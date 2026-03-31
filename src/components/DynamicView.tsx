@@ -6,8 +6,6 @@ import {
   Phone, 
   Wifi, 
   User, 
-  Bitcoin, 
-  Calendar,
   Share2,
   ExternalLink,
   ChevronRight,

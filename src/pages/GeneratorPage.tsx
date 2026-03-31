@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { QRConfiguration, QRType, QRData } from '../types/qr';
+import type { QRConfiguration, QRType } from '../types/qr';
 import QRCodePreview from '../components/QRCodePreview';
 import ExportPanel from '../components/ExportPanel';
 import ContentPanel from '../components/panels/ContentPanel';
@@ -198,7 +198,7 @@ function GeneratorPage() {
                   </div>
                 </div>
                 <div className="bg-gray-50/50 p-6 sm:p-10 rounded-[32px] border border-gray-50">
-                   <ContentPanel config={config} updateData={updateData} updateConfig={updateConfig} />
+                   <ContentPanel config={config} updateData={updateData} />
                 </div>
               </div>
 
