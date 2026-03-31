@@ -12,13 +12,18 @@ import {
   User,
   Zap,
   Share2,
-  X
+  X,
+  FileText,
+  Video,
+  Music,
+  Smartphone
 } from 'lucide-react';
 import type { QRConfiguration, QRData, QRType } from '../../types/qr';
 
 interface ContentPanelProps {
   config: QRConfiguration;
   updateData: (updates: Partial<QRData>) => void;
+  hideTypeSelector?: boolean;
 }
 
 import { clsx, type ClassValue } from 'clsx';
@@ -28,7 +33,7 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData }) => {
+const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTypeSelector }) => {
   const data = config.data;
   const types: { type: QRType; icon: React.ReactNode; label: string; category: string }[] = [
     { type: 'url', icon: <Link className="w-4 h-4" />, label: 'Website Link', category: 'Basic' },
@@ -37,37 +42,43 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData }) => {
     { type: 'wifi', icon: <Wifi className="w-4 h-4" />, label: 'WiFi Access', category: 'Basic' },
     { type: 'email', icon: <Mail className="w-4 h-4" />, label: 'Email Draft', category: 'Basic' },
     { type: 'sms', icon: <MessageSquare className="w-4 h-4" />, label: 'SMS Message', category: 'Basic' },
-    { type: 'whatsapp', icon: <Phone className="w-4 h-4" />, label: 'WhatsApp', category: 'Basic' },
-    { type: 'image', icon: <Camera className="w-4 h-4" />, label: 'Image Gallery', category: 'Specific' },
-    { type: 'socials', icon: <Share2 className="w-4 h-4" />, label: 'Social Media', category: 'Social' },
+    { type: 'whatsapp', icon: <Phone className="w-4 h-4" />, label: 'WhatsApp', category: 'Social' },
+    { type: 'image', icon: <Camera className="w-4 h-4" />, label: 'Images', category: 'Dynamic' },
+    { type: 'socials', icon: <Share2 className="w-4 h-4" />, label: 'Multi Links', category: 'Social' },
+    { type: 'pdf', icon: <FileText className="w-4 h-4" />, label: 'PDF Doc', category: 'Dynamic' },
+    { type: 'video', icon: <Video className="w-4 h-4" />, label: 'Video', category: 'Dynamic' },
+    { type: 'mp3', icon: <Music className="w-4 h-4" />, label: 'MP3 Audio', category: 'Dynamic' },
+    { type: 'app', icon: <Smartphone className="w-4 h-4" />, label: 'App Store', category: 'Dynamic' },
     { type: 'crypto', icon: <Bitcoin className="w-4 h-4" />, label: 'Crypto Pay', category: 'Specific' },
-    { type: 'event', icon: <Calendar className="w-4 h-4" />, label: 'Event Info', category: 'Specific' },
+    { type: 'event', icon: <Calendar className="w-4 h-4" />, label: 'Event Info', category: 'Dynamic' },
   ];
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-        {types.map((t) => (
-          <button
-            key={t.type}
-            onClick={() => updateData({ type: t.type })}
-            className={cn(
-              "flex items-center gap-2 px-3 py-3 rounded-2xl border transition-all hover:bg-blue-50 text-left group min-h-[56px]",
-              data.type === t.type
-                ? "border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-200"
-                : "border-gray-100 bg-white text-gray-500 hover:text-blue-600"
-            )}
-          >
-            <div className={cn(
-              "flex-shrink-0 transition-colors p-1.5 rounded-lg",
-              data.type === t.type ? "bg-white/20 text-white" : "bg-gray-50 text-gray-400 group-hover:text-blue-600"
-            )}>
-              {t.icon}
-            </div>
-            <span className="text-[10px] font-extrabold leading-tight flex-1 whitespace-nowrap">{t.label}</span>
-          </button>
-        ))}
-      </div>
+      {!hideTypeSelector && (
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {types.map((t) => (
+            <button
+              key={t.type}
+              onClick={() => updateData({ type: t.type })}
+              className={cn(
+                "flex items-center gap-2 px-3 py-3 rounded-2xl border transition-all hover:bg-blue-50 text-left group min-h-[56px]",
+                data.type === t.type
+                  ? "border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-200"
+                  : "border-gray-100 bg-white text-gray-500 hover:text-blue-600"
+              )}
+            >
+              <div className={cn(
+                "flex-shrink-0 transition-colors p-1.5 rounded-lg",
+                data.type === t.type ? "bg-white/20 text-white" : "bg-gray-50 text-gray-400 group-hover:text-blue-600"
+              )}>
+                {t.icon}
+              </div>
+              <span className="text-[10px] font-extrabold leading-tight flex-1 whitespace-nowrap">{t.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="animate-in fade-in slide-in-from-top-2 duration-500">
 
@@ -420,7 +431,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData }) => {
 
               {data.type === 'image' && (
                 <div className="space-y-8 animate-in zoom-in-95 duration-300">
-                  <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl p-10 flex flex-col items-center justify-center space-y-4 hover:border-blue-400/50 transition-all relative overflow-hidden group">
+                  <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl p-10 flex flex-col items-center justify-center space-y-4 hover:border-blue-400/50 transition-all relative overflow-hidden group text-center">
                     {data.image?.url ? (
                       <div className="relative w-full aspect-video flex items-center justify-center">
                          <img src={data.image.url} alt="Upload" className="max-h-[200px] rounded-xl shadow-lg border border-white" />
@@ -437,8 +448,8 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData }) => {
                           <Camera className="w-8 h-8" />
                         </div>
                         <div className="text-center">
-                          <p className="text-sm font-bold text-gray-900">Upload Image</p>
-                          <p className="text-xs text-gray-400 font-medium">JPEG, PNG up to 2MB</p>
+                          <p className="text-sm font-bold text-gray-900 leading-none mb-1">Upload Gallery Image</p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">JPEG, PNG up to 2MB</p>
                         </div>
                         <input 
                           type="file" 
@@ -460,19 +471,74 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData }) => {
                   </div>
                 </div>
               )}
-           </div>
-        </div>
 
-        <div className="flex items-start gap-4 p-5 bg-blue-50 rounded-3xl border border-blue-100">
-          <div className="bg-blue-600 text-white p-2 rounded-xl">
-            <Zap className="w-4 h-4 fill-yellow-300 text-white" />
+              {data.type === 'video' && (
+                 <div className="space-y-4">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Paste Video URL</p>
+                    <div className="relative">
+                       <Video className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                       <input 
+                        type="url"
+                        value={data.video?.url || ''}
+                        onChange={(e) => updateData({ video: { url: e.target.value } })}
+                        placeholder="https://youtube.com/watch?v=..."
+                        className="w-full pl-11 pr-4 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-bold transition-all bg-gray-50/30"
+                       />
+                    </div>
+                    <p className="text-[11px] text-gray-400 font-bold italic translate-x-2">Supports YouTube, Vimeo, and direct links.</p>
+                 </div>
+              )}
+
+              {(data.type === 'pdf' || data.type === 'mp3') && (
+                <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[32px] p-12 flex flex-col items-center justify-center space-y-4 transition-all relative overflow-hidden group">
+                   <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-blue-600 mb-2">
+                       {data.type === 'pdf' ? <FileText className="w-8 h-8" /> : <Music className="w-8 h-8" />}
+                   </div>
+                   <div className="text-center space-y-1">
+                      <h4 className="text-sm font-black text-gray-900 leading-none">Upload {data.type.toUpperCase()} File</h4>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Click to browse or drag and drop</p>
+                   </div>
+                   <input type="file" accept={data.type === 'pdf' ? '.pdf' : 'audio/*'} className="absolute inset-0 opacity-0 cursor-pointer" />
+                </div>
+              )}
+
+              {data.type === 'app' && (
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Apple App Store URL</p>
+                       <input 
+                        type="url"
+                        value={data.app?.ios || ''}
+                        onChange={(e) => updateData({ app: { ...(data.app || {}), ios: e.target.value } })}
+                        placeholder="apps.apple.com/..."
+                        className="w-full px-6 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-bold transition-all bg-gray-50/30 shadow-inner"
+                       />
+                    </div>
+                    <div className="space-y-3">
+                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Google Play Store URL</p>
+                       <input 
+                        type="url"
+                        value={data.app?.android || ''}
+                        onChange={(e) => updateData({ app: { ...(data.app || {}), android: e.target.value } })}
+                        placeholder="play.google.com/..."
+                        className="w-full px-6 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-bold transition-all bg-gray-50/30 shadow-inner"
+                       />
+                    </div>
+                 </div>
+              )}
+            </div>
+         </div>
+
+         <div className="flex items-start gap-5 p-7 bg-blue-50 rounded-[32px] border border-blue-100/50">
+          <div className="bg-blue-600 text-white p-2.5 rounded-2xl shadow-lg shadow-blue-100 shrink-0">
+            <Zap className="w-5 h-5 fill-yellow-300 text-white" />
           </div>
           <div>
-            <p className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-1">Expert Tip</p>
-            <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+            <p className="text-[11px] font-black text-blue-900 uppercase tracking-[0.2em] mb-1.5 opacity-60">Professional Tip</p>
+            <p className="text-[13px] text-blue-900/80 font-bold leading-relaxed">
               {config.isDynamic 
-                ? "Your QR code destination can be edited anytime. Ideal for marketing materials that are already printed!"
-                : "Static codes encode data directly. For long-term use and tracking, we recommend enabling Dynamic Mode."}
+                ? "This is a Dynamic QR Code. You can change its destination content at any time—even after printing—without changing the QR image itself."
+                : "Static codes encode data directly. For long-term use, tracking, and the ability to edit content, we recommend using Dynamic Mode."}
             </p>
           </div>
         </div>
