@@ -4,7 +4,7 @@ import type { QRConfiguration } from '../types/qr';
 
 const getQRDataString = (config: QRConfiguration): string => {
   if (config.isDynamic && config.shortId) {
-    return `https://qr-thrive.com/s/${config.shortId}`;
+    return `${window.location.origin}/s/${config.shortId}`;
   }
 
   const { data } = config;
@@ -37,6 +37,12 @@ const getQRDataString = (config: QRConfiguration): string => {
       return data.crypto?.address || '';
     case 'event':
       return `BEGIN:VEVENT\nSUMMARY:${data.event?.title}\nLOCATION:${data.event?.location}\nDESCRIPTION:${data.event?.description}\nEND:VEVENT`;
+    case 'socials':
+      if (data.socials) {
+        const first = Object.values(data.socials).find(v => v);
+        return first || '';
+      }
+      return '';
     case 'vcard':
       return `BEGIN:VCARD\nVERSION:3.0\nFN:${data.vcard?.firstName} ${data.vcard?.lastName}\nTEL;TYPE=CELL:${data.vcard?.mobile}\nEMAIL:${data.vcard?.email}\nADR:${data.vcard?.address}\nORG:${data.vcard?.company}\nTITLE:${data.vcard?.jobTitle}\nURL:${data.vcard?.website}\nNOTE:${data.vcard?.note}\nEND:VCARD`;
     default: return '';

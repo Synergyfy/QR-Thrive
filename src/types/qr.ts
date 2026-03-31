@@ -16,6 +16,8 @@ export type QRType =
   | 'youtube' 
   | 'tiktok' 
   | 'crypto' 
+  | 'socials'
+  | 'image'
   | 'event';
 
 export interface QRData {
@@ -59,6 +61,14 @@ export interface QRData {
     username: string;
     platform: 'instagram' | 'facebook' | 'linkedin' | 'twitter' | 'youtube' | 'tiktok';
   };
+  socials?: {
+    instagram?: string;
+    facebook?: string;
+    linkedin?: string;
+    twitter?: string;
+    youtube?: string;
+    tiktok?: string;
+  };
   crypto?: {
     address: string;
     coin: 'bitcoin' | 'ethereum' | 'litecoin';
@@ -70,6 +80,10 @@ export interface QRData {
     startDate: string;
     endDate: string;
     description: string;
+  };
+  image?: {
+    url: string;
+    caption?: string;
   };
 }
 
@@ -112,7 +126,7 @@ export interface QRDesignOptions {
 }
 
 export interface QRFrameOptions {
-  type: 'none' | 'simple' | 'text-below' | 'bubble' | 'ribbon' | 'bracket' | 'rounded-thick' | 'shadow';
+  type: 'none' | 'simple' | 'text-below' | 'bubble' | 'ribbon' | 'bracket' | 'rounded-thick' | 'shadow' | 'phone' | 'circular' | 'tag' | 'minimal';
   text?: string;
   color?: string;
   textColor?: string;

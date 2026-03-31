@@ -30,6 +30,8 @@ export const isQRDataValid = (data: QRData): boolean => {
       return !!data.crypto?.address && data.crypto.address.length > 5;
     case 'event':
       return !!data.event?.title && data.event.title.length > 0;
+    case 'socials':
+      return !!data.socials && Object.values(data.socials).some(val => val && val.length > 0);
     case 'phone':
        return !!data.phone?.number && data.phone.number.length > 3;
     default:
