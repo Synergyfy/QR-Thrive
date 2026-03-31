@@ -4,9 +4,9 @@ import {
   AreaChart, Area, Cell, PieChart, Pie
 } from 'recharts';
 import { 
-  Download, Globe, Smartphone, MapPin, 
+  Download, Globe, MapPin, 
   ArrowUpRight, TrendingUp, Users, QrCode, 
-  Zap, Calendar, Clock, MousePointer2
+  Zap, Calendar, Clock
 } from 'lucide-react';
 import type { StoredQR } from '../hooks/useQRStorage';
 

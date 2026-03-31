@@ -164,7 +164,6 @@ const DashboardPage: React.FC = () => {
       // Calculate dimensions precisely
       const basePadding = 8 * S; // 2% of 400
       const innerGap = 8 * S; // p-2 centering
-      const textGap = 16 * S; // gap-16
       
       let canvasWidth = 1000 + (basePadding + innerGap) * 2;
       let canvasHeight = 1000 + (basePadding + innerGap) * 2;

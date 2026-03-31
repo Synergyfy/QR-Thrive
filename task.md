@@ -14,3 +14,4 @@ TODO (Next Observations):
 ✅ Pencil (edit) icon on QR card should be always visible (not just on hover)
 ✅ Fix QR clipping in dashboard card (adjust container/padding/object-fit)
 ✅ Ensure downloaded QR code matches the design/styling shown on the dashboard
+✅ Fix build errors (unused variables)
