@@ -43,6 +43,11 @@ const getQRDataString = (config: QRConfiguration): string => {
         return first || '';
       }
       return '';
+    case 'image': return data.image?.url || '';
+    case 'pdf': return data.pdf?.url || '';
+    case 'video': return data.video?.url || '';
+    case 'mp3': return data.mp3?.url || '';
+    case 'app': return data.app?.android || data.app?.ios || '';
     case 'vcard':
       return `BEGIN:VCARD\nVERSION:3.0\nFN:${data.vcard?.firstName} ${data.vcard?.lastName}\nTEL;TYPE=CELL:${data.vcard?.mobile}\nEMAIL:${data.vcard?.email}\nADR:${data.vcard?.address}\nORG:${data.vcard?.company}\nTITLE:${data.vcard?.jobTitle}\nURL:${data.vcard?.website}\nNOTE:${data.vcard?.note}\nEND:VCARD`;
     default: return '';

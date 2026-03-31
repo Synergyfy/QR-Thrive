@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Mail, Lock, Share2, Globe, Zap } from 'lucide-react';
+import { X, Mail, Lock, Share2, Globe, Zap, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface AuthModalProps {
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
 
   if (!isOpen) return null;
@@ -15,8 +17,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
     // Mock successful auth
-    onSuccess({ email: 'business@example.com', name: 'QR-Thrive Business' });
+    onSuccess({ email: 'business@example.com', name: 'Frank Emesinwa' });
     onClose();
+    navigate('/dashboard');
   };
 
   return (
@@ -84,9 +87,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
 
             <button 
               type="submit"
-              className="w-full bg-blue-600 text-white py-3 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-[0.98]"
+              className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-95 flex items-center justify-center gap-2"
             >
-              {isLogin ? 'Sign In' : 'Create Account'}
+              {isLogin ? 'Sign In to Dashboard' : 'Create My Account'}
+              <ArrowRight className="w-4 h-4 ml-1" />
             </button>
           </form>
 

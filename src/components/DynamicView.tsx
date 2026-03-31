@@ -12,15 +12,21 @@ import {
   ShieldCheck,
   Smartphone,
   Type,
-  Camera
+  Camera,
+  FileText,
+  Video,
+  Music,
+  ShoppingBag,
+  Download
 } from 'lucide-react';
 import type { QRData } from '../types/qr';
 
 interface DynamicViewProps {
   data: QRData;
+  isWizardPreview?: boolean;
 }
 
-const DynamicView: React.FC<DynamicViewProps> = ({ data }) => {
+const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
   // If it's a simple URL, we can just redirect or show a card
   React.useEffect(() => {
     if (data.type === 'url' && data.url) {
@@ -369,6 +375,116 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data }) => {
            </div>
          );
 
+      case 'pdf':
+         return (
+           <div className="space-y-8">
+              <div className="text-center">
+                 <div className="w-20 h-20 bg-red-100 text-red-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-red-100">
+                    <FileText className="w-10 h-10" />
+                 </div>
+                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Document View</h1>
+                 <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest">Secure PDF Hosting</p>
+              </div>
+              <div className="bg-white border border-gray-100 p-6 rounded-3xl flex items-center gap-4">
+                 <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600">
+                    <FileText className="w-6 h-6" />
+                 </div>
+                 <div className="flex-1 min-w-0">
+                    <p className="font-bold text-gray-900 truncate">{data.pdf?.name || 'document_file.pdf'}</p>
+                    <p className="text-xs text-gray-400">PDF Document • 2.4 MB</p>
+                 </div>
+              </div>
+              <button className="w-full py-5 bg-red-600 text-white rounded-[40px] font-black text-lg shadow-xl shadow-red-100 flex items-center justify-center gap-3">
+                 <Download className="w-6 h-6" />
+                 Download PDF
+              </button>
+           </div>
+         );
+
+      case 'video':
+         return (
+           <div className="space-y-8">
+              <div className="relative w-full aspect-video bg-gray-900 rounded-[32px] overflow-hidden shadow-2xl">
+                 <div className="absolute inset-0 flex items-center justify-center">
+                    <Video className="w-16 h-16 text-white opacity-20" />
+                 </div>
+                 {data.video?.url && (
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
+                       <p className="text-white font-bold text-sm truncate">{data.video.url}</p>
+                    </div>
+                 )}
+              </div>
+              <div className="text-center">
+                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Watch Video</h1>
+                 <p className="text-gray-400 text-sm">Streaming services are currently playing.</p>
+              </div>
+              <a 
+                href={data.video?.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-5 bg-blue-600 text-white rounded-[40px] font-black text-lg shadow-xl shadow-blue-100 flex items-center justify-center gap-3"
+              >
+                 <ExternalLink className="w-6 h-6" />
+                 Open Video
+              </a>
+           </div>
+         );
+
+      case 'mp3':
+         return (
+           <div className="space-y-8">
+              <div className="text-center">
+                 <div className="w-24 h-24 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-blue-100 animate-pulse">
+                    <Music className="w-12 h-12" />
+                 </div>
+                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Audio Player</h1>
+                 <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest">Streaming MP3</p>
+              </div>
+              <div className="bg-gray-50 p-8 rounded-[40px] space-y-6">
+                 <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full w-1/3 bg-blue-600 rounded-full" />
+                 </div>
+                 <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-400">1:24</span>
+                    <span className="text-xs font-bold text-gray-400">4:02</span>
+                 </div>
+              </div>
+              <button className="w-full py-5 bg-slate-900 text-white rounded-[40px] font-black text-lg flex items-center justify-center gap-3">
+                 <Music className="w-6 h-6" />
+                 Play Audio
+              </button>
+           </div>
+         );
+
+      case 'app':
+         return (
+           <div className="space-y-10">
+              <div className="text-center">
+                 <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-100">
+                    <ShoppingBag className="w-10 h-10" />
+                 </div>
+                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Download App</h1>
+                 <p className="text-gray-400 text-sm">Available on all your devices</p>
+              </div>
+              <div className="space-y-4">
+                 <button className="w-full py-6 bg-black text-white rounded-[40px] font-bold flex items-center px-8 gap-4 shadow-xl">
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.96.95-2.22 1.48-3.48 1.48s-2.52-.53-3.48-1.48c-.96-1-1.39-2.31-1.28-3.64.11-1.33.74-2.52 1.77-3.35 1.03-.84 2.37-1.18 3.65-1.14 1.28.05 2.44.47 3.24 1.18-.8.15-1.93.91-1.93 2.1 0 1.19.78 2.36 2.36 2.36.19 0 .37-.02.55-.06-.11.85-.5 1.63-1.14 2.24l-3.26.31zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" /></svg>
+                    <div className="text-left">
+                       <p className="text-[10px] uppercase font-black opacity-60">App Store</p>
+                       <p className="text-sm font-black">Download for iOS</p>
+                    </div>
+                 </button>
+                 <button className="w-full py-6 bg-white border-2 border-gray-100 text-gray-900 rounded-[40px] font-bold flex items-center px-8 gap-4 shadow-sm">
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.609 22.186c-.18.18-.285.424-.285.679 0 .528.432.96 1.011.96.183 0 .354-.051.5-.141l14.945-8.407c.54-.303.896-.879.896-1.528 0-.649-.356-1.225-.896-1.528L4.835.132c-.146-.09-.32-.141-.498-.141C3.758 0 3.326.432 3.326.96c0 .255.105.499.283.679l.001-.001-.001.176v.001z" /></svg>
+                    <div className="text-left">
+                       <p className="text-[10px] uppercase font-black opacity-60">Google Play</p>
+                       <p className="text-sm font-black">Get it on Android</p>
+                    </div>
+                 </button>
+              </div>
+           </div>
+         );
+
       default:
         return (
           <div className="text-center space-y-6">
@@ -386,6 +502,20 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data }) => {
         );
     }
   };
+
+  if (isWizardPreview) {
+    return (
+      <div className="w-full flex-1 flex flex-col p-6 overflow-y-auto custom-scrollbar bg-white">
+          <div className="flex items-center justify-center gap-2 mb-8 opacity-40">
+            <div className="w-5 h-5 rounded-lg bg-blue-600 flex items-center justify-center">
+                <ShieldCheck className="text-white w-3 h-3" />
+            </div>
+            <span className="text-[10px] font-bold text-gray-900 tracking-tight">QR Thrive</span>
+          </div>
+          {renderContent()}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-8 flex items-center justify-center font-sans">

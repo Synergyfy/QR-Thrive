@@ -18,12 +18,32 @@ export type QRType =
   | 'crypto' 
   | 'socials'
   | 'image'
-  | 'event';
+  | 'event'
+  | 'pdf'
+  | 'video'
+  | 'mp3'
+  | 'app';
+  
+export interface FileData {
+  url: string;
+  name?: string;
+  size?: number;
+}
 
 export interface QRData {
   type: QRType;
   url?: string;
   text?: string;
+  pdf?: FileData;
+  video?: {
+    url: string;
+    platform?: 'youtube' | 'vimeo' | 'other';
+  };
+  mp3?: FileData;
+  app?: {
+    ios?: string;
+    android?: string;
+  };
   vcard?: {
     firstName: string;
     lastName: string;
