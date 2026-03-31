@@ -71,7 +71,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, updateC
             )}>
               {t.icon}
             </div>
-            <span className="text-[11px] font-semibold truncate">{t.label}</span>
+            <span className="text-[11px] font-bold leading-tight flex-1 break-words py-0.5">{t.label}</span>
           </button>
         ))}
       </div>
@@ -110,7 +110,10 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, updateC
                     value={data.url || ''}
                     onChange={(e) => updateData({ url: e.target.value })}
                     placeholder="https://your-website.com"
-                    className="w-full pl-12 pr-4 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30"
+                    className={cn(
+                      "w-full pl-12 pr-4 py-4 border-2 rounded-2xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30",
+                      !data.url ? "border-amber-100/50" : "border-gray-50 focus:border-blue-600"
+                    )}
                   />
                 </div>
               </div>
@@ -224,7 +227,10 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, updateC
                     value={data.email?.address || ''}
                     onChange={(e) => updateData({ email: { ...(data.email || { subject: '', body: '' }), address: e.target.value } })}
                     placeholder="example@mail.com"
-                    className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
+                    className={cn(
+                      "w-full px-4 py-3 border-2 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all",
+                      !data.email?.address ? "border-amber-100/50" : "border-gray-50 focus:border-blue-600"
+                    )}
                   />
                 </div>
                 <div className="space-y-2">

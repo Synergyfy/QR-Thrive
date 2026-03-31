@@ -1,12 +1,19 @@
 import React from 'react';
 import { useQRCode } from '../hooks/useQRCode';
 import type { QRConfiguration } from '../types/qr';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 interface QRCodePreviewProps {
   config: QRConfiguration;
+  isValid?: boolean;
 }
 
-const QRCodePreview: React.FC<QRCodePreviewProps> = ({ config }) => {
+const QRCodePreview: React.FC<QRCodePreviewProps> = ({ config, isValid = true }) => {
   const { ref } = useQRCode(config);
 
   const getFrameStyles = (): React.CSSProperties => {
@@ -63,55 +70,73 @@ const QRCodePreview: React.FC<QRCodePreviewProps> = ({ config }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 sm:p-10 lg:p-12 bg-white rounded-[40px] sm:rounded-[50px] shadow-[0_20px_50px_rgba(0,0,0,0.04)] border border-gray-50 transition-all w-full max-w-full overflow-hidden">
-      <div style={getFrameStyles()} className="w-full flex items-center justify-center">
-        {/* Added a centering container with a bit of padding to avoid any clipping */}
-        <div className="relative group w-full flex items-center justify-center p-2">
+    <div className="flex flex-col items-center justify-center p-6 sm:p-10 lg:p-12 bg-white rounded-[40px] sm:rounded-[50px] shadow-[0_20px_50px_rgba(0,0,0,0.04)] border border-gray-50 transition-all w-full max-w-full overflow-hidden relative">
+      <div className={cn(
+        "w-full flex flex-col items-center justify-center transition-all duration-500",
+        !isValid && "opacity-20 grayscale scale-95 pointer-events-none"
+      )}>
+        <div style={getFrameStyles()} className="w-full flex items-center justify-center">
+          {/* Added a centering container with a bit of padding to avoid any clipping */}
+          <div className="relative group w-full flex items-center justify-center p-2">
+              <div
+                ref={ref}
+                className="qr-container rounded-xl shadow-inner shadow-black/5"
+                style={{
+                  width: '100%',
+                  maxWidth: `${config.width}px`,
+                  aspectRatio: '1/1',
+                  backgroundColor: config.design.background.color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'visible' // Changed from hidden to avoid clipping the actual pattern
+                }}
+              >
+                 {/* Actual QR injected here */}
+              </div>
+          </div>
+          
+          {config.frame.type !== 'none' && config.frame.text && (
             <div
-              ref={ref}
-              className="qr-container rounded-xl shadow-inner shadow-black/5"
+              className="animate-in slide-in-from-bottom-2 duration-700 w-full"
               style={{
-                width: '100%',
-                maxWidth: `${config.width}px`,
-                aspectRatio: '1/1',
-                backgroundColor: config.design.background.color,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'visible' // Changed from hidden to avoid clipping the actual pattern
+                color: config.frame.textColor || '#ffffff',
+                backgroundColor: config.frame.color || '#2563eb',
+                padding: config.frame.type === 'ribbon' ? '16px 32px' : '10px 20px',
+                borderRadius: config.frame.type === 'ribbon' ? '0' : '999px',
+                fontWeight: '700',
+                fontSize: '14px',
+                textAlign: 'center',
+                width: config.frame.type === 'ribbon' ? '100.5%' : 'auto',
+                minWidth: config.frame.type === 'ribbon' ? '101%' : 'min(100%, 140px)',
+                marginTop: config.frame.type === 'ribbon' ? '12px' : '8px',
+                marginBottom: config.frame.type === 'ribbon' ? '0' : '12px',
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                boxShadow: config.frame.type === 'ribbon' ? 'none' : '0 10px 20px rgba(37,99,235,0.1)'
               }}
             >
-               {/* Actual QR injected here */}
+              {config.frame.text}
             </div>
+          )}
         </div>
-        
-        {config.frame.type !== 'none' && config.frame.text && (
-          <div
-            className="animate-in slide-in-from-bottom-2 duration-700 w-full"
-            style={{
-              color: config.frame.textColor || '#ffffff',
-              backgroundColor: config.frame.color || '#2563eb',
-              padding: config.frame.type === 'ribbon' ? '16px 32px' : '10px 20px',
-              borderRadius: config.frame.type === 'ribbon' ? '0' : '999px',
-              fontWeight: '700',
-              fontSize: '14px',
-              textAlign: 'center',
-              width: config.frame.type === 'ribbon' ? '100.5%' : 'auto',
-              minWidth: config.frame.type === 'ribbon' ? '101%' : 'min(100%, 140px)',
-              marginTop: config.frame.type === 'ribbon' ? '12px' : '8px',
-              marginBottom: config.frame.type === 'ribbon' ? '0' : '12px',
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-              boxShadow: config.frame.type === 'ribbon' ? 'none' : '0 10px 20px rgba(37,99,235,0.1)'
-            }}
-          >
-            {config.frame.text}
-          </div>
-        )}
       </div>
+
+      {!isValid && (
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in duration-500">
+           <div className="bg-amber-100 text-amber-700 px-6 py-4 rounded-3xl border-2 border-amber-200 shadow-xl shadow-amber-900/10 flex flex-col items-center gap-3">
+              <span className="text-sm font-black uppercase tracking-widest">Incomplete Data</span>
+              <p className="text-[11px] font-bold leading-relaxed max-w-[180px]">Please enter valid content in Step 1 to generate your QR Code</p>
+           </div>
+        </div>
+      )}
+
       <div className="mt-8 sm:mt-12 text-[10px] text-gray-300 font-bold uppercase tracking-[0.2em] flex items-center gap-3">
-        <span className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse border-2 border-white shadow-sm" />
-        High Fidelity Preview
+        <span className={cn(
+          "w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm",
+          isValid ? "bg-blue-600 animate-pulse" : "bg-gray-200"
+        )} />
+        {isValid ? "High Fidelity Preview" : "Waiting for content..."}
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `

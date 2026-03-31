@@ -7,6 +7,7 @@ import DesignPanel from './components/panels/DesignPanel';
 import ColorsPanel from './components/panels/ColorsPanel';
 import LogoPanel from './components/panels/LogoPanel';
 import AuthModal from './components/AuthModal';
+import { isQRDataValid } from './utils/qrValidation';
 import {
   Type,
   LogOut,
@@ -157,17 +158,13 @@ function App() {
       {/* Hero with Generator Card */}
       <section className="pt-32 pb-20 px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-8 tracking-tight leading-[1.1]">Create, manage and track<br/><span className="text-blue-600/40">your dynamic QR codes</span></h1>
-            <p className="text-lg lg:text-xl text-gray-500 max-w-2xl mx-auto font-medium leading-relaxed">Quickly create a QR code for your website, app, or social media. Customize the design to match your brand and track its performance in real-time.</p>
-          </div>
 
           {/* This is the Main Generator Card - The 1-2-3 Psychology Container */}
-          <div className="bg-white rounded-[40px] shadow-[0_30px_1000px_rgba(37,99,235,0.06)] border border-gray-100 overflow-hidden flex flex-col lg:flex-row">
+          <div className="bg-white rounded-[40px] shadow-[0_30px_1000px_rgba(37,99,235,0.06)] border border-gray-100 flex flex-col lg:flex-row relative">
             {/* Left Content Column (Steps 1 & 2) */}
-            <div className="flex-1 p-6 sm:p-10 lg:p-16 border-b lg:border-b-0 lg:border-r border-gray-100">
+            <div className="flex-1 p-6 sm:p-10 lg:p-16 border-b lg:border-b-0 lg:border-r border-gray-100 rounded-t-[40px] lg:rounded-r-none lg:rounded-l-[40px]">
               {/* Step 1: Content Type */}
-              <div className="mb-14">
+              <div className="mb-1">
                 <div className="flex items-center gap-4 mb-10">
                   <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-lg font-bold shadow-lg shadow-blue-200">1</div>
                   <div>
@@ -180,7 +177,7 @@ function App() {
                 </div>
               </div>
 
-              <div className="h-px bg-gray-50/50 w-full mb-14" />
+              <div className="h-px bg-gray-50/50 w-full mb-1" />
 
               {/* Step 2: Design */}
               <div>
@@ -231,61 +228,33 @@ function App() {
             </div>
 
             {/* Right Preview Column (Step 3) */}
-            <div className="w-full lg:w-[480px] bg-gray-50/40 p-6 sm:p-10 lg:p-16 flex flex-col items-center justify-start min-h-[500px]">
-              <div className="sticky top-28 w-full flex flex-col items-center">
+            <div className="w-full lg:w-[480px] bg-gray-50/40 p-6 sm:p-10 lg:p-16 flex flex-col items-center justify-start min-h-[500px] rounded-b-[40px] lg:rounded-l-none lg:rounded-r-[40px]">
+              <div className="sticky top-24 w-full flex flex-col items-center">
                 <div className="flex items-center justify-center gap-4 mb-10">
                   <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-lg font-bold shadow-lg shadow-blue-200">3</div>
                   <h2 className="text-2xl font-bold text-gray-900">Download Ready</h2>
                 </div>
                 
                 <div className="w-full max-w-[400px] mb-12 transform group transition-all duration-500 hover:scale-[1.02]">
-                  <QRCodePreview config={config} />
+                  <QRCodePreview config={config} isValid={isQRDataValid(config.data)} />
                 </div>
-
+ 
                 <div className="w-full space-y-5 max-w-[400px]">
                   <ExportPanel 
                     config={config} 
                     hasUser={!!user} 
+                    isValid={isQRDataValid(config.data)}
                     onAuthRequired={() => setIsAuthModalOpen(true)} 
                   />
                   
-                  {!user && (
-                    <div className="p-5 bg-blue-900 rounded-3xl border border-white/10 flex items-start gap-4 text-left shadow-xl shadow-blue-200/20">
-                      <div className="bg-white/10 p-2 rounded-xl shrink-0">
-                        <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-                      </div>
-                      <p className="text-[12px] font-semibold text-blue-50 leading-normal">
-                        Unlock high-resolution SVG exports and remove all watermarks by joining our community today!
-                      </p>
-                    </div>
-                  )}
                 </div>
 
-                <div className="mt-10 flex items-center justify-center gap-3 text-gray-400">
-                  <div className="flex -space-x-2">
-                    {[1, 2, 3, 4].map(i => (
-                      <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-gray-200" />
-                    ))}
-                  </div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider">Join 12k+ active creators</span>
-                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Brands Trust Section */}
-      <section className="py-16 border-y border-gray-100 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <p className="text-center text-[10px] font-bold text-gray-300 uppercase tracking-[0.4em] mb-12">Empowering teams at world leading companies</p>
-          <div className="flex flex-wrap justify-center items-center gap-16 md:gap-24 grayscale opacity-30">
-            {['SAMSUNG', 'NIKE', 'LVMH', 'RED BULL', 'ADIDAS', 'TESLA'].map(brand => (
-              <span key={brand} className="text-xl lg:text-3xl font-bold text-gray-900 tracking-tighter">{brand}</span>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Benefits Content Section */}
       <section className="py-24 px-4 bg-white relative overflow-hidden">
