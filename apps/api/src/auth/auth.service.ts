@@ -1,13 +1,15 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, Logger, InternalServerErrorException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignupDto, LoginDto } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
-import { Response } from 'express';
+import type { Response } from 'express';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -21,38 +23,48 @@ export class AuthService {
       throw new ConflictException('Passwords do not match');
     }
 
-    const existingUser = await this.prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+    try {
+      const existingUser = await this.prisma.user.findUnique({ where: { email } });
+      if (existingUser) {
+        throw new ConflictException('User with this email already exists');
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = await this.prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          firstName,
+          lastName,
+        },
+      });
+
+      this.logger.log(`User created: ${email}`);
+      return this.generateAndSetTokens(user.id, res, true);
+    } catch (error) {
+      if (error instanceof ConflictException) throw error;
+      this.logger.error(`Signup error for ${email}:`, error.stack);
+      throw new InternalServerErrorException('Error creating user');
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        firstName,
-        lastName,
-      },
-    });
-
-    return this.generateAndSetTokens(user.id, res);
   }
 
   async login(loginDto: LoginDto, res: Response) {
-    const { email, password } = loginDto;
+    const { email, password, rememberMe } = loginDto;
 
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
+      this.logger.warn(`Login attempt for non-existent user: ${email}`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      this.logger.warn(`Invalid password for user: ${email}`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    return this.generateAndSetTokens(user.id, res);
+    this.logger.log(`User logged in: ${email}`);
+    return this.generateAndSetTokens(user.id, res, rememberMe);
   }
 
   async refresh(refreshToken: string, res: Response) {
@@ -60,29 +72,41 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token missing');
     }
 
-    const tokenRecord = await this.prisma.refreshToken.findUnique({
-      where: { token: refreshToken },
-      include: { user: true },
-    });
+    try {
+      const tokenRecord = await this.prisma.refreshToken.findUnique({
+        where: { token: refreshToken },
+        include: { user: true },
+      });
 
-    if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
-      if (tokenRecord) {
-        await this.prisma.refreshToken.delete({ where: { id: tokenRecord.id } });
+      if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
+        if (tokenRecord) {
+          await this.prisma.refreshToken.delete({ where: { id: tokenRecord.id } });
+        }
+        throw new UnauthorizedException('Invalid or expired refresh token');
       }
-      throw new UnauthorizedException('Invalid or expired refresh token');
+
+      // Delete the old refresh token (rotation)
+      await this.prisma.refreshToken.delete({ where: { id: tokenRecord.id } });
+
+      this.logger.log(`Token refreshed for user: ${tokenRecord.user.email}`);
+      // Maintain session length during refresh
+      return this.generateAndSetTokens(tokenRecord.userId, res, true);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
+      this.logger.error(`Refresh error:`, error.stack);
+      throw new InternalServerErrorException('Error refreshing token');
     }
-
-    // Delete the old refresh token (rotation)
-    await this.prisma.refreshToken.delete({ where: { id: tokenRecord.id } });
-
-    return this.generateAndSetTokens(tokenRecord.userId, res);
   }
 
   async logout(refreshToken: string, res: Response) {
     if (refreshToken) {
-      await this.prisma.refreshToken.deleteMany({
-        where: { token: refreshToken },
-      });
+      try {
+        await this.prisma.refreshToken.deleteMany({
+          where: { token: refreshToken },
+        });
+      } catch (error) {
+        this.logger.error(`Logout token deletion error:`, error.stack);
+      }
     }
 
     res.clearCookie('accessToken');
@@ -98,7 +122,7 @@ export class AuthService {
     return { user };
   }
 
-  private async generateAndSetTokens(userId: string, res: Response) {
+  private async generateAndSetTokens(userId: string, res: Response, rememberMe: boolean = false) {
     const accessToken = await this.jwtService.signAsync(
       { sub: userId },
       {
@@ -108,8 +132,11 @@ export class AuthService {
     );
 
     const refreshTokenString = await bcrypt.hash(Math.random().toString(), 10);
+    
+    // Set refresh token expiration based on rememberMe
+    const refreshDays = rememberMe ? 30 : 7;
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
+    expiresAt.setDate(expiresAt.getDate() + refreshDays);
 
     await this.prisma.refreshToken.create({
       data: {
@@ -132,7 +159,7 @@ export class AuthService {
       httpOnly: true,
       secure: isProd,
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: refreshDays * 24 * 60 * 60 * 1000,
     });
 
     const user = await this.prisma.user.findUnique({
