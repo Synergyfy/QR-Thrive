@@ -1,25 +1,72 @@
 import React, { useState } from 'react';
-import { X, Mail, Lock, Share2, Globe, Zap, ArrowRight } from 'lucide-react';
+import { X, Mail, Lock, Share2, Globe, Zap, ArrowRight, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import type { AuthResponse } from '../types/auth';
+import { AxiosError } from 'axios';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (user: any) => void;
+  onSuccess: (response: AuthResponse | null) => void;
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const navigate = useNavigate();
+  const { login, signup } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+  });
 
   if (!isOpen) return null;
 
-  const handleAuth = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError(null);
+  };
+
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock successful auth
-    onSuccess({ email: 'business@example.com', name: 'Frank Emesinwa' });
-    onClose();
-    navigate('/dashboard');
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (isLogin) {
+        await login(formData.email, formData.password);
+      } else {
+        if (formData.password !== formData.confirmPassword) {
+          setError('Passwords do not match');
+          setLoading(false);
+          return;
+        }
+        await signup({
+          email: formData.email,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+        });
+      }
+      onSuccess(null); // AuthContext handles the user state
+      onClose();
+      navigate('/dashboard');
+    } catch (err) {
+      if (err instanceof AxiosError && err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('Authentication failed');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -59,12 +106,56 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
             </p>
           </div>
 
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleAuth} className="space-y-4">
+            {!isLogin && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase ml-1">First Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input 
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      type="text" 
+                      required
+                      placeholder="John" 
+                      className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" 
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase ml-1">Last Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input 
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      type="text" 
+                      required
+                      placeholder="Doe" 
+                      className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" 
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-500 uppercase ml-1">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input 
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
                   type="email" 
                   required
                   placeholder="name@company.com" 
@@ -72,11 +163,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
                 />
               </div>
             </div>
+
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-500 uppercase ml-1">Password</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input 
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
                   type="password" 
                   required
                   placeholder="••••••••" 
@@ -85,39 +180,41 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
               </div>
             </div>
 
+            {!isLogin && (
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase ml-1">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input 
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    type="password" 
+                    required
+                    placeholder="••••••••" 
+                    className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" 
+                  />
+                </div>
+              </div>
+            )}
+
             <button 
               type="submit"
-              className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-95 flex items-center justify-center gap-2"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {isLogin ? 'Sign In to Dashboard' : 'Create My Account'}
+              {loading ? 'Processing...' : (isLogin ? 'Sign In to Dashboard' : 'Create My Account')}
               <ArrowRight className="w-4 h-4 ml-1" />
             </button>
           </form>
 
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-100"></div>
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-4 text-gray-400 font-medium">Or continue with</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors">
-              <Globe className="w-4 h-4 text-red-500" />
-              <span className="text-sm font-bold text-gray-700">Google</span>
-            </button>
-            <button className="flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors">
-              <Share2 className="w-4 h-4 text-gray-900" />
-              <span className="text-sm font-bold text-gray-700">GitHub</span>
-            </button>
-          </div>
-
           <p className="mt-8 text-center text-sm text-gray-500">
             {isLogin ? "Don't have an account?" : "Already have an account?"}
             <button 
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError(null);
+              }}
               className="ml-1 text-blue-600 font-bold hover:underline"
             >
               {isLogin ? 'Sign up' : 'Log in'}
