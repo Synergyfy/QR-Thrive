@@ -18,7 +18,8 @@ import {
   Zap,
   Palette,
   Image as LogoIcon,
-  Frame
+  Frame,
+  Loader2
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
@@ -31,7 +32,8 @@ import FramePanel from '../components/panels/FramePanel';
 import ContentPanel from '../components/panels/ContentPanel';
 import QRCodePreview from '../components/QRCodePreview';
 import DynamicView from '../components/DynamicView';
-import { useQRStorage } from '../hooks/useQRStorage';
+import toast from 'react-hot-toast';
+import { useQRCode, useCreateQRCode, useUpdateQRCode } from '../hooks/useApi';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -79,7 +81,9 @@ const INITIAL_CONFIG: QRConfiguration = {
 const CreationWizard: React.FC = () => {
   const navigate = useNavigate();
   const { id: editId, step: editStep } = useParams<{ id?: string; step?: string }>();
-  const { saveQR, updateQRConfig, getQR } = useQRStorage();
+  const { data: existingQR } = useQRCode(editId || '');
+  const createQRMutation = useCreateQRCode();
+  const updateQRMutation = useUpdateQRCode();
 
   const isEditing = !!editId;
 
@@ -95,15 +99,12 @@ const CreationWizard: React.FC = () => {
   // Load existing QR when editing
   useEffect(() => {
     if (editId) {
-      const existing = getQR(editId);
-      if (existing) {
-        setConfig(existing.config);
-        setSelectedType(existing.config.data.type);
-      } else {
-        navigate('/dashboard');
+      if (existingQR) {
+        setConfig(existingQR.config);
+        setSelectedType(existingQR.config.data.type);
       }
     }
-  }, [editId]);
+  }, [editId, existingQR]);
 
   // Sync types for new QRs
   useEffect(() => {
@@ -132,14 +133,45 @@ const CreationWizard: React.FC = () => {
     setConfig(prev => ({ ...prev, design: { ...prev.design, ...updates } }));
   };
 
-  const handleFinish = () => {
-    if (isEditing && editId) {
-      updateQRConfig(editId, config);
-    } else {
-      saveQR(config);
+  const handleFinish = async () => {
+    try {
+      if (isEditing && editId) {
+        await updateQRMutation.mutateAsync({ 
+          id: editId, 
+          data: { 
+            name: `${config.data.type} QR`, 
+            type: config.data.type, 
+            data: config.data, 
+            design: config.design, 
+            frame: config.frame, 
+            logo: config.logo, 
+            width: config.width, 
+            height: config.height, 
+            margin: config.margin 
+          } 
+        });
+        toast.success('QR Code updated successfully!');
+      } else {
+        await createQRMutation.mutateAsync({ 
+          name: `${config.data.type} QR`, 
+          type: config.data.type, 
+          data: config.data, 
+          design: config.design, 
+          frame: config.frame, 
+          logo: config.logo, 
+          width: config.width, 
+          height: config.height, 
+          margin: config.margin 
+        });
+        toast.success('QR Code created successfully!');
+      }
+      navigate('/dashboard');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Failed to save QR Code');
     }
-    navigate('/dashboard');
   };
+
+  const isSaving = createQRMutation.isPending || updateQRMutation.isPending;
 
   const handleBack = () => {
     if (isEditing) {
@@ -201,15 +233,21 @@ const CreationWizard: React.FC = () => {
               <ChevronLeft className="w-4 h-4" /> Back
            </button>
            <button 
-            disabled={!selectedType}
+            disabled={!selectedType || isSaving}
             onClick={handleNext}
             className={cn(
-              "px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-xl",
+              "px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-xl min-w-[140px] justify-center",
               selectedType ? "bg-blue-600 text-white shadow-blue-100 hover:bg-blue-700 active:scale-95" : "bg-slate-200 text-slate-400 cursor-not-allowed"
             )}
            >
-              {step === 'design' ? (isEditing ? 'Save Changes' : 'Finish') : 'Continue'}
-              <ChevronRight className="w-4 h-4" />
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  {step === 'design' ? (isEditing ? 'Save Changes' : 'Finish') : 'Continue'}
+                  <ChevronRight className="w-4 h-4" />
+                </>
+              )}
            </button>
         </div>
       </nav>

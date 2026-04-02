@@ -9,39 +9,95 @@ import {
   Zap, Calendar, Clock
 } from 'lucide-react';
 import type { StoredQR } from '../hooks/useQRStorage';
+import { useDashboardStats } from '../hooks/useApi';
 
 interface StatsPanelProps {
   codes: StoredQR[];
 }
 
 const StatsPanel: React.FC<StatsPanelProps> = ({ codes }) => {
-  // Generate high-fidelity mock data for the charts
-  const chartData = useMemo(() => [
-    { name: '30 Mar', scans: 120, unique: 85 },
-    { name: '31 Mar', scans: 450, unique: 310 },
-    { name: '01 Apr', scans: 340, unique: 210 },
-    { name: '02 Apr', scans: 580, unique: 420 },
-    { name: '03 Apr', scans: 890, unique: 670 },
-    { name: '04 Apr', scans: 720, unique: 530 },
-    { name: '05 Apr', scans: 950, unique: 680 },
-  ], []);
+  const { data: stats, isLoading } = useDashboardStats();
 
-  const osData = useMemo(() => [
-    { name: 'iOS', value: 55, color: '#2563eb' },
-    { name: 'Android', value: 35, color: '#10b981' },
-    { name: 'Windows', value: 7, color: '#f59e0b' },
-    { name: 'macOS', value: 3, color: '#8b5cf6' },
-  ], []);
+  const getFlagEmoji = (countryCode: string) => {
+    if (!countryCode || countryCode === 'Unknown') return '🌍';
+    if (countryCode.length === 2) {
+      const codePoints = countryCode.toUpperCase().split('').map(char => 127397 + char.charCodeAt(0));
+      return String.fromCodePoint(...codePoints);
+    }
+    return '🌍';
+  };
 
-  const countryData = useMemo(() => [
-    { name: 'Nigeria', scans: 840, share: '65%', flag: '🇳🇬' },
-    { name: 'United States', scans: 320, share: '15%', flag: '🇺🇸' },
-    { name: 'United Kingdom', scans: 210, share: '12%', flag: '🇬🇧' },
-    { name: 'Germany', scans: 154, share: '8%', flag: '🇩🇪' },
-  ], []);
+  const chartData = useMemo(() => {
+    if (!stats) return [];
+    return stats.chartData.map(d => {
+      // Map ISO date to shorter date e.g., '30 Mar'
+      const dateObj = new Date(d.name);
+      return { 
+        name: dateObj.toLocaleDateString('en-US', { day: '2-digit', month: 'short' }), 
+        scans: d.scans, 
+        unique: d.unique 
+      };
+    });
+  }, [stats]);
 
-  const totalScans = codes.reduce((acc, curr) => acc + curr.scans, 0) || 5402; // Using mock if empty
-  const uniqueScans = Math.floor(totalScans * 0.72);
+  const osData = useMemo(() => {
+    if (!stats) return [];
+    const colors = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#ec4899'];
+    return Object.entries(stats.osDist).map(([name, value], idx) => ({
+      name,
+      value,
+      color: colors[idx % colors.length]
+    })).sort((a,b) => b.value - a.value);
+  }, [stats]);
+
+  const countryData = useMemo(() => {
+    if (!stats) return [];
+    const totalCountriesScans = Object.values(stats.countryDist).reduce((a, b) => a + b, 0);
+    return Object.entries(stats.countryDist).map(([name, scans]) => ({
+      name,
+      scans,
+      share: totalCountriesScans ? Math.round((scans / totalCountriesScans) * 100) + '%' : '0%',
+      flag: getFlagEmoji(name)
+    })).sort((a,b) => b.scans - a.scans);
+  }, [stats]);
+
+  const timeData = useMemo(() => {
+    if (!stats) return [];
+    const data = [];
+    for (let i = 0; i < 24; i++) {
+        const hourLabel = i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i-12}pm`;
+        data.push({ h: hourLabel, v: stats.timeDist[i.toString()] || 0 });
+    }
+    return data;
+  }, [stats]);
+
+  const peakHour = useMemo(() => {
+    if (!stats) return { hour: 'N/A', scans: 0 };
+    let maxScans = 0;
+    let peak = 'N/A';
+    Object.entries(stats.timeDist).forEach(([h, scans]) => {
+       if (scans > maxScans) {
+         maxScans = scans;
+         const i = parseInt(h);
+         peak = i === 0 ? '12:00 AM' : i < 12 ? `${i}:00 AM` : i === 12 ? '12:00 PM' : `${i-12}:00 PM`;
+       }
+    });
+    return { hour: peak, scans: maxScans };
+  }, [stats]);
+
+  const totalScans = stats ? stats.totalScans : 0;
+  const uniqueScans = stats ? stats.uniqueVisitors : 0;
+  const conversionRate = totalScans ? Math.round((uniqueScans / totalScans) * 100) + '%' : '0%';
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+         <div className="w-10 h-10 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!stats) return null;
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
@@ -51,7 +107,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ codes }) => {
           { label: 'Total QR Codes', value: codes.length || 0, icon: QrCode, trend: '+12%', color: 'blue' },
           { label: 'Total Scans', value: totalScans.toLocaleString(), icon: Zap, trend: '+28%', color: 'emerald' },
           { label: 'Unique Visitors', value: uniqueScans.toLocaleString(), icon: Users, trend: '+18%', color: 'purple' },
-          { label: 'Conversion Rate', value: '72.4%', icon: TrendingUp, trend: '+5.2%', color: 'amber' },
+          { label: 'Conversion Rate', value: conversionRate, icon: TrendingUp, trend: '+5.2%', color: 'amber' },
         ].map((metric) => (
           <div key={metric.label} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all group">
             <div className="flex items-center justify-between mb-4">
@@ -138,12 +194,12 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ codes }) => {
                     <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
                     <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Live Pulse</span>
                  </div>
-                 <h4 className="text-xl font-bold leading-tight">Your QR Codes were scanned 42 times in the last hour.</h4>
+                 <h4 className="text-xl font-bold leading-tight">Your QR Codes were scanned {stats.scansLastHour} times in the last hour.</h4>
                  <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-md">
                        <Clock className="w-4 h-4 text-blue-400 mb-2" />
                        <p className="text-[8px] font-black text-white/50 uppercase tracking-widest mb-0.5">Peak Hour</p>
-                       <p className="text-sm font-bold">4:00 PM</p>
+                       <p className="text-sm font-bold">{peakHour.hour}</p>
                     </div>
                     <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-md">
                        <Calendar className="w-4 h-4 text-emerald-400 mb-2" />
@@ -182,7 +238,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ codes }) => {
                          <div className="w-2 h-2 rounded-full" style={{backgroundColor: item.color}} />
                          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{item.name}</span>
                       </div>
-                      <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{item.value}%</span>
+                      <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{Math.round((item.value / stats.totalScans) * 100)}%</span>
                    </div>
                  ))}
               </div>
@@ -256,10 +312,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ codes }) => {
 
             <div className="h-[240px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                 <BarChart data={[
-                   {h: '6am', v: 20}, {h: '9am', v: 45}, {h: '12pm', v: 85}, 
-                   {h: '3pm', v: 120}, {h: '6pm', v: 95}, {h: '9pm', v: 60}, {h: '12am', v: 15}
-                 ]}>
+                 <BarChart data={timeData}>
                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                    <XAxis dataKey="h" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}}/>
                    <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.05)'}} />

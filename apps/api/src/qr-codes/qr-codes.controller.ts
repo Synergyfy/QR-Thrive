@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Req, Query, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, Req, Query, Res } from '@nestjs/common';
 import { QRCodesService } from './qr-codes.service';
 import { CreateQRCodeDto } from './dto/create-qr-code.dto';
 import { UpdateQRCodeDto } from './dto/update-qr-code.dto';
-import { AuthGuard } from '@nestjs/passport';
+import { Public } from '../auth/decorators/public.decorator';
 import type { Request, Response } from 'express';
 
 interface RequestWithUser extends Request {
@@ -15,13 +15,11 @@ interface RequestWithUser extends Request {
 export class QRCodesController {
   constructor(private readonly qrCodesService: QRCodesService) {}
 
-  @UseGuards(AuthGuard('jwt'))
   @Post()
   create(@Req() req: RequestWithUser, @Body() createQRCodeDto: CreateQRCodeDto) {
     return this.qrCodesService.create(req.user.userId, createQRCodeDto);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Get()
   findAll(
     @Req() req: RequestWithUser,
@@ -33,37 +31,39 @@ export class QRCodesController {
     return this.qrCodesService.findAll(req.user.userId, { status, folderId, type, search });
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Get('stats')
   getStats(@Req() req: RequestWithUser) {
     return this.qrCodesService.getStats(req.user.userId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Get(':id')
   findOne(@Req() req: RequestWithUser, @Param('id') id: string) {
     return this.qrCodesService.findOne(id, req.user.userId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Put(':id')
   update(@Req() req: RequestWithUser, @Param('id') id: string, @Body() updateQRCodeDto: UpdateQRCodeDto) {
     return this.qrCodesService.update(id, req.user.userId, updateQRCodeDto);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   remove(@Req() req: RequestWithUser, @Param('id') id: string) {
     return this.qrCodesService.remove(id, req.user.userId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Post(':id/duplicate')
   duplicate(@Req() req: RequestWithUser, @Param('id') id: string) {
     return this.qrCodesService.duplicate(id, req.user.userId);
   }
 
+  @Public()
+  @Get('public/:shortId')
+  async getPublic(@Param('shortId') shortId: string) {
+    return this.qrCodesService.findOneByShortId(shortId);
+  }
+
   // Public scan redirect endpoint
+  @Public()
   @Get('scan/:shortId')
   async scan(
     @Param('shortId') shortId: string,
@@ -85,7 +85,7 @@ export class QRCodesController {
       } else {
         // For other types (vcard, wifi, etc), we might redirect to a landing page
         // For now, let's just use a placeholder or the short URL logic
-        url = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/s/${shortId}`;
+        url = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/s/${shortId}?scanned=1`;
       }
 
       return res.redirect(url);

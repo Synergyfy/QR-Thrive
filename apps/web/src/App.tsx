@@ -1,20 +1,39 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import GeneratorPage from './pages/GeneratorPage';
 import DynamicPage from './pages/DynamicPage';
 import DashboardPage from './pages/DashboardPage';
 import CreationWizard from './pages/CreationWizard';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <BrowserRouter>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#fff',
+            color: '#1e293b',
+            borderRadius: '16px',
+            fontSize: '14px',
+            fontWeight: '600',
+            boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)',
+            padding: '16px 24px',
+          },
+        }}
+      />
       <Routes>
         {/* Public Landing & Generator */}
         <Route path="/" element={<GeneratorPage />} />
 
-        {/* Dashboard Area */}
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/dashboard/create" element={<CreationWizard />} />
-        <Route path="/dashboard/edit/:id/:step" element={<CreationWizard />} />
+        {/* Protected Dashboard Area */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/dashboard/create" element={<CreationWizard />} />
+          <Route path="/dashboard/edit/:id/:step" element={<CreationWizard />} />
+        </Route>
 
         {/* Dynamic Link Redirection */}
         {/* We use /s/ as the prefix for our short IDs */}

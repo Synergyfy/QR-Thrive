@@ -8,7 +8,9 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { useQRStorage, type StoredQR } from '../hooks/useQRStorage';
+import toast from 'react-hot-toast';
+import { useFolders, useCreateFolder, useDeleteFolder, useQRCodes, useDeleteQRCode, useUpdateQRCode, useDuplicateQRCode } from '../hooks/useApi';
+import type { BackendQRCode } from '../types/api';
 import StatsPanel from '../components/StatsPanel';
 import DashboardQRPreview from '../components/DashboardQRPreview';
 import QRCodeStyling from 'qr-code-styling';
@@ -17,11 +19,101 @@ function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const {
-    qrCodes, folders, activeQRs, archivedQRs, getQRsByFolder,
-    deleteQR, archiveQR, unarchiveQR, duplicateQR, moveToFolder,
-    renameQR, createFolder, deleteFolder, updateQRConfig,
-  } = useQRStorage();
+  
+  const { data: folders = [] } = useFolders();
+  const { data: qrCodes = [] } = useQRCodes();
+  const createFolderMutation = useCreateFolder();
+  const deleteFolderMutation = useDeleteFolder();
+  const deleteQRMutation = useDeleteQRCode();
+  const updateQRMutation = useUpdateQRCode();
+  const duplicateQRMutation = useDuplicateQRCode();
+
+  const activeQRs = qrCodes.filter(qr => qr.status === 'active');
+  const archivedQRs = qrCodes.filter(qr => qr.status === 'archived');
+  const getQRsByFolder = (folderId: string) => qrCodes.filter(qr => qr.folderId === folderId && qr.status === 'active');
+
+  const deleteQR = async (id: string) => {
+    try {
+      await deleteQRMutation.mutateAsync(id);
+      toast.success('QR Code deleted');
+    } catch (e) {
+      toast.error('Failed to delete QR Code');
+    }
+  };
+
+  const archiveQR = async (id: string) => {
+    try {
+      await updateQRMutation.mutateAsync({ id, data: { status: 'archived' }});
+      toast.success('QR Code archived');
+    } catch (e) {
+      toast.error('Failed to archive QR Code');
+    }
+  };
+
+  const unarchiveQR = async (id: string) => {
+    try {
+      await updateQRMutation.mutateAsync({ id, data: { status: 'active' }});
+      toast.success('QR Code restored');
+    } catch (e) {
+      toast.error('Failed to restore QR Code');
+    }
+  };
+
+  const duplicateQR = async (id: string) => {
+    try {
+      await duplicateQRMutation.mutateAsync(id);
+      toast.success('QR Code duplicated');
+    } catch (e) {
+      toast.error('Failed to duplicate QR Code');
+    }
+  };
+
+  const moveToFolder = async (qrId: string, folderId?: string) => {
+    try {
+      await updateQRMutation.mutateAsync({ id: qrId, data: { folderId: folderId || null } as any });
+      toast.success(folderId ? 'Moved to folder' : 'Removed from folder');
+    } catch (e) {
+      toast.error('Failed to move QR Code');
+    }
+  };
+
+  const renameQR = async (id: string, name: string) => {
+    try {
+      await updateQRMutation.mutateAsync({ id, data: { name }});
+      toast.success('Renamed successfully');
+    } catch (e) {
+      toast.error('Failed to rename');
+    }
+  };
+
+  const createFolder = async (name: string) => {
+    try {
+      const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+      const color = colors[folders.length % colors.length];
+      await createFolderMutation.mutateAsync({ name, color });
+      toast.success('Folder created');
+    } catch (e) {
+      toast.error('Failed to create folder');
+    }
+  };
+
+  const deleteFolder = async (id: string) => {
+    try {
+      await deleteFolderMutation.mutateAsync(id);
+      toast.success('Folder deleted');
+    } catch (e) {
+      toast.error('Failed to delete folder');
+    }
+  };
+
+  const updateQRConfig = async (id: string, config: any) => {
+    try {
+      await updateQRMutation.mutateAsync({ id, data: { data: config.data, design: config.design, frame: config.frame, logo: config.logo, width: config.width, height: config.height, margin: config.margin } });
+      toast.success('URL updated');
+    } catch (e) {
+      toast.error('Failed to update URL');
+    }
+  };
 
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,8 +140,8 @@ const DashboardPage: React.FC = () => {
   }, []);
 
   // Determine which QRs to show
-  const getDisplayedQRs = (): StoredQR[] => {
-    let list: StoredQR[] = [];
+  const getDisplayedQRs = (): BackendQRCode[] => {
+    let list: BackendQRCode[] = [];
     if (activeTab === 'all') list = qrCodes;
     else if (activeTab === 'active') list = activeQRs;
     else if (activeTab === 'archived') list = archivedQRs;
@@ -101,7 +193,7 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const handleDownload = async (qr: StoredQR) => {
+  const handleDownload = async (qr: BackendQRCode) => {
     const qrData = qr.shortUrl.startsWith('http') 
       ? qr.shortUrl 
       : `${window.location.origin}${qr.shortUrl}`;
@@ -635,7 +727,7 @@ const DashboardPage: React.FC = () => {
 
                         <div className="p-8 flex-1">
                            <div className="flex gap-4 items-center bg-slate-50/50 p-6 rounded-[32px] border border-slate-50 relative overflow-hidden">
-                              <div className="w-28 h-28 bg-white rounded-2xl p-2 shadow-inner border border-slate-100 shrink-0 relative overflow-hidden group/qr">
+                              <div className="w-28 h-28 bg-white rounded-2xl shadow-inner border border-slate-100 shrink-0 relative overflow-hidden group/qr flex items-center justify-center p-2">
                                  <DashboardQRPreview config={qr.config} shortUrl={qr.shortUrl} />
                                  <div className="absolute inset-0 bg-blue-600/60 backdrop-blur-sm opacity-0 group-hover/qr:opacity-100 transition-opacity flex items-center justify-center">
                                     <ExternalLink className="text-white w-8 h-8" />
@@ -654,7 +746,9 @@ const DashboardPage: React.FC = () => {
                                       className="flex items-center gap-1.5 text-blue-600 truncate hover:underline group/link"
                                     >
                                        <QrCode className="w-3.5 h-3.5 shrink-0 group-hover/link:animate-pulse" />
-                                       <span className="text-[12px] font-black tracking-tight truncate">{qr.shortUrl.replace(/^https?:\/\//, '')}</span>
+                                       <span className="text-[12px] font-black tracking-tight truncate">
+                                          {typeof qr.shortUrl === 'string' ? qr.shortUrl.replace(/^https?:\/\//, '') : ''}
+                                       </span>
                                     </a>
                                     {qr.config.data.type === 'url' && qr.config.data.url && (
                                       <div className="flex items-center gap-2 group/edit-container">

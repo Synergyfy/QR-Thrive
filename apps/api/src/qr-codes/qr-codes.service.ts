@@ -109,6 +109,18 @@ export class QRCodesService {
     });
   }
 
+  async findOneByShortId(shortId: string) {
+    const qrCode = await this.prisma.qRCode.findUnique({
+      where: { shortId },
+    });
+
+    if (!qrCode) {
+      throw new NotFoundException(`QR Code with shortId ${shortId} not found`);
+    }
+
+    return qrCode;
+  }
+
   async recordScan(shortId: string, ip: string, userAgent: string) {
     const qrCode = await this.prisma.qRCode.findUnique({
       where: { shortId },
@@ -171,6 +183,13 @@ export class QRCodesService {
     const osDist: Record<string, number> = {};
     // Browser distribution
     const browserDist: Record<string, number> = {};
+    // Country distribution
+    const countryDist: Record<string, number> = {};
+    // Time distribution (0-23 hours)
+    const timeDist: Record<string, number> = {};
+    
+    const oneHourAgo = new Date(Date.now() - 3600000);
+    let scansLastHour = 0;
 
     qrCodes.forEach(qr => {
         qr.scans.forEach(scan => {
@@ -182,6 +201,16 @@ export class QRCodesService {
 
             const b = scan.browser || 'unknown';
             browserDist[b] = (browserDist[b] || 0) + 1;
+
+            const c = scan.country || 'Unknown';
+            countryDist[c] = (countryDist[c] || 0) + 1;
+
+            const hour = scan.createdAt.getHours().toString();
+            timeDist[hour] = (timeDist[hour] || 0) + 1;
+
+            if (scan.createdAt >= oneHourAgo) {
+                scansLastHour++;
+            }
         });
     });
 
@@ -210,9 +239,12 @@ export class QRCodesService {
       totalQRs,
       totalScans,
       uniqueVisitors,
+      scansLastHour,
       deviceDist,
       osDist,
       browserDist,
+      countryDist,
+      timeDist,
       chartData,
     };
   }

@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, Req } from '@nestjs/common';
 import { FoldersService } from './folders.service';
 import { CreateFolderDto, UpdateFolderDto } from './dto/folder.dto';
-import { AuthGuard } from '@nestjs/passport';
 import type { Request } from 'express';
 
 interface RequestWithUser extends Request {
@@ -11,7 +10,6 @@ interface RequestWithUser extends Request {
 }
 
 @Controller('folders')
-@UseGuards(AuthGuard('jwt'))
 export class FoldersController {
   constructor(private readonly foldersService: FoldersService) {}
 
