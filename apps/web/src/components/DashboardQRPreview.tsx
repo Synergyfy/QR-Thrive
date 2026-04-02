@@ -60,12 +60,16 @@ const DashboardQRPreview: React.FC<DashboardQRPreviewProps> = ({ config, shortUr
     <div ref={containerRef} className="w-full h-full flex items-center justify-center dashboard-qr-preview">
       <style dangerouslySetInnerHTML={{ __html: `
         .dashboard-qr-preview canvas {
-          max-width: 100% !important;
-          height: auto !important;
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: contain;
+          display: block;
         }
         .dashboard-qr-preview svg {
-          max-width: 100% !important;
-          height: auto !important;
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: contain;
+          display: block;
         }
       `}} />
     </div>

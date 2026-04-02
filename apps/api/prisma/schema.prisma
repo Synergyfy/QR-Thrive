@@ -1,0 +1,136 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  firstName    String
+  lastName     String
+  password     String
+  refreshTokens RefreshToken[]
+  folders      Folder[]
+  qrCodes      QRCode[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  color     String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  qrCodes   QRCode[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+enum QRType {
+  url
+  text
+  vcard
+  wifi
+  email
+  sms
+  whatsapp
+  phone
+  instagram
+  facebook
+  linkedin
+  twitter
+  youtube
+  tiktok
+  crypto
+  socials
+  image
+  event
+  pdf
+  video
+  mp3
+  app
+  business
+  menu
+}
+
+enum QRStatus {
+  active
+  archived
+}
+
+model QRCode {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  folderId     String?
+  folder       Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  
+  name         String
+  description  String?
+  status       QRStatus @default(active)
+  
+  shortId      String   @unique
+  type         QRType
+  isDynamic    Boolean  @default(true)
+  
+  data         Json
+  design       Json
+  frame        Json
+  
+  logo         String?
+  width        Int      @default(400)
+  height       Int      @default(400)
+  margin       Int      @default(20)
+  
+  clicks       Int      @default(0)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  scans        Scan[]
+
+  @@index([userId])
+}
+
+model Scan {
+  id         String   @id @default(cuid())
+  qrCodeId   String
+  qrCode     QRCode   @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+  
+  ip         String?
+  userAgent  String?
+  browser    String?
+  os         String?
+  device     String?
+  city       String?
+  country    String?
+  region     String?
+  
+  createdAt  DateTime @default(now())
+
+  @@index([qrCodeId])
+  @@index([createdAt])
+}

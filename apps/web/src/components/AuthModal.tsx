@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { X, Mail, Lock, Share2, Globe, Zap, ArrowRight } from 'lucide-react';
+import { X, Mail, Lock, Share2, Globe, Zap, ArrowRight, Loader2, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import { useLogin, useSignup } from '../hooks/useApi';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -11,16 +13,43 @@ interface AuthModalProps {
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const loginMutation = useLogin();
+  const signupMutation = useSignup();
 
   if (!isOpen) return null;
 
-  const handleAuth = (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock successful auth
-    onSuccess({ email: 'business@example.com', name: 'Frank Emesinwa' });
-    onClose();
-    navigate('/dashboard');
+    try {
+      if (isLogin) {
+        const res = await loginMutation.mutateAsync({ email, password });
+        onSuccess(res.user);
+        toast.success(`Welcome back, ${res.user.firstName}!`);
+        onClose();
+        navigate('/dashboard');
+      } else {
+        if (password !== confirmPassword) {
+          toast.error("Passwords don't match");
+          return;
+        }
+        const res = await signupMutation.mutateAsync({ email, password, confirmPassword, firstName, lastName });
+        onSuccess(res.user);
+        toast.success('Account created successfully!');
+        onClose();
+        navigate('/dashboard');
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Authentication failed');
+    }
   };
+
+  const isLoading = loginMutation.isPending || signupMutation.isPending;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -60,6 +89,38 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
           </div>
 
           <form onSubmit={handleAuth} className="space-y-4">
+            {!isLogin && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase ml-1">First Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input 
+                      type="text" 
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="John" 
+                      className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" 
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase ml-1">Last Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input 
+                      type="text" 
+                      required
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Doe" 
+                      className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" 
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-500 uppercase ml-1">Email Address</label>
               <div className="relative">
@@ -67,6 +128,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
                 <input 
                   type="email" 
                   required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com" 
                   className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" 
                 />
@@ -79,18 +142,39 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
                 <input 
                   type="password" 
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••" 
                   className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" 
                 />
               </div>
             </div>
+            {!isLogin && (
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase ml-1">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input 
+                    type="password" 
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••" 
+                    className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" 
+                  />
+                </div>
+              </div>
+            )}
 
             <button 
               type="submit"
-              className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-95 flex items-center justify-center gap-2"
+              disabled={isLoading}
+              className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              {isLogin ? 'Sign In to Dashboard' : 'Create My Account'}
-              <ArrowRight className="w-4 h-4 ml-1" />
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : isLogin ? 'Sign In to Dashboard' : 'Create My Account'}
+              {!isLoading && <ArrowRight className="w-4 h-4 ml-1" />}
             </button>
           </form>
 
