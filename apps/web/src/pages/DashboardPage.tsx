@@ -824,7 +824,10 @@ const DashboardPage: React.FC = () => {
                               </button>
                               
                               {qr.type === 'form' && (
-                                <button className="flex-1 px-5 py-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all font-bold text-slate-600">
+                                <button 
+                                  onClick={() => navigate(`/dashboard/qr/${qr.id}/submissions`)}
+                                  className="flex-1 px-5 py-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all font-bold text-slate-600"
+                                >
                                    <ClipboardList className="w-4 h-4" />
                                    <span className="text-emerald-600">{qr.form?._count?.submissions || 0}</span> Responses
                                 </button>

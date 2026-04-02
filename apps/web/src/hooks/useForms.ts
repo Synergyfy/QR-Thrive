@@ -7,15 +7,15 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 const formsApi = {
   getForm: async (qrCodeId: string): Promise<Form> => {
-    const { data } = await axios.get(`${API_URL}/forms/qr/${qrCodeId}`, { withCredentials: true });
+    const { data } = await axios.get(`${API_URL}/forms/${qrCodeId}`, { withCredentials: true });
     return data;
   },
   createOrUpdateForm: async (dto: CreateFormDto): Promise<Form> => {
-    const { data } = await axios.post(`${API_URL}/forms/configure`, dto, { withCredentials: true });
+    const { data } = await axios.post(`${API_URL}/forms`, dto, { withCredentials: true });
     return data;
   },
   getSubmissions: async (qrCodeId: string): Promise<FormSubmission[]> => {
-    const { data } = await axios.get(`${API_URL}/forms/qr/${qrCodeId}/submissions`, { withCredentials: true });
+    const { data } = await axios.get(`${API_URL}/forms/${qrCodeId}/submissions`, { withCredentials: true });
     return data;
   },
   getPublicForm: async (shortId: string): Promise<Form> => {
