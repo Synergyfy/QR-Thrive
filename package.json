@@ -14,7 +14,6 @@
   "license": "ISC",
   "packageManager": "pnpm@10.29.1",
   "devDependencies": {
-    "pnpm": "^8.15.4",
     "turbo": "^2.9.3"
   }
 }
