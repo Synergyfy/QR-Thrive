@@ -65,7 +65,7 @@ const DynamicPage: React.FC = () => {
           targetUrl = data.url || '';
           break;
         case 'whatsapp':
-          targetUrl = `https://wa.me/${data.whatsapp?.number}?text=${encodeURIComponent(data.whatsapp?.message || '')}`;
+          targetUrl = `https://wa.me/${(data.whatsapp?.phoneNumber ? (data.whatsapp?.countryCode || '').replace(/\D/g, '') + data.whatsapp.phoneNumber.replace(/\D/g, '').replace(/^0+/, '') : (data.whatsapp?.number || '').replace(/\D/g, ''))}?text=${encodeURIComponent(data.whatsapp?.message || '')}`;
           break;
         case 'email':
           targetUrl = `mailto:${data.email?.address}?subject=${encodeURIComponent(data.email?.subject || '')}&body=${encodeURIComponent(data.email?.body || '')}`;

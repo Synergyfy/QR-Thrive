@@ -325,7 +325,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
             )}
 
             <a 
-              href={`https://wa.me/${(data.whatsapp?.phoneNumber ? (data.whatsapp?.countryCode || '') + data.whatsapp.phoneNumber : data.whatsapp?.number || '').replace(/\D/g, '')}?text=${encodeURIComponent(data.whatsapp?.message || '')}`}
+              href={`https://wa.me/${(data.whatsapp?.phoneNumber ? (data.whatsapp?.countryCode || '').replace(/\D/g, '') + data.whatsapp.phoneNumber.replace(/\D/g, '').replace(/^0+/, '') : (data.whatsapp?.number || '').replace(/\D/g, ''))}?text=${encodeURIComponent(data.whatsapp?.message || '')}`}
               className="w-full py-5 bg-[#25D366] text-white rounded-[32px] font-black text-lg shadow-xl shadow-emerald-200 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
             >
               Message on WhatsApp

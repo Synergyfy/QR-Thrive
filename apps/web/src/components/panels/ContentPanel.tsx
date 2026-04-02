@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { 
   Link, 
   Type, 
@@ -39,6 +40,30 @@ function cn(...inputs: ClassValue[]) {
 
 const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTypeSelector }) => {
   const data = config.data;
+
+  // Automatic Country Detection
+  useEffect(() => {
+    if (data.type === 'whatsapp' && !data.whatsapp?.phoneNumber && !data.whatsapp?.countryCode) {
+      fetch('https://ipapi.co/json/')
+        .then(res => res.json())
+        .then(geoData => {
+          if (geoData.country_code) {
+            const country = countries.find(c => c.code === geoData.country_code);
+            if (country) {
+              updateData({ 
+                whatsapp: { 
+                  ...(data.whatsapp || { message: '' }), 
+                  countryCode: country.dialCode 
+                } 
+              });
+            }
+          }
+        })
+        .catch(() => {
+          console.warn('Country detection failed');
+        });
+    }
+  }, [data.type]);
   const types: { type: QRType; icon: React.ReactNode; label: string; category: string }[] = [
     { type: 'url', icon: <Link className="w-4 h-4" />, label: 'Website Link', category: 'Basic' },
     { type: 'text', icon: <Type className="w-4 h-4" />, label: 'Plain Text', category: 'Basic' },
