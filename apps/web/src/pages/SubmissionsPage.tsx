@@ -2,10 +2,15 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, ClipboardList, Search, 
-  Download, Globe
+  Download, Globe, X, Check
 } from 'lucide-react';
 import { useForm, useFormSubmissions } from '../hooks/useForms';
 import { useQRCodes } from '../hooks/useApi';
+import toast from 'react-hot-toast';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
 const SubmissionsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +22,18 @@ const SubmissionsPage: React.FC = () => {
   const { data: submissions = [], isLoading: loadingSubmissions } = useFormSubmissions(id);
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportConfig, setExportConfig] = useState<{
+    type: 'all' | 'last' | 'range',
+    lastN: number,
+    startDate: string,
+    endDate: string
+  }>({
+    type: 'all',
+    lastN: 10,
+    startDate: '',
+    endDate: ''
+  });
 
   const filteredSubmissions = useMemo(() => {
     if (!searchQuery.trim()) return submissions;
@@ -39,11 +56,32 @@ const SubmissionsPage: React.FC = () => {
     });
   };
 
-  const exportToCSV = () => {
+  const handleExport = () => {
     if (!form || !submissions.length) return;
     
+    let dataToExport = [...submissions];
+    
+    // Sort by date descending (should already be from API, but let's be safe)
+    dataToExport.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    if (exportConfig.type === 'last') {
+      dataToExport = dataToExport.slice(0, exportConfig.lastN);
+    } else if (exportConfig.type === 'range') {
+      const start = exportConfig.startDate ? new Date(exportConfig.startDate).getTime() : 0;
+      const end = exportConfig.endDate ? new Date(exportConfig.endDate).getTime() : Infinity;
+      dataToExport = dataToExport.filter(sub => {
+        const time = new Date(sub.createdAt).getTime();
+        return time >= start && time <= end;
+      });
+    }
+
+    if (dataToExport.length === 0) {
+      toast.error('No responses found for selected filters');
+      return;
+    }
+
     const headers = ['Date', 'IP Address', ...form.fields.map(f => f.label)];
-    const rows = submissions.map(sub => [
+    const rows = dataToExport.map(sub => [
       formatDate(sub.createdAt),
       sub.ip || 'N/A',
       ...form.fields.map(f => sub.answers[f.id] || '')
@@ -58,11 +96,12 @@ const SubmissionsPage: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `${qrCode?.name || 'submissions'}-responses.csv`);
+    link.setAttribute('download', `${qrCode?.name || 'submissions'}-responses-${exportConfig.type}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setIsExportModalOpen(false);
   };
 
   if (loadingForm || loadingSubmissions) {
@@ -109,7 +148,7 @@ const SubmissionsPage: React.FC = () => {
                 />
               </div>
               <button 
-                onClick={exportToCSV}
+                onClick={() => setIsExportModalOpen(true)}
                 disabled={submissions.length === 0}
                 className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-100 disabled:opacity-50 disabled:grayscale"
               >
@@ -117,6 +156,126 @@ const SubmissionsPage: React.FC = () => {
               </button>
            </div>
         </header>
+
+        {/* Export Modal */}
+        {isExportModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setIsExportModalOpen(false)} />
+            <div className="relative w-full max-w-lg bg-white rounded-[40px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+              <div className="p-10">
+                <div className="flex items-center justify-between mb-10">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+                      <Download className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black text-slate-900 leading-none">Export Responses</h3>
+                      <p className="text-sm font-bold text-slate-400 mt-1.5">Customize your CSV export</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setIsExportModalOpen(false)}
+                    className="p-3 hover:bg-slate-50 rounded-2xl text-slate-400 hover:text-slate-900 transition-all"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <div className="space-y-8">
+                  {/* Export Type Selection */}
+                  <div className="grid grid-cols-1 gap-4">
+                    {[
+                      { id: 'all', label: 'All Responses', desc: `Export all ${submissions.length} responses` },
+                      { id: 'last', label: 'Last N Responses', desc: 'Export the most recent entries' },
+                      { id: 'range', label: 'Date Range', desc: 'Export responses within a period' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        onClick={() => setExportConfig(prev => ({ ...prev, type: opt.id as any }))}
+                        className={cn(
+                          "w-full p-5 rounded-3xl border-2 text-left transition-all relative group",
+                          exportConfig.type === opt.id 
+                            ? "border-blue-600 bg-blue-50/30 ring-4 ring-blue-50" 
+                            : "border-slate-100 hover:border-slate-200 bg-white"
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className={cn("font-black text-sm uppercase tracking-wider", 
+                              exportConfig.type === opt.id ? "text-blue-600" : "text-slate-900")}>
+                              {opt.label}
+                            </p>
+                            <p className="text-xs font-bold text-slate-400 mt-1">{opt.desc}</p>
+                          </div>
+                          {exportConfig.type === opt.id && (
+                            <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white">
+                              <Check className="w-4 h-4 stroke-[3]" />
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Contextual Inputs */}
+                  <div className="pt-2">
+                    {exportConfig.type === 'last' && (
+                      <div className="space-y-3 animate-in slide-in-from-top-2 duration-300">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Number of responses</label>
+                        <input
+                          type="number"
+                          value={exportConfig.lastN}
+                          onChange={(e) => setExportConfig(prev => ({ ...prev, lastN: parseInt(e.target.value) || 1 }))}
+                          className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-blue-600 focus:bg-white rounded-2xl outline-none transition-all font-bold text-slate-900"
+                          placeholder="Enter amount..."
+                          min="1"
+                        />
+                      </div>
+                    )}
+
+                    {exportConfig.type === 'range' && (
+                      <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-300">
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Start Date</label>
+                          <input
+                            type="date"
+                            value={exportConfig.startDate}
+                            onChange={(e) => setExportConfig(prev => ({ ...prev, startDate: e.target.value }))}
+                            className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-blue-600 focus:bg-white rounded-2xl outline-none transition-all font-bold text-slate-900"
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">End Date</label>
+                          <input
+                            type="date"
+                            value={exportConfig.endDate}
+                            onChange={(e) => setExportConfig(prev => ({ ...prev, endDate: e.target.value }))}
+                            className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-blue-600 focus:bg-white rounded-2xl outline-none transition-all font-bold text-slate-900"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <button
+                      onClick={() => setIsExportModalOpen(false)}
+                      className="flex-1 py-5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-[24px] font-black text-xs uppercase tracking-widest transition-all active:scale-95"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleExport}
+                      className="flex-[2] py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-[24px] font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      Download CSV <Download className="w-4 h-4 stroke-[3]" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
