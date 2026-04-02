@@ -4,6 +4,7 @@ import GeneratorPage from './pages/GeneratorPage';
 import DynamicPage from './pages/DynamicPage';
 import DashboardPage from './pages/DashboardPage';
 import CreationWizard from './pages/CreationWizard';
+import SubmissionsPage from './pages/SubmissionsPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/dashboard/create" element={<CreationWizard />} />
           <Route path="/dashboard/edit/:id/:step" element={<CreationWizard />} />
+          <Route path="/dashboard/qr/:id/submissions" element={<SubmissionsPage />} />
         </Route>
 
         {/* Dynamic Link Redirection */}

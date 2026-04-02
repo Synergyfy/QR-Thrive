@@ -6,16 +6,21 @@ import * as crypto from 'crypto';
 import { UAParser } from 'ua-parser-js';
 import * as geoip from 'geoip-lite';
 
+import { FormsService } from '../forms/forms.service';
+
 @Injectable()
 export class QRCodesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly formsService: FormsService,
+  ) {}
 
   async create(userId: string, createQRCodeDto: CreateQRCodeDto) {
     const shortId = crypto.randomBytes(4).toString('hex');
     
     const { data, design, frame, ...rest } = createQRCodeDto;
 
-    return this.prisma.qRCode.create({
+    const qrCode = await this.prisma.qRCode.create({
       data: {
         ...rest,
         userId,
@@ -25,6 +30,19 @@ export class QRCodesService {
         frame: frame as any,
       },
     });
+
+    // If it's a form type, synchronize with the Form table
+    if (qrCode.type === 'form' && data && (data as any).form) {
+      const formData = (data as any).form;
+      await this.formsService.createOrUpdateForm(userId, {
+        qrCodeId: qrCode.id,
+        title: formData.title || 'Untitled Form',
+        description: formData.description,
+        fields: formData.fields || [],
+      });
+    }
+
+    return qrCode;
   }
 
   async findAll(userId: string, filters: { status?: string; folderId?: string; type?: string; search?: string } = {}) {
@@ -46,6 +64,13 @@ export class QRCodesService {
       include: {
         _count: {
           select: { scans: true }
+        },
+        form: {
+          select: {
+            _count: {
+              select: { submissions: true }
+            }
+          }
         }
       },
       orderBy: { createdAt: 'desc' },
@@ -75,7 +100,7 @@ export class QRCodesService {
     
     const { data, design, frame, ...rest } = updateQRCodeDto;
 
-    return this.prisma.qRCode.update({
+    const updated = await this.prisma.qRCode.update({
       where: { id: qrCode.id },
       data: {
         ...rest,
@@ -84,6 +109,19 @@ export class QRCodesService {
         frame: frame === undefined ? undefined : (frame as any),
       },
     });
+
+    // If it's a form type, synchronize with the Form table
+    if (updated.type === 'form' && data && (data as any).form) {
+      const formData = (data as any).form;
+      await this.formsService.createOrUpdateForm(userId, {
+        qrCodeId: updated.id,
+        title: formData.title || 'Untitled Form',
+        description: formData.description,
+        fields: formData.fields || [],
+      });
+    }
+
+    return updated;
   }
 
   async remove(id: string, userId: string) {
@@ -112,10 +150,33 @@ export class QRCodesService {
   async findOneByShortId(shortId: string) {
     const qrCode = await this.prisma.qRCode.findUnique({
       where: { shortId },
+      include: {
+        form: {
+          include: { fields: { orderBy: { order: 'asc' } } }
+        }
+      }
     });
 
     if (!qrCode) {
       throw new NotFoundException(`QR Code with shortId ${shortId} not found`);
+    }
+
+    // If it's a form type and we have relational form data, sync it back into the 'data' field
+    // so the frontend receives the correct database IDs (CUIDs)
+    if (qrCode.type === 'form' && qrCode.form) {
+      const data = qrCode.data as any;
+      if (data && data.form) {
+        data.form.fields = qrCode.form.fields.map(f => ({
+          id: f.id,
+          type: f.type,
+          label: f.label,
+          placeholder: f.placeholder,
+          helpText: f.helpText,
+          required: f.required,
+          options: f.options,
+          validation: f.validation,
+        }));
+      }
     }
 
     return qrCode;
@@ -133,6 +194,10 @@ export class QRCodesService {
     const parser = new UAParser(userAgent);
     const result = parser.getResult();
     const geo = geoip.lookup(ip);
+    
+    if (!geo) {
+      console.log(`[QRCodesService] No geo data found for IP: ${ip}`);
+    }
 
     await this.prisma.$transaction([
       this.prisma.qRCode.update({
@@ -144,15 +209,16 @@ export class QRCodesService {
           qrCodeId: qrCode.id,
           ip,
           userAgent,
-          browser: result.browser.name,
-          os: result.os.name,
+          browser: result.browser.name || 'unknown',
+          os: result.os.name || 'unknown',
           device: result.device.type || 'desktop',
-          city: geo?.city,
-          country: geo?.country,
-          region: geo?.region,
+          city: geo?.city || null,
+          country: geo?.country || null,
+          region: geo?.region || null,
         },
       }),
     ]);
+
 
     return qrCode;
   }

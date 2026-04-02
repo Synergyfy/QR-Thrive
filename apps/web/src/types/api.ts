@@ -58,6 +58,11 @@ export interface BackendQRCode {
   createdAt: string;
   updatedAt: string;
   scans: number;
+  form?: {
+    _count: {
+      submissions: number;
+    };
+  };
   config: QRConfiguration; // To make it easier for our UI
 }
 

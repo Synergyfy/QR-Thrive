@@ -70,7 +70,18 @@ export class QRCodesController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown';
+    let ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown';
+    
+    // If X-Forwarded-For contains multiple IPs, use the first one
+    if (ip.includes(',')) {
+      ip = ip.split(',')[0].trim();
+    }
+    
+    // Normalize IPv6-mapped IPv4 addresses
+    if (ip.startsWith('::ffff:')) {
+      ip = ip.substring(7);
+    }
+
     const userAgent = req.headers['user-agent'] || 'unknown';
     
     try {
@@ -82,6 +93,11 @@ export class QRCodesController {
 
       if (qrCode.type === 'url' && data.url) {
         url = data.url.startsWith('http') ? data.url : `https://${data.url}`;
+      } else if (qrCode.type === 'whatsapp' && data.phoneNumber) {
+        const message = data.message ? `?text=${encodeURIComponent(data.message)}` : '';
+        url = `https://wa.me/${data.phoneNumber}${message}`;
+      } else if (qrCode.type === 'form') {
+        url = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/s/${shortId}?scanned=1`;
       } else {
         // For other types (vcard, wifi, etc), we might redirect to a landing page
         // For now, let's just use a placeholder or the short URL logic

@@ -22,7 +22,8 @@ export type QRType =
   | 'pdf'
   | 'video'
   | 'mp3'
-  | 'app';
+  | 'app'
+  | 'form';
   
 export interface FileData {
   url: string;
@@ -71,7 +72,9 @@ export interface QRData {
     message: string;
   };
   whatsapp?: {
-    number: string;
+    number?: string;
+    countryCode?: string;
+    phoneNumber?: string;
     message: string;
   };
   phone?: {
@@ -104,6 +107,21 @@ export interface QRData {
   image?: {
     url: string;
     caption?: string;
+  };
+  form?: {
+    title: string;
+    description?: string;
+    fields: {
+      id: string;
+      type: 'text' | 'number' | 'range' | 'checkbox' | 'select' | 'radio' | 'email' | 'phone';
+      label: string;
+      placeholder?: string;
+      helpText?: string;
+      required: boolean;
+      options?: { label: string; value: string }[];
+      validation?: { min?: number; max?: number; step?: number };
+      order: number;
+    }[];
   };
 }
 

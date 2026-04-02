@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Mail, Lock, Share2, Globe, Zap, ArrowRight, Loader2, User } from 'lucide-react';
+import { X, Mail, Lock, Globe, Zap, ArrowRight, Loader2, User, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useLogin, useSignup } from '../hooks/useApi';
 
@@ -18,14 +19,51 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setError(null);
+  }, [isLogin]);
 
   const loginMutation = useLogin();
   const signupMutation = useSignup();
+  const validateEmail = (email: string) => {
+    return String(email)
+      .toLowerCase()
+      .match(
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      );
+  };
 
   if (!isOpen) return null;
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
+    // Validation
+    if (isLogin) {
+      if (!email.trim() || !password.trim()) {
+        setError("Please fill in all fields");
+        return;
+      }
+    } else {
+      if (!email.trim() || !password.trim() || !confirmPassword.trim() || !firstName.trim() || !lastName.trim()) {
+        setError("All fields are required");
+        return;
+      }
+    }
+
+    if (!validateEmail(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    if (!isLogin && password !== confirmPassword) {
+      setError("Passwords don't match");
+      return;
+    }
+
     try {
       if (isLogin) {
         const res = await loginMutation.mutateAsync({ email, password });
@@ -34,18 +72,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
         onClose();
         navigate('/dashboard');
       } else {
-        if (password !== confirmPassword) {
-          toast.error("Passwords don't match");
-          return;
-        }
         const res = await signupMutation.mutateAsync({ email, password, confirmPassword, firstName, lastName });
         onSuccess(res.user);
         toast.success('Account created successfully!');
         onClose();
         navigate('/dashboard');
       }
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Authentication failed');
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Authentication failed');
     }
   };
 
@@ -166,6 +200,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
               </div>
             )}
 
+            {error && (
+              <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-100 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-300">
+                <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+                <p className="text-sm font-medium text-red-600 line-clamp-2">{error}</p>
+              </div>
+            )}
+
             <button 
               type="submit"
               disabled={isLoading}
@@ -187,14 +228,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <button className="flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors">
               <Globe className="w-4 h-4 text-red-500" />
               <span className="text-sm font-bold text-gray-700">Google</span>
-            </button>
-            <button className="flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors">
-              <Share2 className="w-4 h-4 text-gray-900" />
-              <span className="text-sm font-bold text-gray-700">GitHub</span>
             </button>
           </div>
 

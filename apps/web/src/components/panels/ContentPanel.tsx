@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { 
   Link, 
   Type, 
@@ -16,9 +17,13 @@ import {
   FileText,
   Video,
   Music,
-  Smartphone
+  Smartphone,
+  ClipboardList,
+  ChevronDown
 } from 'lucide-react';
 import type { QRConfiguration, QRData, QRType } from '../../types/qr';
+import FormBuilder from '../FormBuilder';
+import { countries } from '../../constants/countries';
 
 interface ContentPanelProps {
   config: QRConfiguration;
@@ -35,6 +40,30 @@ function cn(...inputs: ClassValue[]) {
 
 const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTypeSelector }) => {
   const data = config.data;
+
+  // Automatic Country Detection
+  useEffect(() => {
+    if (data.type === 'whatsapp' && !data.whatsapp?.phoneNumber && !data.whatsapp?.countryCode) {
+      fetch('https://ipapi.co/json/')
+        .then(res => res.json())
+        .then(geoData => {
+          if (geoData.country_code) {
+            const country = countries.find(c => c.code === geoData.country_code);
+            if (country) {
+              updateData({ 
+                whatsapp: { 
+                  ...(data.whatsapp || { message: '' }), 
+                  countryCode: country.dialCode 
+                } 
+              });
+            }
+          }
+        })
+        .catch(() => {
+          console.warn('Country detection failed');
+        });
+    }
+  }, [data.type]);
   const types: { type: QRType; icon: React.ReactNode; label: string; category: string }[] = [
     { type: 'url', icon: <Link className="w-4 h-4" />, label: 'Website Link', category: 'Basic' },
     { type: 'text', icon: <Type className="w-4 h-4" />, label: 'Plain Text', category: 'Basic' },
@@ -51,6 +80,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
     { type: 'app', icon: <Smartphone className="w-4 h-4" />, label: 'App Store', category: 'Dynamic' },
     { type: 'crypto', icon: <Bitcoin className="w-4 h-4" />, label: 'Crypto Pay', category: 'Specific' },
     { type: 'event', icon: <Calendar className="w-4 h-4" />, label: 'Event Info', category: 'Dynamic' },
+    { type: 'form', icon: <ClipboardList className="w-4 h-4" />, label: 'Custom Form', category: 'Dynamic' },
   ];
 
   return (
@@ -274,26 +304,52 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
 
             {data.type === 'whatsapp' && (
               <div className="space-y-6">
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">WhatsApp Number</p>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors">
-                      <Phone className="w-5 h-5" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Country Code</p>
+                    <div className="relative group">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">
+                        <Globe className="w-4 h-4" />
+                      </div>
+                      <select 
+                        value={data.whatsapp?.countryCode || '+1'}
+                        onChange={(e) => updateData({ whatsapp: { ...(data.whatsapp || { message: '' }), countryCode: e.target.value } })}
+                        className="w-full pl-11 pr-10 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30 appearance-none cursor-pointer"
+                      >
+                        {countries.map(c => (
+                          <option key={`${c.code}-${c.dialCode}`} value={c.dialCode}>
+                            {c.flag} {c.name} ({c.dialCode})
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                        <ChevronDown className="w-4 h-4" />
+                      </div>
                     </div>
-                    <input
-                      type="tel"
-                      value={data.whatsapp?.number || ''}
-                      onChange={(e) => updateData({ whatsapp: { ...(data.whatsapp || { message: '' }), number: e.target.value } })}
-                      placeholder="+1 234 567 890"
-                      className="w-full pl-12 pr-4 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30"
-                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Phone Number</p>
+                    <div className="relative group">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                        <Phone className="w-4 h-4" />
+                      </div>
+                      <input
+                        type="tel"
+                        value={data.whatsapp?.phoneNumber || ''}
+                        onChange={(e) => updateData({ whatsapp: { ...(data.whatsapp || { message: '' }), phoneNumber: e.target.value } })}
+                        placeholder="234 567 890"
+                        className="w-full pl-11 pr-4 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30"
+                      />
+                    </div>
                   </div>
                 </div>
+
                 <div className="space-y-2">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Default Message</p>
                   <textarea
                     value={data.whatsapp?.message || ''}
-                    onChange={(e) => updateData({ whatsapp: { ...(data.whatsapp || { number: '' }), message: e.target.value } })}
+                    onChange={(e) => updateData({ whatsapp: { ...(data.whatsapp || { countryCode: '+1', phoneNumber: '' }), message: e.target.value } })}
                     placeholder="Enter your auto-message..."
                     rows={4}
                     className="w-full p-6 border-2 border-gray-50 focus:border-blue-600 rounded-3xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
@@ -526,6 +582,49 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                     </div>
                  </div>
               )}
+               {data.type === 'form' && (
+                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex items-center justify-between">
+                       <div className="space-y-1">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1">Form Builder</p>
+                          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Design your questions</h2>
+                       </div>
+                       <div className="px-4 py-2 bg-blue-50 text-blue-600 text-[9px] font-black uppercase tracking-widest rounded-xl">
+                          Live Interactive
+                       </div>
+                    </div>
+                    
+                    <div className="flex flex-col gap-4">
+                       <div className="space-y-2">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Form Title</p>
+                          <input 
+                            type="text"
+                            value={data.form?.title || ''}
+                            onChange={(e) => updateData({ form: { ...(data.form || { fields: [], title: '' }), title: e.target.value } })}
+                            placeholder="e.g. Feedback Form"
+                            className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-bold transition-all"
+                          />
+                       </div>
+                       <div className="space-y-2">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Description (Optional)</p>
+                          <textarea 
+                            value={data.form?.description || ''}
+                            onChange={(e) => updateData({ form: { ...(data.form || { fields: [], title: '' }), description: e.target.value } })}
+                            placeholder="Tell your audience what this form is about..."
+                            rows={2}
+                            className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-bold transition-all"
+                          />
+                       </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-100">
+                       <FormBuilder 
+                        fields={data.form?.fields || []} 
+                        onChange={(fields) => updateData({ form: { ...(data.form || { title: '' }), fields } })} 
+                       />
+                    </div>
+                 </div>
+               )}
             </div>
          </div>
 
