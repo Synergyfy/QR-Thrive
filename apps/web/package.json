@@ -1,5 +1,5 @@
 {
-  "name": "@qr-thrive/web",
+  "name": "@qr-api/web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
