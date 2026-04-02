@@ -16,9 +16,11 @@ import {
   FileText,
   Video,
   Music,
-  Smartphone
+  Smartphone,
+  ClipboardList
 } from 'lucide-react';
 import type { QRConfiguration, QRData, QRType } from '../../types/qr';
+import FormBuilder from '../FormBuilder';
 
 interface ContentPanelProps {
   config: QRConfiguration;
@@ -51,6 +53,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
     { type: 'app', icon: <Smartphone className="w-4 h-4" />, label: 'App Store', category: 'Dynamic' },
     { type: 'crypto', icon: <Bitcoin className="w-4 h-4" />, label: 'Crypto Pay', category: 'Specific' },
     { type: 'event', icon: <Calendar className="w-4 h-4" />, label: 'Event Info', category: 'Dynamic' },
+    { type: 'form', icon: <ClipboardList className="w-4 h-4" />, label: 'Custom Form', category: 'Dynamic' },
   ];
 
   return (
@@ -526,6 +529,49 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                     </div>
                  </div>
               )}
+               {data.type === 'form' && (
+                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex items-center justify-between">
+                       <div className="space-y-1">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1">Form Builder</p>
+                          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Design your questions</h2>
+                       </div>
+                       <div className="px-4 py-2 bg-blue-50 text-blue-600 text-[9px] font-black uppercase tracking-widest rounded-xl">
+                          Live Interactive
+                       </div>
+                    </div>
+                    
+                    <div className="flex flex-col gap-4">
+                       <div className="space-y-2">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Form Title</p>
+                          <input 
+                            type="text"
+                            value={data.form?.title || ''}
+                            onChange={(e) => updateData({ form: { ...(data.form || { fields: [], title: '' }), title: e.target.value } })}
+                            placeholder="e.g. Feedback Form"
+                            className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-bold transition-all"
+                          />
+                       </div>
+                       <div className="space-y-2">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Description (Optional)</p>
+                          <textarea 
+                            value={data.form?.description || ''}
+                            onChange={(e) => updateData({ form: { ...(data.form || { fields: [], title: '' }), description: e.target.value } })}
+                            placeholder="Tell your audience what this form is about..."
+                            rows={2}
+                            className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-bold transition-all"
+                          />
+                       </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-100">
+                       <FormBuilder 
+                        fields={data.form?.fields || []} 
+                        onChange={(fields) => updateData({ form: { ...(data.form || { title: '' }), fields } })} 
+                       />
+                    </div>
+                 </div>
+               )}
             </div>
          </div>
 

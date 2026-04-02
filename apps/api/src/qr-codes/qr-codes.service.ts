@@ -46,6 +46,13 @@ export class QRCodesService {
       include: {
         _count: {
           select: { scans: true }
+        },
+        form: {
+          select: {
+            _count: {
+              select: { submissions: true }
+            }
+          }
         }
       },
       orderBy: { createdAt: 'desc' },

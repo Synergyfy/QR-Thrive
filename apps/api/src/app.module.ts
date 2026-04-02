@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { QRCodesModule } from './qr-codes/qr-codes.module';
 import { FoldersModule } from './folders/folders.module';
+import { FormsModule } from './forms/forms.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -18,6 +19,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     AuthModule,
     QRCodesModule,
     FoldersModule,
+    FormsModule,
   ],
   controllers: [AppController],
   providers: [

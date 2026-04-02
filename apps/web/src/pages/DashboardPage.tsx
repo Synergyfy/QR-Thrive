@@ -3,7 +3,7 @@ import {
   LayoutGrid, QrCode, Archive, BarChart3, User, Settings, Crown,
   Search, Plus, MoreVertical, Calendar, ExternalLink, Edit2, Brush, Globe,
   ChevronDown, ChevronRight, Bell, FolderOpen, Trash2, Copy, Printer,
-  RefreshCw, X, FolderPlus, ArrowRight, Edit3
+  RefreshCw, X, FolderPlus, ArrowRight, Edit3, ClipboardList
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
@@ -816,16 +816,26 @@ const DashboardPage: React.FC = () => {
                            </div>
                         </div>
 
-                        <div className="px-8 pb-8 flex items-center justify-between gap-4">
-                           <button className="flex-1 px-5 py-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all font-bold text-slate-600">
-                              <BarChart3 className="w-4 h-4" />
-                              <span className="text-blue-600">{qr.scans}</span> Scans
-                           </button>
+                        <div className="px-8 pb-8 flex flex-col gap-4">
+                           <div className="flex gap-4">
+                              <button className="flex-1 px-5 py-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all font-bold text-slate-600">
+                                 <BarChart3 className="w-4 h-4" />
+                                 <span className="text-blue-600">{qr.scans}</span> Scans
+                              </button>
+                              
+                              {qr.type === 'form' && (
+                                <button className="flex-1 px-5 py-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all font-bold text-slate-600">
+                                   <ClipboardList className="w-4 h-4" />
+                                   <span className="text-emerald-600">{qr.form?._count?.submissions || 0}</span> Responses
+                                </button>
+                              )}
+                           </div>
+
                            <button 
                              onClick={() => handleDownload(qr)}
-                             className="flex-1 px-5 py-4 bg-blue-600 text-white rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-blue-100 font-black text-xs uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all"
+                             className="w-full px-5 py-4 bg-blue-600 text-white rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-blue-100 font-black text-xs uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all"
                            >
-                              <ChevronDown className="w-4 h-4 stroke-[3]" /> Download
+                              <ChevronDown className="w-4 h-4 stroke-[3]" /> Download QR Code
                            </button>
                         </div>
 

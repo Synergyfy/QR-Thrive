@@ -82,6 +82,11 @@ export class QRCodesController {
 
       if (qrCode.type === 'url' && data.url) {
         url = data.url.startsWith('http') ? data.url : `https://${data.url}`;
+      } else if (qrCode.type === 'whatsapp' && data.phoneNumber) {
+        const message = data.message ? `?text=${encodeURIComponent(data.message)}` : '';
+        url = `https://wa.me/${data.phoneNumber}${message}`;
+      } else if (qrCode.type === 'form') {
+        url = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/s/${shortId}?scanned=1`;
       } else {
         // For other types (vcard, wifi, etc), we might redirect to a landing page
         // For now, let's just use a placeholder or the short URL logic

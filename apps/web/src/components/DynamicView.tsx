@@ -17,9 +17,17 @@ import {
   Video,
   Music,
   ShoppingBag,
-  Download
+  Download,
+  ClipboardList,
+  CheckCircle2
 } from 'lucide-react';
 import type { QRData } from '../types/qr';
+import { useParams } from 'react-router-dom';
+import { useSubmitForm } from '../hooks/useForms';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
 interface DynamicViewProps {
   data: QRData;
@@ -27,6 +35,11 @@ interface DynamicViewProps {
 }
 
 const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
+  const { id: shortId } = useParams<{ id: string }>();
+  const submitMutation = useSubmitForm(shortId || '');
+  const [answers, setAnswers] = React.useState<Record<string, any>>({});
+  const [submitted, setSubmitted] = React.useState(false);
+
   // If it's a simple URL, we can just redirect or show a card
   React.useEffect(() => {
     if (data.type === 'url' && data.url) {
@@ -35,6 +48,32 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
        // return () => clearTimeout(timer);
     }
   }, [data]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isWizardPreview) return;
+
+    // Basic validation for required fields (including arrays)
+    const missingFields = data.form?.fields.filter(f => {
+      if (!f.required) return false;
+      const answer = answers[f.id];
+      if (Array.isArray(answer)) return answer.length === 0;
+      return !answer;
+    });
+
+    if (missingFields && missingFields.length > 0) {
+      const labels = missingFields.map(f => f.label).join(', ');
+      import('react-hot-toast').then(({ toast }) => {
+        toast.error(`Please complete required fields: ${labels}`);
+      });
+      return;
+    }
+
+    try {
+      await submitMutation.mutateAsync(answers);
+      setSubmitted(true);
+    } catch (e) {}
+  };
 
   const renderContent = () => {
     switch (data.type) {
@@ -485,6 +524,167 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
            </div>
          );
 
+      case 'form':
+        if (submitted) {
+          return (
+            <div className="text-center space-y-8 animate-in fade-in zoom-in-95 duration-700">
+              <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-[40px] flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-emerald-100">
+                 <CheckCircle2 className="w-12 h-12" />
+              </div>
+              <div>
+                 <h1 className="text-3xl font-black text-gray-900 mb-4">Thank You!</h1>
+                 <p className="text-gray-500 font-medium px-4">Your response has been successfully submitted and saved.</p>
+              </div>
+              <button 
+                onClick={() => setSubmitted(false)}
+                className="text-blue-600 font-black text-xs uppercase tracking-widest hover:underline"
+              >
+                 Submit Another Response
+              </button>
+            </div>
+          );
+        }
+
+        return (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <div className="text-center">
+                <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-100">
+                   <ClipboardList className="w-10 h-10" />
+                </div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">{data.form?.title || 'Form'}</h1>
+                {data.form?.description && (
+                  <p className="text-gray-500 text-sm font-medium leading-relaxed">{data.form.description}</p>
+                )}
+             </div>
+
+             <form onSubmit={handleSubmit} className="space-y-6">
+                {data.form?.fields.sort((a, b) => a.order - b.order).map((field) => (
+                  <div key={field.id} className="space-y-2">
+                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest pl-1 block">
+                        {field.label} {field.required && <span className="text-red-500">*</span>}
+                     </label>
+                     
+                     {field.type === 'text' || field.type === 'email' || field.type === 'phone' || field.type === 'number' ? (
+                        <input 
+                          type={field.type}
+                          required={field.required}
+                          placeholder={field.placeholder}
+                          value={answers[field.id] || ''}
+                          onChange={(e) => setAnswers({ ...answers, [field.id]: e.target.value })}
+                          className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-600 focus:bg-white rounded-2xl outline-none text-gray-900 font-bold transition-all shadow-inner"
+                        />
+                     ) : field.type === 'range' ? (
+                        <div className="space-y-4 pt-2">
+                           <input 
+                             type="range"
+                             min={field.validation?.min || 0}
+                             max={field.validation?.max || 10}
+                             step={field.validation?.step || 1}
+                             value={answers[field.id] || field.validation?.min || 0}
+                             onChange={(e) => setAnswers({ ...answers, [field.id]: parseInt(e.target.value) })}
+                             className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                           />
+                           <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase">
+                              <span>Min: {field.validation?.min || 0}</span>
+                              <span className="text-blue-600 text-sm">Value: {answers[field.id] || field.validation?.min || 0}</span>
+                              <span>Max: {field.validation?.max || 10}</span>
+                           </div>
+                        </div>
+                     ) : field.type === 'checkbox' ? (
+                        <div className="space-y-3">
+                           {field.options && field.options.length > 0 ? (
+                             <div className="grid grid-cols-1 gap-3">
+                                {field.options.map((opt) => {
+                                   const isChecked = Array.isArray(answers[field.id]) && answers[field.id].includes(opt.value);
+                                   return (
+                                     <label key={opt.value} className={cn(
+                                       "flex items-center gap-3 p-4 rounded-2xl cursor-pointer hover:bg-gray-100 transition-all border-2",
+                                       isChecked ? "bg-blue-50/50 border-blue-600/20" : "bg-gray-50 border-transparent"
+                                     )}>
+                                        <input 
+                                          type="checkbox"
+                                          checked={isChecked}
+                                          onChange={(e) => {
+                                             const current = Array.isArray(answers[field.id]) ? answers[field.id] : [];
+                                             const next = e.target.checked 
+                                               ? [...current, opt.value]
+                                               : current.filter((v: string) => v !== opt.value);
+                                             setAnswers({ ...answers, [field.id]: next });
+                                          }}
+                                          className="w-5 h-5 rounded-lg border-2 border-gray-300 text-blue-600 focus:ring-blue-600"
+                                        />
+                                        <span className={cn("text-sm font-bold transition-colors", isChecked ? "text-blue-900" : "text-gray-700")}>
+                                          {opt.label}
+                                        </span>
+                                     </label>
+                                   );
+                                })}
+                             </div>
+                           ) : (
+                             <label className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl cursor-pointer hover:bg-gray-100 transition-colors border border-transparent">
+                                <input 
+                                  type="checkbox"
+                                  checked={!!answers[field.id]}
+                                  onChange={(e) => setAnswers({ ...answers, [field.id]: e.target.checked })}
+                                  className="w-5 h-5 rounded-lg border-2 border-gray-300 text-blue-600 focus:ring-blue-600"
+                                />
+                                <span className="text-sm font-bold text-gray-700">{field.placeholder || 'Check this option'}</span>
+                             </label>
+                           )}
+                        </div>
+                     ) : field.type === 'select' ? (
+                        <div className="relative">
+                          <select 
+                            required={field.required}
+                            value={answers[field.id] || ''}
+                            onChange={(e) => setAnswers({ ...answers, [field.id]: e.target.value })}
+                            className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-600 focus:bg-white rounded-2xl outline-none text-gray-900 font-bold transition-all shadow-inner appearance-none"
+                          >
+                             <option value="" disabled>{field.placeholder || 'Select an option...'}</option>
+                             {field.options?.map((opt) => (
+                               <option key={opt.value} value={opt.value}>{opt.label}</option>
+                             ))}
+                          </select>
+                          <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none rotate-90" />
+                        </div>
+                     ) : field.type === 'radio' ? (
+                        <div className="space-y-3">
+                           {field.options?.map((opt) => (
+                             <label key={opt.value} className={cn(
+                               "flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all border-2",
+                               answers[field.id] === opt.value ? "bg-blue-50 border-blue-600" : "bg-gray-50 border-transparent hover:bg-gray-100"
+                             )}>
+                                <input 
+                                  type="radio"
+                                  name={field.id}
+                                  checked={answers[field.id] === opt.value}
+                                  onChange={() => setAnswers({ ...answers, [field.id]: opt.value })}
+                                  className="w-5 h-5 border-2 border-gray-300 text-blue-600 focus:ring-blue-600"
+                                />
+                                <span className={cn(
+                                  "text-sm font-bold",
+                                  answers[field.id] === opt.value ? "text-blue-900" : "text-gray-700"
+                                )}>{opt.label}</span>
+                             </label>
+                           ))}
+                        </div>
+                     ) : null}
+                     {field.helpText && <p className="text-[10px] font-bold text-gray-400 pl-1">{field.helpText}</p>}
+                  </div>
+                ))}
+
+                <button 
+                  type="submit"
+                  disabled={submitMutation.isPending || isWizardPreview}
+                  className="w-full py-5 bg-blue-600 text-white rounded-[32px] font-black text-lg shadow-xl shadow-blue-100 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+                >
+                   {submitMutation.isPending ? 'Submitting...' : 'Submit Response'}
+                   {!submitMutation.isPending && <ChevronRight className="w-6 h-6" />}
+                </button>
+             </form>
+          </div>
+        );
+
       default:
         return (
           <div className="text-center space-y-6">
@@ -563,7 +763,7 @@ const getSocialConfig = (platform: string) => {
       color: 'bg-black' 
     };
     case 'linkedin': return { 
-      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451c.979 0 1.778-.773 1.778-1.729V1.729C24 .774 23.204 0 22.225 0z"/></svg>, 
+      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.37 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451c.979 0 1.778-.773 1.778-1.729V1.729C24 .774 23.204 0 22.225 0z"/></svg>, 
       color: 'bg-[#0A66C2]' 
     };
     case 'youtube': return { 

@@ -19,7 +19,9 @@ import {
   Palette,
   Image as LogoIcon,
   Frame,
-  Loader2
+  Loader2,
+  ClipboardList,
+  Phone
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
@@ -61,6 +63,8 @@ const qrTypes: QRTypeOption[] = [
   { id: 'business', icon: Building2, title: 'Business Page', description: 'Information about your business', category: 'dynamic' },
   { id: 'menu', icon: UtensilsCrossed, title: 'Menu', description: 'Share digital menu', category: 'dynamic' },
   { id: 'event', icon: Calendar, title: 'Event', description: 'Promote your next event', category: 'dynamic' },
+  { id: 'whatsapp', icon: Phone, title: 'WhatsApp', description: 'Chat with us on WhatsApp', category: 'dynamic' },
+  { id: 'form', icon: ClipboardList, title: 'Form', description: 'Create a custom form', category: 'dynamic' },
 ];
 
 const INITIAL_CONFIG: QRConfiguration = {
