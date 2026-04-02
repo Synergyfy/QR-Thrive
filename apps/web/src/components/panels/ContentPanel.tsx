@@ -17,10 +17,12 @@ import {
   Video,
   Music,
   Smartphone,
-  ClipboardList
+  ClipboardList,
+  ChevronDown
 } from 'lucide-react';
 import type { QRConfiguration, QRData, QRType } from '../../types/qr';
 import FormBuilder from '../FormBuilder';
+import { countries } from '../../constants/countries';
 
 interface ContentPanelProps {
   config: QRConfiguration;
@@ -277,26 +279,52 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
 
             {data.type === 'whatsapp' && (
               <div className="space-y-6">
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">WhatsApp Number</p>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors">
-                      <Phone className="w-5 h-5" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Country Code</p>
+                    <div className="relative group">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">
+                        <Globe className="w-4 h-4" />
+                      </div>
+                      <select 
+                        value={data.whatsapp?.countryCode || '+1'}
+                        onChange={(e) => updateData({ whatsapp: { ...(data.whatsapp || { message: '' }), countryCode: e.target.value } })}
+                        className="w-full pl-11 pr-10 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30 appearance-none cursor-pointer"
+                      >
+                        {countries.map(c => (
+                          <option key={`${c.code}-${c.dialCode}`} value={c.dialCode}>
+                            {c.flag} {c.name} ({c.dialCode})
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                        <ChevronDown className="w-4 h-4" />
+                      </div>
                     </div>
-                    <input
-                      type="tel"
-                      value={data.whatsapp?.number || ''}
-                      onChange={(e) => updateData({ whatsapp: { ...(data.whatsapp || { message: '' }), number: e.target.value } })}
-                      placeholder="+1 234 567 890"
-                      className="w-full pl-12 pr-4 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30"
-                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Phone Number</p>
+                    <div className="relative group">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                        <Phone className="w-4 h-4" />
+                      </div>
+                      <input
+                        type="tel"
+                        value={data.whatsapp?.phoneNumber || ''}
+                        onChange={(e) => updateData({ whatsapp: { ...(data.whatsapp || { message: '' }), phoneNumber: e.target.value } })}
+                        placeholder="234 567 890"
+                        className="w-full pl-11 pr-4 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30"
+                      />
+                    </div>
                   </div>
                 </div>
+
                 <div className="space-y-2">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Default Message</p>
                   <textarea
                     value={data.whatsapp?.message || ''}
-                    onChange={(e) => updateData({ whatsapp: { ...(data.whatsapp || { number: '' }), message: e.target.value } })}
+                    onChange={(e) => updateData({ whatsapp: { ...(data.whatsapp || { countryCode: '+1', phoneNumber: '' }), message: e.target.value } })}
                     placeholder="Enter your auto-message..."
                     rows={4}
                     className="w-full p-6 border-2 border-gray-50 focus:border-blue-600 rounded-3xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"

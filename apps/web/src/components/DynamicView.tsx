@@ -53,18 +53,50 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
     e.preventDefault();
     if (isWizardPreview) return;
 
-    // Basic validation for required fields (including arrays)
-    const missingFields = data.form?.fields.filter(f => {
-      if (!f.required) return false;
-      const answer = answers[f.id];
-      if (Array.isArray(answer)) return answer.length === 0;
-      return !answer;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^\+?[\d\s-]{7,15}$/;
+
+    // Detailed validation
+    const errors: string[] = [];
+    
+    data.form?.fields.forEach(f => {
+      const value = answers[f.id];
+      const isMissing = Array.isArray(value) ? value.length === 0 : (value === undefined || value === null || value === '');
+
+      // Required check
+      if (f.required && isMissing) {
+        errors.push(`"${f.label}" is required`);
+        return;
+      }
+
+      // Type-specific validation if value is present
+      if (!isMissing) {
+        if (f.type === 'email' && !emailRegex.test(String(value))) {
+          errors.push(`"${f.label}" must be a valid email`);
+        }
+        if (f.type === 'phone' && !phoneRegex.test(String(value))) {
+          errors.push(`"${f.label}" must be a valid phone number`);
+        }
+        if (f.type === 'number' || f.type === 'range') {
+          const num = Number(value);
+          if (isNaN(num)) {
+            errors.push(`"${f.label}" must be a number`);
+          } else if (f.validation) {
+            const v = f.validation as any;
+            if (v.min !== undefined && num < v.min) {
+              errors.push(`"${f.label}" must be at least ${v.min}`);
+            }
+            if (v.max !== undefined && num > v.max) {
+              errors.push(`"${f.label}" must be at most ${v.max}`);
+            }
+          }
+        }
+      }
     });
 
-    if (missingFields && missingFields.length > 0) {
-      const labels = missingFields.map(f => f.label).join(', ');
+    if (errors.length > 0) {
       import('react-hot-toast').then(({ toast }) => {
-        toast.error(`Please complete required fields: ${labels}`);
+        toast.error(errors[0]); // Show the first error for cleaner UX
       });
       return;
     }
@@ -293,7 +325,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
             )}
 
             <a 
-              href={`https://wa.me/${data.whatsapp?.number}?text=${encodeURIComponent(data.whatsapp?.message || '')}`}
+              href={`https://wa.me/${(data.whatsapp?.phoneNumber ? (data.whatsapp?.countryCode || '') + data.whatsapp.phoneNumber : data.whatsapp?.number || '').replace(/\D/g, '')}?text=${encodeURIComponent(data.whatsapp?.message || '')}`}
               className="w-full py-5 bg-[#25D366] text-white rounded-[32px] font-black text-lg shadow-xl shadow-emerald-200 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
             >
               Message on WhatsApp

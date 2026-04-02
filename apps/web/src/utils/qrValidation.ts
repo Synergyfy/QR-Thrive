@@ -18,7 +18,8 @@ export const isQRDataValid = (data: QRData): boolean => {
     case 'sms':
       return !!data.sms?.number && data.sms.number.length > 3;
     case 'whatsapp':
-      return !!data.whatsapp?.number && data.whatsapp.number.length > 3;
+      return (!!data.whatsapp?.number && data.whatsapp.number.length > 3) || 
+             (!!data.whatsapp?.phoneNumber && data.whatsapp.phoneNumber.length > 3);
     case 'instagram':
     case 'facebook':
     case 'linkedin':

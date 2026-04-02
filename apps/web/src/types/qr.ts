@@ -72,7 +72,9 @@ export interface QRData {
     message: string;
   };
   whatsapp?: {
-    number: string;
+    number?: string;
+    countryCode?: string;
+    phoneNumber?: string;
     message: string;
   };
   phone?: {
