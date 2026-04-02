@@ -27,11 +27,14 @@ import {
   Briefcase,
   Camera,
   BarChart3,
+  LayoutGrid,
   Image as ImageIcon,
   type LucideIcon
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useNavigate } from 'react-router-dom';
+import { useCurrentUser, useLogout } from '../hooks/useApi';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -83,8 +86,12 @@ const INITIAL_CONFIG: QRConfiguration = {
 };
 
 function GeneratorPage() {
+  const navigate = useNavigate();
+  const { data: userData } = useCurrentUser();
+  const logoutMutation = useLogout();
+  const user = userData?.user;
+  
   const [config, setConfig] = useState<QRConfiguration>(INITIAL_CONFIG);
-  const [user, setUser] = useState<any>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [designTab, setDesignTab] = useState<'shape' | 'frame' | 'logo'>('shape');
@@ -131,8 +138,12 @@ function GeneratorPage() {
     }
   }, [config.data, config.isDynamic, config.shortId]);
 
-  const handleLogout = () => {
-    setUser(null);
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync();
+    } catch (e) {
+      console.error('Logout failed', e);
+    }
   };
 
   return (
@@ -149,7 +160,14 @@ function GeneratorPage() {
             </div>
             
             <div className="hidden md:flex items-center gap-8">
-              <a href="#" className="text-sm font-semibold text-gray-600 hover:text-blue-600 transition-colors">QR Codes</a>
+              {user && (
+                <button 
+                  onClick={() => navigate('/dashboard')}
+                  className="flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  <LayoutGrid className="w-4 h-4" /> Go to Dashboard
+                </button>
+              )}
               <a href="#" className="text-sm font-semibold text-gray-600 hover:text-blue-600 transition-colors">Pricing</a>
               <a href="#" className="text-sm font-semibold text-gray-600 hover:text-blue-600 transition-colors">Solutions</a>
               <a href="#" className="text-sm font-semibold text-gray-600 hover:text-blue-600 transition-colors">API</a>
@@ -159,7 +177,7 @@ function GeneratorPage() {
               {user ? (
                 <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
                   <div className="text-right">
-                    <p className="text-xs font-bold text-gray-900">{user.name}</p>
+                    <p className="text-xs font-bold text-gray-900">{user.firstName} {user.lastName}</p>
                   </div>
                   <button onClick={handleLogout} className="text-gray-400 hover:text-red-500 transition-colors">
                     <LogOut className="w-4 h-4" />
@@ -485,7 +503,7 @@ function GeneratorPage() {
       <AuthModal 
         isOpen={isAuthModalOpen} 
         onClose={() => setIsAuthModalOpen(false)} 
-        onSuccess={setUser} 
+        onSuccess={() => {}} // useCurrentUser handles this
       />
     </div>
   );

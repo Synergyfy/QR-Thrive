@@ -9,16 +9,20 @@ import { useNavigate } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import toast from 'react-hot-toast';
-import { useFolders, useCreateFolder, useDeleteFolder, useQRCodes, useDeleteQRCode, useUpdateQRCode, useDuplicateQRCode } from '../hooks/useApi';
+import { useFolders, useCreateFolder, useDeleteFolder, useQRCodes, useDeleteQRCode, useUpdateQRCode, useDuplicateQRCode, useCurrentUser, useLogout } from '../hooks/useApi';
 import type { BackendQRCode } from '../types/api';
 import StatsPanel from '../components/StatsPanel';
 import DashboardQRPreview from '../components/DashboardQRPreview';
 import QRCodeStyling from 'qr-code-styling';
+import { LogOut } from 'lucide-react';
 
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const { data: userData } = useCurrentUser();
+  const logoutMutation = useLogout();
+  const user = userData?.user;
   
   const { data: folders = [] } = useFolders();
   const { data: qrCodes = [] } = useQRCodes();
@@ -112,6 +116,15 @@ const DashboardPage: React.FC = () => {
       toast.success('URL updated');
     } catch (e) {
       toast.error('Failed to update URL');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync();
+      navigate('/');
+    } catch (e) {
+      toast.error('Logout failed');
     }
   };
 
@@ -533,6 +546,12 @@ const DashboardPage: React.FC = () => {
            <div className="flex items-center gap-3 p-3 text-slate-500 hover:text-slate-900 cursor-pointer transition-all hover:bg-slate-50 rounded-xl">
               <Settings className="w-5 h-5" /><span className="text-sm font-bold">Settings</span>
            </div>
+           <div 
+             onClick={handleLogout}
+             className="flex items-center gap-3 p-3 text-red-500 hover:bg-red-50 cursor-pointer transition-all rounded-xl"
+           >
+              <LogOut className="w-5 h-5" /><span className="text-sm font-bold">Log Out</span>
+           </div>
         </div>
       </aside>
 
@@ -554,13 +573,15 @@ const DashboardPage: React.FC = () => {
                  <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
               </div>
               <div className="h-10 w-px bg-slate-100" />
-              <div className="flex items-center gap-4 group cursor-pointer">
+               <div className="flex items-center gap-4 group cursor-pointer">
                  <div className="text-right flex flex-col items-end">
-                    <p className="text-sm font-black text-slate-900 leading-none mb-1">Frank Emesinwa</p>
+                    <p className="text-sm font-black text-slate-900 leading-none mb-1">
+                      {user ? `${user.firstName} ${user.lastName}` : 'Guest'}
+                    </p>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Administrator</p>
                  </div>
                  <div className="w-12 h-12 rounded-2xl bg-slate-100 overflow-hidden border-2 border-transparent group-hover:border-blue-600 transition-all p-0.5">
-                    <img src="https://ui-avatars.com/api/?name=Frank+Emesinwa&background=2563eb&color=fff" alt="Profile" className="w-full h-full rounded-[14px]" />
+                    <img src={`https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=2563eb&color=fff`} alt="Profile" className="w-full h-full rounded-[14px]" />
                  </div>
                  <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-900 transition-all" />
               </div>
