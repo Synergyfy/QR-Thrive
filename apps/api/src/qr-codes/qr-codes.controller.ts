@@ -70,7 +70,18 @@ export class QRCodesController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown';
+    let ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown';
+    
+    // If X-Forwarded-For contains multiple IPs, use the first one
+    if (ip.includes(',')) {
+      ip = ip.split(',')[0].trim();
+    }
+    
+    // Normalize IPv6-mapped IPv4 addresses
+    if (ip.startsWith('::ffff:')) {
+      ip = ip.substring(7);
+    }
+
     const userAgent = req.headers['user-agent'] || 'unknown';
     
     try {

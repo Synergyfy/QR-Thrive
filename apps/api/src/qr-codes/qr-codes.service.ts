@@ -194,6 +194,10 @@ export class QRCodesService {
     const parser = new UAParser(userAgent);
     const result = parser.getResult();
     const geo = geoip.lookup(ip);
+    
+    if (!geo) {
+      console.log(`[QRCodesService] No geo data found for IP: ${ip}`);
+    }
 
     await this.prisma.$transaction([
       this.prisma.qRCode.update({
@@ -205,15 +209,16 @@ export class QRCodesService {
           qrCodeId: qrCode.id,
           ip,
           userAgent,
-          browser: result.browser.name,
-          os: result.os.name,
+          browser: result.browser.name || 'unknown',
+          os: result.os.name || 'unknown',
           device: result.device.type || 'desktop',
-          city: geo?.city,
-          country: geo?.country,
-          region: geo?.region,
+          city: geo?.city || null,
+          country: geo?.country || null,
+          region: geo?.region || null,
         },
       }),
     ]);
+
 
     return qrCode;
   }
