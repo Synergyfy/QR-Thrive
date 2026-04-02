@@ -4,8 +4,8 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 
-async function bootstrap() {
-  const logger = new Logger('Bootstrap');
+// 1. Export the bootstrap function so Vercel can import it
+export async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use(cookieParser());
@@ -28,11 +28,23 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT ?? 3005;
-  await app.listen(port);
+  // 2. Initialize the app (do NOT call app.listen here)
+  await app.init();
 
-  const baseUrl = `http://localhost:${port}`;
-  logger.log(`Application is running on: ${baseUrl}`);
-  logger.log(`Swagger documentation is available at: ${baseUrl}/api/docs`);
+  // 3. Return the underlying Express instance
+  return app.getHttpAdapter().getInstance();
 }
-bootstrap();
+
+// 4. Start the server normally ONLY if we are NOT on Vercel
+if (!process.env.VERCEL) {
+  bootstrap().then((expressInstance) => {
+    const port = process.env.PORT ?? 3005;
+    const logger = new Logger('Bootstrap');
+
+    expressInstance.listen(port, () => {
+      const baseUrl = `http://localhost:${port}`;
+      logger.log(`Application is running on: ${baseUrl}`);
+      logger.log(`Swagger documentation is available at: ${baseUrl}/api/docs`);
+    });
+  });
+}
