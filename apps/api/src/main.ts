@@ -7,7 +7,7 @@ import { Logger as PinoLogger } from 'nestjs-pino';
 
 // Explicitly export the bootstrap function
 export async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule);
   app.useLogger(app.get(PinoLogger));
 
   app.use(cookieParser());

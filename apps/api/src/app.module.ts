@@ -15,9 +15,9 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
   imports: [
     LoggerModule.forRoot({
       pinoHttp: {
-        transport: process.env.NODE_ENV !== 'production' 
-          ? { target: 'pino-pretty', options: { colorize: true } } 
-          : undefined,
+        // transport: process.env.NODE_ENV !== 'production'
+        //   ? { target: 'pino-pretty', options: { colorize: true } }
+        //   : undefined,
       },
     }),
     ConfigModule.forRoot({
@@ -38,6 +38,6 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
 
 

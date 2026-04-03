@@ -48,28 +48,29 @@ export class FormsService {
       await tx.formField.deleteMany({ where: { formId: form.id } });
 
       if (fields && fields.length > 0) {
-        for (let i = 0; i < fields.length; i++) {
-          const field = fields[i];
-          await tx.formField.create({
-            data: {
-              type: field.type,
-              label: field.label,
-              placeholder: field.placeholder,
-              helpText: field.helpText,
-              required: field.required ?? false,
-              order: field.order ?? i,
-              options: field.options as any,
-              validation: field.validation as any,
-              formId: form.id,
-            },
-          });
-        }
+        const fieldData = fields.map((field, index) => ({
+          type: field.type,
+          label: field.label,
+          placeholder: field.placeholder,
+          helpText: field.helpText,
+          required: field.required ?? false,
+          order: field.order ?? index,
+          options: field.options as any,
+          validation: field.validation as any,
+          formId: form.id,
+        }));
+
+        await tx.formField.createMany({
+          data: fieldData,
+        });
       }
 
       return tx.form.findUnique({
         where: { id: form.id },
         include: { fields: { orderBy: { order: 'asc' } } },
       });
+    }, {
+      timeout: 10000, // 10 seconds timeout for larger form operations
     });
   }
 
