@@ -28,11 +28,11 @@ export class FormsService {
     const { qrCodeId, title, description, fields } = createFormDto;
 
     // Verify ownership
-    const qrCode = await this.prisma.qRCode.findFirst({
-      where: { id: qrCodeId, userId },
+    const qrCode = await this.prisma.qRCode.findUnique({
+      where: { id: qrCodeId },
     });
 
-    if (!qrCode) {
+    if (!qrCode || qrCode.userId !== userId) {
       throw new ForbiddenException('You do not own this QR Code');
     }
 

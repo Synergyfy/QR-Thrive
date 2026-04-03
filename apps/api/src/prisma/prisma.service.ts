@@ -18,9 +18,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     // Serverless optimized pool
     const pool = new Pool({ 
       connectionString,
-      max: process.env.VERCEL ? 1 : 10,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
+      max: process.env.VERCEL ? 3 : 10,
+      idleTimeoutMillis: 10000,
+      connectionTimeoutMillis: 30000,
       ssl: connectionString.includes('supabase') || process.env.NODE_ENV === 'production' 
         ? { rejectUnauthorized: false } 
         : false
