@@ -1,14 +1,29 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
 
   constructor(private configService: ConfigService) {
-    super();
-    this.logger.log('PrismaService initialized');
+    const connectionString = configService.get<string>('DATABASE_URL');
+    
+    if (!connectionString) {
+      throw new Error('DATABASE_URL is not defined in environment variables');
+    }
+
+    const pool = new Pool({ 
+      connectionString,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    });
+    const adapter = new PrismaPg(pool);
+    
+    super({ adapter });
+    
+    this.logger.log('PrismaService initialized with PrismaPg adapter');
   }
 
   async onModuleInit() {
