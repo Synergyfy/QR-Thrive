@@ -3,10 +3,13 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
+import { loggerConfig } from './common/logger/logger.config';
 
 // Explicitly export the bootstrap function
 export async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: loggerConfig,
+  });
 
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({

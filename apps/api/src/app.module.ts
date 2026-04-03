@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
@@ -9,6 +9,7 @@ import { QRCodesModule } from './qr-codes/qr-codes.module';
 import { FoldersModule } from './folders/folders.module';
 import { FormsModule } from './forms/forms.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { HttpLoggingMiddleware } from './common/middleware/http-logging.middleware';
 
 @Module({
   imports: [
@@ -30,4 +31,9 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(HttpLoggingMiddleware).forRoutes('*');
+  }
+}
+
