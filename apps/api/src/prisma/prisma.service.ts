@@ -7,6 +7,7 @@ import { Pool } from 'pg';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
+  private static instance: PrismaService;
 
   constructor(private configService: ConfigService) {
     const connectionString = configService.get<string>('DATABASE_URL');
@@ -17,13 +18,19 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
     const pool = new Pool({ 
       connectionString,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+      max: 1, // Crucial for serverless: limit each instance to 1 connection
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
+      ssl: connectionString.includes('supabase') || process.env.NODE_ENV === 'production' 
+        ? { rejectUnauthorized: false } 
+        : false
     });
+    
     const adapter = new PrismaPg(pool);
     
     super({ adapter });
     
-    this.logger.log('PrismaService initialized with PrismaPg adapter');
+    this.logger.log('PrismaService initialized with PrismaPg adapter (Serverless Optimized)');
   }
 
   async onModuleInit() {
@@ -32,8 +39,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       this.logger.log('Successfully connected to database');
     } catch (error) {
       this.logger.error('Failed to connect to database', error.message);
-      // Don't throw the full error to avoid exposing the URL in logs,
-      // but the 'at base' message should now be clearer if it persists.
       throw error;
     }
   }
