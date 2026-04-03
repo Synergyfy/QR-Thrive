@@ -13,15 +13,14 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     const connectionString = configService.get<string>('DATABASE_URL');
     
     if (!connectionString) {
-      this.logger.error('CRITICAL: DATABASE_URL is UNDEFINED in environment variables');
+      const logger = new Logger(PrismaService.name);
+      logger.error('CRITICAL: DATABASE_URL is UNDEFINED in environment variables');
       throw new Error('DATABASE_URL is not defined');
     }
 
-    this.logger.log(`DATABASE_URL detected. Length: ${connectionString.length}. Protocol: ${connectionString.split(':')[0]}`);
-
     const pool = new Pool({ 
       connectionString,
-      max: 1, // Crucial for serverless: limit each instance to 1 connection
+      max: 1, 
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 2000,
       ssl: connectionString.includes('supabase') || process.env.NODE_ENV === 'production' 
@@ -33,6 +32,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     
     super({ adapter });
     
+    this.logger.log(`DATABASE_URL detected. Length: ${connectionString.length}. Protocol: ${connectionString.split(':')[0]}`);
     this.logger.log('PrismaService initialized with PrismaPg adapter (Serverless Optimized)');
   }
 
