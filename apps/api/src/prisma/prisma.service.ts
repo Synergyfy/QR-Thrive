@@ -13,8 +13,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     const connectionString = configService.get<string>('DATABASE_URL');
     
     if (!connectionString) {
-      throw new Error('DATABASE_URL is not defined in environment variables');
+      this.logger.error('CRITICAL: DATABASE_URL is UNDEFINED in environment variables');
+      throw new Error('DATABASE_URL is not defined');
     }
+
+    this.logger.log(`DATABASE_URL detected. Length: ${connectionString.length}. Protocol: ${connectionString.split(':')[0]}`);
 
     const pool = new Pool({ 
       connectionString,
