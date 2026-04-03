@@ -1,6 +1,7 @@
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { LoggerModule } from 'nestjs-pino';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -9,10 +10,16 @@ import { QRCodesModule } from './qr-codes/qr-codes.module';
 import { FoldersModule } from './folders/folders.module';
 import { FormsModule } from './forms/forms.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
-import { HttpLoggingMiddleware } from './common/middleware/http-logging.middleware';
 
 @Module({
   imports: [
+    LoggerModule.forRoot({
+      pinoHttp: {
+        transport: process.env.NODE_ENV !== 'production' 
+          ? { target: 'pino-pretty', options: { colorize: true } } 
+          : undefined,
+      },
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -31,9 +38,6 @@ import { HttpLoggingMiddleware } from './common/middleware/http-logging.middlewa
     },
   ],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(HttpLoggingMiddleware).forRoutes('*');
-  }
-}
+export class AppModule {}
+
 

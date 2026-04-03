@@ -1,15 +1,14 @@
 import { NestFactory } from '@nestjs/core';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
-import { loggerConfig } from './common/logger/logger.config';
+import { Logger as PinoLogger } from 'nestjs-pino';
 
 // Explicitly export the bootstrap function
 export async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    logger: loggerConfig,
-  });
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(PinoLogger));
 
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({
