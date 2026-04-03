@@ -1,47 +1,27 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
-  private static instance: PrismaService;
 
-  constructor(private configService: ConfigService) {
-    const connectionString = configService.get<string>('DATABASE_URL');
-    
-    if (!connectionString) {
-      const logger = new Logger(PrismaService.name);
-      logger.error('CRITICAL: DATABASE_URL is UNDEFINED in environment variables');
-      throw new Error('DATABASE_URL is not defined');
-    }
-
-    const pool = new Pool({ 
-      connectionString,
-      max: 1, 
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
-      ssl: connectionString.includes('supabase') || process.env.NODE_ENV === 'production' 
-        ? { rejectUnauthorized: false } 
-        : false
-    });
-    
-    const adapter = new PrismaPg(pool);
-    
-    super({ adapter });
-    
-    this.logger.log(`DATABASE_URL detected. Length: ${connectionString.length}. Protocol: ${connectionString.split(':')[0]}`);
-    this.logger.log('PrismaService initialized with PrismaPg adapter (Serverless Optimized)');
+  constructor() {
+    // We call super() without arguments. 
+    // Prisma 7 will automatically use the DATABASE_URL from process.env 
+    // and the configuration in your prisma.config.ts.
+    super();
+    this.logger.log('PrismaService initialized (Standard Engine)');
   }
 
   async onModuleInit() {
     try {
+      this.logger.log('Attempting to connect to database...');
       await this.$connect();
       this.logger.log('Successfully connected to database');
     } catch (error) {
-      this.logger.error('Failed to connect to database', error.message);
+      this.logger.error('Failed to connect to database');
+      this.logger.error(`Error Code: ${error.code || 'N/A'}`);
+      this.logger.error(`Error Message: ${error.message}`);
       throw error;
     }
   }
