@@ -13,8 +13,7 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/apps/web/dist/$1",
-      "check": true
+      "destination": "/apps/web/dist/$1"
     },
     {
       "source": "/(.*)",
