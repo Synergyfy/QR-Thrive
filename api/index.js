@@ -1,4 +1,4 @@
-const { bootstrap } = require('../dist/main');
+const { bootstrap } = require('../apps/api/dist/main');
 
 let cachedServer;
 

@@ -2,14 +2,14 @@
   "version": 2,
   "public": true,
   "functions": {
-    "apps/api/api/index.js": {
+    "api/index.js": {
       "includeFiles": "apps/api/dist/**"
     }
   },
   "rewrites": [
     {
       "source": "/api/v1/(.*)",
-      "destination": "/apps/api/api/index.js"
+      "destination": "/api/index.js"
     },
     {
       "source": "/(.*)",
