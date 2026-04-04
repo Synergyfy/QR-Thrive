@@ -4,11 +4,13 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import { Logger as PinoLogger } from 'nestjs-pino';
-import express from 'express';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 // Explicitly export the bootstrap function
 export async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: true,
+  });
   app.useLogger(app.get(PinoLogger));
 
   app.use(cookieParser());
@@ -18,9 +20,13 @@ export async function bootstrap() {
     forbidNonWhitelisted: false,
   }));
 
-  // Increase body limit for file uploads (50MB)
-  app.use(express.json({ limit: '50mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+  // Increase body limit for file uploads (50MB) via platform-specific instance if needed
+  // But Nest 11+ handles it better with its own middleware if possible, 
+  // or we can use the instance without an explicit import.
+  const expressInstance = app.getHttpAdapter().getInstance();
+  const bodyParser = require('body-parser');
+  app.use(bodyParser.json({ limit: '50mb' }));
+  app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
   app.enableCors({
     origin: [
