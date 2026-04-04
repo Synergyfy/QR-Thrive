@@ -3,7 +3,7 @@ import type { QRConfiguration } from '../../types/qr';
 import { Upload, X, ImageIcon, Check, Loader2 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { uploadApi } from '../../services/api';
+import { apiClient } from '../../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -35,15 +35,22 @@ const LogoPanel: React.FC<LogoPanelProps> = ({ config, updateConfig }) => {
     if (file) {
       setUploading(true);
       try {
-        const { signedUrl } = await uploadApi.getSignedUrl('logo', file.name, file.size);
-        const response = await fetch(signedUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': file.type },
-          body: file,
-        });
-        const data = await response.json();
-        if (data.secure_url) {
-          updateConfig({ logo: data.secure_url });
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('fileType', 'logo');
+
+        const response = await apiClient.post<{ cloudinaryUrl: string; publicId: string }>(
+          '/upload/file',
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
+
+        if (response.data.cloudinaryUrl) {
+          updateConfig({ logo: response.data.cloudinaryUrl });
         }
       } catch (err) {
         const reader = new FileReader();
