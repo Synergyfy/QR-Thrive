@@ -9,7 +9,7 @@ import type {
   Scan,
 } from '../types/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:3005/api/v1');
 const SESSION_HINT_KEY = 'qr-thrive-session';
 
 export const apiClient = axios.create({
