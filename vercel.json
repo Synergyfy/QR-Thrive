@@ -12,11 +12,12 @@
       "destination": "/api/index.js"
     },
     {
-      "source": "/((?!api/v1).*)",
-      "destination": "/apps/web/dist/$1"
+      "source": "/(.*)",
+      "destination": "/apps/web/dist/$1",
+      "check": true
     },
     {
-      "source": "/((?!api/v1).*)",
+      "source": "/(.*)",
       "destination": "/apps/web/dist/index.html"
     }
   ]
