@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { QRConfiguration } from '../../types/qr';
-import { Upload, X, ImageIcon, Check } from 'lucide-react';
+import { Upload, X, ImageIcon, Check, Loader2 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { uploadApi } from '../../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -14,6 +15,8 @@ interface LogoPanelProps {
 }
 
 const LogoPanel: React.FC<LogoPanelProps> = ({ config, updateConfig }) => {
+  const [uploading, setUploading] = useState(false);
+  
   const popularLogos = [
     { name: 'PayPal', url: 'https://cdn-icons-png.flaticon.com/512/174/174861.png' },
     { name: 'Instagram', url: 'https://cdn-icons-png.flaticon.com/512/174/174855.png' },
@@ -27,14 +30,30 @@ const LogoPanel: React.FC<LogoPanelProps> = ({ config, updateConfig }) => {
     { name: 'Shopify', url: 'https://cdn-icons-png.flaticon.com/512/825/825508.png' },
   ];
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateConfig({ logo: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+      setUploading(true);
+      try {
+        const { signedUrl } = await uploadApi.getSignedUrl('logo', file.name, file.size);
+        const response = await fetch(signedUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': file.type },
+          body: file,
+        });
+        const data = await response.json();
+        if (data.secure_url) {
+          updateConfig({ logo: data.secure_url });
+        }
+      } catch (err) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          updateConfig({ logo: reader.result as string });
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
@@ -111,15 +130,27 @@ const LogoPanel: React.FC<LogoPanelProps> = ({ config, updateConfig }) => {
             </div>
           ) : (
             <div className="relative flex flex-col items-center justify-center border-2 border-dashed border-gray-100 rounded-3xl p-6 hover:border-blue-300 transition-all bg-white group h-[120px] cursor-pointer shadow-sm">
-              <div className="bg-gray-50 p-3 rounded-full mb-3 group-hover:scale-110 group-hover:bg-blue-50 transition-all">
-                 <Upload className="w-5 h-5 text-gray-400 group-hover:text-blue-600" />
-              </div>
-              <span className="text-[10px] text-gray-400 group-hover:text-blue-600 font-bold uppercase tracking-widest transition-colors">Custom Logo</span>
+              {uploading ? (
+                <>
+                  <div className="bg-blue-50 p-3 rounded-full mb-3">
+                    <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                  </div>
+                  <span className="text-[10px] text-blue-600 font-bold uppercase tracking-widest transition-colors">Uploading...</span>
+                </>
+              ) : (
+                <>
+                  <div className="bg-gray-50 p-3 rounded-full mb-3 group-hover:scale-110 group-hover:bg-blue-50 transition-all">
+                    <Upload className="w-5 h-5 text-gray-400 group-hover:text-blue-600" />
+                  </div>
+                  <span className="text-[10px] text-gray-400 group-hover:text-blue-600 font-bold uppercase tracking-widest transition-colors">Custom Logo</span>
+                </>
+              )}
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleLogoUpload}
                 className="absolute inset-0 opacity-0 cursor-pointer"
+                disabled={uploading}
               />
             </div>
           )}

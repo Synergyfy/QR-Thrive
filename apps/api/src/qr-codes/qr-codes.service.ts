@@ -7,12 +7,14 @@ import { UAParser } from 'ua-parser-js';
 import * as geoip from 'geoip-lite';
 
 import { FormsService } from '../forms/forms.service';
+import { UploadService } from '../upload/upload.service';
 
 @Injectable()
 export class QRCodesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly formsService: FormsService,
+    private readonly uploadService: UploadService,
   ) {}
 
   async create(userId: string, createQRCodeDto: CreateQRCodeDto) {
@@ -95,6 +97,21 @@ export class QRCodesService {
     return qrCode;
   }
 
+  async getScans(id: string, userId: string) {
+    const qrCode = await this.prisma.qRCode.findFirst({
+      where: { id, userId },
+    });
+
+    if (!qrCode) {
+      throw new NotFoundException(`QR Code with ID ${id} not found`);
+    }
+
+    return this.prisma.scan.findMany({
+      where: { qrCodeId: id },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async update(id: string, userId: string, updateQRCodeDto: UpdateQRCodeDto) {
     const qrCode = await this.findOne(id, userId);
     
@@ -127,9 +144,24 @@ export class QRCodesService {
   async remove(id: string, userId: string) {
     const qrCode = await this.findOne(id, userId);
 
+    // Delete associated files from Cloudinary
+    await this.deleteCloudinaryFiles(qrCode.data);
+
     return this.prisma.qRCode.delete({
       where: { id: qrCode.id },
     });
+  }
+
+  private async deleteCloudinaryFiles(data: any) {
+    if (!data) return;
+
+    const fileFields = ['image', 'pdf', 'video', 'mp3'];
+    for (const field of fileFields) {
+      const fileData = data[field];
+      if (fileData && fileData.publicId) {
+        await this.uploadService.deleteFile(fileData.publicId);
+      }
+    }
   }
 
   async duplicate(id: string, userId: string) {

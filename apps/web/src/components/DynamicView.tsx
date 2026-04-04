@@ -19,13 +19,16 @@ import {
   ShoppingBag,
   Download,
   ClipboardList,
-  CheckCircle2
+  CheckCircle2,
+  Eye,
+  Play
 } from 'lucide-react';
 import type { QRData } from '../types/qr';
 import { useParams } from 'react-router-dom';
 import { useSubmitForm } from '../hooks/useForms';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { downloadFile } from '../utils/upload';
 
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
@@ -39,6 +42,21 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
   const submitMutation = useSubmitForm(shortId || '');
   const [answers, setAnswers] = React.useState<Record<string, any>>({});
   const [submitted, setSubmitted] = React.useState(false);
+  const [viewingImage, setViewingImage] = React.useState(false);
+  const [viewingPdf, setViewingPdf] = React.useState(false);
+  const [viewingVideo, setViewingVideo] = React.useState(false);
+  const [playingAudio, setPlayingAudio] = React.useState(false);
+  const [isDownloading, setIsDownloading] = React.useState(false);
+
+  const handleDownload = async (url: string, fileName: string) => {
+    if (isDownloading) return;
+    setIsDownloading(true);
+    try {
+      await downloadFile(url, fileName);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   // If it's a simple URL, we can just redirect or show a card
   React.useEffect(() => {
@@ -170,50 +188,109 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
         );
 
       case 'image':
-        return (
-          <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-100">
-                <Camera className="w-10 h-10" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Image Gallery</h1>
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none">Shared via QR Thrive</p>
-            </div>
-
-            <div className="bg-white p-2 rounded-[40px] border border-gray-100 shadow-2xl shadow-blue-100/50 overflow-hidden group">
-               <div className="relative aspect-square sm:aspect-video rounded-[32px] overflow-hidden">
-                  <img 
-                    src={data.image?.url} 
-                    alt="Gallery" 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                  {data.image?.caption && (
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
-                       <p className="text-white font-bold text-lg leading-tight transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 italic">"{data.image.caption}"</p>
-                    </div>
-                  )}
-               </div>
-            </div>
-
-            {data.image?.caption && (
-              <div className="bg-white p-6 rounded-3xl border border-gray-50 flex items-start gap-4 shadow-sm sm:hidden">
-                 <div className="bg-blue-50 p-2 rounded-xl text-blue-600">
-                    <Type className="w-4 h-4" />
+         return (
+           <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+             {viewingImage ? (
+               <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+                 <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+                   <button 
+                     onClick={() => setViewingImage(false)}
+                     className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white font-bold text-sm"
+                   >
+                     <ChevronRight className="w-4 h-4 rotate-180" />
+                     Back
+                   </button>
+                   <button 
+                     disabled={isDownloading}
+                     onClick={() => {
+                       if (data.image?.url) {
+                         const name = data.image.name || 'image.png';
+                         handleDownload(data.image.url, name.includes('.') ? name : `${name}.png`);
+                       }
+                     }}
+                     className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white font-bold text-sm disabled:opacity-50"
+                   >
+                     {isDownloading ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                     ) : (
+                        <Download className="w-4 h-4" />
+                     )}
+                     {isDownloading ? 'Preparing...' : 'Download'}
+                   </button>
                  </div>
-                 <p className="text-xs font-semibold text-gray-600 leading-relaxed">"{data.image.caption}"</p>
-              </div>
-            )}
-            
-            <a 
-              href={data.image?.url} 
-              download="gallery-image"
-              className="w-full py-5 bg-gray-50 text-gray-900 rounded-[32px] font-black text-xs uppercase tracking-[0.2em] shadow-sm border border-gray-100 flex items-center justify-center gap-3 hover:bg-white active:scale-95 transition-all"
-            >
-              Save to Device
-              <ExternalLink className="w-5 h-5 opacity-20" />
-            </a>
-          </div>
-        );
+                 <img 
+                   src={data.image?.url} 
+                   alt="Full view" 
+                   className="max-w-full max-h-full object-contain"
+                 />
+               </div>
+             ) : (
+               <>
+                 <div className="text-center">
+                   <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-100">
+                     <Camera className="w-10 h-10" />
+                   </div>
+                   <h1 className="text-2xl font-bold text-gray-900 mb-2">Image Gallery</h1>
+                   <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none">Shared via QR Thrive</p>
+                 </div>
+
+                 <div className="bg-white p-2 rounded-[40px] border border-gray-100 shadow-2xl shadow-blue-100/50 overflow-hidden group">
+                    <div className="relative aspect-square sm:aspect-video rounded-[32px] overflow-hidden cursor-pointer" onClick={() => setViewingImage(true)}>
+                       <img 
+                         src={data.image?.url} 
+                         alt="Gallery" 
+                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                       />
+                       <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                         <Eye className="w-8 h-8 text-white" />
+                       </div>
+                       {data.image?.caption && (
+                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
+                            <p className="text-white font-bold text-lg leading-tight transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 italic">"{data.image.caption}"</p>
+                         </div>
+                       )}
+                    </div>
+                 </div>
+
+                 {data.image?.caption && (
+                   <div className="bg-white p-6 rounded-3xl border border-gray-50 flex items-start gap-4 shadow-sm">
+                      <div className="bg-blue-50 p-2 rounded-xl text-blue-600">
+                         <Type className="w-4 h-4" />
+                      </div>
+                      <p className="text-xs font-semibold text-gray-600 leading-relaxed">"{data.image.caption}"</p>
+                   </div>
+                 )}
+                
+                 <div className="grid grid-cols-2 gap-4">
+                   <button 
+                     onClick={() => setViewingImage(true)}
+                     className="py-4 bg-blue-600 text-white rounded-[32px] font-black text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-95 transition-all"
+                   >
+                     <Eye className="w-5 h-5" />
+                     View
+                   </button>
+                    <button 
+                      disabled={isDownloading}
+                      onClick={() => {
+                        if (data.image?.url) {
+                          const name = data.image.name || 'image.png';
+                          handleDownload(data.image.url, name.includes('.') ? name : `${name}.png`);
+                        }
+                      }}
+                      className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-black text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 hover:bg-white active:scale-95 transition-all disabled:opacity-50"
+                    >
+                      {isDownloading ? (
+                        <div className="w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Download className="w-5 h-5" />
+                      )}
+                      {isDownloading ? 'Preparing...' : 'Download'}
+                    </button>
+                 </div>
+               </>
+             )}
+           </div>
+         );
 
        case 'wifi':
         return (
@@ -456,48 +533,171 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                  <h1 className="text-2xl font-bold text-gray-900 mb-2">Document View</h1>
                  <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest">Secure PDF Hosting</p>
               </div>
-              <div className="bg-white border border-gray-100 p-6 rounded-3xl flex items-center gap-4">
-                 <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600">
-                    <FileText className="w-6 h-6" />
-                 </div>
-                 <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-900 truncate">{data.pdf?.name || 'document_file.pdf'}</p>
-                    <p className="text-xs text-gray-400">PDF Document • 2.4 MB</p>
-                 </div>
-              </div>
-              <button className="w-full py-5 bg-red-600 text-white rounded-[40px] font-black text-lg shadow-xl shadow-red-100 flex items-center justify-center gap-3">
-                 <Download className="w-6 h-6" />
-                 Download PDF
-              </button>
+              
+              {viewingPdf ? (
+                <div className="fixed inset-0 z-50 bg-gray-900 flex flex-col">
+                  <div className="flex items-center justify-between p-4 bg-gray-800">
+                    <button 
+                      onClick={() => setViewingPdf(false)}
+                      className="flex items-center gap-2 text-white text-sm font-bold hover:text-gray-300"
+                    >
+                      <ChevronRight className="w-4 h-4 rotate-180" />
+                      Back
+                    </button>
+                    <span className="text-white text-xs font-bold truncate flex-1 text-center px-4">
+                      {data.pdf?.name || 'document.pdf'}
+                    </span>
+                    <button 
+                      onClick={() => {
+                        if (data.pdf?.url) {
+                          downloadFile(data.pdf.url, data.pdf.name || 'document.pdf');
+                        }
+                      }}
+                      className="text-white hover:text-gray-300 p-2"
+                    >
+                      <Download className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <iframe 
+                    src={`https://docs.google.com/viewer?url=${encodeURIComponent(data.pdf?.url || '')}&embedded=true`}
+                    className="flex-1 w-full border-none bg-white"
+                    title="PDF Viewer"
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="bg-white border border-gray-100 p-6 rounded-3xl flex items-center gap-4">
+                     <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600">
+                        <FileText className="w-6 h-6" />
+                     </div>
+                     <div className="flex-1 min-w-0">
+                        <p className="font-bold text-gray-900 truncate">{data.pdf?.name || 'document_file.pdf'}</p>
+                        <p className="text-xs text-gray-400">PDF Document</p>
+                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button 
+                      onClick={() => setViewingPdf(true)}
+                      className="py-4 bg-red-600 text-white rounded-[32px] font-black text-sm shadow-xl shadow-red-100 flex items-center justify-center gap-2"
+                    >
+                      <Eye className="w-5 h-5" />
+                      View
+                    </button>
+                    <button 
+                      disabled={isDownloading}
+                      onClick={() => {
+                        if (data.pdf?.url) {
+                          const name = data.pdf.name || 'document.pdf';
+                          handleDownload(data.pdf.url, name.includes('.') ? name : `${name}.pdf`);
+                        }
+                      }}
+                      className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-black text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 hover:bg-white active:scale-95 transition-all disabled:opacity-50"
+                    >
+                      {isDownloading ? (
+                        <div className="w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Download className="w-5 h-5" />
+                      )}
+                      {isDownloading ? 'Preparing...' : 'Download'}
+                    </button>
+                  </div>
+                </>
+              )}
            </div>
          );
 
       case 'video':
          return (
            <div className="space-y-8">
-              <div className="relative w-full aspect-video bg-gray-900 rounded-[32px] overflow-hidden shadow-2xl">
-                 <div className="absolute inset-0 flex items-center justify-center">
-                    <Video className="w-16 h-16 text-white opacity-20" />
-                 </div>
-                 {data.video?.url && (
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
-                       <p className="text-white font-bold text-sm truncate">{data.video.url}</p>
-                    </div>
-                 )}
-              </div>
-              <div className="text-center">
-                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Watch Video</h1>
-                 <p className="text-gray-400 text-sm">Streaming services are currently playing.</p>
-              </div>
-              <a 
-                href={data.video?.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-5 bg-blue-600 text-white rounded-[40px] font-black text-lg shadow-xl shadow-blue-100 flex items-center justify-center gap-3"
-              >
-                 <ExternalLink className="w-6 h-6" />
-                 Open Video
-              </a>
+              {viewingVideo ? (
+                <div className="fixed inset-0 z-50 bg-black flex flex-col">
+                  <div className="flex items-center justify-between p-4 bg-black/50 backdrop-blur-md">
+                    <button 
+                      onClick={() => setViewingVideo(false)}
+                      className="flex items-center gap-2 text-white text-sm font-bold hover:text-gray-300"
+                    >
+                      <ChevronRight className="w-4 h-4 rotate-180" />
+                      Back
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (data.video?.url) {
+                          const name = data.video.name || 'video.mp4';
+                          handleDownload(data.video.url, name.includes('.') ? name : `${name}.mp4`);
+                        }
+                      }}
+                      className="text-white hover:text-gray-300 p-2"
+                    >
+                      <Download className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="flex-1 flex items-center justify-center">
+                    <video 
+                      controls 
+                      autoPlay 
+                      className="max-w-full max-h-full"
+                      src={data.video?.url}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="relative w-full aspect-video bg-gray-900 rounded-[32px] overflow-hidden shadow-2xl">
+                     {data.video?.url ? (
+                       <>
+                         <video 
+                           className="w-full h-full object-cover"
+                           src={data.video?.url}
+                         />
+                         <button 
+                           onClick={() => setViewingVideo(true)}
+                           className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors"
+                         >
+                           <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
+                             <Play className="w-8 h-8 text-gray-900 ml-1" />
+                           </div>
+                         </button>
+                       </>
+                     ) : (
+                       <div className="absolute inset-0 flex items-center justify-center">
+                          <Video className="w-16 h-16 text-white opacity-20" />
+                       </div>
+                     )}
+                  </div>
+                  <div className="text-center">
+                     <h1 className="text-2xl font-bold text-gray-900 mb-2">Watch Video</h1>
+                     <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest leading-none">Shared via QR Thrive</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button 
+                      onClick={() => setViewingVideo(true)}
+                      className="py-4 bg-blue-600 text-white rounded-[32px] font-black text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2"
+                    >
+                      <Play className="w-5 h-5" />
+                      View
+                    </button>
+                    <button 
+                      disabled={isDownloading}
+                      onClick={() => {
+                        if (data.video?.url) {
+                          const name = data.video.name || 'video.mp4';
+                          handleDownload(data.video.url, name.includes('.') ? name : `${name}.mp4`);
+                        }
+                      }}
+                      className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-black text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 hover:bg-white active:scale-95 transition-all disabled:opacity-50"
+                    >
+                      {isDownloading ? (
+                        <div className="w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Download className="w-5 h-5" />
+                      )}
+                      {isDownloading ? 'Preparing...' : 'Download'}
+                    </button>
+                  </div>
+                </>
+              )}
            </div>
          );
 
@@ -505,25 +705,76 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
          return (
            <div className="space-y-8">
               <div className="text-center">
-                 <div className="w-24 h-24 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-blue-100 animate-pulse">
+                 <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-blue-100">
                     <Music className="w-12 h-12" />
                  </div>
                  <h1 className="text-2xl font-bold text-gray-900 mb-2">Audio Player</h1>
-                 <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest">Streaming MP3</p>
+                 <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest">
+                   {data.mp3?.name || 'Audio File'}
+                 </p>
               </div>
-              <div className="bg-gray-50 p-8 rounded-[40px] space-y-6">
-                 <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                    <div className="h-full w-1/3 bg-blue-600 rounded-full" />
-                 </div>
-                 <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-400">1:24</span>
-                    <span className="text-xs font-bold text-gray-400">4:02</span>
-                 </div>
+              
+              <div className="bg-gray-900 rounded-[32px] p-6 shadow-2xl">
+                <audio 
+                  controls 
+                  autoPlay={playingAudio}
+                  className="w-full rounded-xl"
+                  src={data.mp3?.url}
+                  onPlay={() => setPlayingAudio(true)}
+                  onPause={() => setPlayingAudio(false)}
+                >
+                  Your browser does not support the audio element.
+                </audio>
               </div>
-              <button className="w-full py-5 bg-slate-900 text-white rounded-[40px] font-black text-lg flex items-center justify-center gap-3">
-                 <Music className="w-6 h-6" />
-                 Play Audio
-              </button>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <button 
+                  onClick={() => {
+                    const audio = document.querySelector('audio');
+                    if (audio) {
+                      if (audio.paused) {
+                        audio.play();
+                      } else {
+                        audio.pause();
+                      }
+                    }
+                  }}
+                  className="py-4 bg-blue-600 text-white rounded-[32px] font-black text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2"
+                >
+                  {playingAudio ? (
+                    <>
+                      <div className="flex gap-1">
+                        <div className="w-1 h-3 bg-white animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-1 h-3 bg-white animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-1 h-3 bg-white animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                      Pause
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-5 h-5" />
+                      Play
+                    </>
+                  )}
+                </button>
+                <button 
+                  disabled={isDownloading}
+                  onClick={() => {
+                    if (data.mp3?.url) {
+                      const name = data.mp3.name || 'audio.mp3';
+                      handleDownload(data.mp3.url, name.includes('.') ? name : `${name}.mp3`);
+                    }
+                  }}
+                  className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-black text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isDownloading ? (
+                    <div className="w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Download className="w-5 h-5" />
+                  )}
+                  {isDownloading ? 'Preparing...' : 'Download'}
+                </button>
+              </div>
            </div>
          );
 
@@ -809,7 +1060,5 @@ const getSocialConfig = (platform: string) => {
     default: return { icon: Share2, color: 'bg-gray-600' };
   }
 };
-
-
 
 export default DynamicView;

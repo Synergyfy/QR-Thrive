@@ -6,6 +6,7 @@ import type {
   CreateQRCodeDto,
   BackendQRCode,
   DashboardStats,
+  Scan,
 } from '../types/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -70,10 +71,11 @@ export const foldersApi = {
 
 export const qrCodesApi = {
   getQRCodes: async (params?: any) => {
-    const res = await apiClient.get<BackendQRCode[]>('/qr-codes', { params });
+    const res = await apiClient.get<(BackendQRCode & { _count?: { scans: number } })[]>('/qr-codes', { params });
     // Transform backend qr code to match the expected format in UI
     return (res.data || []).map(qr => ({
       ...qr,
+      scans: qr.scans ?? qr._count?.scans ?? 0,
       shortUrl: qr.shortUrl || `/s/${qr.shortId}`,
       config: {
         data: qr.data || {},
@@ -89,9 +91,10 @@ export const qrCodesApi = {
     }));
   },
   getQRCode: async (id: string) => {
-    const qr = (await apiClient.get<BackendQRCode>(`/qr-codes/${id}`)).data;
+    const qr = (await apiClient.get<BackendQRCode & { _count?: { scans: number } }>(`/qr-codes/${id}`)).data;
     return {
       ...qr,
+      scans: qr.scans ?? qr._count?.scans ?? 0,
       shortUrl: qr.shortUrl || `/s/${qr.shortId}`,
       config: {
         data: qr.data || {},
@@ -106,6 +109,7 @@ export const qrCodesApi = {
       }
     };
   },
+  getScans: async (id: string) => (await apiClient.get<Scan[]>(`/qr-codes/${id}/scans`)).data,
   getPublicQRCode: async (shortId: string) => {
     const res = await apiClient.get<BackendQRCode>(`/qr-codes/public/${shortId}`);
     const qr = res.data;
@@ -133,4 +137,18 @@ export const qrCodesApi = {
 
 export const statsApi = {
   getDashboardStats: async () => (await apiClient.get<DashboardStats>('/qr-codes/stats')).data,
+};
+
+export const uploadApi = {
+  getSignedUrl: async (fileType: string, fileName: string, fileSize: number) => {
+    const res = await apiClient.post<{ signedUrl: string; cloudinaryUrl: string; publicId: string }>(
+      '/upload/signed-url',
+      { fileType, fileName, fileSize }
+    );
+    return res.data;
+  },
+  deleteFile: async (publicId: string) => {
+    const res = await apiClient.delete(`/upload/file/${publicId}`);
+    return res.data;
+  },
 };

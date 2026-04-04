@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import { Logger as PinoLogger } from 'nestjs-pino';
+import express from 'express';
 
 // Explicitly export the bootstrap function
 export async function bootstrap() {
@@ -14,8 +15,12 @@ export async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
-    forbidNonWhitelisted: true,
+    forbidNonWhitelisted: false,
   }));
+
+  // Increase body limit for file uploads (50MB)
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
   app.enableCors({
     origin: [

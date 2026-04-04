@@ -36,6 +36,8 @@ import QRCodePreview from '../components/QRCodePreview';
 import DynamicView from '../components/DynamicView';
 import toast from 'react-hot-toast';
 import { useQRCode, useCreateQRCode, useUpdateQRCode } from '../hooks/useApi';
+import { uploadAllPendingFiles } from '../utils/upload';
+import { uploadApi } from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -137,15 +139,52 @@ const CreationWizard: React.FC = () => {
     setConfig(prev => ({ ...prev, design: { ...prev.design, ...updates } }));
   };
 
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [uploadedPublicIds, setUploadedPublicIds] = useState<string[]>([]);
+
+  const cleanupUploadedFiles = async () => {
+    for (const publicId of uploadedPublicIds) {
+      try {
+        await uploadApi.deleteFile(publicId);
+      } catch (err) {
+        console.error('Failed to delete file:', publicId);
+      }
+    }
+    setUploadedPublicIds([]);
+  };
+
   const handleFinish = async () => {
+    setUploadingFiles(true);
     try {
+      const uploadedData = await uploadAllPendingFiles(config.data);
+      
+      const dataToSave = {
+        ...config.data,
+        ...uploadedData,
+      };
+
+      const publicIds: string[] = [];
+      const collectPublicIds = (data: any) => {
+        if (data?.pendingFile?.signedUrl) {
+          const match = data.pendingFile.signedUrl.match(/folder=([^&]+)/);
+          if (match) {
+            publicIds.push(match[1]);
+          }
+        }
+      };
+      collectPublicIds(dataToSave.image);
+      collectPublicIds(dataToSave.video);
+      collectPublicIds(dataToSave.pdf);
+      collectPublicIds(dataToSave.mp3);
+      setUploadedPublicIds(publicIds);
+
       if (isEditing && editId) {
         await updateQRMutation.mutateAsync({ 
           id: editId, 
           data: { 
             name: `${config.data.type} QR`, 
             type: config.data.type, 
-            data: config.data, 
+            data: dataToSave, 
             design: config.design, 
             frame: config.frame, 
             logo: config.logo, 
@@ -159,7 +198,7 @@ const CreationWizard: React.FC = () => {
         await createQRMutation.mutateAsync({ 
           name: `${config.data.type} QR`, 
           type: config.data.type, 
-          data: config.data, 
+          data: dataToSave, 
           design: config.design, 
           frame: config.frame, 
           logo: config.logo, 
@@ -171,11 +210,14 @@ const CreationWizard: React.FC = () => {
       }
       navigate('/dashboard');
     } catch (error: any) {
+      await cleanupUploadedFiles();
       toast.error(error?.response?.data?.message || 'Failed to save QR Code');
+    } finally {
+      setUploadingFiles(false);
     }
   };
 
-  const isSaving = createQRMutation.isPending || updateQRMutation.isPending;
+  const isSaving = createQRMutation.isPending || updateQRMutation.isPending || uploadingFiles;
 
   const handleBack = () => {
     if (isEditing) {

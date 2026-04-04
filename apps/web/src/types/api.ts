@@ -66,6 +66,20 @@ export interface BackendQRCode {
   config: QRConfiguration; // To make it easier for our UI
 }
 
+export interface Scan {
+  id: string;
+  qrCodeId: string;
+  ip?: string;
+  userAgent?: string;
+  browser?: string;
+  os?: string;
+  device?: string;
+  city?: string;
+  country?: string;
+  region?: string;
+  createdAt: string;
+}
+
 export interface DashboardStats {
   totalQRs: number;
   totalScans: number;

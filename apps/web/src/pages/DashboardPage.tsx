@@ -15,6 +15,7 @@ import StatsPanel from '../components/StatsPanel';
 import DashboardQRPreview from '../components/DashboardQRPreview';
 import QRCodeStyling from 'qr-code-styling';
 import { LogOut } from 'lucide-react';
+import ScansModal from '../components/ScansModal';
 
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
@@ -137,6 +138,7 @@ const DashboardPage: React.FC = () => {
   const [renamingQR, setRenamingQR] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [editingURLQR, setEditingURLQR] = useState<string | null>(null);
+  const [viewingScansQR, setViewingScansQR] = useState<{ id: string, name: string } | null>(null);
   const [newURLValue, setNewURLValue] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -818,7 +820,10 @@ const DashboardPage: React.FC = () => {
 
                         <div className="px-8 pb-8 flex flex-col gap-4">
                            <div className="flex gap-4">
-                              <button className="flex-1 px-5 py-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all font-bold text-slate-600">
+                              <button 
+                                onClick={() => setViewingScansQR({ id: qr.id, name: qr.name })}
+                                className="flex-1 px-5 py-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all font-bold text-slate-600"
+                              >
                                  <BarChart3 className="w-4 h-4" />
                                  <span className="text-blue-600">{qr.scans}</span> Scans
                               </button>
@@ -919,6 +924,15 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Scans Detail Modal */}
+      {viewingScansQR && (
+        <ScansModal 
+          qrId={viewingScansQR.id}
+          qrName={viewingScansQR.name}
+          onClose={() => setViewingScansQR(null)}
+        />
       )}
     </div>
   );

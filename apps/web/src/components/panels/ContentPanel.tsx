@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Link, 
   Type, 
@@ -18,12 +18,16 @@ import {
   Video,
   Music,
   Smartphone,
-  ClipboardList,
-  ChevronDown
+  ChevronDown,
+  Loader2,
+  Upload,
+  Edit3,
+  ClipboardList
 } from 'lucide-react';
 import type { QRConfiguration, QRData, QRType } from '../../types/qr';
 import FormBuilder from '../FormBuilder';
 import { countries } from '../../constants/countries';
+import ImageEditor from '../ImageEditor';
 
 interface ContentPanelProps {
   config: QRConfiguration;
@@ -40,6 +44,31 @@ function cn(...inputs: ClassValue[]) {
 
 const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTypeSelector }) => {
   const data = config.data;
+  const [uploading, setUploading] = useState<string | null>(null);
+  const [editingImage, setEditingImage] = useState<string | null>(null);
+
+  const handleFileSelect = (file: File, type: 'image' | 'pdf' | 'mp3' | 'video') => {
+    setUploading(type);
+    try {
+      if (type === 'image') {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          updateData({ image: { url: ev.target?.result as string, name: file.name, size: file.size, pendingFile: { file } } } as any);
+        };
+        reader.readAsDataURL(file);
+      } else if (type === 'video') {
+        updateData({ video: { url: '', pendingFile: { file } } });
+      } else if (type === 'pdf') {
+        updateData({ pdf: { url: '', name: file.name, size: file.size, pendingFile: { file } } as any });
+      } else if (type === 'mp3') {
+        updateData({ mp3: { url: '', name: file.name, size: file.size, pendingFile: { file } } as any});
+      }
+    } catch (err) {
+      console.error('Failed to handle file:', err);
+    } finally {
+      setUploading(null);
+    }
+  };
 
   // Automatic Country Detection
   useEffect(() => {
@@ -491,12 +520,21 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                     {data.image?.url ? (
                       <div className="relative w-full aspect-video flex items-center justify-center">
                          <img src={data.image.url} alt="Upload" className="max-h-[200px] rounded-xl shadow-lg border border-white" />
-                         <button 
-                          onClick={() => updateData({ image: undefined })}
-                          className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 active:scale-95 transition-all"
-                         >
-                           <X className="w-3 h-3" />
-                         </button>
+                         <div className="absolute top-2 right-2 flex gap-1">
+                           <button 
+                            onClick={() => setEditingImage(data.image?.url || null)}
+                            className="bg-blue-500 text-white p-1.5 rounded-full shadow-lg hover:bg-blue-600 active:scale-95 transition-all"
+                            title="Edit Image"
+                           >
+                             <Edit3 className="w-3 h-3" />
+                           </button>
+                           <button 
+                            onClick={() => updateData({ image: undefined })}
+                            className="bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 active:scale-95 transition-all"
+                           >
+                             <X className="w-3 h-3" />
+                           </button>
+                         </div>
                       </div>
                     ) : (
                       <>
@@ -514,11 +552,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
-                               const reader = new FileReader();
-                               reader.onload = (ev) => {
-                                 updateData({ image: { url: ev.target?.result as string } } as any);
-                               };
-                               reader.readAsDataURL(file);
+                              handleFileSelect(file, 'image');
                             }
                           }}
                         />
@@ -542,19 +576,77 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                        />
                     </div>
                     <p className="text-[11px] text-gray-400 font-bold italic translate-x-2">Supports YouTube, Vimeo, and direct links.</p>
+                    
+                    <div className="relative mt-4">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-gray-100"></span>
+                      </div>
+                      <div className="relative flex justify-center text-xs font-bold uppercase tracking-widest">
+                        <span className="bg-white px-4 text-gray-400">or upload</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl p-8 flex flex-col items-center justify-center space-y-4 transition-all relative overflow-hidden group">
+                      {uploading === 'video' ? (
+                        <div className="flex items-center gap-2 text-blue-600">
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                          <span className="text-sm font-bold">Uploading...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="w-14 h-14 bg-white rounded-2xl shadow-lg flex items-center justify-center text-blue-600">
+                            <Upload className="w-7 h-7" />
+                          </div>
+                          <div className="text-center">
+                             <p className="text-sm font-bold text-gray-900">Upload Video File</p>
+                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">MP4, MOV, WebM up to 50MB</p>
+                          </div>
+                          <input 
+                            type="file" 
+                            accept="video/*"
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleFileSelect(file, 'video');
+                              }
+                            }}
+                          />
+                        </>
+                      )}
+                    </div>
                  </div>
               )}
 
               {(data.type === 'pdf' || data.type === 'mp3') && (
                 <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[32px] p-12 flex flex-col items-center justify-center space-y-4 transition-all relative overflow-hidden group">
-                   <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-blue-600 mb-2">
-                       {data.type === 'pdf' ? <FileText className="w-8 h-8" /> : <Music className="w-8 h-8" />}
-                   </div>
-                   <div className="text-center space-y-1">
-                      <h4 className="text-sm font-black text-gray-900 leading-none">Upload {data.type.toUpperCase()} File</h4>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Click to browse or drag and drop</p>
-                   </div>
-                   <input type="file" accept={data.type === 'pdf' ? '.pdf' : 'audio/*'} className="absolute inset-0 opacity-0 cursor-pointer" />
+                  {uploading === data.type ? (
+                    <div className="flex items-center gap-2 text-blue-600">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                      <span className="text-sm font-bold">Uploading...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-blue-600 mb-2">
+                          {data.type === 'pdf' ? <FileText className="w-8 h-8" /> : <Music className="w-8 h-8" />}
+                      </div>
+                      <div className="text-center space-y-1">
+                         <h4 className="text-sm font-black text-gray-900 leading-none">Upload {data.type.toUpperCase()} File</h4>
+                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Click to browse or drag and drop</p>
+                      </div>
+                      <input 
+                        type="file" 
+                        accept={data.type === 'pdf' ? '.pdf' : 'audio/*'} 
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleFileSelect(file, data.type as 'pdf' | 'mp3');
+                          }
+                        }}
+                      />
+                    </>
+                  )}
                 </div>
               )}
 
@@ -642,6 +734,17 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
           </div>
         </div>
       </div>
+
+      {editingImage && (
+        <ImageEditor
+          imageSrc={editingImage}
+          onSave={(editedImage) => {
+            updateData({ image: { url: editedImage } } as any);
+            setEditingImage(null);
+          }}
+          onCancel={() => setEditingImage(null)}
+        />
+      )}
     </div>
   );
 };

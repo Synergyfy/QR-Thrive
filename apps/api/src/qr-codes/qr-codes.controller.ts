@@ -41,6 +41,11 @@ export class QRCodesController {
     return this.qrCodesService.findOne(id, req.user.userId);
   }
 
+  @Get(':id/scans')
+  getScans(@Req() req: RequestWithUser, @Param('id') id: string) {
+    return this.qrCodesService.getScans(id, req.user.userId);
+  }
+
   @Put(':id')
   update(@Req() req: RequestWithUser, @Param('id') id: string, @Body() updateQRCodeDto: UpdateQRCodeDto) {
     return this.qrCodesService.update(id, req.user.userId, updateQRCodeDto);

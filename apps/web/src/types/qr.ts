@@ -29,18 +29,36 @@ export interface FileData {
   url: string;
   name?: string;
   size?: number;
+  publicId?: string;
+}
+
+export interface PendingFile {
+  file: File;
+  signedUrl?: string;
 }
 
 export interface QRData {
   type: QRType;
   url?: string;
   text?: string;
-  pdf?: FileData;
+  image?: {
+    url: string;
+    name?: string;
+    size?: number;
+    publicId?: string;
+    caption?: string;
+    pendingFile?: PendingFile;
+  };
+  pdf?: FileData & { pendingFile?: PendingFile };
   video?: {
     url: string;
+    name?: string;
+    size?: number;
+    publicId?: string;
     platform?: 'youtube' | 'vimeo' | 'other';
+    pendingFile?: PendingFile;
   };
-  mp3?: FileData;
+  mp3?: FileData & { pendingFile?: PendingFile };
   app?: {
     ios?: string;
     android?: string;
@@ -103,10 +121,6 @@ export interface QRData {
     startDate: string;
     endDate: string;
     description: string;
-  };
-  image?: {
-    url: string;
-    caption?: string;
   };
   form?: {
     title: string;

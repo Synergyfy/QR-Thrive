@@ -90,6 +90,14 @@ export const useQRCode = (id: string) => {
   });
 };
 
+export const useScans = (id: string) => {
+  return useQuery({
+    queryKey: ['scans', id],
+    queryFn: () => qrCodesApi.getScans(id),
+    enabled: !!id,
+  });
+};
+
 export const useCreateQRCode = () => {
   const queryClient = useQueryClient();
   return useMutation({
