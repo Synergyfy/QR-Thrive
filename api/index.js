@@ -12,6 +12,12 @@ module.exports = async (req, res) => {
         return res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
     }
     
+    // Manually strip the api/v1 prefix so NestJS sees a clean route.
+    // Example: /api/v1/auth/login -> /auth/login
+    if (req.url.startsWith('/api/v1')) {
+        req.url = req.url.replace('/api/v1', '') || '/';
+    }
+    
     if (!cachedServer) {
         console.log('[API BOOTSTRAP] - Initializing NestJS App...');
         cachedServer = await bootstrap();

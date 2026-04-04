@@ -12,7 +12,7 @@ export async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useLogger(app.get(PinoLogger));
 
-    app.setGlobalPrefix('api/v1');
+  // app.setGlobalPrefix('api/v1');
 
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({
