@@ -8,15 +8,15 @@
   },
   "rewrites": [
     {
-      "source": "/api/v1/(.*)",
+      "source": "/api/v1/:path*",
       "destination": "/api/index.js"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/v1).*)",
       "destination": "/apps/web/dist/$1"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/v1).*)",
       "destination": "/apps/web/dist/index.html"
     }
   ]
