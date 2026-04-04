@@ -40,6 +40,8 @@
     "cloudinary": "^2.9.0",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.3.1",
+    "express": "5.0.0",
+    "body-parser": "^1.20.3",
     "geoip-lite": "^2.0.1",
     "multer": "^2.1.1",
     "nanoid": "^5.1.7",
