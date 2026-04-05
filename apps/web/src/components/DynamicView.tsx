@@ -21,14 +21,15 @@ import {
   ClipboardList,
   CheckCircle2,
   Eye,
-  Play
+  Play,
+  Loader2
 } from 'lucide-react';
 import type { QRData } from '../types/qr';
 import { useParams } from 'react-router-dom';
 import { useSubmitForm } from '../hooks/useForms';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { downloadFile } from '../utils/upload';
+import { downloadFile, getDownloadUrl } from '../utils/upload';
 
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
@@ -42,11 +43,35 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
   const submitMutation = useSubmitForm(shortId || '');
   const [answers, setAnswers] = React.useState<Record<string, any>>({});
   const [submitted, setSubmitted] = React.useState(false);
-  const [viewingImage, setViewingImage] = React.useState(false);
+  const [viewingImage, setViewingImage] = React.useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = React.useState<Set<number>>(new Set());
   const [viewingPdf, setViewingPdf] = React.useState(false);
   const [viewingVideo, setViewingVideo] = React.useState(false);
   const [playingAudio, setPlayingAudio] = React.useState(false);
   const [isDownloading, setIsDownloading] = React.useState(false);
+
+  const toggleSelect = (idx: number) => {
+    const next = new Set(selectedImages);
+    if (next.has(idx)) next.delete(idx);
+    else next.add(idx);
+    setSelectedImages(next);
+  };
+
+  const handleBulkDownload = async () => {
+    if (isDownloading || selectedImages.size === 0) return;
+    setIsDownloading(true);
+    try {
+      const imgs = data.images || [];
+      for (const idx of Array.from(selectedImages)) {
+        const img = imgs[idx];
+        if (img?.url) {
+          await downloadFile(img.url, img.name || `image-${idx}.png`);
+        }
+      }
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const handleDownload = async (url: string, fileName: string) => {
     if (isDownloading) return;
@@ -194,38 +219,98 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
                  <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
                    <button 
-                     onClick={() => setViewingImage(false)}
+                     onClick={() => setViewingImage(null)}
                      className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white font-bold text-sm"
                    >
                      <ChevronRight className="w-4 h-4 rotate-180" />
                      Back
                    </button>
                    <button 
-                     disabled={isDownloading}
-                     onClick={() => {
-                       if (data.image?.url) {
-                         const name = data.image.name || 'image.png';
-                         handleDownload(data.image.url, name.includes('.') ? name : `${name}.png`);
-                       }
-                     }}
-                     className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white font-bold text-sm disabled:opacity-50"
-                   >
-                     {isDownloading ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                     ) : (
-                        <Download className="w-4 h-4" />
-                     )}
-                     {isDownloading ? 'Preparing...' : 'Download'}
-                   </button>
+                      disabled={isDownloading}
+                      onClick={() => {
+                        if (viewingImage) {
+                          handleDownload(viewingImage, 'image.png');
+                        }
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white font-bold text-sm disabled:opacity-50"
+                    >
+                      {isDownloading ? (
+                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                         <Download className="w-4 h-4" />
+                      )}
+                      {isDownloading ? 'Preparing...' : 'Download'}
+                    </button>
                  </div>
                  <img 
-                   src={data.image?.url} 
+                   src={viewingImage} 
                    alt="Full view" 
                    className="max-w-full max-h-full object-contain"
                  />
                </div>
-             ) : (
-               <>
+             ) : data.images ? (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h1 className="text-2xl font-bold text-gray-900 leading-none">Photo Gallery</h1>
+                      <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none mt-2">Shared via QR Thrive</p>
+                    </div>
+                    {selectedImages.size > 0 && (
+                      <button 
+                        onClick={handleBulkDownload}
+                        disabled={isDownloading}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-full font-bold text-xs shadow-lg shadow-blue-100 flex items-center gap-2 animate-in slide-in-from-right-4 duration-300"
+                      >
+                         {isDownloading ? (
+                           <Loader2 className="w-3 h-3 animate-spin" />
+                         ) : (
+                           <Download className="w-3 h-3" />
+                         )}
+                         Download {selectedImages.size}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {data.images.map((img, idx) => {
+                      const isSelected = selectedImages.has(idx);
+                      return (
+                        <div 
+                           key={idx} 
+                           className={cn(
+                             "relative aspect-square rounded-[24px] overflow-hidden group transition-all duration-300",
+                             isSelected ? "p-2 bg-blue-600 shadow-xl shadow-blue-100 scale-95" : "bg-gray-100"
+                           )}
+                        >
+                           <div className="relative w-full h-full rounded-[18px] overflow-hidden">
+                              <img 
+                                src={img.url} 
+                                alt={`Gallery ${idx}`}
+                                className="w-full h-full object-cover cursor-pointer"
+                                onClick={() => setViewingImage(img.url)}
+                              />
+                              <div className="absolute top-2 right-2 flex flex-col gap-2">
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleSelect(idx);
+                                  }}
+                                  className={cn(
+                                    "w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-lg",
+                                    isSelected ? "bg-white text-blue-600" : "bg-white/20 backdrop-blur-md text-white border border-white/30"
+                                  )}
+                                >
+                                  {isSelected ? <CheckCircle2 className="w-5 h-5" /> : <div className="w-5 h-5 rounded-full border-2 border-white/50" />}
+                                </button>
+                              </div>
+                           </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <>
                  <div className="text-center">
                    <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-100">
                      <Camera className="w-10 h-10" />
@@ -235,7 +320,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                  </div>
 
                  <div className="bg-white p-2 rounded-[40px] border border-gray-100 shadow-2xl shadow-blue-100/50 overflow-hidden group">
-                    <div className="relative aspect-square sm:aspect-video rounded-[32px] overflow-hidden cursor-pointer" onClick={() => setViewingImage(true)}>
+                    <div className="relative aspect-square sm:aspect-video rounded-[32px] overflow-hidden cursor-pointer" onClick={() => setViewingImage(data.image?.url || null)}>
                        <img 
                          src={data.image?.url} 
                          alt="Gallery" 
@@ -262,30 +347,23 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                  )}
                 
                  <div className="grid grid-cols-2 gap-4">
-                   <button 
-                     onClick={() => setViewingImage(true)}
-                     className="py-4 bg-blue-600 text-white rounded-[32px] font-black text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-95 transition-all"
+                   <a 
+                     href={data.image?.url}
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     className="py-4 bg-blue-600 text-white rounded-[32px] font-black text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-95 transition-all text-center"
                    >
                      <Eye className="w-5 h-5" />
                      View
-                   </button>
-                    <button 
-                      disabled={isDownloading}
-                      onClick={() => {
-                        if (data.image?.url) {
-                          const name = data.image.name || 'image.png';
-                          handleDownload(data.image.url, name.includes('.') ? name : `${name}.png`);
-                        }
-                      }}
-                      className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-black text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 hover:bg-white active:scale-95 transition-all disabled:opacity-50"
-                    >
-                      {isDownloading ? (
-                        <div className="w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Download className="w-5 h-5" />
-                      )}
-                      {isDownloading ? 'Preparing...' : 'Download'}
-                    </button>
+                   </a>
+                   <a 
+                     href={data.image?.url ? getDownloadUrl(data.image.url) : '#'}
+                     download={data.image?.name || 'image.png'}
+                     className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-black text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 hover:bg-white active:scale-95 transition-all"
+                   >
+                     <Download className="w-5 h-5" />
+                     Download
+                   </a>
                  </div>
                </>
              )}
@@ -576,30 +654,23 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                      </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <button 
-                      onClick={() => setViewingPdf(true)}
-                      className="py-4 bg-red-600 text-white rounded-[32px] font-black text-sm shadow-xl shadow-red-100 flex items-center justify-center gap-2"
+                    <a 
+                      href={data.pdf?.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="py-4 bg-red-600 text-white rounded-[32px] font-black text-sm shadow-xl shadow-red-100 flex items-center justify-center gap-2 text-center"
                     >
                       <Eye className="w-5 h-5" />
                       View
-                    </button>
-                    <button 
-                      disabled={isDownloading}
-                      onClick={() => {
-                        if (data.pdf?.url) {
-                          const name = data.pdf.name || 'document.pdf';
-                          handleDownload(data.pdf.url, name.includes('.') ? name : `${name}.pdf`);
-                        }
-                      }}
-                      className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-black text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 hover:bg-white active:scale-95 transition-all disabled:opacity-50"
+                    </a>
+                    <a 
+                      href={data.pdf?.url ? getDownloadUrl(data.pdf.url) : '#'}
+                      download={data.pdf?.name || 'document.pdf'}
+                      className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-black text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 hover:bg-white active:scale-95 transition-all"
                     >
-                      {isDownloading ? (
-                        <div className="w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Download className="w-5 h-5" />
-                      )}
-                      {isDownloading ? 'Preparing...' : 'Download'}
-                    </button>
+                      <Download className="w-5 h-5" />
+                      Download
+                    </a>
                   </div>
                 </>
               )}
@@ -671,30 +742,23 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                      <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest leading-none">Shared via QR Thrive</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <button 
-                      onClick={() => setViewingVideo(true)}
-                      className="py-4 bg-blue-600 text-white rounded-[32px] font-black text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2"
+                    <a 
+                      href={data.video?.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="py-4 bg-blue-600 text-white rounded-[32px] font-black text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2 text-center"
                     >
                       <Play className="w-5 h-5" />
                       View
-                    </button>
-                    <button 
-                      disabled={isDownloading}
-                      onClick={() => {
-                        if (data.video?.url) {
-                          const name = data.video.name || 'video.mp4';
-                          handleDownload(data.video.url, name.includes('.') ? name : `${name}.mp4`);
-                        }
-                      }}
-                      className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-black text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 hover:bg-white active:scale-95 transition-all disabled:opacity-50"
+                    </a>
+                    <a 
+                      href={data.video?.url ? getDownloadUrl(data.video.url) : '#'}
+                      download={data.video?.name || 'video.mp4'}
+                      className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-black text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 hover:bg-white active:scale-95 transition-all"
                     >
-                      {isDownloading ? (
-                        <div className="w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Download className="w-5 h-5" />
-                      )}
-                      {isDownloading ? 'Preparing...' : 'Download'}
-                    </button>
+                      <Download className="w-5 h-5" />
+                      Download
+                    </a>
                   </div>
                 </>
               )}
@@ -728,52 +792,23 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
               </div>
               
               <div className="grid grid-cols-2 gap-4">
-                <button 
-                  onClick={() => {
-                    const audio = document.querySelector('audio');
-                    if (audio) {
-                      if (audio.paused) {
-                        audio.play();
-                      } else {
-                        audio.pause();
-                      }
-                    }
-                  }}
-                  className="py-4 bg-blue-600 text-white rounded-[32px] font-black text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2"
+                <a 
+                  href={data.mp3?.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-4 bg-blue-600 text-white rounded-[32px] font-black text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2 text-center"
                 >
-                  {playingAudio ? (
-                    <>
-                      <div className="flex gap-1">
-                        <div className="w-1 h-3 bg-white animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <div className="w-1 h-3 bg-white animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <div className="w-1 h-3 bg-white animate-bounce" style={{ animationDelay: '300ms' }} />
-                      </div>
-                      Pause
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-5 h-5" />
-                      Play
-                    </>
-                  )}
-                </button>
-                <button 
-                  disabled={isDownloading}
-                  onClick={() => {
-                    if (data.mp3?.url) {
-                      const name = data.mp3.name || 'audio.mp3';
-                      handleDownload(data.mp3.url, name.includes('.') ? name : `${name}.mp3`);
-                    }
-                  }}
-                  className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-black text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 disabled:opacity-50"
+                  <Play className="w-5 h-5" />
+                  View
+                </a>
+                <a 
+                  href={data.mp3?.url ? getDownloadUrl(data.mp3.url) : '#'}
+                  download={data.mp3?.name || 'audio.mp3'}
+                  className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-black text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2"
                 >
-                  {isDownloading ? (
-                    <div className="w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Download className="w-5 h-5" />
-                  )}
-                  {isDownloading ? 'Preparing...' : 'Download'}
-                </button>
+                  <Download className="w-5 h-5" />
+                  Download
+                </a>
               </div>
            </div>
          );

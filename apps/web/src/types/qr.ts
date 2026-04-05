@@ -49,6 +49,7 @@ export interface QRData {
     caption?: string;
     pendingFile?: PendingFile;
   };
+  images?: (FileData & { pendingFile?: PendingFile; caption?: string })[];
   pdf?: FileData & { pendingFile?: PendingFile };
   video?: {
     url: string;

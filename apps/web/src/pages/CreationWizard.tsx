@@ -165,11 +165,8 @@ const CreationWizard: React.FC = () => {
 
       const publicIds: string[] = [];
       const collectPublicIds = (data: any) => {
-        if (data?.pendingFile?.signedUrl) {
-          const match = data.pendingFile.signedUrl.match(/folder=([^&]+)/);
-          if (match) {
-            publicIds.push(match[1]);
-          }
+        if (data?.publicId) {
+          publicIds.push(data.publicId);
         }
       };
       collectPublicIds(dataToSave.image);

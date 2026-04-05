@@ -152,3 +152,25 @@ export const uploadApi = {
     return res.data;
   },
 };
+
+export const mediaApi = {
+  getSignature: async () => (await apiClient.get<{ signature: string; timestamp: number; folder: string; cloudName: string; apiKey: string }>('/media/signature')).data,
+  updateQRCodeMedia: async (id: string, secureUrl: string) => (await apiClient.patch(`/media/${id}`, { secureUrl })).data,
+  uploadToCloudinary: async (file: File, credentials: { signature: string; timestamp: number; folder: string; cloudName: string; apiKey: string }) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('signature', credentials.signature);
+    formData.append('timestamp', credentials.timestamp.toString());
+    formData.append('api_key', credentials.apiKey);
+    formData.append('folder', credentials.folder);
+    
+    // Unauthenticated POST directly to Cloudinary
+    // Note: Use /auto/ upload for dynamic handling of videos, PDFs, images, etc.
+    const res = await axios.post(
+      `https://api.cloudinary.com/v1_1/${credentials.cloudName}/auto/upload`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return res.data;
+  }
+};

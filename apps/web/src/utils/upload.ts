@@ -1,32 +1,25 @@
-import { apiClient } from '../services/api';
+import { mediaApi } from '../services/api';
 import type { PendingFile } from '../types/qr';
 
 export const uploadPendingFile = async (
   pendingFile: PendingFile,
-  fileType: string
+  _fileType: string // Unused now as Cloudinary /auto/ handles it, but kept for signature folder if needed
 ): Promise<{ url: string; publicId: string } | null> => {
   if (!pendingFile.file) return null;
 
-  const formData = new FormData();
-  formData.append('file', pendingFile.file);
-  formData.append('fileType', fileType);
-
   try {
-    const response = await apiClient.post<{ cloudinaryUrl: string; publicId: string }>(
-      '/upload/file',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
+    // Step 1: Get signature from backend
+    const credentials = await mediaApi.getSignature();
+    
+    // Step 2 & 3: Upload directly to Cloudinary
+    const result = await mediaApi.uploadToCloudinary(pendingFile.file, credentials);
+    
     return { 
-      url: response.data.cloudinaryUrl, 
-      publicId: response.data.publicId 
+      url: result.secure_url, 
+      publicId: result.public_id 
     };
   } catch (err) {
-    console.error('Upload failed:', err);
+    console.error('Direct upload failed:', err);
     return null;
   }
 };
@@ -35,7 +28,6 @@ export const uploadAllPendingFiles = async (
   data: any
 ): Promise<any> => {
   const updatedData = { ...data };
-
   if (updatedData.image?.pendingFile) {
     const result = await uploadPendingFile(updatedData.image.pendingFile, 'image');
     if (result) {
@@ -49,6 +41,28 @@ export const uploadAllPendingFiles = async (
     } else {
       delete updatedData.image;
     }
+  }
+  
+  if (updatedData.images && Array.isArray(updatedData.images)) {
+    const uploadedImages = await Promise.all(
+      updatedData.images.map(async (img: any) => {
+        if (img.pendingFile) {
+          const result = await uploadPendingFile(img.pendingFile, 'image');
+          if (result) {
+            return {
+              url: result.url,
+              publicId: result.publicId,
+              name: img.name,
+              size: img.size,
+              caption: img.caption
+            };
+          }
+          return null;
+        }
+        return img; // Already uploaded
+      })
+    );
+    updatedData.images = uploadedImages.filter(Boolean);
   }
 
   if (updatedData.video?.pendingFile) {

@@ -21,7 +21,7 @@ import {
   ChevronDown,
   Loader2,
   Upload,
-  Edit3,
+  Plus,
   ClipboardList
 } from 'lucide-react';
 import type { QRConfiguration, QRData, QRType } from '../../types/qr';
@@ -47,26 +47,49 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
   const [uploading, setUploading] = useState<string | null>(null);
   const [editingImage, setEditingImage] = useState<string | null>(null);
 
-  const handleFileSelect = (file: File, type: 'image' | 'pdf' | 'mp3' | 'video') => {
+  const handleFileSelect = (file: File, type: 'pdf' | 'mp3' | 'video') => {
     setUploading(type);
     try {
-      if (type === 'image') {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          updateData({ image: { url: ev.target?.result as string, name: file.name, size: file.size, pendingFile: { file } } } as any);
-        };
-        reader.readAsDataURL(file);
-      } else if (type === 'video') {
-        updateData({ video: { url: '', pendingFile: { file } } });
+      const previewUrl = URL.createObjectURL(file);
+      if (type === 'video') {
+        updateData({ video: { url: previewUrl, pendingFile: { file } } });
       } else if (type === 'pdf') {
-        updateData({ pdf: { url: '', name: file.name, size: file.size, pendingFile: { file } } as any });
+        updateData({ pdf: { url: previewUrl, name: file.name, size: file.size, pendingFile: { file } } as any });
       } else if (type === 'mp3') {
-        updateData({ mp3: { url: '', name: file.name, size: file.size, pendingFile: { file } } as any});
+        updateData({ mp3: { url: previewUrl, name: file.name, size: file.size, pendingFile: { file } } as any});
       }
     } catch (err) {
       console.error('Failed to handle file:', err);
     } finally {
       setUploading(null);
+    }
+  };
+
+  const handleMultipleImagesSelect = async (files: File[]) => {
+    setUploading('image');
+    try {
+       const newImagesPromises = files.map(file => {
+          return new Promise<any>((resolve) => {
+             const reader = new FileReader();
+             reader.onload = (ev) => {
+                resolve({
+                   url: ev.target?.result as string,
+                   name: file.name,
+                   size: file.size,
+                   pendingFile: { file }
+                });
+             };
+             reader.readAsDataURL(file);
+          });
+       });
+
+       const newImages = await Promise.all(newImagesPromises);
+       const currentImages = data.images || [];
+       updateData({ images: [...currentImages, ...newImages] } as any);
+    } catch (err) {
+       console.error('Failed to handle multiple images:', err);
+    } finally {
+       setUploading(null);
     }
   };
 
@@ -515,50 +538,55 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
               )}
 
               {data.type === 'image' && (
-                <div className="space-y-8 animate-in zoom-in-95 duration-300">
-                  <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl p-10 flex flex-col items-center justify-center space-y-4 hover:border-blue-400/50 transition-all relative overflow-hidden group text-center">
-                    {data.image?.url ? (
-                      <div className="relative w-full aspect-video flex items-center justify-center">
-                         <img src={data.image.url} alt="Upload" className="max-h-[200px] rounded-xl shadow-lg border border-white" />
-                         <div className="absolute top-2 right-2 flex gap-1">
-                           <button 
-                            onClick={() => setEditingImage(data.image?.url || null)}
-                            className="bg-blue-500 text-white p-1.5 rounded-full shadow-lg hover:bg-blue-600 active:scale-95 transition-all"
-                            title="Edit Image"
-                           >
-                             <Edit3 className="w-3 h-3" />
-                           </button>
-                           <button 
-                            onClick={() => updateData({ image: undefined })}
-                            className="bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 active:scale-95 transition-all"
-                           >
-                             <X className="w-3 h-3" />
-                           </button>
-                         </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="w-16 h-16 bg-white rounded-full shadow-xl flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
-                          <Camera className="w-8 h-8" />
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm font-bold text-gray-900 leading-none mb-1">Upload Gallery Image</p>
-                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">JPEG, PNG up to 2MB</p>
-                        </div>
-                        <input 
-                          type="file" 
-                          accept="image/*"
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              handleFileSelect(file, 'image');
-                            }
-                          }}
+                <div className="space-y-6 animate-in zoom-in-95 duration-300">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {(data.images || []).map((img, idx) => (
+                      <div key={idx} className="relative aspect-square bg-gray-100 rounded-2xl overflow-hidden group border-2 border-white shadow-sm hover:shadow-md transition-all">
+                        <img 
+                          src={img.url} 
+                          alt={`Gallery ${idx}`} 
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
                         />
-                      </>
-                    )}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                           <button 
+                             onClick={() => {
+                               const newImages = [...(data.images || [])];
+                               newImages.splice(idx, 1);
+                               updateData({ images: newImages.length > 0 ? newImages : undefined } as any);
+                             }}
+                             className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                           >
+                             <X className="w-4 h-4" />
+                           </button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <label className="relative aspect-square border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center space-y-2 hover:border-blue-400 hover:bg-blue-50/30 cursor-pointer transition-all group">
+                       <div className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                          <Plus className="w-5 h-5" />
+                       </div>
+                       <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Add Image</span>
+                       <input 
+                         type="file" 
+                         accept="image/*"
+                         multiple
+                         className="absolute inset-0 opacity-0 cursor-pointer"
+                         onChange={(e) => {
+                           const files = Array.from(e.target.files || []);
+                           if (files.length > 0) {
+                             handleMultipleImagesSelect(files);
+                           }
+                         }}
+                       />
+                    </label>
                   </div>
+                  
+                  {(!data.images || data.images.length === 0) && (
+                    <div className="text-center py-4">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none">Upload at least one image to your gallery</p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -591,6 +619,26 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                         <div className="flex items-center gap-2 text-blue-600">
                           <Loader2 className="w-6 h-6 animate-spin" />
                           <span className="text-sm font-bold">Uploading...</span>
+                        </div>
+                      ) : data.video?.pendingFile ? (
+                        <div className="w-full flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-blue-100">
+                           <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                                 <Video className="w-5 h-5" />
+                              </div>
+                              <div className="text-left">
+                                 <p className="text-sm font-bold text-gray-900 truncate max-w-[200px]">
+                                    {data.video.pendingFile.file.name}
+                                 </p>
+                                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ready to upload</p>
+                              </div>
+                           </div>
+                           <button 
+                             onClick={() => updateData({ video: undefined })}
+                             className="p-2 hover:bg-red-50 text-red-500 rounded-xl transition-all"
+                           >
+                             <X className="w-5 h-5" />
+                           </button>
                         </div>
                       ) : (
                         <>
@@ -625,6 +673,26 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                       <Loader2 className="w-6 h-6 animate-spin" />
                       <span className="text-sm font-bold">Uploading...</span>
                     </div>
+                  ) : (data.type === 'pdf' ? data.pdf?.pendingFile : data.mp3?.pendingFile) ? (
+                     <div className="w-full flex items-center justify-between p-6 bg-white rounded-2xl shadow-sm border border-blue-100">
+                        <div className="flex items-center gap-4">
+                           <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                              {data.type === 'pdf' ? <FileText className="w-6 h-6" /> : <Music className="w-6 h-6" />}
+                           </div>
+                           <div className="text-left">
+                              <p className="text-base font-bold text-gray-900 truncate max-w-[250px]">
+                                 {data.type === 'pdf' ? data.pdf?.pendingFile?.file.name : data.mp3?.pendingFile?.file.name}
+                              </p>
+                              <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">Ready to upload</p>
+                           </div>
+                        </div>
+                        <button 
+                          onClick={() => updateData({ [data.type]: undefined })}
+                          className="p-3 hover:bg-red-50 text-red-500 rounded-2xl transition-all"
+                        >
+                          <X className="w-6 h-6" />
+                        </button>
+                     </div>
                   ) : (
                     <>
                       <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-blue-600 mb-2">

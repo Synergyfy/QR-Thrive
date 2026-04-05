@@ -10,6 +10,7 @@ import { QRCodesModule } from './qr-codes/qr-codes.module';
 import { FoldersModule } from './folders/folders.module';
 import { FormsModule } from './forms/forms.module';
 import { UploadModule } from './upload/upload.module';
+import { MediaModule } from './media/media.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -30,6 +31,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     FoldersModule,
     FormsModule,
     UploadModule,
+    MediaModule,
   ],
   controllers: [AppController],
   providers: [
