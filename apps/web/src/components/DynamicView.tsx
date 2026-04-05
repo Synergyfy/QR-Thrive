@@ -49,6 +49,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
   const [viewingVideo, setViewingVideo] = React.useState(false);
   const [playingAudio, setPlayingAudio] = React.useState(false);
   const [isDownloading, setIsDownloading] = React.useState(false);
+  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({});
 
   const toggleSelect = (idx: number) => {
     const next = new Set(selectedImages);
@@ -99,8 +100,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^\+?[\d\s-]{7,15}$/;
 
-    // Detailed validation
-    const errors: string[] = [];
+    const fieldErrorsMap: Record<string, string> = {};
     
     data.form?.fields.forEach(f => {
       const value = answers[f.id];
@@ -108,41 +108,40 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
 
       // Required check
       if (f.required && isMissing) {
-        errors.push(`"${f.label}" is required`);
+        fieldErrorsMap[f.id] = `${f.label} is required`;
         return;
       }
 
       // Type-specific validation if value is present
       if (!isMissing) {
         if (f.type === 'email' && !emailRegex.test(String(value))) {
-          errors.push(`"${f.label}" must be a valid email`);
+          fieldErrorsMap[f.id] = 'Please enter a valid email address';
         }
         if (f.type === 'phone' && !phoneRegex.test(String(value))) {
-          errors.push(`"${f.label}" must be a valid phone number`);
+          fieldErrorsMap[f.id] = 'Please enter a valid phone number';
         }
         if (f.type === 'number' || f.type === 'range') {
           const num = Number(value);
           if (isNaN(num)) {
-            errors.push(`"${f.label}" must be a number`);
+            fieldErrorsMap[f.id] = 'Must be a number';
           } else if (f.validation) {
             const v = f.validation as any;
             if (v.min !== undefined && num < v.min) {
-              errors.push(`"${f.label}" must be at least ${v.min}`);
+              fieldErrorsMap[f.id] = `Must be at least ${v.min}`;
             }
             if (v.max !== undefined && num > v.max) {
-              errors.push(`"${f.label}" must be at most ${v.max}`);
+              fieldErrorsMap[f.id] = `Must be at most ${v.max}`;
             }
           }
         }
       }
     });
 
-    if (errors.length > 0) {
-      import('react-hot-toast').then(({ toast }) => {
-        toast.error(errors[0]); // Show the first error for cleaner UX
-      });
+    if (Object.keys(fieldErrorsMap).length > 0) {
+      setFieldErrors(fieldErrorsMap);
       return;
     }
+    setFieldErrors({});
 
     try {
       await submitMutation.mutateAsync(answers);
@@ -888,8 +887,18 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                           required={field.required}
                           placeholder={field.placeholder}
                           value={answers[field.id] || ''}
-                          onChange={(e) => setAnswers({ ...answers, [field.id]: e.target.value })}
-                          className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-600 focus:bg-white rounded-2xl outline-none text-gray-900 font-bold transition-all shadow-inner"
+                          onChange={(e) => {
+                            setAnswers({ ...answers, [field.id]: e.target.value });
+                            if (fieldErrors[field.id]) {
+                              const newErrors = { ...fieldErrors };
+                              delete newErrors[field.id];
+                              setFieldErrors(newErrors);
+                            }
+                          }}
+                          className={cn(
+                            "w-full px-6 py-4 bg-gray-50 border-2 focus:border-blue-600 focus:bg-white rounded-2xl outline-none text-gray-900 font-bold transition-all shadow-inner",
+                            fieldErrors[field.id] ? "border-red-500 bg-red-50/10" : "border-transparent"
+                          )}
                         />
                      ) : field.type === 'range' ? (
                         <div className="space-y-4 pt-2">
@@ -899,7 +908,14 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                              max={field.validation?.max || 10}
                              step={field.validation?.step || 1}
                              value={answers[field.id] || field.validation?.min || 0}
-                             onChange={(e) => setAnswers({ ...answers, [field.id]: parseInt(e.target.value) })}
+                             onChange={(e) => {
+                               setAnswers({ ...answers, [field.id]: parseInt(e.target.value) });
+                               if (fieldErrors[field.id]) {
+                                 const newErrors = { ...fieldErrors };
+                                 delete newErrors[field.id];
+                                 setFieldErrors(newErrors);
+                               }
+                             }}
                              className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
                            />
                            <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase">
@@ -928,6 +944,11 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                                                ? [...current, opt.value]
                                                : current.filter((v: string) => v !== opt.value);
                                              setAnswers({ ...answers, [field.id]: next });
+                                             if (fieldErrors[field.id]) {
+                                               const newErrors = { ...fieldErrors };
+                                               delete newErrors[field.id];
+                                               setFieldErrors(newErrors);
+                                             }
                                           }}
                                           className="w-5 h-5 rounded-lg border-2 border-gray-300 text-blue-600 focus:ring-blue-600"
                                         />
@@ -943,7 +964,14 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                                 <input 
                                   type="checkbox"
                                   checked={!!answers[field.id]}
-                                  onChange={(e) => setAnswers({ ...answers, [field.id]: e.target.checked })}
+                                  onChange={(e) => {
+                                    setAnswers({ ...answers, [field.id]: e.target.checked });
+                                    if (fieldErrors[field.id]) {
+                                      const newErrors = { ...fieldErrors };
+                                      delete newErrors[field.id];
+                                      setFieldErrors(newErrors);
+                                    }
+                                  }}
                                   className="w-5 h-5 rounded-lg border-2 border-gray-300 text-blue-600 focus:ring-blue-600"
                                 />
                                 <span className="text-sm font-bold text-gray-700">{field.placeholder || 'Check this option'}</span>
@@ -955,8 +983,18 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                           <select 
                             required={field.required}
                             value={answers[field.id] || ''}
-                            onChange={(e) => setAnswers({ ...answers, [field.id]: e.target.value })}
-                            className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-600 focus:bg-white rounded-2xl outline-none text-gray-900 font-bold transition-all shadow-inner appearance-none"
+                            onChange={(e) => {
+                              setAnswers({ ...answers, [field.id]: e.target.value });
+                              if (fieldErrors[field.id]) {
+                                const newErrors = { ...fieldErrors };
+                                delete newErrors[field.id];
+                                setFieldErrors(newErrors);
+                              }
+                            }}
+                            className={cn(
+                              "w-full px-6 py-4 bg-gray-50 border-2 focus:border-blue-600 focus:bg-white rounded-2xl outline-none text-gray-900 font-bold transition-all shadow-inner appearance-none",
+                              fieldErrors[field.id] ? "border-red-500 bg-red-50/10" : "border-transparent"
+                            )}
                           >
                              <option value="" disabled>{field.placeholder || 'Select an option...'}</option>
                              {field.options?.map((opt) => (
@@ -976,7 +1014,14 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                                   type="radio"
                                   name={field.id}
                                   checked={answers[field.id] === opt.value}
-                                  onChange={() => setAnswers({ ...answers, [field.id]: opt.value })}
+                                  onChange={() => {
+                                    setAnswers({ ...answers, [field.id]: opt.value });
+                                    if (fieldErrors[field.id]) {
+                                      const newErrors = { ...fieldErrors };
+                                      delete newErrors[field.id];
+                                      setFieldErrors(newErrors);
+                                    }
+                                  }}
                                   className="w-5 h-5 border-2 border-gray-300 text-blue-600 focus:ring-blue-600"
                                 />
                                 <span className={cn(
@@ -988,6 +1033,11 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                         </div>
                      ) : null}
                      {field.helpText && <p className="text-[10px] font-bold text-gray-400 pl-1">{field.helpText}</p>}
+                     {fieldErrors[field.id] && (
+                        <p className="text-[11px] font-bold text-red-500 pl-1 animate-in slide-in-from-top-1 duration-200">
+                          {fieldErrors[field.id]}
+                        </p>
+                      )}
                   </div>
                 ))}
 
