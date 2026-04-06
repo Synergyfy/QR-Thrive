@@ -296,9 +296,9 @@ const CreationWizard: React.FC = () => {
       </nav>
 
       {/* Content area */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
          {/* Left Side: Configuration */}
-         <div className="flex-1 overflow-y-auto p-12 custom-scrollbar flex flex-col items-center relative z-20">
+         <div className="flex-1 overflow-y-auto p-12 custom-scrollbar flex flex-col items-center relative z-20 pr-[480px]">
             <div className="w-full max-w-4xl space-y-10">
                {step === 'type' && (
                  <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -370,7 +370,7 @@ const CreationWizard: React.FC = () => {
                     </div>
                     <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden flex flex-col">
                        <div className="flex border-b border-slate-100 p-2 bg-slate-50/50">
-                          {(['shape', 'frame', 'logo', 'colors'] as const).map(tab => (
+                          {(['shape', 'frame', 'logo'] as const).map(tab => (
                             <button
                               key={tab}
                               onClick={() => setDesignTab(tab)}
@@ -381,7 +381,6 @@ const CreationWizard: React.FC = () => {
                                {tab === 'shape' && <Palette className="w-4 h-4" />}
                                {tab === 'frame' && <Frame className="w-4 h-4" />}
                                {tab === 'logo' && <LogoIcon className="w-4 h-4" />}
-                               {tab === 'colors' && <Palette className="w-4 h-4" />}
                                {tab.charAt(0).toUpperCase() + tab.slice(1)}
                             </button>
                           ))}
@@ -390,7 +389,6 @@ const CreationWizard: React.FC = () => {
                           {designTab === 'shape' && <DesignPanel design={config.design} updateDesign={updateDesign} />}
                           {designTab === 'frame' && <FramePanel config={config} updateConfig={updateConfig} />}
                           {designTab === 'logo' && <LogoPanel config={config} updateConfig={updateConfig} />}
-                          {designTab === 'colors' && <ColorsPanel design={config.design} updateDesign={updateDesign} />}
                        </div>
                     </div>
                  </div>
@@ -398,9 +396,9 @@ const CreationWizard: React.FC = () => {
             </div>
          </div>
 
-         {/* Right Side: Preview */}
-         <div className="w-[480px] bg-white p-12 flex flex-col items-center justify-start border-l border-slate-100 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] relative z-10">
-            <div className="sticky top-12 w-full flex flex-col items-center">
+         {/* Right Side: Preview (Fixed) */}
+         <div className="fixed top-20 right-0 bottom-0 w-[480px] bg-white border-l border-slate-100 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] z-30 p-12 flex flex-col items-center justify-start overflow-y-auto custom-scrollbar">
+            <div className="w-full flex flex-col items-center">
                <button className="w-full py-4 bg-slate-900 text-white rounded-[20px] font-black tracking-widest text-[10px] uppercase flex items-center justify-center gap-3 shadow-2xl shadow-slate-200 mb-12 hover:scale-[1.02] transition-all active:scale-95 group">
                   <Smartphone className="w-4 h-4 text-blue-400" />
                   {step === 'design' ? 'QR Code Preview' : 'Landing Page Preview'}
@@ -426,7 +424,7 @@ const CreationWizard: React.FC = () => {
                     </div>
                   </div>
                ) : (
-                  <div className="relative w-[300px] aspect-[9/19] bg-white rounded-[60px] border-[12px] border-slate-900 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] overflow-hidden flex flex-col animate-in slide-in-from-right-10 duration-700">
+                  <div className="relative w-[300px] aspect-[9/19] bg-white rounded-[60px] border-[12px] border-slate-900 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] overflow-hidden flex flex-col animate-in slide-in-from-right-10 duration-700 shrink-0">
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-slate-900 rounded-b-3xl z-20" />
                     <div className="h-10 px-8 flex items-center justify-between text-[11px] font-black text-slate-900 pt-3 shrink-0">
                         <span>9:41</span>

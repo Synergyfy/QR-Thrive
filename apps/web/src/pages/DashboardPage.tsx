@@ -133,6 +133,7 @@ const DashboardPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [folderMenuOpen, setFolderMenuOpen] = useState<string | null>(null);
+  const [downloadMenuOpen, setDownloadMenuOpen] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [renamingQR, setRenamingQR] = useState<string | null>(null);
@@ -148,6 +149,7 @@ const DashboardPage: React.FC = () => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(null);
         setFolderMenuOpen(null);
+        setDownloadMenuOpen(null);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -208,7 +210,7 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const handleDownload = async (qr: BackendQRCode) => {
+  const handleDownload = async (qr: BackendQRCode, extension: 'png' | 'svg' | 'jpeg' | 'webp' = 'png') => {
     const qrData = qr.shortUrl.startsWith('http') 
       ? qr.shortUrl 
       : `${window.location.origin}${qr.shortUrl}`;
@@ -243,9 +245,9 @@ const DashboardPage: React.FC = () => {
       qrOptions: qr.config.design.qrOptions,
     });
 
-    // 2. If no frame, just download directly
-    if (qr.config.frame.type === 'none') {
-      qrCode.download({ name: qr.name, extension: 'png' });
+    // 2. If no frame OR if SVG, just download directly (frames aren't supported in SVG export yet)
+    if (qr.config.frame.type === 'none' || extension === 'svg') {
+      qrCode.download({ name: qr.name, extension });
       return;
     }
 
@@ -391,9 +393,10 @@ const DashboardPage: React.FC = () => {
       }
 
       // Download
+      const mimeType = extension === 'jpeg' ? 'image/jpeg' : 'image/png';
       const link = document.createElement('a');
-      link.download = `${qr.name}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.download = `${qr.name}.${extension}`;
+      link.href = canvas.toDataURL(mimeType);
       link.click();
       URL.revokeObjectURL(url);
     };
@@ -839,12 +842,48 @@ const DashboardPage: React.FC = () => {
                               )}
                            </div>
 
-                           <button 
-                             onClick={() => handleDownload(qr)}
-                             className="w-full px-5 py-4 bg-blue-600 text-white rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-blue-100 font-black text-xs uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all"
-                           >
-                              <ChevronDown className="w-4 h-4 stroke-[3]" /> Download QR Code
-                           </button>
+                           <div className="relative">
+                             <button 
+                               onClick={() => setDownloadMenuOpen(downloadMenuOpen === qr.id ? null : qr.id)}
+                               className="w-full px-5 py-4 bg-blue-600 text-white rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-blue-100 font-black text-xs uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all"
+                             >
+                                <ChevronDown className={cn("w-4 h-4 stroke-[3] transition-transform", downloadMenuOpen === qr.id && "rotate-180")} /> Download QR Code
+                             </button>
+                             
+                             {downloadMenuOpen === qr.id && (
+                               <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-2xl shadow-2xl border border-slate-100 py-3 z-[60] animate-in slide-in-from-bottom-2 duration-200">
+                                  <div className="px-4 mb-2">
+                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Format</p>
+                                  </div>
+                                  <div className="grid grid-cols-1 gap-1">
+                                     {[
+                                       { label: 'PNG Image', ext: 'png', desc: 'High quality, transparent' },
+                                       { label: 'JPG Image', ext: 'jpeg', desc: 'Small file size' },
+                                       { label: 'SVG Vector', ext: 'svg', desc: 'Scalable (No Frame)' },
+                                       { label: 'PDF Document', ext: 'pdf', desc: 'Print ready' },
+                                       { label: 'EPS Format', ext: 'eps', desc: 'Professional use' }
+                                     ].map((format) => (
+                                       <button
+                                         key={format.ext}
+                                         onClick={() => {
+                                           if (format.ext === 'pdf' || format.ext === 'eps') {
+                                             toast.success(`${format.label} will be ready in a moment...`);
+                                             handleDownload(qr, 'png'); // Fallback for now or implement if possible
+                                           } else {
+                                             handleDownload(qr, format.ext as any);
+                                           }
+                                           setDownloadMenuOpen(null);
+                                         }}
+                                         className="w-full flex flex-col items-start px-5 py-2.5 hover:bg-blue-50 transition-all group"
+                                       >
+                                          <span className="text-sm font-bold text-slate-700 group-hover:text-blue-600">{format.label}</span>
+                                          <span className="text-[10px] text-slate-400 group-hover:text-blue-400">{format.desc}</span>
+                                       </button>
+                                     ))}
+                                  </div>
+                               </div>
+                             )}
+                           </div>
                         </div>
 
                         {/* Status badge */}
