@@ -1,7 +1,7 @@
 import React from 'react';
 import type { QRDesignOptions } from '../../types/qr';
 import type { DotType, CornerSquareType, CornerDotType } from 'qr-code-styling';
-import { Layout, Square, Circle, Palette, MousePointer2 } from 'lucide-react';
+import { Layout, Square, Circle, Palette } from 'lucide-react';
 
 interface DesignPanelProps {
   design: QRDesignOptions;

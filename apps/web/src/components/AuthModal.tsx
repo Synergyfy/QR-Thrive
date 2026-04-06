@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Mail, Lock, Globe, Zap, ArrowRight, Loader2, User, AlertCircle } from 'lucide-react';
+import { X, Mail, Lock, Zap, ArrowRight, Loader2, User, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';

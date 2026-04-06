@@ -11,7 +11,6 @@ import AuthModal from '../components/AuthModal';
 import { isQRDataValid } from '../utils/qrValidation';
 import {
   Type,
-  LogOut,
   Zap,
   Globe,
   Mail,
@@ -21,19 +20,13 @@ import {
   Clock,
   CheckCircle2,
   ChevronRight,
-  Menu,
-  X,
-  MessageSquare,
-  Briefcase,
-  Camera,
   BarChart3,
-  LayoutGrid,
   Image as ImageIcon,
   type LucideIcon
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { useNavigate, Link } from 'react-router-dom';
+
 import PublicNav from '../components/PublicNav';
 import PublicFooter from '../components/PublicFooter';
 import { useCurrentUser } from '../hooks/useApi';
@@ -88,7 +81,6 @@ const INITIAL_CONFIG: QRConfiguration = {
 };
 
 function GeneratorPage() {
-  const navigate = useNavigate();
   const { data: userData } = useCurrentUser();
   const user = userData?.user;
   
@@ -455,14 +447,6 @@ function QRTypeCard({ icon: Icon, title, desc }: any) {
       <h4 className="font-bold text-gray-900 text-xl mb-4 leading-tight">{title}</h4>
       <p className="text-sm text-gray-400 font-semibold leading-relaxed">{desc}</p>
     </div>
-  );
-}
-
-function SocialIcon({ icon: Icon }: { icon: LucideIcon }) {
-  return (
-    <button className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-blue-100 hover:bg-white/20 hover:text-white hover:-translate-y-1 transition-all border border-white/5">
-      <Icon className="w-5 h-5" />
-    </button>
   );
 }
 

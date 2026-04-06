@@ -28,7 +28,6 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import type { QRConfiguration } from '../types/qr';
 import DesignPanel from '../components/panels/DesignPanel';
-import ColorsPanel from '../components/panels/ColorsPanel';
 import LogoPanel from '../components/panels/LogoPanel';
 import FramePanel from '../components/panels/FramePanel';
 import ContentPanel from '../components/panels/ContentPanel';

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Check, ArrowRight, Plus, Minus, CreditCard, Zap, Shield, HelpCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Check, ArrowRight, Plus, Minus, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import PublicNav from '../components/PublicNav';
