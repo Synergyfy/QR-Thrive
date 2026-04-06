@@ -105,38 +105,63 @@ const FramePanel: React.FC<FramePanelProps> = ({ config, updateConfig }) => {
         </div>
 
         {config.frame.type !== 'none' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-4 duration-500">
-            <div className="space-y-3">
-               <div className="flex items-center gap-2">
-                  <TypeIcon className="w-3.5 h-3.5 text-blue-600" />
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Call to Action</p>
-               </div>
-               <input
-                type="text"
-                value={config.frame.text || ''}
-                onChange={(e) => updateFrame({ text: e.target.value })}
-                placeholder="SCAN ME"
-                className="w-full px-5 py-4 border-2 border-gray-100 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-semibold bg-white transition-all shadow-sm"
-              />
+          <div className="space-y-6 animate-in slide-in-from-top-4 duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                 <div className="flex items-center gap-2">
+                    <TypeIcon className="w-3.5 h-3.5 text-blue-600" />
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Call to Action</p>
+                 </div>
+                 <input
+                  type="text"
+                  value={config.frame.text || ''}
+                  onChange={(e) => updateFrame({ text: e.target.value })}
+                  placeholder="SCAN ME"
+                  className="w-full px-5 py-4 border-2 border-gray-100 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-semibold bg-white transition-all shadow-sm"
+                />
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                    <Palette className="w-3.5 h-3.5 text-blue-600" />
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Frame Color</p>
+                 </div>
+                <div className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm transition-all focus-within:border-blue-600">
+                  <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-gray-100 shrink-0">
+                    <input
+                      type="color"
+                      value={config.frame.color || '#000000'}
+                      onChange={(e) => updateFrame({ color: e.target.value })}
+                      className="absolute inset-0 w-full h-full cursor-pointer scale-150"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    value={(config.frame.color || '#000000').toUpperCase()}
+                    onChange={(e) => updateFrame({ color: e.target.value })}
+                    className="w-full text-sm font-semibold text-gray-900 outline-none bg-transparent uppercase"
+                  />
+                </div>
+              </div>
             </div>
+
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                   <Palette className="w-3.5 h-3.5 text-blue-600" />
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Frame Color</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Text Color</p>
                </div>
-              <div className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm transition-all focus-within:border-blue-600">
+              <div className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm transition-all focus-within:border-blue-600 max-w-[240px]">
                 <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-gray-100 shrink-0">
                   <input
                     type="color"
-                    value={config.frame.color || '#000000'}
-                    onChange={(e) => updateFrame({ color: e.target.value })}
+                    value={config.frame.textColor || '#ffffff'}
+                    onChange={(e) => updateFrame({ textColor: e.target.value })}
                     className="absolute inset-0 w-full h-full cursor-pointer scale-150"
                   />
                 </div>
                 <input
                   type="text"
-                  value={(config.frame.color || '#000000').toUpperCase()}
-                  onChange={(e) => updateFrame({ color: e.target.value })}
+                  value={(config.frame.textColor || '#ffffff').toUpperCase()}
+                  onChange={(e) => updateFrame({ textColor: e.target.value })}
                   className="w-full text-sm font-semibold text-gray-900 outline-none bg-transparent uppercase"
                 />
               </div>

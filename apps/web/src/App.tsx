@@ -6,6 +6,7 @@ import DashboardPage from './pages/DashboardPage';
 import CreationWizard from './pages/CreationWizard';
 import SubmissionsPage from './pages/SubmissionsPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import PricingPage from './pages/PricingPage';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
       <Routes>
         {/* Public Landing & Generator */}
         <Route path="/" element={<GeneratorPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
 
         {/* Protected Dashboard Area */}
         <Route element={<ProtectedRoute />}>

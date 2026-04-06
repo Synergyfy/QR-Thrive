@@ -11,7 +11,6 @@ import AuthModal from '../components/AuthModal';
 import { isQRDataValid } from '../utils/qrValidation';
 import {
   Type,
-  LogOut,
   Zap,
   Globe,
   Mail,
@@ -21,20 +20,16 @@ import {
   Clock,
   CheckCircle2,
   ChevronRight,
-  Menu,
-  X,
-  MessageSquare,
-  Briefcase,
-  Camera,
   BarChart3,
-  LayoutGrid,
   Image as ImageIcon,
   type LucideIcon
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { useNavigate } from 'react-router-dom';
-import { useCurrentUser, useLogout } from '../hooks/useApi';
+
+import PublicNav from '../components/PublicNav';
+import PublicFooter from '../components/PublicFooter';
+import { useCurrentUser } from '../hooks/useApi';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -86,14 +81,12 @@ const INITIAL_CONFIG: QRConfiguration = {
 };
 
 function GeneratorPage() {
-  const navigate = useNavigate();
   const { data: userData } = useCurrentUser();
-  const logoutMutation = useLogout();
   const user = userData?.user;
   
   const [config, setConfig] = useState<QRConfiguration>(INITIAL_CONFIG);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const [designTab, setDesignTab] = useState<'shape' | 'frame' | 'logo'>('shape');
 
   const updateConfig = (updates: Partial<QRConfiguration>) => {
@@ -138,65 +131,11 @@ function GeneratorPage() {
     }
   }, [config.data, config.isDynamic, config.shortId]);
 
-  const handleLogout = async () => {
-    try {
-      await logoutMutation.mutateAsync();
-    } catch (e) {
-      console.error('Logout failed', e);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2 group cursor-pointer">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center transform group-hover:rotate-12 transition-transform">
-                <Zap className="text-white w-5 h-5 fill-yellow-300" />
-              </div>
-              <span className="text-xl font-bold tracking-tight text-gray-900">QR Thrive</span>
-            </div>
-            
-            <div className="hidden md:flex items-center gap-8">
-              {user && (
-                <button 
-                  onClick={() => navigate('/dashboard')}
-                  className="flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors"
-                >
-                  <LayoutGrid className="w-4 h-4" /> Go to Dashboard
-                </button>
-              )}
-              <a href="#" className="text-sm font-semibold text-gray-600 hover:text-blue-600 transition-colors">Pricing</a>
-              <a href="#" className="text-sm font-semibold text-gray-600 hover:text-blue-600 transition-colors">Solutions</a>
-              <a href="#" className="text-sm font-semibold text-gray-600 hover:text-blue-600 transition-colors">API</a>
-            </div>
-
-            <div className="hidden md:flex items-center gap-3">
-              {user ? (
-                <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
-                  <div className="text-right">
-                    <p className="text-xs font-bold text-gray-900">{user.firstName} {user.lastName}</p>
-                  </div>
-                  <button onClick={handleLogout} className="text-gray-400 hover:text-red-500 transition-colors">
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <button onClick={() => setIsAuthModalOpen(true)} className="px-5 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 rounded-full transition-all">Log In</button>
-                  <button onClick={() => setIsAuthModalOpen(true)} className="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-all shadow-md active:scale-95">Sign Up Free</button>
-                </>
-              )}
-            </div>
-
-            <button className="md:hidden p-2 text-gray-600" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-              {isMenuOpen ? <X /> : <Menu />}
-            </button>
-          </div>
-        </div>
-      </nav>
+      <PublicNav />
 
       {/* Hero with Generator Card */}
       <section className="pt-32 pb-20 px-4">
@@ -441,65 +380,7 @@ function GeneratorPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-blue-600 py-24 px-4 text-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-16 mb-24">
-            <div className="col-span-2">
-              <div className="flex items-center gap-2 mb-8">
-                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                  <Zap className="text-white w-6 h-6 fill-yellow-300" />
-                </div>
-                <span className="text-2xl font-bold tracking-tighter">QR Thrive</span>
-              </div>
-              <p className="text-blue-100 max-w-xs mb-10 font-medium leading-relaxed">Modernize your business interactions with the world's most intuitive QR management engine.</p>
-              <div className="flex gap-5">
-                <SocialIcon icon={Globe} />
-                <SocialIcon icon={MessageSquare} />
-                <SocialIcon icon={Camera} />
-                <SocialIcon icon={Briefcase} />
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="font-bold text-sm uppercase tracking-[0.2em] mb-8 text-blue-200">Product</h4>
-              <ul className="space-y-5 text-blue-100 text-sm font-semibold">
-                <li><a href="#" className="hover:text-white transition-colors">QR Generator</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Dynamic Links</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Analytics Pro</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing Plans</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-bold text-sm uppercase tracking-[0.2em] mb-8 text-blue-200">Company</h4>
-              <ul className="space-y-5 text-blue-100 text-sm font-semibold">
-                <li><a href="#" className="hover:text-white transition-colors">About Story</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Product Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Join Team</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-bold text-sm uppercase tracking-[0.2em] mb-8 text-blue-200">Legal</h4>
-              <ul className="space-y-5 text-blue-100 text-sm font-semibold">
-                <li><a href="#" className="hover:text-white transition-colors">Privacy Guard</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Usage Terms</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Cookie Policy</a></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="pt-12 border-t border-blue-500/30 flex flex-col md:flex-row justify-between items-center gap-8 text-blue-200 text-[10px] font-bold uppercase tracking-[0.3em]">
-            <p>© 2026 QR Thrive Enterprise. Built for the future of physical interactions.</p>
-            <div className="flex gap-10">
-              <span className="hover:text-white cursor-pointer">System Status</span>
-              <span className="hover:text-white cursor-pointer">Security Compliance</span>
-            </div>
-          </div>
-        </div>
-      </footer>
-
+      <PublicFooter />
       <AuthModal 
         isOpen={isAuthModalOpen} 
         onClose={() => setIsAuthModalOpen(false)} 
@@ -566,14 +447,6 @@ function QRTypeCard({ icon: Icon, title, desc }: any) {
       <h4 className="font-bold text-gray-900 text-xl mb-4 leading-tight">{title}</h4>
       <p className="text-sm text-gray-400 font-semibold leading-relaxed">{desc}</p>
     </div>
-  );
-}
-
-function SocialIcon({ icon: Icon }: { icon: LucideIcon }) {
-  return (
-    <button className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-blue-100 hover:bg-white/20 hover:text-white hover:-translate-y-1 transition-all border border-white/5">
-      <Icon className="w-5 h-5" />
-    </button>
   );
 }
 
