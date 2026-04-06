@@ -17,13 +17,17 @@ export type QRType =
   | 'tiktok' 
   | 'crypto' 
   | 'socials'
+  | 'links'
   | 'image'
   | 'event'
   | 'pdf'
   | 'video'
   | 'mp3'
   | 'app'
-  | 'form';
+  | 'form'
+  | 'business'
+  | 'menu'
+  | 'coupon';
   
 export interface FileData {
   url: string;
@@ -137,6 +141,81 @@ export interface QRData {
       validation?: { min?: number; max?: number; step?: number };
       order: number;
     }[];
+  };
+  linksInfo?: {
+    themeColor?: string;
+    linkBgColor?: string;
+    linkTextColor?: string;
+    avatar?: string;
+    title?: string;
+    description?: string;
+  };
+  linksList?: {
+    title: string;
+    url: string;
+    icon?: string;
+  }[];
+  business?: {
+    themeColor?: string;
+    companyName?: string;
+    headline?: string;
+    about?: string;
+    logo?: string;
+    banner?: string;
+    contact?: {
+      email?: string;
+      phone?: string;
+      website?: string;
+      address?: string;
+    };
+    socials?: {
+      facebook?: string;
+      instagram?: string;
+      twitter?: string;
+      linkedin?: string;
+      youtube?: string;
+    };
+    openingHours?: {
+      monday?: string;
+      tuesday?: string;
+      wednesday?: string;
+      thursday?: string;
+      friday?: string;
+      saturday?: string;
+      sunday?: string;
+    };
+  };
+  menu?: {
+    themeColor?: string;
+    restaurantName?: string;
+    description?: string;
+    logo?: string;
+    currency?: string;
+    categories?: {
+      id: string;
+      name: string;
+      items: {
+        id: string;
+        name: string;
+        description?: string;
+        price: number;
+        image?: string;
+        flags?: string[]; // e.g. vegan, spicy, gluten-free
+      }[];
+    }[];
+  };
+  coupon?: {
+    themeColor?: string;
+    title?: string;
+    description?: string;
+    discount?: string; // e.g. "20% OFF" or "$10 OFF"
+    promoCode?: string;
+    barcode?: string; // can be same as promo text, rendered as visual barcode
+    validUntil?: string;
+    terms?: string;
+    banner?: string;
+    companyName?: string;
+    website?: string;
   };
 }
 

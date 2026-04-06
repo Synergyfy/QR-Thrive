@@ -22,7 +22,11 @@ import {
   Loader2,
   Upload,
   Plus,
-  ClipboardList
+  ClipboardList,
+  Building2,
+  UtensilsCrossed,
+  Ticket,
+  Clock
 } from 'lucide-react';
 import type { QRConfiguration, QRData, QRType } from '../../types/qr';
 import FormBuilder from '../FormBuilder';
@@ -133,6 +137,9 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
     { type: 'crypto', icon: <Bitcoin className="w-4 h-4" />, label: 'Crypto Pay', category: 'Specific' },
     { type: 'event', icon: <Calendar className="w-4 h-4" />, label: 'Event Info', category: 'Dynamic' },
     { type: 'form', icon: <ClipboardList className="w-4 h-4" />, label: 'Custom Form', category: 'Dynamic' },
+    { type: 'business', icon: <Building2 className="w-4 h-4" />, label: 'Business Profile', category: 'Dynamic' },
+    { type: 'menu', icon: <UtensilsCrossed className="w-4 h-4" />, label: 'Restaurant Menu', category: 'Dynamic' },
+    { type: 'coupon', icon: <Ticket className="w-4 h-4" />, label: 'Coupon', category: 'Dynamic' },
   ];
 
   return (
@@ -742,6 +749,159 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                     </div>
                  </div>
               )}
+
+              {data.type === 'links' && (
+                 <div className="space-y-6">
+                    {/* Design Section */}
+                    <div className="border border-gray-100 rounded-[24px] overflow-hidden">
+                       <div className="p-4 bg-gray-50 flex items-center gap-3 border-b border-gray-100 cursor-pointer">
+                          <Globe className="w-5 h-5 text-gray-500" />
+                          <div className="flex-1">
+                             <p className="text-sm font-bold text-gray-900">Design</p>
+                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Choose a color theme for your page.</p>
+                          </div>
+                          <ChevronDown className="w-5 h-5 text-gray-400" />
+                       </div>
+                       <div className="p-6 bg-white space-y-6">
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Background Color</p>
+                              <div className="flex items-center gap-3">
+                                 <input type="color" className="w-10 h-10 rounded-xl cursor-pointer" value={data.linksInfo?.themeColor || '#1E293B'} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), themeColor: e.target.value } })} />
+                                 <input type="text" className="flex-1 px-4 py-2 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" value={data.linksInfo?.themeColor || '#1E293B'} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), themeColor: e.target.value } })} />
+                              </div>
+                           </div>
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Background Color of the link</p>
+                              <div className="flex items-center gap-3">
+                                 <input type="color" className="w-10 h-10 rounded-xl cursor-pointer" value={data.linksInfo?.linkBgColor || '#F7F7F7'} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), linkBgColor: e.target.value } })} />
+                                 <input type="text" className="flex-1 px-4 py-2 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" value={data.linksInfo?.linkBgColor || '#F7F7F7'} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), linkBgColor: e.target.value } })} />
+                              </div>
+                           </div>
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Link Text Color</p>
+                              <div className="flex items-center gap-3">
+                                 <input type="color" className="w-10 h-10 rounded-xl cursor-pointer" value={data.linksInfo?.linkTextColor || '#7EC09F'} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), linkTextColor: e.target.value } })} />
+                                 <input type="text" className="flex-1 px-4 py-2 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" value={data.linksInfo?.linkTextColor || '#7EC09F'} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), linkTextColor: e.target.value } })} />
+                              </div>
+                           </div>
+                       </div>
+                    </div>
+
+                    {/* Basic Info Section */}
+                    <div className="border border-gray-100 rounded-[24px] overflow-hidden">
+                       <div className="p-4 bg-gray-50 flex items-center gap-3 border-b border-gray-100 cursor-pointer">
+                          <User className="w-5 h-5 text-gray-500" />
+                          <div className="flex-1">
+                             <p className="text-sm font-bold text-gray-900">Basic Information *</p>
+                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Add a headline and short description to introduce your list of links</p>
+                          </div>
+                          <ChevronDown className="w-5 h-5 text-gray-400" />
+                       </div>
+                       <div className="p-6 bg-white space-y-6">
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Profile Image</p>
+                              <div className="flex items-center gap-3">
+                                 {data.linksInfo?.avatar ? (
+                                    <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 overflow-hidden relative group">
+                                       <img src={data.linksInfo.avatar} alt="Profile" className="w-full h-full object-cover" />
+                                       <button className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => { updateData({ linksInfo: { ...(data.linksInfo || {}), avatar: undefined } }); }}>
+                                          <X className="w-5 h-5 text-white" />
+                                       </button>
+                                    </div>
+                                 ) : (
+                                    <label className="w-16 h-16 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all shrink-0">
+                                       <Camera className="w-5 h-5 text-gray-400" />
+                                       <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                             const reader = new FileReader();
+                                             reader.onload = (ev) => {
+                                                updateData({ linksInfo: { ...(data.linksInfo || {}), avatar: ev.target?.result as string } });
+                                             };
+                                             reader.readAsDataURL(file);
+                                          }
+                                       }} />
+                                    </label>
+                                 )}
+                              </div>
+                           </div>
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Title *</p>
+                              <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="E.g. Find me on social networks" value={data.linksInfo?.title || ''} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), title: e.target.value } })} />
+                           </div>
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Description</p>
+                              <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="E.g. New content every week in the links below" rows={3} value={data.linksInfo?.description || ''} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), description: e.target.value } })} />
+                           </div>
+                       </div>
+                    </div>
+
+                    {/* List of Links Section */}
+                    <div className="border border-gray-100 rounded-[24px] overflow-hidden">
+                       <div className="p-4 bg-gray-50 flex items-center gap-3 border-b border-gray-100 cursor-pointer">
+                          <Link className="w-5 h-5 text-gray-500" />
+                          <div className="flex-1">
+                             <p className="text-sm font-bold text-gray-900">List of Links</p>
+                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Add your custom links</p>
+                           </div>
+                           <ChevronDown className="w-5 h-5 text-gray-400" />
+                       </div>
+                       <div className="p-6 bg-white space-y-6">
+                          {(data.linksList || []).map((link: any, idx: number) => (
+                             <div key={idx} className="border border-gray-100 p-4 rounded-2xl relative bg-white shadow-sm overflow-hidden">
+                                <button className="absolute top-4 right-4 p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100" onClick={() => { const newList = [...(data.linksList || [])]; newList.splice(idx, 1); updateData({ linksList: newList }); }}><X className="w-4 h-4" /></button>
+                                 <div className="space-y-4 pt-8">
+                                   <div className="space-y-2">
+                                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Link Image / Logo</p>
+                                      <div className="flex items-center gap-3">
+                                         {link.icon ? (
+                                            <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 overflow-hidden relative group">
+                                               <img src={link.icon} alt="Link logo" className="w-full h-full object-cover" />
+                                               <button className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => { const newList = [...(data.linksList || [])]; newList[idx].icon = undefined; updateData({ linksList: newList }); }}>
+                                                  <X className="w-4 h-4 text-white" />
+                                               </button>
+                                            </div>
+                                         ) : (
+                                            <label className="w-12 h-12 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all shrink-0">
+                                               <Camera className="w-4 h-4 text-gray-400" />
+                                               <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                                  const file = e.target.files?.[0];
+                                                  if (file) {
+                                                     const reader = new FileReader();
+                                                     reader.onload = (ev) => {
+                                                        const newList = [...(data.linksList || [])];
+                                                        newList[idx].icon = ev.target?.result as string;
+                                                        updateData({ linksList: newList });
+                                                     };
+                                                     reader.readAsDataURL(file);
+                                                  }
+                                               }} />
+                                            </label>
+                                         )}
+                                         <div className="flex-1 space-y-2">
+                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Link text</p>
+                                            <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-sm font-bold text-gray-900 transition-all bg-gray-50/30" placeholder="Name of the link" value={link.title || ''} onChange={(e) => { const newList = [...(data.linksList || [])]; newList[idx].title = e.target.value; updateData({ linksList: newList }); }} />
+                                         </div>
+                                      </div>
+                                   </div>
+                                   <div className="space-y-2">
+                                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">URL</p>
+                                      <input type="url" className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-sm font-bold text-gray-900 transition-all bg-gray-50/30" placeholder="E.g. https://mywebsite.com/" value={link.url || ''} onChange={(e) => { const newList = [...(data.linksList || [])]; newList[idx].url = e.target.value; updateData({ linksList: newList }); }} />
+                                   </div>
+                                </div>
+                             </div>
+                          ))}
+                          <button 
+                            onClick={() => updateData({ linksList: [...(data.linksList || []), { title: '', url: '', icon: '' }] })}
+                            className="w-full py-4 bg-blue-50/50 border-2 border-dashed border-blue-200 text-blue-600 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
+                          >
+                             <Plus className="w-5 h-5" /> Add Link
+                          </button>
+                       </div>
+                    </div>
+                 </div>
+              )}
+
                {data.type === 'form' && (
                  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="flex items-center justify-between">
@@ -785,6 +945,273 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                     </div>
                  </div>
                )}
+
+              {data.type === 'business' && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                   <div className="border border-gray-100 rounded-[24px] overflow-hidden">
+                       <div className="p-4 bg-gray-50 flex items-center gap-3 border-b border-gray-100">
+                          <Building2 className="w-5 h-5 text-gray-500" />
+                          <div className="flex-1">
+                             <p className="text-sm font-bold text-gray-900">Business Details</p>
+                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Share information about your business</p>
+                          </div>
+                       </div>
+                       <div className="p-6 bg-white space-y-6">
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Business Logo</p>
+                              <div className="flex items-center gap-4">
+                                  <label className="flex-1 px-4 py-4 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
+                                      <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                              const reader = new FileReader();
+                                              reader.onloadend = () => {
+                                                  updateData({ business: { ...(data.business || {}), logo: reader.result as string }});
+                                              };
+                                              reader.readAsDataURL(file);
+                                          }
+                                      }} />
+                                      <Camera className="w-5 h-5 text-gray-400 group-hover:text-blue-500 mb-1 transition-colors" />
+                                      <span className="text-[11px] font-bold text-gray-400 group-hover:text-blue-500">Upload Logo</span>
+                                  </label>
+                                  {data.business?.logo && (
+                                      <div className="w-20 h-20 rounded-xl border border-gray-100 overflow-hidden relative group shrink-0 shadow-sm bg-white">
+                                          <img src={data.business.logo} alt="Logo preview" className="w-full h-full object-cover" />
+                                          <button 
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                updateData({ business: { ...(data.business || {}), logo: undefined }});
+                                            }}
+                                            className="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center text-white backdrop-blur-sm transition-all"
+                                          >
+                                            <X className="w-5 h-5" />
+                                          </button>
+                                      </div>
+                                  )}
+                              </div>
+                           </div>
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Company Name</p>
+                              <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="Your Business Ltd." value={data.business?.companyName || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), companyName: e.target.value } })} />
+                           </div>
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Headline</p>
+                              <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Best Coffee in Town" value={data.business?.headline || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), headline: e.target.value } })} />
+                           </div>
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">About Us</p>
+                              <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="Describe your business..." rows={3} value={data.business?.about || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), about: e.target.value } })} />
+                           </div>
+                       </div>
+                   </div>
+                   
+                   <div className="border border-gray-100 rounded-[24px] overflow-hidden">
+                       <div className="p-4 bg-gray-50 flex items-center gap-3 border-b border-gray-100">
+                          <Phone className="w-5 h-5 text-gray-500" />
+                          <div className="flex-1">
+                             <p className="text-sm font-bold text-gray-900">Contact</p>
+                          </div>
+                       </div>
+                       <div className="p-6 bg-white space-y-6">
+                           <div className="grid grid-cols-2 gap-4">
+                             <div className="space-y-3">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Email</p>
+                                <input type="email" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="hello@business.com" value={data.business?.contact?.email || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), contact: { ...(data.business?.contact || {}), email: e.target.value } } })} />
+                             </div>
+                             <div className="space-y-3">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Phone</p>
+                                <input type="tel" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="+1..." value={data.business?.contact?.phone || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), contact: { ...(data.business?.contact || {}), phone: e.target.value } } })} />
+                             </div>
+                           </div>
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Website</p>
+                              <input type="url" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="https://" value={data.business?.contact?.website || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), contact: { ...(data.business?.contact || {}), website: e.target.value } } })} />
+                           </div>
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Address</p>
+                              <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="123 Example Street" rows={2} value={data.business?.contact?.address || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), contact: { ...(data.business?.contact || {}), address: e.target.value } } })} />
+                           </div>
+                       </div>
+                   </div>
+
+                   <div className="border border-gray-100 rounded-[24px] overflow-hidden">
+                       <div className="p-4 bg-gray-50 flex items-center gap-3 border-b border-gray-100">
+                          <Clock className="w-5 h-5 text-gray-500" />
+                          <div className="flex-1">
+                             <p className="text-sm font-bold text-gray-900">Opening Hours</p>
+                          </div>
+                       </div>
+                       <div className="p-6 bg-white space-y-4">
+                          {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
+                              <div key={day} className="flex items-center gap-4">
+                                  <p className="w-24 text-[10px] font-bold text-gray-400 uppercase tracking-widest">{day}</p>
+                                  <input 
+                                      type="text" 
+                                      placeholder="e.g. 9:00 AM - 5:00 PM" 
+                                      className="flex-1 px-4 py-2.5 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm focus:border-blue-500 transition-colors" 
+                                      value={(data.business?.openingHours as any)?.[day] || ''} 
+                                      onChange={(e) => {
+                                          const currentHours = data.business?.openingHours || {};
+                                          updateData({ 
+                                              business: { 
+                                                  ...(data.business || {}), 
+                                                  openingHours: { 
+                                                      ...currentHours, 
+                                                      [day]: e.target.value 
+                                                  } 
+                                              } 
+                                          });
+                                      }}
+                                  />
+                              </div>
+                          ))}
+                       </div>
+                   </div>
+                </div>
+              )}
+
+              {data.type === 'menu' && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                   <div className="border border-gray-100 rounded-[24px] overflow-hidden">
+                       <div className="p-4 bg-gray-50 flex items-center gap-3 border-b border-gray-100">
+                          <UtensilsCrossed className="w-5 h-5 text-gray-500" />
+                          <div className="flex-1">
+                             <p className="text-sm font-bold text-gray-900">Restaurant Details</p>
+                          </div>
+                       </div>
+                       <div className="p-6 bg-white space-y-6">
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Restaurant Name</p>
+                              <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. The Great Cafe" value={data.menu?.restaurantName || ''} onChange={(e) => updateData({ menu: { ...(data.menu || {}), restaurantName: e.target.value } })} />
+                           </div>
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Description</p>
+                              <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Authentic Italian Cuisine" value={data.menu?.description || ''} onChange={(e) => updateData({ menu: { ...(data.menu || {}), description: e.target.value } })} />
+                           </div>
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Currency</p>
+                              <input type="text" className="w-24 px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="$" value={data.menu?.currency || ''} onChange={(e) => updateData({ menu: { ...(data.menu || {}), currency: e.target.value } })} />
+                           </div>
+                       </div>
+                   </div>
+
+                   <div className="border border-gray-100 rounded-[24px] overflow-hidden">
+                       <div className="p-4 bg-gray-50 flex items-center gap-3 border-b border-gray-100">
+                          <ClipboardList className="w-5 h-5 text-gray-500" />
+                          <div className="flex-1">
+                             <p className="text-sm font-bold text-gray-900">Menu Categories & Items</p>
+                          </div>
+                       </div>
+                       <div className="p-6 bg-white space-y-6">
+                         {(data.menu?.categories || []).map((cat, cIdx) => (
+                            <div key={cIdx} className="border-2 border-gray-50 rounded-xl p-4 space-y-4">
+                               <div className="flex items-center gap-2">
+                                   <input type="text" className="flex-1 px-4 py-2 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 text-sm" placeholder="Category Name (e.g. Starters)" value={cat.name} onChange={(e) => {
+                                       const newCategories = [...(data.menu?.categories || [])];
+                                       newCategories[cIdx].name = e.target.value;
+                                       updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                                   }} />
+                                   <button onClick={() => {
+                                       const newCategories = [...(data.menu?.categories || [])];
+                                       newCategories.splice(cIdx, 1);
+                                       updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                                   }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                      <X className="w-5 h-5" />
+                                   </button>
+                               </div>
+                               
+                               <div className="pl-4 border-l-2 border-gray-50 space-y-3">
+                                  {cat.items.map((item, iIdx) => (
+                                     <div key={iIdx} className="flex flex-col gap-2 bg-gray-50 p-3 rounded-xl relative">
+                                        <button className="absolute top-2 right-2 text-red-400 hover:text-red-600 hover:bg-red-50 p-1 rounded-md" onClick={() => {
+                                              const newCategories = [...(data.menu?.categories || [])];
+                                              newCategories[cIdx].items.splice(iIdx, 1);
+                                              updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                                        }}>
+                                           <X className="w-4 h-4" />
+                                        </button>
+                                        <div className="flex gap-2 mr-6">
+                                            <input type="text" placeholder="Item Name" className="flex-1 px-3 py-2 rounded-lg text-sm font-bold bg-white outline-none border border-transparent focus:border-blue-500" value={item.name} onChange={(e) => {
+                                                const newCategories = [...(data.menu?.categories || [])];
+                                                newCategories[cIdx].items[iIdx].name = e.target.value;
+                                                updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                                            }} />
+                                            <input type="number" placeholder="Price" className="w-24 px-3 py-2 rounded-lg text-sm font-bold bg-white outline-none border border-transparent focus:border-blue-500" value={item.price || ''} onChange={(e) => {
+                                                const newCategories = [...(data.menu?.categories || [])];
+                                                newCategories[cIdx].items[iIdx].price = parseFloat(e.target.value) || 0;
+                                                updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                                            }} />
+                                        </div>
+                                        <input type="text" placeholder="Description (Optional)" className="w-full px-3 py-2 rounded-lg text-sm text-gray-600 bg-white outline-none border border-transparent focus:border-blue-500" value={item.description || ''} onChange={(e) => {
+                                              const newCategories = [...(data.menu?.categories || [])];
+                                              newCategories[cIdx].items[iIdx].description = e.target.value;
+                                              updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                                        }} />
+                                     </div>
+                                  ))}
+                                  <button onClick={() => {
+                                      const newCategories = [...(data.menu?.categories || [])];
+                                      newCategories[cIdx].items.push({ id: Math.random().toString(), name: '', price: 0 });
+                                      updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                                  }} className="text-xs font-bold text-blue-600 flex items-center gap-1 hover:underline p-1">
+                                     <Plus className="w-3 h-3" /> Add Item
+                                  </button>
+                               </div>
+                            </div>
+                         ))}
+                         
+                         <button onClick={() => {
+                             const newCategories = [...(data.menu?.categories || []), { id: Math.random().toString(), name: '', items: [] }];
+                             updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                         }} className="w-full py-3 bg-blue-50 text-blue-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors">
+                             <Plus className="w-4 h-4" /> Add Category
+                         </button>
+                       </div>
+                   </div>
+                </div>
+              )}
+
+              {data.type === 'coupon' && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                   <div className="border border-gray-100 rounded-[24px] overflow-hidden">
+                       <div className="p-4 bg-gray-50 flex items-center gap-3 border-b border-gray-100">
+                          <Ticket className="w-5 h-5 text-gray-500" />
+                          <div className="flex-1">
+                             <p className="text-sm font-bold text-gray-900">Coupon Details</p>
+                          </div>
+                       </div>
+                       <div className="p-6 bg-white space-y-6">
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Coupon Title</p>
+                              <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. 50% Off First Purchase" value={data.coupon?.title || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), title: e.target.value } })} />
+                           </div>
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Description</p>
+                              <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="Describe the offer..." rows={2} value={data.coupon?.description || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), description: e.target.value } })} />
+                           </div>
+                           <div className="grid grid-cols-2 gap-4">
+                             <div className="space-y-3">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Discount</p>
+                                <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. $10 OFF" value={data.coupon?.discount || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), discount: e.target.value } })} />
+                             </div>
+                             <div className="space-y-3">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Promo Code</p>
+                                <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. SUMMER50" value={data.coupon?.promoCode || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), promoCode: e.target.value } })} />
+                             </div>
+                           </div>
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Valid Until</p>
+                              <input type="date" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" value={data.coupon?.validUntil || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), validUntil: e.target.value } })} />
+                           </div>
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Company Name</p>
+                              <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="Business Name" value={data.coupon?.companyName || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), companyName: e.target.value } })} />
+                           </div>
+                       </div>
+                   </div>
+                </div>
+              )}
+
             </div>
          </div>
 

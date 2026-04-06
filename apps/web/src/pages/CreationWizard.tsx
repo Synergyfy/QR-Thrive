@@ -1,28 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ChevronLeft, 
   ChevronRight, 
-  Smartphone,
   Globe,
   FileText,
   Image as ImageIcon,
   Video,
   User,
-  Share2,
   SmartphoneNfc,
   Music,
   Building2,
   UtensilsCrossed,
-  Calendar,
   CheckCircle2,
+  Phone,
+  Link2,
+  Users,
+  Ticket,
+  Wifi,
   Zap,
   Palette,
   Image as LogoIcon,
   Frame,
-  Loader2,
-  ClipboardList,
-  Phone
+  Loader2
 } from 'lucide-react';
+
+const FacebookIcon = (props: any) => (
+  <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+  </svg>
+);
+
+const InstagramIcon = (props: any) => (
+  <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+  </svg>
+);
 import { useNavigate, useParams } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -53,19 +66,22 @@ interface QRTypeOption {
 }
 
 const qrTypes: QRTypeOption[] = [
-  { id: 'url', icon: Globe, title: 'Website URL', description: 'Link to any Website URL', category: 'static' },
-  { id: 'pdf', icon: FileText, title: 'PDF', description: 'Share PDF document', category: 'dynamic' },
+  { id: 'url', icon: Globe, title: 'Website', description: 'Link to any website URL', category: 'static' },
+  { id: 'pdf', icon: FileText, title: 'PDF', description: 'Show a PDF', category: 'dynamic' },
+  { id: 'links', icon: Link2, title: 'List of Links', description: 'Share multiple links', category: 'dynamic' },
+  { id: 'vcard', icon: User, title: 'vCard', description: 'Share a digital business card', category: 'dynamic' },
+  { id: 'business', icon: Building2, title: 'Business', description: 'Share information about your business', category: 'dynamic' },
+  { id: 'video', icon: Video, title: 'Video', description: 'Show a video', category: 'dynamic' },
   { id: 'image', icon: ImageIcon, title: 'Images', description: 'Share multiple images', category: 'dynamic' },
-  { id: 'video', icon: Video, title: 'Video', description: 'Share a video', category: 'dynamic' },
-  { id: 'vcard', icon: User, title: 'Profile Card', description: 'Personal custom page', category: 'dynamic' },
-  { id: 'socials', icon: Share2, title: 'Multiple Links', description: 'A tree for all your socials', category: 'dynamic' },
-  { id: 'app', icon: SmartphoneNfc, title: 'App', description: 'Download apps Android & iOS', category: 'dynamic' },
+  { id: 'facebook', icon: FacebookIcon, title: 'Facebook', description: 'Share your Facebook page', category: 'dynamic' },
+  { id: 'instagram', icon: InstagramIcon, title: 'Instagram', description: 'Share your Instagram', category: 'dynamic' },
+  { id: 'socials', icon: Users, title: 'Social Media', description: 'Share your social channels', category: 'dynamic' },
+  { id: 'whatsapp', icon: Phone, title: 'WhatsApp', description: 'Get WhatsApp messages', category: 'dynamic' },
   { id: 'mp3', icon: Music, title: 'MP3', description: 'Share an audio file', category: 'dynamic' },
-  { id: 'business', icon: Building2, title: 'Business Page', description: 'Information about your business', category: 'dynamic' },
-  { id: 'menu', icon: UtensilsCrossed, title: 'Menu', description: 'Share digital menu', category: 'dynamic' },
-  { id: 'event', icon: Calendar, title: 'Event', description: 'Promote your next event', category: 'dynamic' },
-  { id: 'whatsapp', icon: Phone, title: 'WhatsApp', description: 'Chat with us on WhatsApp', category: 'dynamic' },
-  { id: 'form', icon: ClipboardList, title: 'Form', description: 'Create a custom form', category: 'dynamic' },
+  { id: 'menu', icon: UtensilsCrossed, title: 'Menu', description: 'Create a restaurant menu', category: 'dynamic' },
+  { id: 'app', icon: SmartphoneNfc, title: 'Apps', description: 'Redirect to an app store', category: 'dynamic' },
+  { id: 'coupon', icon: Ticket, title: 'Coupon', description: 'Share a coupon', category: 'dynamic' },
+  { id: 'wifi', icon: Wifi, title: 'WiFi', description: 'Connect to a Wi-Fi network', category: 'static' },
 ];
 
 const INITIAL_CONFIG: QRConfiguration = {
@@ -237,57 +253,63 @@ const CreationWizard: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
       {/* Navbar */}
-      <nav className="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center gap-10">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
-             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
-               <CheckCircle2 className="w-6 h-6" />
-             </div>
-             <span className="text-xl font-black text-slate-900 tracking-tighter">QR Thrive</span>
-          </div>
+      <nav className="h-16 bg-white border-b border-slate-100 px-8 flex items-center justify-between sticky top-0 z-40">
+        <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => navigate('/dashboard')}>
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-100">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <span className="text-lg font-black text-slate-900 tracking-tighter">QR Thrive</span>
+        </div>
 
-          {/* Stepper */}
-          <div className="flex items-center gap-8">
-             {steps.map((s, idx) => (
-                <div key={s.id} className="flex items-center gap-3">
+        {/* Stepper (Centered) */}
+        <div className="hidden md:flex items-center gap-4">
+            {steps.map((s, idx) => (
+              <React.Fragment key={s.id}>
+                <div className="flex items-center gap-2">
                    <div className={cn(
-                     "w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition-all",
+                     "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all",
                      step === s.id ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : 
-                     steps.findIndex(x => x.id === step) > idx ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"
+                     steps.findIndex(x => x.id === step) > idx ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-500"
                    )}>
                       {idx + 1}
                    </div>
                    <span className={cn(
-                     "text-sm font-bold tracking-tight",
+                     "text-xs font-bold tracking-tight whitespace-nowrap",
                      step === s.id ? "text-slate-900" : "text-slate-400"
                    )}>{s.label}</span>
-                   {idx < steps.length - 1 && <div className="h-px w-6 bg-slate-200 ml-2" />}
                 </div>
-             ))}
-          </div>
+                {idx < steps.length - 1 && (
+                  <ChevronRight className="w-4 h-4 text-slate-300 mx-1" />
+                )}
+              </React.Fragment>
+            ))}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 shrink-0">
+           <div className="hidden sm:flex items-center gap-2 mr-4">
+              <button className="p-2 bg-slate-50 text-slate-400 rounded-lg border border-slate-100 hover:text-blue-600 transition-colors">
+                 <div className="w-5 h-5 border-2 border-current rounded-md flex items-center justify-center text-[10px] font-black">?</div>
+              </button>
+           </div>
            <button 
             onClick={handleBack}
-            className="px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all flex items-center gap-2"
+            className="px-5 py-2 bg-slate-50 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-100 transition-all flex items-center gap-2"
            >
-              <ChevronLeft className="w-4 h-4" /> Back
+              Back
            </button>
            <button 
             disabled={!selectedType || isSaving}
             onClick={handleNext}
             className={cn(
-              "px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-xl min-w-[140px] justify-center",
-              selectedType ? "bg-blue-600 text-white shadow-blue-100 hover:bg-blue-700 active:scale-95" : "bg-slate-200 text-slate-400 cursor-not-allowed"
+              "px-6 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-lg min-w-[100px] justify-center tracking-widest uppercase",
+              selectedType ? "bg-blue-600 text-white shadow-blue-100 hover:bg-blue-700 active:scale-95" : "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
             )}
            >
               {isSaving ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-3 h-3 animate-spin" />
               ) : (
                 <>
-                  {step === 'design' ? (isEditing ? 'Save Changes' : 'Finish') : 'Continue'}
-                  <ChevronRight className="w-4 h-4" />
+                  {step === 'design' ? (isEditing ? 'Save' : 'Finish') : 'Next'}
                 </>
               )}
            </button>
@@ -301,34 +323,35 @@ const CreationWizard: React.FC = () => {
             <div className="w-full max-w-4xl space-y-10">
                {step === 'type' && (
                  <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="space-y-1">
-                       <h1 className="text-3xl font-black text-slate-900 tracking-tight">Choose your QR Code type</h1>
-                       <p className="text-slate-400 font-medium">Select what you want the user to see after scanning.</p>
+                    <div className="space-y-2">
+                       <h1 className="text-3xl font-black text-slate-900 tracking-tight">1. Select a type of QR code</h1>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
                        {qrTypes.map(type => (
                           <button
                             key={type.id}
                             onClick={() => setSelectedType(type.id)}
                             className={cn(
-                              "flex items-center gap-5 p-6 rounded-2xl border-2 transition-all hover:scale-[1.02] active:scale-[0.98] group text-left",
+                              "flex flex-col items-center text-center p-6 rounded-[2rem] border-2 transition-all hover:scale-[1.02] active:scale-[0.98] group relative overflow-hidden",
                               selectedType === type.id 
-                                ? "border-blue-600 bg-blue-50/10 ring-4 ring-blue-50/50" 
-                                : "border-white bg-white hover:border-slate-100 shadow-sm"
+                                ? "border-blue-600 bg-blue-50/10 ring-4 ring-blue-50/30" 
+                                : "border-white bg-white hover:border-slate-100 shadow-sm shadow-slate-200/50"
                             )}
                           >
                              <div className={cn(
-                               "w-14 h-14 rounded-2xl flex items-center justify-center transition-colors shadow-sm",
-                               selectedType === type.id ? "bg-blue-600 text-white" : "bg-slate-50 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600"
+                               "w-16 h-16 rounded-full flex items-center justify-center transition-all mb-4 border-2",
+                               selectedType === type.id 
+                                 ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200" 
+                                 : "bg-white text-slate-400 border-slate-100 group-hover:border-blue-100 group-hover:text-blue-600"
                              )}>
                                 <type.icon className="w-7 h-7" />
                              </div>
-                             <div className="flex-1">
-                                <h3 className="font-bold text-slate-900 leading-none mb-1">{type.title}</h3>
-                                <p className="text-xs font-medium text-slate-400">{type.description}</p>
+                             <div className="space-y-1">
+                                <h3 className="font-black text-slate-900 text-sm tracking-tight">{type.title}</h3>
+                                <p className="text-[10px] font-medium text-slate-400 leading-tight px-2">{type.description}</p>
                              </div>
                              {type.category === 'dynamic' && (
-                                <div className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] font-black uppercase tracking-widest rounded-md">Dynamic</div>
+                                <div className="absolute top-3 right-3 w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
                              )}
                           </button>
                        ))}
@@ -341,7 +364,7 @@ const CreationWizard: React.FC = () => {
                      <div className="flex items-center justify-between">
                         <div className="space-y-1">
                            <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-                              {isEditing ? 'Edit Content' : qrTypes.find(t => t.id === selectedType)?.title}
+                              2. {isEditing ? 'Edit Content' : qrTypes.find(t => t.id === selectedType)?.title}
                            </h1>
                            <p className="text-slate-400 font-medium">
                               {isEditing ? 'Update the information for your QR Code.' : 'Complete the information for your QR Code.'}
@@ -363,7 +386,7 @@ const CreationWizard: React.FC = () => {
                  <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                     <div className="space-y-2">
                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-                          {isEditing ? 'Edit Design' : 'QR Code Design'}
+                          3. {isEditing ? 'Edit Design' : 'Design QR Code'}
                        </h1>
                        <p className="text-slate-400 font-medium">Customize the look of your QR code to match your brand.</p>
                     </div>
@@ -396,15 +419,10 @@ const CreationWizard: React.FC = () => {
          </div>
 
          {/* Right Side: Preview (Fixed) */}
-         <div className="fixed top-20 right-0 bottom-0 w-[480px] bg-white border-l border-slate-100 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] z-30 p-12 flex flex-col items-center justify-start overflow-y-auto custom-scrollbar">
+         <div className="fixed top-20 right-0 bottom-0 w-[480px] bg-white border-l border-slate-100 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] z-30 p-12 flex flex-col items-center justify-center overflow-y-auto custom-scrollbar">
             <div className="w-full flex flex-col items-center">
-               <button className="w-full py-4 bg-slate-900 text-white rounded-[20px] font-black tracking-widest text-[10px] uppercase flex items-center justify-center gap-3 shadow-2xl shadow-slate-200 mb-12 hover:scale-[1.02] transition-all active:scale-95 group">
-                  <Smartphone className="w-4 h-4 text-blue-400" />
-                  {step === 'design' ? 'QR Code Preview' : 'Landing Page Preview'}
-                  <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-               </button>
-
-               {step === 'design' ? (
+               
+               {step === 'design' && selectedType ? (
                   <div className="w-full max-w-[340px] animate-in zoom-in-95 duration-500 flex flex-col items-center">
                     <div className="bg-white p-8 rounded-[48px] shadow-2xl shadow-slate-200/50 border border-slate-50 mb-8 w-full aspect-square flex items-center justify-center">
                        <div className="w-full h-full flex items-center justify-center">
@@ -423,26 +441,65 @@ const CreationWizard: React.FC = () => {
                     </div>
                   </div>
                ) : (
-                  <div className="relative w-[300px] aspect-[9/19] bg-white rounded-[60px] border-[12px] border-slate-900 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] overflow-hidden flex flex-col animate-in slide-in-from-right-10 duration-700 shrink-0">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-slate-900 rounded-b-3xl z-20" />
-                    <div className="h-10 px-8 flex items-center justify-between text-[11px] font-black text-slate-900 pt-3 shrink-0">
-                        <span>9:41</span>
-                        <div className="flex gap-2 items-center">
-                          <Zap className="w-3 h-3 fill-blue-500 text-blue-500" />
-                          <div className="w-4 h-2.5 border-2 border-slate-900 rounded-sm" />
+                  <div className="relative group">
+                    {/* Phone Mockup Case */}
+                    <div className="relative w-[300px] aspect-[9/18.5] bg-slate-900 rounded-[55px] p-3 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] border-[1px] border-slate-800">
+                      {/* Notch */}
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-slate-900 rounded-b-2xl z-40 border-x border-b border-slate-800" />
+                      
+                      {/* Screen */}
+                      <div className="relative w-full h-full bg-white rounded-[44px] overflow-hidden flex flex-col">
+                        <div className="h-10 px-8 flex items-center justify-between text-[11px] font-black text-slate-900 pt-3 shrink-0">
+                            <span>9:41</span>
+                            <div className="flex gap-1.5 items-center">
+                              <div className="flex gap-0.5">
+                                <div className="w-0.5 h-2 bg-slate-900 rounded-full" />
+                                <div className="w-0.5 h-2.5 bg-slate-900 rounded-full" />
+                                <div className="w-0.5 h-1.5 bg-slate-900 rounded-full opacity-30" />
+                              </div>
+                              <Wifi className="w-3 h-3" />
+                              <div className="w-5 h-2.5 border border-slate-900 rounded-[3px] p-[1px] flex items-center">
+                                <div className="w-full h-full bg-slate-900 rounded-[1px]" />
+                              </div>
+                            </div>
                         </div>
+
+                        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col relative">
+                            {selectedType ? (
+                               <div className="min-h-full animate-in fade-in slide-in-from-bottom-5 duration-700 flex flex-col">
+                                  <DynamicView data={config.data} isWizardPreview={true} />
+                               </div>
+                            ) : (
+                              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-10 animate-in fade-in duration-1000 p-6 pt-10">
+                                 {/* Screenshot specific QR Placeholder */}
+                                 <div className="relative w-full aspect-square border-2 border-dashed border-slate-100 rounded-[40px] flex items-center justify-center group-hover:scale-105 transition-transform duration-700">
+                                    <div className="w-48 h-48 bg-slate-50 rounded-3xl flex flex-col items-center justify-center border border-slate-100 relative group">
+                                       <div className="absolute inset-4 border-[10px] border-slate-900 rounded-lg"></div>
+                                       <div className="absolute top-8 right-8 w-8 h-8 bg-slate-900"></div>
+                                       <div className="absolute bottom-8 left-8 w-8 h-8 bg-slate-900"></div>
+                                       <div className="absolute top-8 left-8 w-8 h-8 bg-slate-900"></div>
+                                       <div className="w-16 h-16 rounded-full bg-white shadow-xl flex items-center justify-center text-[10px] font-black text-slate-900 border border-slate-100 z-10 transition-transform group-hover:scale-110">
+                                          LOGO
+                                       </div>
+                                       {/* Random dots for QR feel */}
+                                       <div className="absolute inset-12 grid grid-cols-6 gap-1 opacity-20">
+                                          {[...Array(36)].map((_, i) => (
+                                            <div key={i} className={`w-full aspect-square bg-slate-900 rounded-[1px] ${Math.random() > 0.5 ? 'opacity-100' : 'opacity-0'}`} />
+                                          ))}
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div className="space-y-2">
+                                    <h3 className="text-xl font-black text-slate-900 leading-none">Select a type of QR code on the left</h3>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-10">Start your journey here</p>
+                                 </div>
+                              </div>
+                            )}
+                        </div>
+                        {/* Home Indicator */}
+                        <div className="h-1 w-24 bg-slate-900 rounded-full mx-auto mb-3 shrink-0" />
+                      </div>
                     </div>
-                    <div className="flex-1 overflow-hidden flex flex-col">
-                        {selectedType ? (
-                           <DynamicView data={config.data} isWizardPreview={true} />
-                        ) : (
-                          <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 opacity-30 bg-white">
-                             <Smartphone className="w-16 h-16 text-slate-300" />
-                             <p className="text-xs font-black text-slate-400 px-10 leading-relaxed uppercase tracking-widest">Select a type to see result</p>
-                          </div>
-                        )}
-                    </div>
-                    <div className="h-1.5 w-28 bg-slate-900 rounded-full mx-auto mb-3 shrink-0" />
                   </div>
                )}
             </div>
