@@ -22,7 +22,13 @@ import {
   CheckCircle2,
   Eye,
   Play,
-  Loader2
+  Loader2,
+  Link2,
+  Building2,
+  UtensilsCrossed,
+  Ticket,
+  MapPin,
+  Clock
 } from 'lucide-react';
 import type { QRData } from '../types/qr';
 import { useParams } from 'react-router-dom';
@@ -600,6 +606,72 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
            </div>
          );
 
+      case 'links':
+         return (
+           <div className="flex-1 flex flex-col relative bg-white -mx-6 -mt-6 rounded-t-[44px]">
+              {/* Top Banner & Background */}
+              {data.linksInfo?.themeColor && (
+                 <div 
+                   className="absolute top-0 left-0 right-0 h-40 rounded-b-[48px] z-0"
+                   style={{ backgroundColor: data.linksInfo.themeColor }}
+                 />
+              )}
+              
+              <div className="relative z-10 flex flex-col items-center pt-24 px-6">
+                 <div className="w-24 h-24 rounded-full border-4 border-white shadow-xl overflow-hidden bg-white flex items-center justify-center shrink-0 mb-4 cursor-pointer hover:scale-105 transition-transform">
+                    {data.linksInfo?.avatar ? (
+                       <img src={data.linksInfo.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                       <User className="w-10 h-10 text-gray-300" />
+                    )}
+                 </div>
+                 
+                 <div className="text-center mb-8">
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+                       {data.linksInfo?.title || 'Your Title'}
+                    </h1>
+                    {data.linksInfo?.description && (
+                       <p className="text-[12px] text-gray-500 font-medium leading-relaxed mt-2 max-w-[260px] mx-auto">
+                          {data.linksInfo.description}
+                       </p>
+                    )}
+                 </div>
+
+                 <div className="w-full space-y-3">
+                    {data.linksList?.map((link: any, idx: number) => (
+                       <a 
+                         key={idx}
+                         href={link.url || '#'}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         className="flex items-center justify-between p-3.5 bg-white border border-gray-100 rounded-[28px] hover:scale-[1.02] active:scale-95 transition-transform shadow-sm"
+                         style={{ 
+                            backgroundColor: data.linksInfo?.linkBgColor || '#F8FAFC',
+                            color: data.linksInfo?.linkTextColor || '#1E293B'
+                         }}
+                       >
+                          <div className="flex items-center gap-4">
+                             <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-sm border border-black/5">
+                                {link.icon ? (
+                                  <img src={link.icon} alt={link.title} className="w-full h-full object-cover" />
+                                ) : (
+                                   <div className="w-full h-full bg-gray-50 flex items-center justify-center">
+                                      <Link2 className="w-4 h-4 text-gray-400" />
+                                   </div>
+                                )}
+                             </div>
+                             <span className="font-bold text-[13px] tracking-tight">{link.title || 'Link Title'}</span>
+                          </div>
+                          <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center shrink-0">
+                             <ChevronRight className="w-4 h-4 opacity-50" style={{ color: data.linksInfo?.linkTextColor || '#1E293B' }} />
+                          </div>
+                       </a>
+                    ))}
+                 </div>
+              </div>
+           </div>
+         );
+
       case 'pdf':
          return (
            <div className="space-y-8">
@@ -1052,6 +1124,233 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
              </form>
           </div>
         );
+      case 'business':
+        return (
+          <div className="flex-1 flex flex-col relative bg-white -mx-6 -mt-6 rounded-t-[44px]">
+             {/* Banner */}
+             <div className="h-48 rounded-b-[48px] relative overflow-hidden bg-gray-100 flex items-center justify-center">
+                {data.business?.banner ? (
+                   <img src={data.business.banner} className="w-full h-full object-cover" alt="Banner" />
+                ) : (
+                   <div className="w-full h-full bg-slate-800" />
+                )}
+             </div>
+
+             <div className="relative z-10 flex flex-col pt-4 px-6">
+                 {/* Logo that overlaps the banner */}
+                 <div className="w-24 h-24 rounded-[32px] border-4 border-white shadow-xl overflow-hidden bg-white flex items-center justify-center shrink-0 -mt-16 mb-4 relative z-20 mx-auto">
+                    {data.business?.logo ? (
+                       <img src={data.business.logo} alt="Logo" className="w-full h-full object-cover" />
+                    ) : (
+                       <Building2 className="w-10 h-10 text-gray-300" />
+                    )}
+                 </div>
+
+                 <div className="text-center mb-8">
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+                       {data.business?.companyName || 'Business Name'}
+                    </h1>
+                    {data.business?.headline && (
+                       <p className="text-[13px] text-gray-500 font-bold leading-relaxed mt-1">
+                          {data.business.headline}
+                       </p>
+                    )}
+                 </div>
+
+                 {/* Contact Actions Row */}
+                 <div className="flex items-center justify-center gap-4 mb-8">
+                    {data.business?.contact?.phone && (
+                       <a href={`tel:${data.business.contact.phone}`} className="w-12 h-12 rounded-[20px] bg-blue-100 text-blue-600 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg shadow-blue-100/50">
+                          <Phone className="w-5 h-5 fill-current" />
+                       </a>
+                    )}
+                    {data.business?.contact?.email && (
+                       <a href={`mailto:${data.business.contact.email}`} className="w-12 h-12 rounded-[20px] bg-purple-100 text-purple-600 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg shadow-purple-100/50">
+                          <Mail className="w-5 h-5" />
+                       </a>
+                    )}
+                    {data.business?.contact?.website && (
+                       <a href={data.business.contact.website} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-[20px] bg-emerald-100 text-emerald-600 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg shadow-emerald-100/50">
+                          <Globe className="w-5 h-5" />
+                       </a>
+                    )}
+                 </div>
+
+                 <div className="space-y-6">
+                    {data.business?.about && (
+                       <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">About Us</p>
+                          <p className="text-sm font-medium text-gray-700 leading-relaxed">
+                             {data.business.about}
+                          </p>
+                       </div>
+                    )}
+
+                    {data.business?.contact?.address && (
+                       <div className="flex items-start gap-4 p-5 bg-white border border-gray-100 rounded-[28px] shadow-sm">
+                          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
+                             <MapPin className="w-5 h-5 text-gray-400" />
+                          </div>
+                          <div>
+                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Location</p>
+                             <p className="text-sm font-bold text-gray-900 leading-tight">
+                                {data.business.contact.address}
+                             </p>
+                          </div>
+                       </div>
+                    )}
+
+                    {data.business?.openingHours && Object.values(data.business.openingHours).some((v) => !!v) && (
+                       <div className="bg-white border border-gray-100 rounded-[28px] shadow-sm overflow-hidden">
+                          <div className="flex items-center gap-3 p-4 border-b border-gray-50">
+                             <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
+                                <Clock className="w-5 h-5 text-gray-400" />
+                             </div>
+                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Opening Hours</p>
+                          </div>
+                          <div className="p-4 space-y-2.5">
+                             {(['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as Array<keyof NonNullable<typeof data.business.openingHours>>).map((day) => {
+                                const hours = data.business!.openingHours![day];
+                                if (!hours) return null;
+                                return (
+                                   <div key={day} className="flex justify-between items-center border-b border-gray-50 last:border-0 pb-2 last:pb-0">
+                                      <span className="text-xs font-bold text-gray-400 capitalize">{day}</span>
+                                      <span className="text-xs font-bold text-gray-900">{hours}</span>
+                                   </div>
+                                );
+                             })}
+                          </div>
+                       </div>
+                    )}
+                 </div>
+                 <div className="h-8"></div>
+             </div>
+          </div>
+        );
+
+      case 'menu':
+        return (
+          <div className="flex-1 flex flex-col relative bg-[#F8FAFC] -mx-6 -mt-6 rounded-t-[44px]">
+             {/* Header */}
+             <div className="bg-white px-6 pt-12 pb-8 rounded-b-[48px] shadow-sm relative z-10 text-center">
+                 <div className="w-20 h-20 rounded-[28px] shadow-xl overflow-hidden bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mx-auto mb-4 border border-blue-100">
+                    {data.menu?.logo ? (
+                       <img src={data.menu.logo} alt="Logo" className="w-full h-full object-cover" />
+                    ) : (
+                       <UtensilsCrossed className="w-10 h-10" />
+                    )}
+                 </div>
+                 <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+                    {data.menu?.restaurantName || 'Restaurant Menu'}
+                 </h1>
+                 {data.menu?.description && (
+                    <p className="text-[13px] text-gray-500 font-bold leading-relaxed mt-2 max-w-[280px] mx-auto">
+                       {data.menu.description}
+                    </p>
+                 )}
+             </div>
+
+             <div className="px-6 py-8 space-y-8 relative z-0">
+                 {(data.menu?.categories && data.menu.categories.length > 0) ? data.menu.categories.map((category) => (
+                    <div key={category.id} className="space-y-4">
+                       <h2 className="text-lg font-black text-gray-900 tracking-tight pl-2 border-l-4 border-blue-600">
+                          {category.name || 'Category'}
+                       </h2>
+                       <div className="space-y-4">
+                          {category.items.map((item) => (
+                             <div key={item.id} className="bg-white p-5 rounded-[28px] shadow-sm border border-gray-100 transition-transform hover:scale-[1.02]">
+                                <div className="flex justify-between items-start gap-4">
+                                   <div className="flex-1">
+                                      <h3 className="font-bold text-gray-900 text-sm leading-tight">
+                                         {item.name || 'Item Name'}
+                                      </h3>
+                                      {item.description && (
+                                         <p className="text-[11px] font-medium text-gray-500 mt-1 leading-relaxed">
+                                            {item.description}
+                                         </p>
+                                      )}
+                                   </div>
+                                   <div className="font-black text-gray-900 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100 text-sm">
+                                      {data.menu?.currency || '$'}{item.price || '0'}
+                                   </div>
+                                </div>
+                             </div>
+                          ))}
+                       </div>
+                    </div>
+                 )) : (
+                    <div className="text-center py-12">
+                       <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <ClipboardList className="w-8 h-8 text-gray-400" />
+                       </div>
+                       <h3 className="font-bold text-gray-900">Menu is empty</h3>
+                       <p className="text-xs text-gray-500 mt-1">Add categories and items to your menu.</p>
+                    </div>
+                 )}
+             </div>
+          </div>
+        );
+
+      case 'coupon':
+        return (
+          <div className="space-y-8">
+             <div className="text-center">
+                <div className="w-24 h-24 bg-gradient-to-br from-yellow-400 to-orange-500 text-white rounded-[40px] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-orange-200">
+                   <Ticket className="w-12 h-12" />
+                </div>
+                <h1 className="text-3xl font-black text-gray-900 mb-2">
+                   {data.coupon?.title || 'Special Offer!'}
+                </h1>
+                {data.coupon?.companyName && (
+                   <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">{data.coupon.companyName}</p>
+                )}
+             </div>
+
+             <div className="bg-white p-1 rounded-[40px] border-2 border-dashed border-orange-200 shadow-xl shadow-orange-100">
+                <div className="bg-orange-50 rounded-[36px] p-8 text-center space-y-6">
+                   {data.coupon?.discount && (
+                      <div className="inline-block px-6 py-2 bg-orange-100 text-orange-600 rounded-full font-black text-xl tracking-tight">
+                         {data.coupon.discount}
+                      </div>
+                   )}
+                   
+                   {data.coupon?.description && (
+                      <p className="text-sm font-bold text-orange-900 leading-relaxed">
+                         {data.coupon.description}
+                      </p>
+                   )}
+
+                   {data.coupon?.promoCode && (
+                      <div className="pt-4 space-y-2">
+                         <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Your Promo Code</p>
+                         <div className="font-mono text-2xl font-black text-gray-900 tracking-wider bg-white py-4 px-6 rounded-2xl border-2 border-gray-100 inline-block shadow-sm">
+                            {data.coupon.promoCode}
+                         </div>
+                      </div>
+                   )}
+                </div>
+             </div>
+
+             {data.coupon?.validUntil && (
+                <div className="flex items-center justify-center gap-2 text-gray-500 text-xs font-bold uppercase tracking-widest">
+                   <Clock className="w-4 h-4" />
+                   Valid until {new Date(data.coupon.validUntil).toLocaleDateString()}
+                </div>
+             )}
+
+             <button 
+               onClick={() => {
+                 if (data.coupon?.promoCode) {
+                   navigator.clipboard.writeText(data.coupon.promoCode);
+                   alert('Promo code copied!');
+                 }
+               }}
+               className="w-full py-5 bg-gray-900 text-white rounded-[32px] font-black text-lg shadow-2xl shadow-gray-200 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
+             >
+               Copy Code
+             </button>
+          </div>
+        );
 
       default:
         return (
@@ -1073,7 +1372,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
 
   if (isWizardPreview) {
     return (
-      <div className="w-full flex-1 flex flex-col p-6 overflow-y-auto custom-scrollbar bg-white">
+      <div className="w-full min-h-full flex flex-col p-6 bg-white pb-32">
           <div className="flex items-center justify-center gap-2 mb-8 opacity-40">
             <div className="w-5 h-5 rounded-lg bg-blue-600 flex items-center justify-center">
                 <ShieldCheck className="text-white w-3 h-3" />

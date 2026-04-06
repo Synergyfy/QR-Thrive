@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Check, ArrowRight, Plus, Minus, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+
 import PublicNav from '../components/PublicNav';
 import PublicFooter from '../components/PublicFooter';
 
@@ -44,27 +44,41 @@ const faqs = [
     question: "Can I change my plan?",
     answer: "Yes, you can upgrade, downgrade, or cancel your plan at any time from your account settings."
   }
+];const plans = [
+  {
+    name: "Standard",
+    cycle: "Monthly",
+    price: "5,000",
+    totalPrice: "5,000",
+    description: "Perfect for short-term projects and testing.",
+    billing: "Billed monthly",
+    popular: false
+  },
+  {
+    name: "Annual",
+    cycle: "Yearly",
+    price: "4,167",
+    totalPrice: "50,000",
+    description: "Our best value for growing businesses.",
+    billing: "Billed annually (₦50,000)",
+    popular: true,
+    highlight: true,
+    save: "16%"
+  },
+  {
+    name: "Quarterly",
+    cycle: "Quarterly",
+    price: "4,500",
+    totalPrice: "13,500",
+    description: "A great middle ground for commitment.",
+    billing: "Billed quarterly (₦13,500)",
+    popular: false,
+    save: "10%"
+  }
 ];
 
 export default function PricingPage() {
-  const [billingCycle, setBillingCycle] = useState<'Monthly' | 'Quarterly' | 'Yearly'>('Monthly');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-
-  const getPrice = () => {
-    switch (billingCycle) {
-      case 'Monthly': return '5,000';
-      case 'Quarterly': return '13,500'; // 10% discount
-      case 'Yearly': return '50,000'; // ~16% discount
-    }
-  };
-
-  const getApiPrice = () => {
-    switch (billingCycle) {
-      case 'Monthly': return '15,000';
-      case 'Quarterly': return '40,500';
-      case 'Yearly': return '150,000';
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-blue-500/30 flex flex-col">
@@ -72,7 +86,7 @@ export default function PricingPage() {
 
       <main className="flex-grow pt-32 pb-24">
         {/* Hero Section */}
-        <section className="pt-16 pb-20 px-4 text-center max-w-4xl mx-auto relative">
+        <section className="pt-16 pb-12 px-4 text-center max-w-4xl mx-auto relative">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-400/20 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
           
           <motion.h1 
@@ -87,116 +101,132 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-lg md:text-xl text-slate-600 mb-10 leading-relaxed max-w-2xl mx-auto"
+            className="text-lg md:text-xl text-slate-600 mb-6 leading-relaxed max-w-2xl mx-auto"
           >
             Qrthrive helps you create powerful, branded QR codes that don't just link — they track, convert, and grow your business.
           </motion.p>
-
-          <div className="flex gap-4 justify-center">
-             <Link to="/">
-              <button className="px-8 py-3.5 bg-white text-blue-600 border border-blue-200 hover:border-blue-600 hover:bg-blue-50 font-semibold rounded-full transition-all shadow-sm active:scale-95">
-                Start Free
-              </button>
-            </Link>
-          </div>
         </section>
 
-        {/* Pricing Toggle */}
-        <section className="mb-12 flex justify-center px-4 relative z-10">
-          <div className="bg-white p-1.5 rounded-full shadow-md border border-slate-200/60 inline-flex relative">
-            {['Monthly', 'Quarterly', 'Yearly'].map((cycle) => (
-              <button
-                key={cycle}
-                onClick={() => setBillingCycle(cycle as any)}
-                className={`relative px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 z-10 ${
-                  billingCycle === cycle ? 'text-white' : 'text-slate-600 hover:text-slate-900'
+        {/* Pricing Cards Section */}
+        <section className="max-w-7xl mx-auto px-4 mb-24 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+            {plans.map((plan, idx) => (
+              <motion.div 
+                key={plan.cycle}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + (idx * 0.1) }}
+                className={`flex flex-col relative rounded-[2.5rem] p-8 transition-all duration-500 overflow-hidden group ${
+                  plan.highlight 
+                    ? 'bg-slate-900 text-white shadow-2xl shadow-blue-500/20 scale-105 z-20 md:-translate-y-4' 
+                    : 'bg-white border border-slate-100 shadow-xl shadow-blue-900/5 z-10'
                 }`}
               >
-                {billingCycle === cycle && (
-                  <motion.div
-                    layoutId="active-pill"
-                    className="absolute inset-0 bg-blue-600 rounded-full -z-10 shadow-sm"
-                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  />
+                {/* Most Popular Badge */}
+                {plan.popular && (
+                  <div className="absolute top-6 right-8">
+                     <span className="bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-full shadow-lg shadow-blue-500/40">
+                        Most Popular
+                     </span>
+                  </div>
                 )}
-                {cycle}
-              </button>
+
+                {/* Plan Content */}
+                <div className="mb-10 pt-4">
+                  <h3 className={`text-xl font-black tracking-tight mb-2 ${plan.highlight ? 'text-blue-400' : 'text-slate-900'}`}>
+                    {plan.name}
+                  </h3>
+                  <p className={`text-sm font-medium leading-relaxed mb-8 ${plan.highlight ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {plan.description}
+                  </p>
+                  
+                  <div className="flex items-center gap-4 mb-2">
+                    <div className="flex items-baseline gap-1">
+                      <span className={`text-2xl font-bold ${plan.highlight ? 'text-slate-400' : 'text-slate-400'}`}>₦</span>
+                      <span className={`text-6xl font-black tracking-tighter ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
+                        {plan.price}
+                      </span>
+                      <span className={`text-sm font-bold opacity-60 ml-1 ${plan.highlight ? 'text-white' : 'text-slate-500'}`}>
+                        / month
+                      </span>
+                    </div>
+                    {plan.save && (
+                      <div className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                        plan.highlight ? 'bg-blue-600 text-white' : 'bg-emerald-100 text-emerald-600'
+                      }`}>
+                        SAVE {plan.save}
+                      </div>
+                    )}
+                  </div>
+                  <p className={`text-xs font-bold mt-1 uppercase tracking-widest opacity-60 ${plan.highlight ? 'text-blue-400' : 'text-blue-600'}`}>
+                    {plan.billing}
+                  </p>
+                </div>
+
+                <div className="space-y-4 mb-10 flex-grow">
+                  {pricingFeatures.slice(0, plan.highlight ? pricingFeatures.length : 8).map((feature, fIdx) => (
+                    <div key={fIdx} className="flex items-center gap-3">
+                      <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
+                        plan.highlight ? 'bg-blue-600/20' : 'bg-blue-50'
+                      }`}>
+                        <Check className={`w-3 h-3 font-bold ${plan.highlight ? 'text-blue-400' : 'text-blue-600'}`} />
+                      </div>
+                      <span className={`text-sm font-medium ${plan.highlight ? 'text-slate-300' : 'text-slate-600'}`}>
+                        {feature}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <button className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
+                   plan.highlight 
+                    ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-600/30' 
+                    : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
+                }`}>
+                  Get Started
+                  <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                </button>
+              </motion.div>
             ))}
           </div>
-        </section>
-
-        {/* Pricing Card */}
-        <section className="max-w-md mx-auto px-4 mb-20 relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white rounded-[2rem] p-8 shadow-2xl shadow-blue-900/5 border border-slate-100 flex flex-col relative overflow-hidden group"
-          >
-            {/* Background Accent */}
-            <div className="absolute top-0 right-0 p-32 bg-gradient-to-bl from-blue-50 to-transparent -z-10 group-hover:scale-110 transition-transform duration-700"></div>
-
-            <div className="mb-8">
-              <span className="inline-block py-1 px-3 rounded-full bg-blue-100 text-blue-700 text-xs font-bold tracking-wider uppercase mb-4">
-                Pro Plan
-              </span>
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">Upgrade Pro Plan</h2>
-              <div className="flex items-end gap-1 mb-2">
-                <span className="text-3xl font-semibold text-slate-400">₦</span>
-                <span className="text-5xl font-extrabold tracking-tight text-slate-900">{getPrice()}</span>
-                <span className="text-slate-500 font-medium pb-2">/{billingCycle.toLowerCase().replace('ly', '')}</span>
-              </div>
-              <p className="text-slate-500 text-sm">Billed {billingCycle.toLowerCase()}.</p>
-            </div>
-
-            <div className="space-y-4 mb-8 flex-grow">
-              {pricingFeatures.map((feature, idx) => (
-                <div key={idx} className="flex items-center gap-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
-                    <Check className="w-3 h-3 text-blue-600 font-bold" />
-                  </div>
-                  <span className="text-slate-600 text-sm">{feature}</span>
-                </div>
-              ))}
-            </div>
-
-            <button className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-semibold transition-all shadow-lg shadow-blue-600/20 active:scale-95 flex justify-center items-center gap-2 group">
-              Get Started
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </motion.div>
         </section>
 
         {/* Add-Ons Section */}
         <section className="max-w-4xl mx-auto px-4 mb-24">
           <div className="text-center mb-10">
-            <h3 className="text-3xl font-bold text-slate-900 mb-3">Powerful Add-Ons</h3>
-            <p className="text-slate-500 max-w-xl mx-auto">Enhance your experience with additional features tailored for developers and serious businesses.</p>
+            <h3 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Powerful Add-Ons</h3>
+            <p className="text-slate-500 font-medium max-w-xl mx-auto">Enhance your experience with additional features for developers and businesses.</p>
           </div>
 
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="bg-white rounded-3xl p-8 md:p-10 shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col md:flex-row gap-8 items-center"
+            className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl shadow-blue-900/5 border border-slate-100 flex flex-col md:flex-row gap-10 items-center relative overflow-hidden"
           >
-            <div className="bg-blue-50 w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0">
-              <Zap className="w-10 h-10 text-blue-600" />
+            <div className="absolute top-0 right-0 p-32 bg-blue-50 rounded-full -translate-y-1/2 translate-x-1/2 -z-10 blur-3xl opacity-50"></div>
+            
+            <div className="bg-blue-600 w-20 h-20 rounded-3xl flex items-center justify-center flex-shrink-0 shadow-xl shadow-blue-200">
+              <Zap className="w-10 h-10 text-white fill-white" />
             </div>
             
             <div className="flex-grow text-center md:text-left">
-              <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
-                <h4 className="text-2xl font-bold text-slate-900">API Integration</h4>
-                <div className="mt-2 md:mt-0 text-blue-600 font-bold text-lg bg-blue-50 px-4 py-1.5 rounded-full inline-block">
-                  + ₦{getApiPrice()}/{billingCycle.toLowerCase().replace('ly', '')}
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
+                <h4 className="text-2xl font-black text-slate-900 tracking-tight">API Integration</h4>
+                <div className="bg-blue-50 text-blue-600 font-black text-xs uppercase tracking-widest px-5 py-2.5 rounded-full inline-block border border-blue-100">
+                  + ₦12,500/month (Annual)
                 </div>
               </div>
-              <p className="text-slate-600 mb-4 text-justify md:text-left">
-                For businesses that want to automate QR code generation or integrate it into their platform.
+              <p className="text-slate-500 font-medium mb-6 leading-relaxed">
+                Automate your QR creation workflow with our high-speed API. Includes webhooks and dedicated support.
               </p>
-              <div className="flex items-start gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <Check className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-slate-700 font-medium">Includes all features of the Paid Plan + API access for dynamic code creation and data tracking.</p>
+              <div className="flex items-start gap-3 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                   <Check className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <p className="text-xs text-slate-700 font-bold leading-relaxed uppercase tracking-wider">
+                  Includes all Pro features + API access + Data streaming
+                </p>
               </div>
             </div>
           </motion.div>
