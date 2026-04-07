@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   LayoutDashboard, 
   Users, 
@@ -7,11 +7,9 @@ import {
   LogOut, 
   Bell, 
   Search, 
-  Menu, 
-  X,
-  ChevronRight
+  Menu
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 
 const sidebarLinks = [

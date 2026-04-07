@@ -15,6 +15,7 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
       website: 'www.webcrafters.com',
       jobTitle: 'Senior Web Developer',
       company: 'WebCrafters Studio',
+      address: '123 Innovation Drive, Silicon Valley, CA',
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop'
     }
   },
@@ -70,7 +71,8 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
     type: 'wifi',
     wifi: {
       ssid: 'Guest_WiFi_HighSpeed',
-      encryption: 'WPA2'
+      password: 'demo-password-123',
+      encryption: 'WPA'
     }
   },
   text: {
@@ -145,16 +147,16 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
           id: '1',
           name: 'Starters',
           items: [
-            { id: '1-1', name: 'Fresh Spring Rolls', description: 'Vegetables wrapped in rice paper', price: '8' },
-            { id: '1-2', name: 'Tomato Bruschetta', description: 'Grilled bread with garlic and tomatoes', price: '10' }
+            { id: '1-1', name: 'Fresh Spring Rolls', description: 'Vegetables wrapped in rice paper', price: 8 },
+            { id: '1-2', name: 'Tomato Bruschetta', description: 'Grilled bread with garlic and tomatoes', price: 10 }
           ]
         },
         {
           id: '2',
           name: 'Main Courses',
           items: [
-            { id: '2-1', name: 'Grilled Salmon', description: 'Served with roasted vegetables', price: '22' },
-            { id: '2-2', name: 'Mushroom Risotto', description: 'Creamy Arborio rice with wild mushrooms', price: '18' }
+            { id: '2-1', name: 'Grilled Salmon', description: 'Served with roasted vegetables', price: 22 },
+            { id: '2-2', name: 'Mushroom Risotto', description: 'Creamy Arborio rice with wild mushrooms', price: 18 }
           ]
         }
       ]

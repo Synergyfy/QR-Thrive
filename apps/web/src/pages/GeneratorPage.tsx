@@ -8,7 +8,6 @@ import ColorsPanel from '../components/panels/ColorsPanel';
 import LogoPanel from '../components/panels/LogoPanel';
 import FramePanel from '../components/panels/FramePanel';
 import AuthModal from '../components/AuthModal';
-import { isQRDataValid } from '../utils/qrValidation';
 import {
   Type,
   Zap,
@@ -26,8 +25,6 @@ import {
   Frame,
   Image as LogoIcon,
   LayoutGrid,
-  FileEdit,
-  X,
   type LucideIcon,
   ChevronLeft,
   FileText,
@@ -40,7 +37,6 @@ import {
   Link2,
   Users,
   Ticket,
-  Loader2,
   Phone
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
