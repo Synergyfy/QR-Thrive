@@ -12,7 +12,6 @@ import {
   ShieldCheck,
   Smartphone,
   Type,
-  Camera,
   FileText,
   Video,
   Music,
@@ -38,6 +37,37 @@ import { twMerge } from 'tailwind-merge';
 import { downloadFile, getDownloadUrl } from '../utils/upload';
 import { DEMO_DATA } from '../constants/demoData';
 
+const getSocialConfig = (platform: string) => {
+  switch (platform) {
+    case 'instagram': return { 
+      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>, 
+      color: 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600' 
+    };
+    case 'facebook': return { 
+      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>, 
+      color: 'bg-[#1877F2]' 
+    };
+    case 'twitter': return { 
+      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>, 
+      color: 'bg-black' 
+    };
+    case 'linkedin': return { 
+      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.37 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451c.979 0 1.778-.773 1.778-1.729V1.729C24 .774 23.204 0 22.225 0z"/></svg>, 
+      color: 'bg-[#0A66C2]' 
+    };
+    case 'youtube': return { 
+      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>, 
+      color: 'bg-[#FF0000]' 
+    };
+    case 'tiktok': return { 
+      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.01.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.06-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96s3.35-1.92 5.27-1.74c1.1.07 2.13.44 3.06 1.06V.02z"/></svg>, 
+      color: 'bg-black' 
+    };
+    default: return { icon: Share2, color: 'bg-gray-600' };
+  }
+};
+
+
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
 interface DynamicViewProps {
@@ -52,7 +82,6 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
   const data = React.useMemo(() => {
     if (!isWizardPreview) return initialData;
     
-    // Check if initialData has any real content for its type
     const hasContent = () => {
       const t = initialData.type;
       if (t === 'url') return !!initialData.url;
@@ -62,19 +91,32 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
       if (t === 'phone') return !!initialData.phone?.number;
       if (t === 'sms') return !!initialData.sms?.number;
       if (t === 'whatsapp') return !!(initialData.whatsapp?.phoneNumber || initialData.whatsapp?.number);
+      if (t === 'links') return !!(initialData.linksInfo || initialData.linksList?.length);
       
       const typeData = (initialData as any)[t];
-      if (!typeData) return false;
-      
-      // Check if any field is filled
-      return Object.values(typeData).some(v => {
+      return !!typeData && Object.values(typeData).some(v => {
         if (Array.isArray(v)) return v.length > 0;
         if (typeof v === 'object' && v !== null) return Object.values(v).some(vv => !!vv);
         return !!v;
       });
     };
 
-    if (hasContent()) return initialData;
+    if (hasContent()) {
+      // Even if there is content, we merge with demo data to fill gaps, 
+      // but USER data MUST come last to overwrite demo data.
+      const demo = DEMO_DATA[initialData.type] || {};
+      return {
+        ...demo,
+        ...initialData,
+        // Deep merge for specific info objects if they exist
+        linksInfo: { ...(demo as any).linksInfo, ...initialData.linksInfo },
+        linksList: initialData.linksList?.length ? initialData.linksList : (demo as any).linksList,
+        vcard: { ...(demo as any).vcard, ...initialData.vcard },
+        business: { ...(demo as any).business, ...initialData.business },
+        menu: { ...(demo as any).menu, ...initialData.menu },
+        coupon: { ...(demo as any).coupon, ...initialData.coupon }
+      } as QRData;
+    }
     
     return { ...initialData, ...(DEMO_DATA[initialData.type] || {}) } as QRData;
   }, [initialData, isWizardPreview]);
@@ -252,13 +294,13 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
 
       case 'image':
          return (
-           <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+           <div className="flex-1 flex flex-col relative -mx-6 -mt-6 min-h-full bg-white transition-colors duration-500 overflow-y-auto scrollbar-hide">
              {viewingImage ? (
-               <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
-                 <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+               <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center animate-in fade-in duration-300 px-4">
+                 <div className="absolute top-8 left-4 right-4 flex items-center justify-between z-10">
                    <button 
                      onClick={() => setViewingImage(null)}
-                     className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white font-normal text-sm"
+                     className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full text-white font-normal text-xs border border-white/20"
                    >
                      <ChevronRight className="w-4 h-4 rotate-180" />
                      Back
@@ -270,7 +312,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                           handleDownload(viewingImage, 'image.png');
                         }
                       }}
-                      className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white font-normal text-sm disabled:opacity-50"
+                      className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full text-white font-normal text-xs disabled:opacity-50 border border-white/20"
                     >
                       {isDownloading ? (
                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -286,124 +328,138 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                    className="max-w-full max-h-full object-contain"
                  />
                </div>
-             ) : data.images ? (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h1 className="text-2xl font-normal text-gray-900 leading-none">Photo Gallery</h1>
-                      <p className="text-gray-400 text-[10px] font-normal uppercase tracking-widest leading-none mt-2">Shared via QR Thrive</p>
-                    </div>
-                    {selectedImages.size > 0 && (
-                      <button 
-                        onClick={handleBulkDownload}
-                        disabled={isDownloading}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-full font-normal text-xs shadow-lg shadow-blue-100 flex items-center gap-2 animate-in slide-in-from-right-4 duration-300"
-                      >
-                         {isDownloading ? (
-                           <Loader2 className="w-3 h-3 animate-spin" />
-                         ) : (
-                           <Download className="w-3 h-3" />
-                         )}
-                         Download {selectedImages.size}
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    {data.images.map((img, idx) => {
-                      const isSelected = selectedImages.has(idx);
-                      return (
-                        <div 
-                           key={idx} 
-                           className={cn(
-                             "relative aspect-square rounded-[24px] overflow-hidden group transition-all duration-300",
-                             isSelected ? "p-2 bg-blue-600 shadow-xl shadow-blue-100 scale-95" : "bg-gray-100"
-                           )}
-                        >
-                           <div className="relative w-full h-full rounded-[18px] overflow-hidden">
-                              <img 
-                                src={img.url} 
-                                alt={`Gallery ${idx}`}
-                                className="w-full h-full object-cover cursor-pointer"
-                                onClick={() => setViewingImage(img.url)}
-                              />
-                              <div className="absolute top-2 right-2 flex flex-col gap-2">
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleSelect(idx);
-                                  }}
-                                  className={cn(
-                                    "w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-lg",
-                                    isSelected ? "bg-white text-blue-600" : "bg-white/20 backdrop-blur-md text-white border border-white/30"
-                                  )}
-                                >
-                                  {isSelected ? <CheckCircle2 className="w-5 h-5" /> : <div className="w-5 h-5 rounded-full border-2 border-white/50" />}
-                                </button>
-                              </div>
-                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <>
-                 <div className="text-center">
-                   <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-100">
-                     <Camera className="w-10 h-10" />
-                   </div>
-                   <h1 className="text-2xl font-normal text-gray-900 mb-2">Image Gallery</h1>
-                   <p className="text-gray-400 text-[10px] font-normal uppercase tracking-widest leading-none">Shared via QR Thrive</p>
-                 </div>
-
-                 <div className="bg-white p-2 rounded-[40px] border border-gray-100 shadow-2xl shadow-blue-100/50 overflow-hidden group">
-                    <div className="relative aspect-square sm:aspect-video rounded-[32px] overflow-hidden cursor-pointer" onClick={() => setViewingImage(data.image?.url || null)}>
-                       <img 
-                         src={data.image?.url} 
-                         alt="Gallery" 
-                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                       />
-                       <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                         <Eye className="w-8 h-8 text-white" />
-                       </div>
-                       {data.image?.caption && (
-                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
-                            <p className="text-white font-normal text-lg leading-tight transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 italic">"{data.image.caption}"</p>
-                         </div>
+             ) : (
+                 <div className="flex-1 flex flex-col">
+                    {/* Colored Hero Banner Section */}
+                    <div 
+                       className="relative pt-16 pb-28 px-8 text-center overflow-hidden"
+                       style={{ 
+                          backgroundColor: data.imageGalleryInfo?.themeColor || '#166534',
+                          backgroundImage: data.imageGalleryInfo?.bannerImage?.url ? `url(${data.imageGalleryInfo.bannerImage.url})` : 'none',
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center'
+                       }}
+                    >
+                       {/* Overlay for readability if banner exists */}
+                       {data.imageGalleryInfo?.bannerImage?.url && (
+                          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
                        )}
-                    </div>
-                 </div>
 
-                 {data.image?.caption && (
-                   <div className="bg-white p-6 rounded-3xl border border-gray-50 flex items-start gap-4 shadow-sm">
-                      <div className="bg-blue-50 p-2 rounded-xl text-blue-600">
-                         <Type className="w-4 h-4" />
+                       <div className="relative z-10 flex flex-col items-center">
+                          {data.imageGalleryInfo?.logoImage?.url && (
+                             <div className="w-20 h-20 bg-white rounded-[24px] p-3 shadow-2xl mb-8 animate-in zoom-in-50 duration-700">
+                                <img src={data.imageGalleryInfo.logoImage.url} alt="Logo" className="w-full h-full object-contain" />
+                             </div>
+                          )}
+
+                          <div className="mb-6 flex items-center justify-center opacity-60">
+                             <span className="text-white text-[10px] font-black uppercase tracking-[0.4em]">Gallery Collection</span>
+                          </div>
+
+                          <h1 className="text-[36px] font-bold text-white tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                             {data.imageGalleryInfo?.title || 'Photo Gallery'}
+                          </h1>
+                          
+                          {data.imageGalleryInfo?.description && (
+                             <p className="text-white/80 text-[15px] font-medium leading-relaxed max-w-[280px] mx-auto mt-4 animate-in fade-in slide-in-from-bottom-6 duration-1000 [animation-delay:200ms]">
+                                {data.imageGalleryInfo.description}
+                             </p>
+                          )}
+                          
+                          {data.imageGalleryInfo?.buttonText && data.imageGalleryInfo?.buttonUrl && (
+                            <div className="mt-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 [animation-delay:400ms]">
+                               <a 
+                                 href={data.imageGalleryInfo.buttonUrl}
+                                 target="_blank"
+                                 rel="noopener noreferrer"
+                                 className="inline-flex items-center justify-center px-10 py-4 bg-white text-gray-900 rounded-[20px] font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all"
+                               >
+                                 {data.imageGalleryInfo.buttonText}
+                               </a>
+                            </div>
+                          )}
+                       </div>
+
+                       {/* Wavy Divider SVG */}
+                       <div className="absolute bottom-0 left-0 w-full leading-[0] transform translate-y-[1px] z-10">
+                          <svg viewBox="0 0 1440 320" preserveAspectRatio="none" className="w-full h-20 fill-white">
+                             <path d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,112C672,107,768,149,864,165.3C960,181,1056,171,1152,149.3C1248,128,1344,96,1392,80L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+                          </svg>
+                       </div>
+                    </div>
+
+                   {/* Gallery Content Section (Light Gray Background) */}
+                   <div className="flex-1 px-5 pt-12 pb-20 bg-[#f8fafc]">
+                      <div className="flex items-center justify-between mb-10 px-2">
+                         <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">Gallery Collection</h2>
+                         {selectedImages.size > 0 && (
+                           <button 
+                             onClick={handleBulkDownload}
+                             disabled={isDownloading}
+                             className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-black text-[10px] shadow-2xl flex items-center gap-2 animate-in slide-in-from-right-4 duration-300 uppercase tracking-widest"
+                           >
+                              {isDownloading ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Download className="w-3 h-3" />
+                              )}
+                              Save {selectedImages.size}
+                           </button>
+                         )}
                       </div>
-                      <p className="text-xs font-semibold text-gray-600 leading-relaxed">"{data.image.caption}"</p>
+
+                      <div className="space-y-8">
+                         {(data.images || []).map((img, idx) => {
+                             const isSelected = selectedImages.has(idx);
+                             return (
+                               <div 
+                                  key={idx} 
+                                  className={cn(
+                                    "relative w-full rounded-[48px] overflow-hidden group transition-all duration-700 animate-in fade-in slide-in-from-bottom-12",
+                                    isSelected ? "ring-4 ring-slate-900 shadow-2xl scale-[0.98]" : "shadow-[0_30px_60px_-15px_rgba(15,23,42,0.15)]"
+                                  )}
+                                  style={{ animationDelay: `${idx * 150}ms` }}
+                               >
+                                  <img 
+                                    src={img.url} 
+                                    alt={`Gallery item ${idx + 1}`}
+                                    className="w-full h-auto object-cover cursor-pointer min-h-[220px] block transition-transform duration-700 group-hover:scale-105"
+                                    onClick={() => setViewingImage(img.url)}
+                                  />
+                                  
+                                  {/* Selection Checkmark */}
+                                  <div className="absolute top-6 right-6 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-2 group-hover:translate-y-0">
+                                     <button 
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         toggleSelect(idx);
+                                       }}
+                                       className={cn(
+                                         "w-14 h-14 rounded-[22px] flex items-center justify-center transition-all shadow-2xl backdrop-blur-xl border border-white/20",
+                                         isSelected ? "bg-white text-slate-900" : "bg-black/20 text-white"
+                                       )}
+                                     >
+                                       <CheckCircle2 className="w-7 h-7" />
+                                     </button>
+                                  </div>
+
+                                  {img.caption && (
+                                    <div className="absolute bottom-0 inset-x-0 p-10 bg-gradient-to-t from-black/90 via-black/40 to-transparent transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                                       <p className="text-white text-base font-bold tracking-tight leading-snug">{img.caption}</p>
+                                    </div>
+                                  )}
+                               </div>
+                             );
+                         })}
+                      </div>
                    </div>
-                 )}
-                
-                 <div className="grid grid-cols-2 gap-4">
-                   <a 
-                     href={data.image?.url}
-                     target="_blank"
-                     rel="noopener noreferrer"
-                     className="py-4 bg-blue-600 text-white rounded-[32px] font-normal text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-95 transition-all text-center"
-                   >
-                     <Eye className="w-5 h-5" />
-                     View
-                   </a>
-                   <a 
-                     href={data.image?.url ? getDownloadUrl(data.image.url) : '#'}
-                     download={data.image?.name || 'image.png'}
-                     className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-normal text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 hover:bg-white active:scale-95 transition-all"
-                   >
-                     <Download className="w-5 h-5" />
-                     Download
-                   </a>
-                 </div>
-               </>
+
+                   {/* Footer Branding */}
+                   <div className="py-16 text-center bg-[#f8fafc] mt-auto">
+                      <div className="w-12 h-1 bg-slate-200 mx-auto mb-8 rounded-full opacity-50" />
+                      <p className="text-slate-300 text-[10px] font-black uppercase tracking-[0.5em]">QR Thrive Studio</p>
+                   </div>
+                </div>
              )}
            </div>
          );
@@ -738,11 +794,11 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
            <div className="flex-1 flex flex-col relative bg-white -mx-6 -mt-6 rounded-t-[44px]">
               {/* Banner with Content Inside */}
               <div 
-                className="h-72 rounded-b-[48px] relative overflow-hidden flex flex-col items-center justify-center text-center px-6"
+                className="h-60 rounded-b-[48px] relative overflow-hidden flex flex-col items-center justify-start text-center px-6 pt-10"
                 style={{ backgroundColor: data.linksInfo?.themeColor || '#2563eb' }}
               >
                  {data.linksInfo?.banner && (
-                    <img src={data.linksInfo.banner} className="absolute inset-0 w-full h-full object-cover opacity-50" alt="Banner" />
+                    <img src={data.linksInfo.banner} className="absolute inset-0 w-full h-full object-cover opacity-30" alt="Banner" />
                  )}
                  <div className="relative z-10 flex flex-col items-center">
                     {/* Avatar */}
@@ -754,45 +810,79 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                        )}
                     </div>
 
-                    <h1 className="text-2xl font-medium">
+                    <h1 className="text-xl font-medium text-white tracking-tight mb-1 drop-shadow-md">
                        {data.linksInfo?.title || 'Your Title'}
                     </h1>
                     {data.linksInfo?.description && (
-                       <p className="text-[13px] text-white/90 font-normal leading-relaxed drop-shadow-md max-w-xs">
+                       <p className="text-[10px] text-white/90 font-normal leading-relaxed drop-shadow-md max-w-xs px-4">
                           {data.linksInfo.description}
                        </p>
                     )}
                  </div>
               </div>
               
-              <div className="relative z-10 flex flex-col pt-8 px-6">
-                 <div className="w-full space-y-3 mb-8">
+              <div className="relative z-20 flex flex-col px-6">
+                 {/* Overlapping Icons */}
+                 <div className="flex items-center justify-center gap-4 -mt-10 mb-8">
+                    {data.linksInfo?.phone && (
+                       <a 
+                         href={`tel:${data.linksInfo.phone}`} 
+                         className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
+                         style={{ color: data.linksInfo.themeColor || '#2563eb' }}
+                       >
+                          <Phone className="w-6 h-6" />
+                       </a>
+                    )}
+                    {data.linksInfo?.email && (
+                       <a 
+                         href={`mailto:${data.linksInfo.email}`} 
+                         className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
+                         style={{ color: data.linksInfo.themeColor || '#2563eb' }}
+                       >
+                          <Mail className="w-6 h-6" />
+                       </a>
+                    )}
+                    {data.linksInfo?.website && (
+                       <a 
+                         href={data.linksInfo.website} 
+                         target="_blank" 
+                         rel="noopener noreferrer" 
+                         className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
+                         style={{ color: data.linksInfo.themeColor || '#2563eb' }}
+                       >
+                          <Globe className="w-6 h-6" />
+                       </a>
+                    )}
+                 </div>
+
+                 <div className="w-full space-y-2 mb-8">
                     {data.linksList?.map((link: any, idx: number) => (
                        <a 
                          key={idx}
                          href={link.url || '#'}
                          target="_blank"
                          rel="noopener noreferrer"
-                         className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-[28px] hover:scale-[1.02] active:scale-95 transition-transform shadow-sm"
+                         className="flex items-center gap-4 p-4 bg-white border border-gray-50 rounded-2xl hover:scale-[1.01] active:scale-95 transition-all shadow-sm group"
                          style={{ 
-                            backgroundColor: data.linksInfo?.linkBgColor || '#F8FAFC',
+                            backgroundColor: (data.linksInfo?.linkBgColor || '#FFFFFF') + 'FA',
                             color: data.linksInfo?.linkTextColor || '#1E293B'
                          }}
                        >
-                          <div className="flex items-center gap-4">
-                             <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-sm border border-black/5">
-                                {link.icon ? (
-                                  <img src={link.icon} alt={link.title} className="w-full h-full object-cover" />
-                                ) : (
-                                   <div className="w-full h-full bg-gray-50 flex items-center justify-center">
-                                      <Link2 className="w-4 h-4 text-gray-400" />
-                                   </div>
-                                )}
-                             </div>
-                             <span className="font-normal text-[14px] tracking-tight">{link.title || 'Link Title'}</span>
+                          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden shrink-0 shadow-sm border border-black/5 group-hover:bg-blue-50 transition-colors">
+                             {link.icon ? (
+                               <img src={link.icon} alt={link.title} className="w-full h-full object-cover" />
+                             ) : (
+                                <Link2 className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                             )}
                           </div>
-                          <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center shrink-0">
-                             <ChevronRight className="w-4 h-4 opacity-50" style={{ color: data.linksInfo?.linkTextColor || '#1E293B' }} />
+                          <div className="min-w-0 flex-1">
+                             <p className="text-[9px] font-normal text-gray-400 uppercase tracking-wider leading-none mb-1 opacity-60">Source Link</p>
+                             <p className="font-normal text-xs tracking-tight break-all leading-tight">
+                                {link.title || 'Link Title'}
+                             </p>
+                          </div>
+                          <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center shrink-0 group-hover:bg-blue-50 transition-colors">
+                             <ChevronRight className="w-3 h-3 text-gray-300 group-hover:text-blue-600 transition-colors" />
                           </div>
                        </a>
                     ))}
@@ -1413,8 +1503,8 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                           {category.name || 'Category'}
                        </h2>
                        <div className="space-y-4">
-                          {category.items.map((item) => (
-                             <div key={item.id} className="bg-white p-5 rounded-[28px] shadow-sm border border-gray-100 transition-transform hover:scale-[1.02]">
+                          {category.items.map((item, idx) => (
+                             <div key={idx} className="bg-white p-5 rounded-[28px] shadow-sm border border-gray-100 transition-transform hover:scale-[1.02]">
                                 <div className="flex justify-between items-start gap-4">
                                    <div className="flex-1">
                                       <h3 className="font-normal text-gray-900 text-sm leading-tight">
@@ -1571,34 +1661,6 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
   );
 };
 
-const getSocialConfig = (platform: string) => {
-  switch (platform) {
-    case 'instagram': return { 
-      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>, 
-      color: 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600' 
-    };
-    case 'facebook': return { 
-      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>, 
-      color: 'bg-[#1877F2]' 
-    };
-    case 'twitter': return { 
-      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>, 
-      color: 'bg-black' 
-    };
-    case 'linkedin': return { 
-      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.37 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451c.979 0 1.778-.773 1.778-1.729V1.729C24 .774 23.204 0 22.225 0z"/></svg>, 
-      color: 'bg-[#0A66C2]' 
-    };
-    case 'youtube': return { 
-      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>, 
-      color: 'bg-[#FF0000]' 
-    };
-    case 'tiktok': return { 
-      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.01.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.06-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96s3.35-1.92 5.27-1.74c1.1.07 2.13.44 3.06 1.06V.02z"/></svg>, 
-      color: 'bg-black' 
-    };
-    default: return { icon: Share2, color: 'bg-gray-600' };
-  }
-};
+
 
 export default DynamicView;

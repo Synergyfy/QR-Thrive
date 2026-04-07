@@ -54,6 +54,15 @@ export interface QRData {
     pendingFile?: PendingFile;
   };
   images?: (FileData & { pendingFile?: PendingFile; caption?: string })[];
+  imageGalleryInfo?: {
+    bannerImage?: FileData & { pendingFile?: PendingFile };
+    logoImage?: FileData & { pendingFile?: PendingFile };
+    title?: string;
+    description?: string;
+    buttonText?: string;
+    buttonUrl?: string;
+    themeColor?: string;
+  };
   pdf?: FileData & { pendingFile?: PendingFile };
   video?: {
     url: string;
@@ -164,6 +173,9 @@ export interface QRData {
     banner?: string;
     title?: string;
     description?: string;
+    phone?: string;
+    email?: string;
+    website?: string;
   };
   linksList?: {
     title: string;

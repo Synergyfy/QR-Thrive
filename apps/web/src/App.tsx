@@ -7,6 +7,10 @@ import CreationWizard from './pages/CreationWizard';
 import SubmissionsPage from './pages/SubmissionsPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import PricingPage from './pages/PricingPage';
+import AdminLayout from './pages/admin/AdminLayout';
+import Overview from './pages/admin/Overview';
+import UsersManagement from './pages/admin/Users';
+import PricingManager from './pages/admin/PricingManager';
 
 function App() {
   return (
@@ -42,6 +46,14 @@ function App() {
         {/* Dynamic Link Redirection */}
         {/* We use /s/ as the prefix for our short IDs */}
         <Route path="/s/:id" element={<DynamicPage />} />
+
+        {/* Admin Dashboard Area */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Overview />} />
+          <Route path="users" element={<UsersManagement />} />
+          <Route path="pricing" element={<PricingManager />} />
+          <Route path="settings" element={<div className="p-8 bg-white rounded-3xl border border-slate-100 shadow-sm text-center text-slate-400 font-bold uppercase tracking-widest text-xs">General settings configuration coming soon...</div>} />
+        </Route>
 
         {/* Catch-all for 404s */}
         <Route path="*" element={<Navigate to="/" replace />} />

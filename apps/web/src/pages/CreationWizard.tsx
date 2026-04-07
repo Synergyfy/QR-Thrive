@@ -21,7 +21,6 @@ import {
   Image as LogoIcon,
   Frame,
   Loader2,
-  HelpCircle,
   LayoutGrid,
   FileEdit,
   X
