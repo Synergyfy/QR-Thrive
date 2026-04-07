@@ -35,6 +35,13 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const FAQ_DATA = [
+  { q: "How do I ensure my QR code is scannable?", a: "Just keep the contrast high (dark code, light background) and avoid overly complex designs. Using the 'Q' or 'H' error correction levels in the Design panel helps." },
+  { q: "Can I change the QR code design after generation?", a: "Yes, you can modify any settings in the panel and the preview will update instantly." },
+  { q: "Are these QR codes free to use?", a: "Yes, you can generate and export QR codes for personal and commercial use directly from this platform." },
+  { q: "What format should I download?", a: "PNG is great for digital use (social media/web), while SVG is recommended for print as it can be scaled to any size without losing quality." }
+];
+
 const INITIAL_CONFIG: QRConfiguration = {
   data: {
     type: 'url',
@@ -86,6 +93,7 @@ function GeneratorPage() {
   
   const [config, setConfig] = useState<QRConfiguration>(INITIAL_CONFIG);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(null);
 
   const [designTab, setDesignTab] = useState<'shape' | 'frame' | 'logo'>('shape');
 
@@ -376,6 +384,29 @@ function GeneratorPage() {
             <QRTypeCard icon={Zap} title="App Deep Link" desc="Smart routing based on user's device OS." />
             <QRTypeCard icon={Shield} title="Secure Auth" desc="Use QR for MFA and secure verification flows." />
           </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="max-w-3xl mx-auto py-16 px-6">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-8 text-center">Frequently Asked Questions</h2>
+        <div className="space-y-3">
+          {FAQ_DATA.map((item, i) => (
+            <div key={i} className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+              <button
+                onClick={() => setFaqOpenIndex(faqOpenIndex === i ? null : i)}
+                className="w-full flex justify-between items-center p-5 text-left font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                {item.q}
+                <ChevronRight className={cn("w-5 h-5 transition-transform text-gray-400", faqOpenIndex === i && "rotate-90")} />
+              </button>
+              {faqOpenIndex === i && (
+                <div className="p-5 border-t border-gray-100 text-gray-600 bg-gray-50/50 leading-relaxed">
+                  {item.a}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </section>
 
