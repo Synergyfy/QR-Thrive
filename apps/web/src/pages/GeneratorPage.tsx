@@ -36,7 +36,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 const FAQ_DATA = [
-  { q: "How do I ensure my QR code is scannable?", a: "Keep the contrast high (dark code, light background) and avoid overly complex designs. Using the 'Q' or 'H' error correction levels in the Design panel helps." },
+  { q: "How do I ensure my QR code is scannable?", a: "Just keep the contrast high (dark code, light background) and avoid overly complex designs. Using the 'Q' or 'H' error correction levels in the Design panel helps." },
   { q: "Can I change the QR code design after generation?", a: "Yes, you can modify any settings in the panel and the preview will update instantly." },
   { q: "Are these QR codes free to use?", a: "Yes, you can generate and export QR codes for personal and commercial use directly from this platform." },
   { q: "What format should I download?", a: "PNG is great for digital use (social media/web), while SVG is recommended for print as it can be scaled to any size without losing quality." }
