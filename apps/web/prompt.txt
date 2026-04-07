@@ -1,0 +1,27 @@
+GT Walsheim Pro - 400
+
+Family
+"GT Walsheim Pro", sans-serif
+Style
+normal
+Weight
+400
+Color
+rgb(17, 24, 39)
+Size
+16px
+Line Height
+24pxGT Walsheim Pro - 400
+
+Family
+"GT Walsheim Pro", sans-serif
+Style
+normal
+Weight
+400
+Color
+rgb(17, 24, 39)
+Size
+16px
+Line Height
+24px

@@ -209,6 +209,116 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
 
             {data.type === 'vcard' && (
               <div className="space-y-6">
+                <div className="space-y-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Theme Color</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['#2563eb', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#d97706', '#16a34a', '#059669', '#0891b2', '#1e293b'].map(c => (
+                      <button
+                        key={c}
+                        onClick={() => updateData({ vcard: { ...(data.vcard || {} as any), themeColor: c } } as any)}
+                        className={cn(
+                          "w-8 h-8 rounded-full border-2 transition-all",
+                          (data.vcard as any)?.themeColor === c ? "border-slate-900 scale-110 shadow-lg" : "border-transparent hover:scale-105"
+                        )}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Accent Color (Icons & Buttons)</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['#2563eb', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#d97706', '#16a34a', '#059669', '#0891b2', '#1e293b'].map(c => (
+                      <button
+                        key={c}
+                        onClick={() => updateData({ vcard: { ...(data.vcard || {} as any), accentColor: c } } as any)}
+                        className={cn(
+                          "w-8 h-8 rounded-full border-2 transition-all",
+                          (data.vcard as any)?.accentColor === c ? "border-slate-900 scale-110 shadow-lg" : "border-transparent hover:scale-105"
+                        )}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border border-gray-100 rounded-[24px] overflow-hidden">
+                   <div className="p-4 bg-gray-50 flex items-center gap-3 border-b border-gray-100">
+                      <User className="w-5 h-5 text-gray-500" />
+                      <p className="text-sm font-bold text-gray-900">Personal Identity</p>
+                   </div>
+                   <div className="p-6 bg-white space-y-6">
+                      <div className="space-y-3">
+                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Profile Image</p>
+                         <div className="flex items-center gap-4">
+                             <label className="flex-1 px-4 py-4 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
+                                 <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                     const file = e.target.files?.[0];
+                                     if (file) {
+                                         const reader = new FileReader();
+                                         reader.onloadend = () => {
+                                             updateData({ vcard: { ...(data.vcard || {} as any), avatar: reader.result as string }});
+                                         };
+                                         reader.readAsDataURL(file);
+                                     }
+                                 }} />
+                                 <Camera className="w-5 h-5 text-gray-400 group-hover:text-blue-500 mb-1 transition-colors" />
+                                 <span className="text-[11px] font-bold text-gray-400 group-hover:text-blue-500">Upload Photo</span>
+                             </label>
+                             {data.vcard?.avatar && (
+                                 <div className="w-20 h-20 rounded-xl border border-gray-100 overflow-hidden relative group shrink-0 shadow-sm bg-white">
+                                     <img src={data.vcard.avatar} alt="Avatar preview" className="w-full h-full object-cover" />
+                                     <button 
+                                       onClick={(e) => {
+                                           e.preventDefault();
+                                           updateData({ vcard: { ...(data.vcard || {} as any), avatar: undefined }});
+                                       }}
+                                       className="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center text-white backdrop-blur-sm transition-all"
+                                     >
+                                       <X className="w-5 h-5" />
+                                     </button>
+                                 </div>
+                             )}
+                         </div>
+                      </div>
+
+                      <div className="space-y-3">
+                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Banner Image</p>
+                         <div className="flex flex-col gap-3">
+                             <label className="w-full px-4 py-4 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
+                                 <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                     const file = e.target.files?.[0];
+                                     if (file) {
+                                         const reader = new FileReader();
+                                         reader.onloadend = () => {
+                                             updateData({ vcard: { ...(data.vcard || {} as any), banner: reader.result as string }});
+                                         };
+                                         reader.readAsDataURL(file);
+                                     }
+                                 }} />
+                                 <Camera className="w-5 h-5 text-gray-400 group-hover:text-blue-500 mb-1 transition-colors" />
+                                 <span className="text-[11px] font-bold text-gray-400 group-hover:text-blue-500">Upload Banner</span>
+                             </label>
+                             {data.vcard?.banner && (
+                                 <div className="w-full aspect-[3/1] rounded-xl border border-gray-100 overflow-hidden relative group shadow-sm bg-white">
+                                     <img src={data.vcard.banner} alt="Banner preview" className="w-full h-full object-cover" />
+                                     <button 
+                                       onClick={(e) => {
+                                           e.preventDefault();
+                                           updateData({ vcard: { ...(data.vcard || {} as any), banner: undefined }});
+                                       }}
+                                       className="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center text-white backdrop-blur-sm transition-all"
+                                     >
+                                       <X className="w-5 h-5" />
+                                     </button>
+                                 </div>
+                             )}
+                         </div>
+                      </div>
+                   </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">First Name</p>
@@ -250,6 +360,124 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                     placeholder="+1 234 567 890"
                     className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
                   />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Website URL</p>
+                  <input
+                    type="url"
+                    value={data.vcard?.website || ''}
+                    onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), website: e.target.value } })}
+                    placeholder="https://example.com"
+                    className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
+                  />
+                </div>
+
+                <div className="border border-gray-100 rounded-[24px] overflow-hidden">
+                   <div className="p-4 bg-gray-50 flex items-center gap-3 border-b border-gray-100">
+                      <MapPin className="w-5 h-5 text-gray-500" />
+                      <p className="text-sm font-bold text-gray-900">Location</p>
+                   </div>
+                   <div className="p-6 bg-white space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Address</p>
+                        <textarea
+                          value={data.vcard?.address || ''}
+                          onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), address: e.target.value } })}
+                          placeholder="123 Example Street, City, Country"
+                          rows={2}
+                          className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
+                        />
+                      </div>
+                   </div>
+                </div>
+
+                <div className="border border-gray-100 rounded-[24px] overflow-hidden">
+                   <div className="p-4 bg-gray-50 flex items-center gap-3 border-b border-gray-100">
+                      <Building2 className="w-5 h-5 text-gray-500" />
+                      <p className="text-sm font-bold text-gray-900">Company Details</p>
+                   </div>
+                   <div className="p-6 bg-white space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Company</p>
+                          <input
+                            type="text"
+                            value={data.vcard?.company || ''}
+                            onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), company: e.target.value } })}
+                            placeholder="Company Name"
+                            className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Profession</p>
+                          <input
+                            type="text"
+                            value={data.vcard?.jobTitle || ''}
+                            onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), jobTitle: e.target.value } })}
+                            placeholder="Job Title"
+                            className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
+                          />
+                        </div>
+                      </div>
+                   </div>
+                </div>
+
+                <div className="border border-gray-100 rounded-[24px] overflow-hidden">
+                   <div className="p-4 bg-gray-50 flex items-center gap-3 border-b border-gray-100">
+                      <ClipboardList className="w-5 h-5 text-gray-500" />
+                      <p className="text-sm font-bold text-gray-900">Summary</p>
+                   </div>
+                   <div className="p-6 bg-white space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">About You</p>
+                        <textarea
+                          value={data.vcard?.note || ''}
+                          onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), note: e.target.value } })}
+                          placeholder="Tell people a bit about yourself..."
+                          rows={3}
+                          className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
+                        />
+                      </div>
+                   </div>
+                </div>
+
+                <div className="border border-gray-100 rounded-[24px] overflow-hidden">
+                   <div className="p-4 bg-gray-50 flex items-center gap-3 border-b border-gray-100">
+                      <Share2 className="w-5 h-5 text-gray-500" />
+                      <p className="text-sm font-bold text-gray-900">Social Networks</p>
+                   </div>
+                   <div className="p-6 bg-white space-y-4">
+                      <div className="grid grid-cols-1 gap-4">
+                        {[
+                          { id: 'instagram' as const, icon: InstagramIcon, label: 'Instagram', placeholder: 'instagram.com/user' },
+                          { id: 'facebook' as const, icon: FacebookIcon, label: 'Facebook', placeholder: 'facebook.com/user' },
+                          { id: 'linkedin' as const, icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451c.979 0 1.778-.773 1.778-1.729V1.729C24 .774 23.204 0 22.225 0z"/></svg>, label: 'LinkedIn', placeholder: 'linkedin.com/in/user' },
+                          { id: 'twitter' as const, icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>, label: 'Twitter', placeholder: 'twitter.com/user' },
+                          { id: 'whatsapp' as const, icon: Phone, label: 'WhatsApp', placeholder: 'WhatsApp number' },
+                        ].map((social) => (
+                          <div key={social.id} className="relative group">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-blue-600">
+                              <social.icon className="w-full h-full" />
+                            </div>
+                            <input
+                              type="text"
+                              value={(data.vcard?.socials as any)?.[social.id] || ''}
+                              onChange={(e) => updateData({ 
+                                vcard: { 
+                                  ...(data.vcard || {}), 
+                                  socials: { 
+                                    ...(data.vcard?.socials || {}), 
+                                    [social.id]: e.target.value 
+                                  } 
+                                } 
+                              } as any)}
+                              placeholder={social.placeholder}
+                              className="w-full pl-12 pr-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-sm font-semibold bg-gray-50/30 transition-all"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                   </div>
                 </div>
               </div>
             )}
@@ -958,6 +1186,39 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                        </div>
                        <div className="p-6 bg-white space-y-6">
                            <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Theme Color</p>
+                              <div className="flex flex-wrap gap-2">
+                                {['#2563eb', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#d97706', '#16a34a', '#059669', '#0891b2', '#1e293b'].map(c => (
+                                  <button
+                                    key={c}
+                                    onClick={() => updateData({ business: { ...(data.business || {} as any), themeColor: c } } as any)}
+                                    className={cn(
+                                      "w-8 h-8 rounded-full border-2 transition-all",
+                                      (data.business as any)?.themeColor === c ? "border-slate-900 scale-110 shadow-lg" : "border-transparent hover:scale-105"
+                                    )}
+                                    style={{ backgroundColor: c }}
+                                  />
+                                ))}
+                              </div>
+                           </div>
+
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Accent Color (Icons & Buttons)</p>
+                              <div className="flex flex-wrap gap-2">
+                                {['#2563eb', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#d97706', '#16a34a', '#059669', '#0891b2', '#1e293b'].map(c => (
+                                  <button
+                                    key={c}
+                                    onClick={() => updateData({ business: { ...(data.business || {} as any), accentColor: c } } as any)}
+                                    className={cn(
+                                      "w-8 h-8 rounded-full border-2 transition-all",
+                                      (data.business as any)?.accentColor === c ? "border-slate-900 scale-110 shadow-lg" : "border-transparent hover:scale-105"
+                                    )}
+                                    style={{ backgroundColor: c }}
+                                  />
+                                ))}
+                              </div>
+                           </div>
+                           <div className="space-y-3">
                               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Business Logo</p>
                               <div className="flex items-center gap-4">
                                   <label className="flex-1 px-4 py-4 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
@@ -981,6 +1242,39 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 updateData({ business: { ...(data.business || {}), logo: undefined }});
+                                            }}
+                                            className="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center text-white backdrop-blur-sm transition-all"
+                                          >
+                                            <X className="w-5 h-5" />
+                                          </button>
+                                      </div>
+                                  )}
+                              </div>
+                           </div>
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Banner Image</p>
+                              <div className="flex flex-col gap-3">
+                                  <label className="w-full px-4 py-4 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
+                                      <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                              const reader = new FileReader();
+                                              reader.onloadend = () => {
+                                                  updateData({ business: { ...(data.business || {}), banner: reader.result as string }});
+                                              };
+                                              reader.readAsDataURL(file);
+                                          }
+                                      }} />
+                                      <Camera className="w-5 h-5 text-gray-400 group-hover:text-blue-500 mb-1 transition-colors" />
+                                      <span className="text-[11px] font-bold text-gray-400 group-hover:text-blue-500">Upload Banner (Recommended 1200x600)</span>
+                                  </label>
+                                  {data.business?.banner && (
+                                      <div className="w-full aspect-[2/1] rounded-xl border border-gray-100 overflow-hidden relative group shadow-sm bg-white">
+                                          <img src={data.business.banner} alt="Banner preview" className="w-full h-full object-cover" />
+                                          <button 
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                updateData({ business: { ...(data.business || {}), banner: undefined }});
                                             }}
                                             className="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center text-white backdrop-blur-sm transition-all"
                                           >
@@ -1042,29 +1336,85 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                           </div>
                        </div>
                        <div className="p-6 bg-white space-y-4">
-                          {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
-                              <div key={day} className="flex items-center gap-4">
-                                  <p className="w-24 text-[10px] font-bold text-gray-400 uppercase tracking-widest">{day}</p>
-                                  <input 
-                                      type="text" 
-                                      placeholder="e.g. 9:00 AM - 5:00 PM" 
-                                      className="flex-1 px-4 py-2.5 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm focus:border-blue-500 transition-colors" 
-                                      value={(data.business?.openingHours as any)?.[day] || ''} 
-                                      onChange={(e) => {
-                                          const currentHours = data.business?.openingHours || {};
-                                          updateData({ 
-                                              business: { 
-                                                  ...(data.business || {}), 
-                                                  openingHours: { 
-                                                      ...currentHours, 
-                                                      [day]: e.target.value 
-                                                  } 
-                                              } 
-                                          });
-                                      }}
-                                  />
-                              </div>
-                          ))}
+                          {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => {
+                              const dayData = (data.business?.openingHours as any)?.[day];
+                              const isClosed = typeof dayData === 'object' ? !!dayData.isClosed : dayData === 'Closed';
+                              const fromTime = typeof dayData === 'object' ? dayData.from : '';
+                              const toTime = typeof dayData === 'object' ? dayData.to : '';
+
+                              return (
+                                  <div key={day} className="space-y-2">
+                                      <div className="flex items-center justify-between">
+                                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{day}</p>
+                                         <button 
+                                           onClick={() => {
+                                               const currentHours = data.business?.openingHours || {};
+                                               updateData({
+                                                   business: {
+                                                       ...(data.business || {}),
+                                                       openingHours: {
+                                                           ...currentHours,
+                                                           [day]: { from: fromTime || '09:00', to: toTime || '17:00', isClosed: !isClosed }
+                                                       }
+                                                   }
+                                               } as any);
+                                           }}
+                                           className={cn(
+                                             "px-3 py-1 rounded-full text-[10px] font-bold transition-all",
+                                             isClosed ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
+                                           )}
+                                         >
+                                           {isClosed ? 'Closed' : 'Open'}
+                                         </button>
+                                      </div>
+                                      
+                                      {!isClosed && (
+                                         <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                             <div className="flex-1">
+                                                 <p className="text-[9px] font-bold text-gray-400 uppercase mb-1 ml-1">From</p>
+                                                 <input
+                                                     type="time"
+                                                     className="w-full px-3 py-2 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-xs focus:border-blue-500 transition-colors"
+                                                     value={fromTime}
+                                                     onChange={(e) => {
+                                                         const currentHours = data.business?.openingHours || {};
+                                                         updateData({
+                                                             business: {
+                                                                 ...(data.business || {}),
+                                                                 openingHours: {
+                                                                     ...currentHours,
+                                                                     [day]: { from: e.target.value, to: toTime || '17:00', isClosed: false }
+                                                                 }
+                                                             }
+                                                         } as any);
+                                                     }}
+                                                 />
+                                             </div>
+                                             <div className="flex-1">
+                                                 <p className="text-[9px] font-bold text-gray-400 uppercase mb-1 ml-1">To</p>
+                                                 <input
+                                                     type="time"
+                                                     className="w-full px-3 py-2 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-xs focus:border-blue-500 transition-colors"
+                                                     value={toTime}
+                                                     onChange={(e) => {
+                                                         const currentHours = data.business?.openingHours || {};
+                                                         updateData({
+                                                             business: {
+                                                                 ...(data.business || {}),
+                                                                 openingHours: {
+                                                                     ...currentHours,
+                                                                     [day]: { from: fromTime || '09:00', to: e.target.value, isClosed: false }
+                                                                 }
+                                                             }
+                                                         } as any);
+                                                     }}
+                                                 />
+                                             </div>
+                                         </div>
+                                      )}
+                                  </div>
+                              );
+                          })}
                        </div>
                    </div>
                 </div>
@@ -1080,6 +1430,22 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                           </div>
                        </div>
                        <div className="p-6 bg-white space-y-6">
+                           <div className="space-y-3">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Theme Color</p>
+                              <div className="flex flex-wrap gap-2">
+                                {['#2563eb', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#d97706', '#16a34a', '#059669', '#0891b2', '#1e293b'].map(c => (
+                                  <button
+                                    key={c}
+                                    onClick={() => updateData({ menu: { ...(data.menu || {} as any), themeColor: c } } as any)}
+                                    className={cn(
+                                      "w-8 h-8 rounded-full border-2 transition-all",
+                                      (data.menu as any)?.themeColor === c ? "border-slate-900 scale-110 shadow-lg" : "border-transparent hover:scale-105"
+                                    )}
+                                    style={{ backgroundColor: c }}
+                                  />
+                                ))}
+                              </div>
+                           </div>
                            <div className="space-y-3">
                               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Restaurant Name</p>
                               <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. The Great Cafe" value={data.menu?.restaurantName || ''} onChange={(e) => updateData({ menu: { ...(data.menu || {}), restaurantName: e.target.value } })} />
