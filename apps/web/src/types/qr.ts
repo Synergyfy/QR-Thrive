@@ -54,6 +54,15 @@ export interface QRData {
     pendingFile?: PendingFile;
   };
   images?: (FileData & { pendingFile?: PendingFile; caption?: string })[];
+  imageGalleryInfo?: {
+    bannerImage?: FileData & { pendingFile?: PendingFile };
+    logoImage?: FileData & { pendingFile?: PendingFile };
+    title?: string;
+    description?: string;
+    buttonText?: string;
+    buttonUrl?: string;
+    themeColor?: string;
+  };
   pdf?: FileData & { pendingFile?: PendingFile };
   video?: {
     url: string;
@@ -79,6 +88,20 @@ export interface QRData {
     company?: string;
     jobTitle?: string;
     note?: string;
+    avatar?: string;
+    banner?: string;
+    themeColor?: string;
+    accentColor?: string;
+    socials?: {
+      instagram?: string;
+      facebook?: string;
+      twitter?: string;
+      linkedin?: string;
+      youtube?: string;
+      tiktok?: string;
+      github?: string;
+      whatsapp?: string;
+    };
   };
   wifi?: {
     ssid: string;
@@ -147,8 +170,12 @@ export interface QRData {
     linkBgColor?: string;
     linkTextColor?: string;
     avatar?: string;
+    banner?: string;
     title?: string;
     description?: string;
+    phone?: string;
+    email?: string;
+    website?: string;
   };
   linksList?: {
     title: string;
@@ -157,6 +184,7 @@ export interface QRData {
   }[];
   business?: {
     themeColor?: string;
+    accentColor?: string;
     companyName?: string;
     headline?: string;
     about?: string;
@@ -176,13 +204,13 @@ export interface QRData {
       youtube?: string;
     };
     openingHours?: {
-      monday?: string;
-      tuesday?: string;
-      wednesday?: string;
-      thursday?: string;
-      friday?: string;
-      saturday?: string;
-      sunday?: string;
+      monday?: string | { from: string; to: string; isClosed?: boolean };
+      tuesday?: string | { from: string; to: string; isClosed?: boolean };
+      wednesday?: string | { from: string; to: string; isClosed?: boolean };
+      thursday?: string | { from: string; to: string; isClosed?: boolean };
+      friday?: string | { from: string; to: string; isClosed?: boolean };
+      saturday?: string | { from: string; to: string; isClosed?: boolean };
+      sunday?: string | { from: string; to: string; isClosed?: boolean };
     };
   };
   menu?: {

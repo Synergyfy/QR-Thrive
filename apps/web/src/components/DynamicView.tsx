@@ -12,7 +12,6 @@ import {
   ShieldCheck,
   Smartphone,
   Type,
-  Camera,
   FileText,
   Video,
   Music,
@@ -36,6 +35,38 @@ import { useSubmitForm } from '../hooks/useForms';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { downloadFile, getDownloadUrl } from '../utils/upload';
+import { DEMO_DATA } from '../constants/demoData';
+
+const getSocialConfig = (platform: string) => {
+  switch (platform) {
+    case 'instagram': return { 
+      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>, 
+      color: 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600' 
+    };
+    case 'facebook': return { 
+      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>, 
+      color: 'bg-[#1877F2]' 
+    };
+    case 'twitter': return { 
+      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>, 
+      color: 'bg-black' 
+    };
+    case 'linkedin': return { 
+      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.37 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451c.979 0 1.778-.773 1.778-1.729V1.729C24 .774 23.204 0 22.225 0z"/></svg>, 
+      color: 'bg-[#0A66C2]' 
+    };
+    case 'youtube': return { 
+      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>, 
+      color: 'bg-[#FF0000]' 
+    };
+    case 'tiktok': return { 
+      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.01.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.06-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96s3.35-1.92 5.27-1.74c1.1.07 2.13.44 3.06 1.06V.02z"/></svg>, 
+      color: 'bg-black' 
+    };
+    default: return { icon: Share2, color: 'bg-gray-600' };
+  }
+};
+
 
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
@@ -44,8 +75,52 @@ interface DynamicViewProps {
   isWizardPreview?: boolean;
 }
 
-const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
+const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPreview }) => {
   const { id: shortId } = useParams<{ id: string }>();
+
+  // Merge with demo data if in wizard preview
+  const data = React.useMemo(() => {
+    if (!isWizardPreview) return initialData;
+    
+    const hasContent = () => {
+      const t = initialData.type;
+      if (t === 'url') return !!initialData.url;
+      if (t === 'text') return !!initialData.text;
+      if (t === 'wifi') return !!initialData.wifi?.ssid;
+      if (t === 'email') return !!initialData.email?.address;
+      if (t === 'phone') return !!initialData.phone?.number;
+      if (t === 'sms') return !!initialData.sms?.number;
+      if (t === 'whatsapp') return !!(initialData.whatsapp?.phoneNumber || initialData.whatsapp?.number);
+      if (t === 'links') return !!(initialData.linksInfo || initialData.linksList?.length);
+      
+      const typeData = (initialData as any)[t];
+      return !!typeData && Object.values(typeData).some(v => {
+        if (Array.isArray(v)) return v.length > 0;
+        if (typeof v === 'object' && v !== null) return Object.values(v).some(vv => !!vv);
+        return !!v;
+      });
+    };
+
+    if (hasContent()) {
+      // Even if there is content, we merge with demo data to fill gaps, 
+      // but USER data MUST come last to overwrite demo data.
+      const demo = DEMO_DATA[initialData.type] || {};
+      return {
+        ...demo,
+        ...initialData,
+        // Deep merge for specific info objects if they exist
+        linksInfo: { ...(demo as any).linksInfo, ...initialData.linksInfo },
+        linksList: initialData.linksList?.length ? initialData.linksList : (demo as any).linksList,
+        vcard: { ...(demo as any).vcard, ...initialData.vcard },
+        business: { ...(demo as any).business, ...initialData.business },
+        menu: { ...(demo as any).menu, ...initialData.menu },
+        coupon: { ...(demo as any).coupon, ...initialData.coupon }
+      } as QRData;
+    }
+    
+    return { ...initialData, ...(DEMO_DATA[initialData.type] || {}) } as QRData;
+  }, [initialData, isWizardPreview]);
+
   const submitMutation = useSubmitForm(shortId || '');
   const [answers, setAnswers] = React.useState<Record<string, any>>({});
   const [submitted, setSubmitted] = React.useState(false);
@@ -164,14 +239,14 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
               <Globe className="w-10 h-10" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Website Link</h1>
-              <p className="text-gray-500 font-medium break-all">{data.url}</p>
+              <h1 className="text-xl font-medium text-gray-900 mb-1">Website Link</h1>
+              <p className="text-gray-500 font-normal text-sm break-all">{data.url}</p>
             </div>
             <a 
               href={data.url} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-200"
+              className="w-full py-4 bg-blue-600 text-white rounded-2xl font-normal flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-200"
             >
               Visit Website
               <ExternalLink className="w-4 h-4" />
@@ -186,7 +261,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
               <div className="w-20 h-20 bg-purple-100 text-purple-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-purple-100">
                 <Share2 className="w-10 h-10" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Connect with us</h1>
+              <h1 className="text-2xl font-normal text-gray-900 mb-2">Connect with us</h1>
               <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest">Our Social Ecosystem</p>
             </div>
 
@@ -206,8 +281,8 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                       <config.icon className={`w-6 h-6 ${config.color.replace('bg-', 'text-')}`} />
                     </div>
                     <div className="flex-1">
-                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{platform}</p>
-                       <p className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">Open Profile</p>
+                       <p className="text-xs font-normal text-gray-400 uppercase tracking-widest">{platform}</p>
+                       <p className="font-normal text-gray-900 group-hover:text-blue-600 transition-colors">Open Profile</p>
                     </div>
                     <ChevronRight className="text-gray-300 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </a>
@@ -219,13 +294,13 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
 
       case 'image':
          return (
-           <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+           <div className="flex-1 flex flex-col relative -mx-6 -mt-6 min-h-full bg-white transition-colors duration-500 overflow-y-auto scrollbar-hide">
              {viewingImage ? (
-               <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
-                 <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+               <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center animate-in fade-in duration-300 px-4">
+                 <div className="absolute top-8 left-4 right-4 flex items-center justify-between z-10">
                    <button 
                      onClick={() => setViewingImage(null)}
-                     className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white font-bold text-sm"
+                     className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full text-white font-normal text-xs border border-white/20"
                    >
                      <ChevronRight className="w-4 h-4 rotate-180" />
                      Back
@@ -237,7 +312,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                           handleDownload(viewingImage, 'image.png');
                         }
                       }}
-                      className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white font-bold text-sm disabled:opacity-50"
+                      className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full text-white font-normal text-xs disabled:opacity-50 border border-white/20"
                     >
                       {isDownloading ? (
                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -253,124 +328,138 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                    className="max-w-full max-h-full object-contain"
                  />
                </div>
-             ) : data.images ? (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h1 className="text-2xl font-bold text-gray-900 leading-none">Photo Gallery</h1>
-                      <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none mt-2">Shared via QR Thrive</p>
-                    </div>
-                    {selectedImages.size > 0 && (
-                      <button 
-                        onClick={handleBulkDownload}
-                        disabled={isDownloading}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-full font-bold text-xs shadow-lg shadow-blue-100 flex items-center gap-2 animate-in slide-in-from-right-4 duration-300"
-                      >
-                         {isDownloading ? (
-                           <Loader2 className="w-3 h-3 animate-spin" />
-                         ) : (
-                           <Download className="w-3 h-3" />
-                         )}
-                         Download {selectedImages.size}
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    {data.images.map((img, idx) => {
-                      const isSelected = selectedImages.has(idx);
-                      return (
-                        <div 
-                           key={idx} 
-                           className={cn(
-                             "relative aspect-square rounded-[24px] overflow-hidden group transition-all duration-300",
-                             isSelected ? "p-2 bg-blue-600 shadow-xl shadow-blue-100 scale-95" : "bg-gray-100"
-                           )}
-                        >
-                           <div className="relative w-full h-full rounded-[18px] overflow-hidden">
-                              <img 
-                                src={img.url} 
-                                alt={`Gallery ${idx}`}
-                                className="w-full h-full object-cover cursor-pointer"
-                                onClick={() => setViewingImage(img.url)}
-                              />
-                              <div className="absolute top-2 right-2 flex flex-col gap-2">
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleSelect(idx);
-                                  }}
-                                  className={cn(
-                                    "w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-lg",
-                                    isSelected ? "bg-white text-blue-600" : "bg-white/20 backdrop-blur-md text-white border border-white/30"
-                                  )}
-                                >
-                                  {isSelected ? <CheckCircle2 className="w-5 h-5" /> : <div className="w-5 h-5 rounded-full border-2 border-white/50" />}
-                                </button>
-                              </div>
-                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <>
-                 <div className="text-center">
-                   <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-100">
-                     <Camera className="w-10 h-10" />
-                   </div>
-                   <h1 className="text-2xl font-bold text-gray-900 mb-2">Image Gallery</h1>
-                   <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none">Shared via QR Thrive</p>
-                 </div>
-
-                 <div className="bg-white p-2 rounded-[40px] border border-gray-100 shadow-2xl shadow-blue-100/50 overflow-hidden group">
-                    <div className="relative aspect-square sm:aspect-video rounded-[32px] overflow-hidden cursor-pointer" onClick={() => setViewingImage(data.image?.url || null)}>
-                       <img 
-                         src={data.image?.url} 
-                         alt="Gallery" 
-                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                       />
-                       <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                         <Eye className="w-8 h-8 text-white" />
-                       </div>
-                       {data.image?.caption && (
-                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
-                            <p className="text-white font-bold text-lg leading-tight transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 italic">"{data.image.caption}"</p>
-                         </div>
+             ) : (
+                 <div className="flex-1 flex flex-col">
+                    {/* Colored Hero Banner Section */}
+                    <div 
+                       className="relative pt-16 pb-28 px-8 text-center overflow-hidden"
+                       style={{ 
+                          backgroundColor: data.imageGalleryInfo?.themeColor || '#166534',
+                          backgroundImage: data.imageGalleryInfo?.bannerImage?.url ? `url(${data.imageGalleryInfo.bannerImage.url})` : 'none',
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center'
+                       }}
+                    >
+                       {/* Overlay for readability if banner exists */}
+                       {data.imageGalleryInfo?.bannerImage?.url && (
+                          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
                        )}
-                    </div>
-                 </div>
 
-                 {data.image?.caption && (
-                   <div className="bg-white p-6 rounded-3xl border border-gray-50 flex items-start gap-4 shadow-sm">
-                      <div className="bg-blue-50 p-2 rounded-xl text-blue-600">
-                         <Type className="w-4 h-4" />
+                       <div className="relative z-10 flex flex-col items-center">
+                          {data.imageGalleryInfo?.logoImage?.url && (
+                             <div className="w-20 h-20 bg-white rounded-[24px] p-3 shadow-2xl mb-8 animate-in zoom-in-50 duration-700">
+                                <img src={data.imageGalleryInfo.logoImage.url} alt="Logo" className="w-full h-full object-contain" />
+                             </div>
+                          )}
+
+                          <div className="mb-6 flex items-center justify-center opacity-60">
+                             <span className="text-white text-[10px] font-black uppercase tracking-[0.4em]">Gallery Collection</span>
+                          </div>
+
+                          <h1 className="text-[36px] font-bold text-white tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                             {data.imageGalleryInfo?.title || 'Photo Gallery'}
+                          </h1>
+                          
+                          {data.imageGalleryInfo?.description && (
+                             <p className="text-white/80 text-[15px] font-medium leading-relaxed max-w-[280px] mx-auto mt-4 animate-in fade-in slide-in-from-bottom-6 duration-1000 [animation-delay:200ms]">
+                                {data.imageGalleryInfo.description}
+                             </p>
+                          )}
+                          
+                          {data.imageGalleryInfo?.buttonText && data.imageGalleryInfo?.buttonUrl && (
+                            <div className="mt-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 [animation-delay:400ms]">
+                               <a 
+                                 href={data.imageGalleryInfo.buttonUrl}
+                                 target="_blank"
+                                 rel="noopener noreferrer"
+                                 className="inline-flex items-center justify-center px-10 py-4 bg-white text-gray-900 rounded-[20px] font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all"
+                               >
+                                 {data.imageGalleryInfo.buttonText}
+                               </a>
+                            </div>
+                          )}
+                       </div>
+
+                       {/* Wavy Divider SVG */}
+                       <div className="absolute bottom-0 left-0 w-full leading-[0] transform translate-y-[1px] z-10">
+                          <svg viewBox="0 0 1440 320" preserveAspectRatio="none" className="w-full h-20 fill-white">
+                             <path d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,112C672,107,768,149,864,165.3C960,181,1056,171,1152,149.3C1248,128,1344,96,1392,80L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+                          </svg>
+                       </div>
+                    </div>
+
+                   {/* Gallery Content Section (Light Gray Background) */}
+                   <div className="flex-1 px-5 pt-12 pb-20 bg-[#f8fafc]">
+                      <div className="flex items-center justify-between mb-10 px-2">
+                         <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">Gallery Collection</h2>
+                         {selectedImages.size > 0 && (
+                           <button 
+                             onClick={handleBulkDownload}
+                             disabled={isDownloading}
+                             className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-black text-[10px] shadow-2xl flex items-center gap-2 animate-in slide-in-from-right-4 duration-300 uppercase tracking-widest"
+                           >
+                              {isDownloading ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Download className="w-3 h-3" />
+                              )}
+                              Save {selectedImages.size}
+                           </button>
+                         )}
                       </div>
-                      <p className="text-xs font-semibold text-gray-600 leading-relaxed">"{data.image.caption}"</p>
+
+                      <div className="space-y-8">
+                         {(data.images || []).map((img, idx) => {
+                             const isSelected = selectedImages.has(idx);
+                             return (
+                               <div 
+                                  key={idx} 
+                                  className={cn(
+                                    "relative w-full rounded-[48px] overflow-hidden group transition-all duration-700 animate-in fade-in slide-in-from-bottom-12",
+                                    isSelected ? "ring-4 ring-slate-900 shadow-2xl scale-[0.98]" : "shadow-[0_30px_60px_-15px_rgba(15,23,42,0.15)]"
+                                  )}
+                                  style={{ animationDelay: `${idx * 150}ms` }}
+                               >
+                                  <img 
+                                    src={img.url} 
+                                    alt={`Gallery item ${idx + 1}`}
+                                    className="w-full h-auto object-cover cursor-pointer min-h-[220px] block transition-transform duration-700 group-hover:scale-105"
+                                    onClick={() => setViewingImage(img.url)}
+                                  />
+                                  
+                                  {/* Selection Checkmark */}
+                                  <div className="absolute top-6 right-6 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-2 group-hover:translate-y-0">
+                                     <button 
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         toggleSelect(idx);
+                                       }}
+                                       className={cn(
+                                         "w-14 h-14 rounded-[22px] flex items-center justify-center transition-all shadow-2xl backdrop-blur-xl border border-white/20",
+                                         isSelected ? "bg-white text-slate-900" : "bg-black/20 text-white"
+                                       )}
+                                     >
+                                       <CheckCircle2 className="w-7 h-7" />
+                                     </button>
+                                  </div>
+
+                                  {img.caption && (
+                                    <div className="absolute bottom-0 inset-x-0 p-10 bg-gradient-to-t from-black/90 via-black/40 to-transparent transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                                       <p className="text-white text-base font-bold tracking-tight leading-snug">{img.caption}</p>
+                                    </div>
+                                  )}
+                               </div>
+                             );
+                         })}
+                      </div>
                    </div>
-                 )}
-                
-                 <div className="grid grid-cols-2 gap-4">
-                   <a 
-                     href={data.image?.url}
-                     target="_blank"
-                     rel="noopener noreferrer"
-                     className="py-4 bg-blue-600 text-white rounded-[32px] font-black text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-95 transition-all text-center"
-                   >
-                     <Eye className="w-5 h-5" />
-                     View
-                   </a>
-                   <a 
-                     href={data.image?.url ? getDownloadUrl(data.image.url) : '#'}
-                     download={data.image?.name || 'image.png'}
-                     className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-black text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 hover:bg-white active:scale-95 transition-all"
-                   >
-                     <Download className="w-5 h-5" />
-                     Download
-                   </a>
-                 </div>
-               </>
+
+                   {/* Footer Branding */}
+                   <div className="py-16 text-center bg-[#f8fafc] mt-auto">
+                      <div className="w-12 h-1 bg-slate-200 mx-auto mb-8 rounded-full opacity-50" />
+                      <p className="text-slate-300 text-[10px] font-black uppercase tracking-[0.5em]">QR Thrive Studio</p>
+                   </div>
+                </div>
              )}
            </div>
          );
@@ -382,19 +471,19 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                <Wifi className="w-12 h-12" />
             </div>
             <div>
-               <h1 className="text-2xl font-bold text-gray-900 mb-4">Wi-Fi Connection</h1>
+               <h1 className="text-2xl font-normal text-gray-900 mb-4">Wi-Fi Connection</h1>
                <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 space-y-4">
                   <div className="flex justify-between items-center border-b border-gray-200 pb-4">
-                     <span className="text-xs font-bold text-gray-400 uppercase">Network</span>
-                     <span className="font-bold text-gray-900">{data.wifi?.ssid}</span>
+                     <span className="text-xs font-normal text-gray-400 uppercase">Network</span>
+                     <span className="font-normal text-gray-900">{data.wifi?.ssid}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                     <span className="text-xs font-bold text-gray-400 uppercase">Security</span>
-                     <span className="font-bold text-gray-900">{data.wifi?.encryption}</span>
+                     <span className="text-xs font-normal text-gray-400 uppercase">Security</span>
+                     <span className="font-normal text-gray-900">{data.wifi?.encryption}</span>
                   </div>
                </div>
             </div>
-            <div className="p-4 bg-emerald-50 text-emerald-700 rounded-2xl text-xs font-bold leading-relaxed border border-emerald-100">
+            <div className="p-4 bg-emerald-50 text-emerald-700 rounded-2xl text-xs font-normal leading-relaxed border border-emerald-100">
                Scan successful! Your device should automatically prompt you to join the network.
             </div>
           </div>
@@ -402,37 +491,131 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
 
       case 'vcard':
         return (
-          <div className="space-y-8">
-            <div className="text-center">
-               <div className="w-24 h-24 bg-blue-100 text-blue-600 rounded-[40px] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-blue-100">
-                  <User className="w-12 h-12" />
-               </div>
-               <h1 className="text-3xl font-black text-gray-900 mb-2">{data.vcard?.firstName} {data.vcard?.lastName}</h1>
-               <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">Digital Contact Card</p>
-            </div>
+          <div className="flex-1 flex flex-col relative bg-white -mx-6 -mt-6 rounded-t-[44px]">
+             {/* Banner with Content Inside */}
+             <div 
+               className="h-60 rounded-b-[48px] relative overflow-hidden flex flex-col items-center justify-start text-center px-6 pt-10"
+               style={{ backgroundColor: data.vcard?.themeColor || '#2563eb' }}
+             >
+                {data.vcard?.banner && (
+                   <img src={data.vcard.banner} className="absolute inset-0 w-full h-full object-cover opacity-50" alt="Banner" />
+                )}
+                <div className="relative z-10 flex flex-col items-center">
+                   {/* Logo / Profile */}
+                   <div className="w-20 h-20 rounded-full border-4 border-white shadow-2xl overflow-hidden bg-white flex items-center justify-center mb-4">
+                      {data.vcard?.avatar ? (
+                         <img src={data.vcard.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                         <User className="w-10 h-10 text-blue-600" />
+                      )}
+                   </div>
 
-            <div className="space-y-3">
-              {[
-                { icon: Phone, label: 'Mobile', value: data.vcard?.mobile, href: `tel:${data.vcard?.mobile}` },
-                { icon: Mail, label: 'Email', value: data.vcard?.email, href: `mailto:${data.vcard?.email}` },
-                { icon: Globe, label: 'Website', value: data.vcard?.website, href: data.vcard?.website },
-              ].map((item) => item.value ? (
-                <a key={item.label} href={item.href} className="flex items-center gap-4 p-5 bg-white border border-gray-100 rounded-3xl hover:border-blue-600 transition-all shadow-sm">
-                  <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400">
-                    <item.icon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase">{item.label}</p>
-                    <p className="font-bold text-gray-900">{item.value}</p>
-                  </div>
-                </a>
-              ) : null)}
-            </div>
-            
-            <button className="w-full py-5 bg-gray-900 text-white rounded-3xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-gray-200">
-               Save Contact
-               <Smartphone className="w-5 h-5" />
-            </button>
+                   <h1 className="text-xl font-medium text-white tracking-tight mb-1 drop-shadow-md">
+                      {data.vcard?.firstName} {data.vcard?.lastName}
+                   </h1>
+                   <p className="text-[10px] font-normal text-white/90 uppercase tracking-[0.2em] drop-shadow-md">
+                      Digital Contact Card
+                   </p>
+                </div>
+             </div>
+
+             <div className="relative z-20 flex flex-col px-6">
+                {/* Overlapping Icons */}
+                <div className="flex items-center justify-center gap-4 -mt-10 mb-8">
+                    {data.vcard?.mobile && (
+                       <a 
+                         href={`tel:${data.vcard.mobile}`} 
+                         className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
+                         style={{ color: (data.vcard as any)?.accentColor || '#2563eb' }}
+                       >
+                          <Phone className="w-6 h-6" />
+                       </a>
+                    )}
+                    {data.vcard?.email && (
+                       <a 
+                         href={`mailto:${data.vcard.email}`} 
+                         className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
+                         style={{ color: (data.vcard as any)?.accentColor || '#2563eb' }}
+                       >
+                          <Mail className="w-6 h-6" />
+                       </a>
+                    )}
+                    {data.vcard?.website && (
+                       <a 
+                         href={data.vcard.website} 
+                         target="_blank" 
+                         rel="noopener noreferrer" 
+                         className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
+                         style={{ color: (data.vcard as any)?.accentColor || '#2563eb' }}
+                       >
+                          <Globe className="w-6 h-6" />
+                       </a>
+                    )}
+                </div>
+
+                <div className="space-y-2 mb-8">
+                  {[
+                    { icon: Phone, label: 'Mobile', value: data.vcard?.mobile, href: `tel:${data.vcard?.mobile}` },
+                    { icon: Mail, label: 'Email', value: data.vcard?.email, href: `mailto:${data.vcard?.email}` },
+                    { icon: Globe, label: 'Website', value: data.vcard?.website, href: data.vcard?.website },
+                    { icon: Building2, label: 'Company', value: data.vcard?.company },
+                    { icon: User, label: 'Profession', value: data.vcard?.jobTitle },
+                    { icon: MapPin, label: 'Address', value: data.vcard?.address, href: `https://maps.google.com/?q=${encodeURIComponent(data.vcard?.address || '')}` },
+                  ].map((item) => item.value ? (
+                    <a 
+                      key={item.label} 
+                      href={item.href} 
+                      target={item.href?.startsWith('http') ? "_blank" : undefined}
+                      className={cn(
+                        "flex items-center gap-3 p-4 bg-white border border-gray-50 rounded-2xl transition-all shadow-sm group",
+                        !item.href && "pointer-events-none"
+                      )}
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 shrink-0 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                        <item.icon className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[9px] font-normal text-gray-400 uppercase tracking-wider leading-none mb-1">{item.label}</p>
+                        <p className="text-xs font-normal text-gray-900 break-all leading-tight">{item.value}</p>
+                      </div>
+                    </a>
+                  ) : null)}
+
+                  {data.vcard?.note && (
+                    <div className="p-5 bg-slate-50 border border-slate-100 rounded-[28px] mt-4">
+                       <p className="text-[9px] font-normal text-slate-400 uppercase tracking-widest mb-2">Summary</p>
+                       <p className="text-xs font-normal text-slate-600 leading-relaxed italic">"{data.vcard.note}"</p>
+                    </div>
+                  )}
+
+                  {data.vcard?.socials && Object.values(data.vcard.socials).some(v => !!v) && (
+                    <div className="mt-6 pt-6 border-t border-gray-50">
+                       <p className="text-[10px] font-normal text-gray-400 uppercase tracking-[0.2em] text-center mb-4">Connect with me</p>
+                       <div className="flex flex-wrap justify-center gap-3">
+                          {Object.entries(data.vcard.socials).map(([platform, url]) => {
+                             if (!url) return null;
+                             const s = getSocialConfig(platform);
+                             return (
+                                <a key={platform} href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noopener noreferrer" 
+                                   className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg transition-transform hover:scale-110 active:scale-95", s.color)}>
+                                   <s.icon className="w-5 h-5" />
+                                </a>
+                             );
+                          })}
+                       </div>
+                    </div>
+                  )}
+                </div>
+                
+                <button 
+                  className="w-full py-4 text-white rounded-2xl font-normal text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-gray-200"
+                  style={{ backgroundColor: (data.vcard as any)?.accentColor || '#111827' }}
+                >
+                   Save Contact
+                   <Smartphone className="w-4 h-4" />
+                </button>
+                <div className="h-8"></div>
+             </div>
           </div>
         );
 
@@ -443,18 +626,18 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
               <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-amber-100">
                 <Type className="w-10 h-10" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900 mb-2">Message Content</h1>
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Encoded Plain Text</p>
+              <h1 className="text-xl font-normal text-gray-900 mb-2">Message Content</h1>
+              <p className="text-gray-400 text-[10px] font-normal uppercase tracking-widest">Encoded Plain Text</p>
             </div>
             <div className="bg-gray-50/80 backdrop-blur-sm p-8 rounded-[40px] border border-gray-100 shadow-inner">
-               <p className="text-gray-700 font-medium leading-relaxed whitespace-pre-wrap text-lg italic text-center">"{data.text}"</p>
+               <p className="text-gray-700 font-normal leading-relaxed whitespace-pre-wrap text-lg italic text-center">"{data.text}"</p>
             </div>
             <button 
               onClick={() => {
                 navigator.clipboard.writeText(data.text || '');
                 alert('Copied to clipboard!');
               }}
-              className="w-full py-4 bg-white border-2 border-gray-100 text-gray-900 rounded-3xl font-bold hover:bg-gray-50 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2"
+              className="w-full py-4 bg-white border-2 border-gray-100 text-gray-900 rounded-3xl font-normal hover:bg-gray-50 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2"
             >
               Copy Text
             </button>
@@ -470,8 +653,8 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                    <svg className="w-full h-full fill-current" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
                 </div>
               </div>
-              <h1 className="text-2xl font-black text-gray-900 mb-2">WhatsApp Contact</h1>
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none">Instant Conversation</p>
+              <h1 className="text-2xl font-normal text-gray-900 mb-2">WhatsApp Contact</h1>
+              <p className="text-gray-400 text-[10px] font-normal uppercase tracking-widest leading-none">Instant Conversation</p>
             </div>
             
             {data.whatsapp?.message && (
@@ -479,14 +662,14 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                   <div className="absolute top-0 right-0 p-3 opacity-10">
                      <MessageSquare className="w-12 h-12" />
                   </div>
-                  <p className="text-[10px] font-bold text-emerald-600 uppercase mb-3">Your Message</p>
-                  <p className="text-emerald-900 font-bold leading-relaxed">"{data.whatsapp?.message}"</p>
+                  <p className="text-[10px] font-normal text-emerald-600 uppercase mb-3">Your Message</p>
+                  <p className="text-emerald-900 font-normal leading-relaxed">"{data.whatsapp?.message}"</p>
                </div>
             )}
 
             <a 
               href={`https://wa.me/${(data.whatsapp?.phoneNumber ? (data.whatsapp?.countryCode || '').replace(/\D/g, '') + data.whatsapp.phoneNumber.replace(/\D/g, '').replace(/^0+/, '') : (data.whatsapp?.number || '').replace(/\D/g, ''))}?text=${encodeURIComponent(data.whatsapp?.message || '')}`}
-              className="w-full py-5 bg-[#25D366] text-white rounded-[32px] font-black text-lg shadow-xl shadow-emerald-200 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
+              className="w-full py-5 bg-[#25D366] text-white rounded-[32px] font-normal text-lg shadow-xl shadow-emerald-200 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
             >
               Message on WhatsApp
               <ChevronRight className="w-6 h-6" />
@@ -501,26 +684,26 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
               <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-100">
                 <Mail className="w-10 h-10" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Send an Email</h1>
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">{data.email?.address}</p>
+              <h1 className="text-2xl font-normal text-gray-900 mb-2">Send an Email</h1>
+              <p className="text-gray-400 text-[10px] font-normal uppercase tracking-widest">{data.email?.address}</p>
             </div>
             <div className="space-y-4">
                {data.email?.subject && (
                   <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100">
-                     <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Subject</p>
-                     <p className="text-gray-900 font-bold">{data.email?.subject}</p>
+                     <p className="text-[10px] font-normal text-gray-400 uppercase mb-1">Subject</p>
+                     <p className="text-gray-900 font-normal">{data.email?.subject}</p>
                   </div>
                )}
                {data.email?.body && (
                   <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100">
-                     <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Message</p>
-                     <p className="text-gray-700 font-medium whitespace-pre-wrap">{data.email?.body}</p>
+                     <p className="text-[10px] font-normal text-gray-400 uppercase mb-1">Message</p>
+                     <p className="text-gray-700 font-normal whitespace-pre-wrap">{data.email?.body}</p>
                   </div>
                )}
             </div>
             <a 
               href={`mailto:${data.email?.address}?subject=${encodeURIComponent(data.email?.subject || '')}&body=${encodeURIComponent(data.email?.body || '')}`}
-              className="w-full py-5 bg-blue-600 text-white rounded-3xl font-bold shadow-xl shadow-blue-200 flex items-center justify-center gap-3 hover:bg-blue-700 transition-all"
+              className="w-full py-5 bg-blue-600 text-white rounded-3xl font-normal shadow-xl shadow-blue-200 flex items-center justify-center gap-3 hover:bg-blue-700 transition-all"
             >
               Open Email App
               <Mail className="w-5 h-5" />
@@ -535,12 +718,12 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                <Phone className="w-12 h-12" />
             </div>
             <div>
-               <h1 className="text-3xl font-black text-gray-900 mb-2">Call Now</h1>
-               <p className="text-2xl font-bold text-blue-600 tracking-tight">{data.phone?.number}</p>
+               <h1 className="text-lg font-normal text-gray-900 mb-2">Call Now</h1>
+               <p className="text-2xl font-normal text-blue-600 tracking-tight">{data.phone?.number}</p>
             </div>
             <a 
               href={`tel:${data.phone?.number}`}
-              className="w-full py-5 bg-blue-600 text-white rounded-[40px] font-black text-xl shadow-2xl shadow-blue-200 flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all"
+              className="w-full py-5 bg-blue-600 text-white rounded-[40px] font-normal text-xl shadow-2xl shadow-blue-200 flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all"
             >
               Start Call
               <Phone className="w-6 h-6 fill-current" />
@@ -555,15 +738,15 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
               <div className="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-indigo-100">
                 <MessageSquare className="w-10 h-10" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Send SMS</h1>
+              <h1 className="text-2xl font-normal text-gray-900 mb-2">Send SMS</h1>
               <p className="text-gray-400 text-sm font-semibold">{data.sms?.number}</p>
             </div>
-            <div className="bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100/50 italic text-indigo-900 font-medium leading-relaxed">
+            <div className="bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100/50 italic text-indigo-900 font-normal leading-relaxed">
                "{data.sms?.message}"
             </div>
             <a 
               href={`sms:${data.sms?.number}?body=${encodeURIComponent(data.sms?.message || '')}`}
-              className="w-full py-5 bg-indigo-600 text-white rounded-3xl font-bold shadow-xl shadow-indigo-200 flex items-center justify-center gap-3"
+              className="w-full py-5 bg-indigo-600 text-white rounded-3xl font-normal shadow-xl shadow-indigo-200 flex items-center justify-center gap-3"
             >
               Draft SMS
               <MessageSquare className="w-5 h-5" />
@@ -586,8 +769,8 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                  <config.icon className="w-16 h-16" />
               </div>
               <div>
-                 <h1 className="text-3xl font-black capitalize text-gray-900 mb-2">{platform}</h1>
-                 <p className="text-lg font-bold text-gray-400 tracking-tight">@{username}</p>
+                 <h1 className="text-lg font-normal capitalize text-gray-900 mb-2">{platform}</h1>
+                 <p className="text-lg font-normal text-gray-400 tracking-tight">@{username}</p>
               </div>
               <a 
                 href={platform === 'instagram' ? `https://instagram.com/${username}` : 
@@ -598,7 +781,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                       `https://tiktok.com/@${username}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`w-full py-6 text-white rounded-[40px] font-black text-xl shadow-2xl flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all ${config.color}`}
+                className={`w-full py-6 text-white rounded-[40px] font-normal text-xl shadow-2xl flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all ${config.color}`}
               >
                 Go to Profile
                 <ChevronRight className="w-6 h-6" />
@@ -609,65 +792,102 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
       case 'links':
          return (
            <div className="flex-1 flex flex-col relative bg-white -mx-6 -mt-6 rounded-t-[44px]">
-              {/* Top Banner & Background */}
-              {data.linksInfo?.themeColor && (
-                 <div 
-                   className="absolute top-0 left-0 right-0 h-40 rounded-b-[48px] z-0"
-                   style={{ backgroundColor: data.linksInfo.themeColor }}
-                 />
-              )}
-              
-              <div className="relative z-10 flex flex-col items-center pt-24 px-6">
-                 <div className="w-24 h-24 rounded-full border-4 border-white shadow-xl overflow-hidden bg-white flex items-center justify-center shrink-0 mb-4 cursor-pointer hover:scale-105 transition-transform">
-                    {data.linksInfo?.avatar ? (
-                       <img src={data.linksInfo.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                    ) : (
-                       <User className="w-10 h-10 text-gray-300" />
-                    )}
-                 </div>
-                 
-                 <div className="text-center mb-8">
-                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+              {/* Banner with Content Inside */}
+              <div 
+                className="h-60 rounded-b-[48px] relative overflow-hidden flex flex-col items-center justify-start text-center px-6 pt-10"
+                style={{ backgroundColor: data.linksInfo?.themeColor || '#2563eb' }}
+              >
+                 {data.linksInfo?.banner && (
+                    <img src={data.linksInfo.banner} className="absolute inset-0 w-full h-full object-cover opacity-30" alt="Banner" />
+                 )}
+                 <div className="relative z-10 flex flex-col items-center">
+                    {/* Avatar */}
+                    <div className="w-20 h-20 rounded-full border-4 border-white shadow-2xl overflow-hidden bg-white flex items-center justify-center mb-4">
+                       {data.linksInfo?.avatar ? (
+                          <img src={data.linksInfo.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                       ) : (
+                          <User className="w-10 h-10 text-blue-600" />
+                       )}
+                    </div>
+
+                    <h1 className="text-xl font-medium text-white tracking-tight mb-1 drop-shadow-md">
                        {data.linksInfo?.title || 'Your Title'}
                     </h1>
                     {data.linksInfo?.description && (
-                       <p className="text-[12px] text-gray-500 font-medium leading-relaxed mt-2 max-w-[260px] mx-auto">
+                       <p className="text-[10px] text-white/90 font-normal leading-relaxed drop-shadow-md max-w-xs px-4">
                           {data.linksInfo.description}
                        </p>
                     )}
                  </div>
+              </div>
+              
+              <div className="relative z-20 flex flex-col px-6">
+                 {/* Overlapping Icons */}
+                 <div className="flex items-center justify-center gap-4 -mt-10 mb-8">
+                    {data.linksInfo?.phone && (
+                       <a 
+                         href={`tel:${data.linksInfo.phone}`} 
+                         className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
+                         style={{ color: data.linksInfo.themeColor || '#2563eb' }}
+                       >
+                          <Phone className="w-6 h-6" />
+                       </a>
+                    )}
+                    {data.linksInfo?.email && (
+                       <a 
+                         href={`mailto:${data.linksInfo.email}`} 
+                         className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
+                         style={{ color: data.linksInfo.themeColor || '#2563eb' }}
+                       >
+                          <Mail className="w-6 h-6" />
+                       </a>
+                    )}
+                    {data.linksInfo?.website && (
+                       <a 
+                         href={data.linksInfo.website} 
+                         target="_blank" 
+                         rel="noopener noreferrer" 
+                         className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
+                         style={{ color: data.linksInfo.themeColor || '#2563eb' }}
+                       >
+                          <Globe className="w-6 h-6" />
+                       </a>
+                    )}
+                 </div>
 
-                 <div className="w-full space-y-3">
+                 <div className="w-full space-y-2 mb-8">
                     {data.linksList?.map((link: any, idx: number) => (
                        <a 
                          key={idx}
                          href={link.url || '#'}
                          target="_blank"
                          rel="noopener noreferrer"
-                         className="flex items-center justify-between p-3.5 bg-white border border-gray-100 rounded-[28px] hover:scale-[1.02] active:scale-95 transition-transform shadow-sm"
+                         className="flex items-center gap-4 p-4 bg-white border border-gray-50 rounded-2xl hover:scale-[1.01] active:scale-95 transition-all shadow-sm group"
                          style={{ 
-                            backgroundColor: data.linksInfo?.linkBgColor || '#F8FAFC',
+                            backgroundColor: (data.linksInfo?.linkBgColor || '#FFFFFF') + 'FA',
                             color: data.linksInfo?.linkTextColor || '#1E293B'
                          }}
                        >
-                          <div className="flex items-center gap-4">
-                             <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-sm border border-black/5">
-                                {link.icon ? (
-                                  <img src={link.icon} alt={link.title} className="w-full h-full object-cover" />
-                                ) : (
-                                   <div className="w-full h-full bg-gray-50 flex items-center justify-center">
-                                      <Link2 className="w-4 h-4 text-gray-400" />
-                                   </div>
-                                )}
-                             </div>
-                             <span className="font-bold text-[13px] tracking-tight">{link.title || 'Link Title'}</span>
+                          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden shrink-0 shadow-sm border border-black/5 group-hover:bg-blue-50 transition-colors">
+                             {link.icon ? (
+                               <img src={link.icon} alt={link.title} className="w-full h-full object-cover" />
+                             ) : (
+                                <Link2 className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                             )}
                           </div>
-                          <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center shrink-0">
-                             <ChevronRight className="w-4 h-4 opacity-50" style={{ color: data.linksInfo?.linkTextColor || '#1E293B' }} />
+                          <div className="min-w-0 flex-1">
+                             <p className="text-[9px] font-normal text-gray-400 uppercase tracking-wider leading-none mb-1 opacity-60">Source Link</p>
+                             <p className="font-normal text-xs tracking-tight break-all leading-tight">
+                                {link.title || 'Link Title'}
+                             </p>
+                          </div>
+                          <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center shrink-0 group-hover:bg-blue-50 transition-colors">
+                             <ChevronRight className="w-3 h-3 text-gray-300 group-hover:text-blue-600 transition-colors" />
                           </div>
                        </a>
                     ))}
                  </div>
+                 <div className="h-8"></div>
               </div>
            </div>
          );
@@ -679,7 +899,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                  <div className="w-20 h-20 bg-red-100 text-red-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-red-100">
                     <FileText className="w-10 h-10" />
                  </div>
-                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Document View</h1>
+                 <h1 className="text-2xl font-normal text-gray-900 mb-2">Document View</h1>
                  <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest">Secure PDF Hosting</p>
               </div>
               
@@ -688,12 +908,12 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                   <div className="flex items-center justify-between p-4 bg-gray-800">
                     <button 
                       onClick={() => setViewingPdf(false)}
-                      className="flex items-center gap-2 text-white text-sm font-bold hover:text-gray-300"
+                      className="flex items-center gap-2 text-white text-sm font-normal hover:text-gray-300"
                     >
                       <ChevronRight className="w-4 h-4 rotate-180" />
                       Back
                     </button>
-                    <span className="text-white text-xs font-bold truncate flex-1 text-center px-4">
+                    <span className="text-white text-xs font-normal truncate flex-1 text-center px-4">
                       {data.pdf?.name || 'document.pdf'}
                     </span>
                     <button 
@@ -720,7 +940,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                         <FileText className="w-6 h-6" />
                      </div>
                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-gray-900 truncate">{data.pdf?.name || 'document_file.pdf'}</p>
+                        <p className="font-normal text-gray-900 truncate">{data.pdf?.name || 'document_file.pdf'}</p>
                         <p className="text-xs text-gray-400">PDF Document</p>
                      </div>
                   </div>
@@ -729,7 +949,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                       href={data.pdf?.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="py-4 bg-red-600 text-white rounded-[32px] font-black text-sm shadow-xl shadow-red-100 flex items-center justify-center gap-2 text-center"
+                      className="py-4 bg-red-600 text-white rounded-[32px] font-normal text-sm shadow-xl shadow-red-100 flex items-center justify-center gap-2 text-center"
                     >
                       <Eye className="w-5 h-5" />
                       View
@@ -737,7 +957,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                     <a 
                       href={data.pdf?.url ? getDownloadUrl(data.pdf.url) : '#'}
                       download={data.pdf?.name || 'document.pdf'}
-                      className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-black text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 hover:bg-white active:scale-95 transition-all"
+                      className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-normal text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 hover:bg-white active:scale-95 transition-all"
                     >
                       <Download className="w-5 h-5" />
                       Download
@@ -756,7 +976,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                   <div className="flex items-center justify-between p-4 bg-black/50 backdrop-blur-md">
                     <button 
                       onClick={() => setViewingVideo(false)}
-                      className="flex items-center gap-2 text-white text-sm font-bold hover:text-gray-300"
+                      className="flex items-center gap-2 text-white text-sm font-normal hover:text-gray-300"
                     >
                       <ChevronRight className="w-4 h-4 rotate-180" />
                       Back
@@ -809,7 +1029,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                      )}
                   </div>
                   <div className="text-center">
-                     <h1 className="text-2xl font-bold text-gray-900 mb-2">Watch Video</h1>
+                     <h1 className="text-2xl font-normal text-gray-900 mb-2">Watch Video</h1>
                      <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest leading-none">Shared via QR Thrive</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -817,7 +1037,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                       href={data.video?.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="py-4 bg-blue-600 text-white rounded-[32px] font-black text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2 text-center"
+                      className="py-4 bg-blue-600 text-white rounded-[32px] font-normal text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2 text-center"
                     >
                       <Play className="w-5 h-5" />
                       View
@@ -825,7 +1045,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                     <a 
                       href={data.video?.url ? getDownloadUrl(data.video.url) : '#'}
                       download={data.video?.name || 'video.mp4'}
-                      className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-black text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 hover:bg-white active:scale-95 transition-all"
+                      className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-normal text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2 hover:bg-white active:scale-95 transition-all"
                     >
                       <Download className="w-5 h-5" />
                       Download
@@ -843,7 +1063,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-blue-100">
                     <Music className="w-12 h-12" />
                  </div>
-                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Audio Player</h1>
+                 <h1 className="text-2xl font-normal text-gray-900 mb-2">Audio Player</h1>
                  <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest">
                    {data.mp3?.name || 'Audio File'}
                  </p>
@@ -867,7 +1087,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                   href={data.mp3?.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="py-4 bg-blue-600 text-white rounded-[32px] font-black text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2 text-center"
+                  className="py-4 bg-blue-600 text-white rounded-[32px] font-normal text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2 text-center"
                 >
                   <Play className="w-5 h-5" />
                   View
@@ -875,7 +1095,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                 <a 
                   href={data.mp3?.url ? getDownloadUrl(data.mp3.url) : '#'}
                   download={data.mp3?.name || 'audio.mp3'}
-                  className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-black text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2"
+                  className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-normal text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2"
                 >
                   <Download className="w-5 h-5" />
                   Download
@@ -891,22 +1111,22 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                  <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-100">
                     <ShoppingBag className="w-10 h-10" />
                  </div>
-                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Download App</h1>
+                 <h1 className="text-2xl font-normal text-gray-900 mb-2">Download App</h1>
                  <p className="text-gray-400 text-sm">Available on all your devices</p>
               </div>
               <div className="space-y-4">
-                 <button className="w-full py-6 bg-black text-white rounded-[40px] font-bold flex items-center px-8 gap-4 shadow-xl">
+                 <button className="w-full py-6 bg-black text-white rounded-[40px] font-normal flex items-center px-8 gap-4 shadow-xl">
                     <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.96.95-2.22 1.48-3.48 1.48s-2.52-.53-3.48-1.48c-.96-1-1.39-2.31-1.28-3.64.11-1.33.74-2.52 1.77-3.35 1.03-.84 2.37-1.18 3.65-1.14 1.28.05 2.44.47 3.24 1.18-.8.15-1.93.91-1.93 2.1 0 1.19.78 2.36 2.36 2.36.19 0 .37-.02.55-.06-.11.85-.5 1.63-1.14 2.24l-3.26.31zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" /></svg>
                     <div className="text-left">
-                       <p className="text-[10px] uppercase font-black opacity-60">App Store</p>
-                       <p className="text-sm font-black">Download for iOS</p>
+                       <p className="text-[10px] uppercase font-normal opacity-60">App Store</p>
+                       <p className="text-sm font-normal">Download for iOS</p>
                     </div>
                  </button>
-                 <button className="w-full py-6 bg-white border-2 border-gray-100 text-gray-900 rounded-[40px] font-bold flex items-center px-8 gap-4 shadow-sm">
+                 <button className="w-full py-6 bg-white border-2 border-gray-100 text-gray-900 rounded-[40px] font-normal flex items-center px-8 gap-4 shadow-sm">
                     <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.609 22.186c-.18.18-.285.424-.285.679 0 .528.432.96 1.011.96.183 0 .354-.051.5-.141l14.945-8.407c.54-.303.896-.879.896-1.528 0-.649-.356-1.225-.896-1.528L4.835.132c-.146-.09-.32-.141-.498-.141C3.758 0 3.326.432 3.326.96c0 .255.105.499.283.679l.001-.001-.001.176v.001z" /></svg>
                     <div className="text-left">
-                       <p className="text-[10px] uppercase font-black opacity-60">Google Play</p>
-                       <p className="text-sm font-black">Get it on Android</p>
+                       <p className="text-[10px] uppercase font-normal opacity-60">Google Play</p>
+                       <p className="text-sm font-normal">Get it on Android</p>
                     </div>
                  </button>
               </div>
@@ -921,12 +1141,12 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                  <CheckCircle2 className="w-12 h-12" />
               </div>
               <div>
-                 <h1 className="text-3xl font-black text-gray-900 mb-4">Thank You!</h1>
-                 <p className="text-gray-500 font-medium px-4">Your response has been successfully submitted and saved.</p>
+                 <h1 className="text-lg font-normal text-gray-900 mb-4">Thank You!</h1>
+                 <p className="text-gray-500 font-normal px-4">Your response has been successfully submitted and saved.</p>
               </div>
               <button 
                 onClick={() => setSubmitted(false)}
-                className="text-blue-600 font-black text-xs uppercase tracking-widest hover:underline"
+                className="text-blue-600 font-normal text-xs uppercase tracking-widest hover:underline"
               >
                  Submit Another Response
               </button>
@@ -940,16 +1160,16 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                 <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-100">
                    <ClipboardList className="w-10 h-10" />
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">{data.form?.title || 'Form'}</h1>
+                <h1 className="text-2xl font-normal text-gray-900 mb-2">{data.form?.title || 'Form'}</h1>
                 {data.form?.description && (
-                  <p className="text-gray-500 text-sm font-medium leading-relaxed">{data.form.description}</p>
+                  <p className="text-gray-500 text-sm font-normal leading-relaxed">{data.form.description}</p>
                 )}
              </div>
 
              <form onSubmit={handleSubmit} className="space-y-6">
                 {data.form?.fields.sort((a, b) => a.order - b.order).map((field) => (
                   <div key={field.id} className="space-y-2">
-                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest pl-1 block">
+                     <label className="text-xs font-normal text-gray-400 uppercase tracking-widest pl-1 block">
                         {field.label} {field.required && <span className="text-red-500">*</span>}
                      </label>
                      
@@ -968,7 +1188,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                             }
                           }}
                           className={cn(
-                            "w-full px-6 py-4 bg-gray-50 border-2 focus:border-blue-600 focus:bg-white rounded-2xl outline-none text-gray-900 font-bold transition-all shadow-inner",
+                            "w-full px-6 py-4 bg-gray-50 border-2 focus:border-blue-600 focus:bg-white rounded-2xl outline-none text-gray-900 font-normal transition-all shadow-inner",
                             fieldErrors[field.id] ? "border-red-500 bg-red-50/10" : "border-transparent"
                           )}
                         />
@@ -990,7 +1210,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                              }}
                              className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
                            />
-                           <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase">
+                           <div className="flex justify-between text-[10px] font-normal text-gray-400 uppercase">
                               <span>Min: {field.validation?.min || 0}</span>
                               <span className="text-blue-600 text-sm">Value: {answers[field.id] || field.validation?.min || 0}</span>
                               <span>Max: {field.validation?.max || 10}</span>
@@ -1024,7 +1244,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                                           }}
                                           className="w-5 h-5 rounded-lg border-2 border-gray-300 text-blue-600 focus:ring-blue-600"
                                         />
-                                        <span className={cn("text-sm font-bold transition-colors", isChecked ? "text-blue-900" : "text-gray-700")}>
+                                        <span className={cn("text-sm font-normal transition-colors", isChecked ? "text-blue-900" : "text-gray-700")}>
                                           {opt.label}
                                         </span>
                                      </label>
@@ -1046,7 +1266,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                                   }}
                                   className="w-5 h-5 rounded-lg border-2 border-gray-300 text-blue-600 focus:ring-blue-600"
                                 />
-                                <span className="text-sm font-bold text-gray-700">{field.placeholder || 'Check this option'}</span>
+                                <span className="text-sm font-normal text-gray-700">{field.placeholder || 'Check this option'}</span>
                              </label>
                            )}
                         </div>
@@ -1064,7 +1284,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                               }
                             }}
                             className={cn(
-                              "w-full px-6 py-4 bg-gray-50 border-2 focus:border-blue-600 focus:bg-white rounded-2xl outline-none text-gray-900 font-bold transition-all shadow-inner appearance-none",
+                              "w-full px-6 py-4 bg-gray-50 border-2 focus:border-blue-600 focus:bg-white rounded-2xl outline-none text-gray-900 font-normal transition-all shadow-inner appearance-none",
                               fieldErrors[field.id] ? "border-red-500 bg-red-50/10" : "border-transparent"
                             )}
                           >
@@ -1097,16 +1317,16 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                                   className="w-5 h-5 border-2 border-gray-300 text-blue-600 focus:ring-blue-600"
                                 />
                                 <span className={cn(
-                                  "text-sm font-bold",
+                                  "text-sm font-normal",
                                   answers[field.id] === opt.value ? "text-blue-900" : "text-gray-700"
                                 )}>{opt.label}</span>
                              </label>
                            ))}
                         </div>
                      ) : null}
-                     {field.helpText && <p className="text-[10px] font-bold text-gray-400 pl-1">{field.helpText}</p>}
+                     {field.helpText && <p className="text-[10px] font-normal text-gray-400 pl-1">{field.helpText}</p>}
                      {fieldErrors[field.id] && (
-                        <p className="text-[11px] font-bold text-red-500 pl-1 animate-in slide-in-from-top-1 duration-200">
+                        <p className="text-[11px] font-normal text-red-500 pl-1 animate-in slide-in-from-top-1 duration-200">
                           {fieldErrors[field.id]}
                         </p>
                       )}
@@ -1116,7 +1336,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                 <button 
                   type="submit"
                   disabled={submitMutation.isPending || isWizardPreview}
-                  className="w-full py-5 bg-blue-600 text-white rounded-[32px] font-black text-lg shadow-xl shadow-blue-100 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+                  className="w-full py-5 bg-blue-600 text-white rounded-[32px] font-normal text-lg shadow-xl shadow-blue-100 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
                 >
                    {submitMutation.isPending ? 'Submitting...' : 'Submit Response'}
                    {!submitMutation.isPending && <ChevronRight className="w-6 h-6" />}
@@ -1127,51 +1347,66 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
       case 'business':
         return (
           <div className="flex-1 flex flex-col relative bg-white -mx-6 -mt-6 rounded-t-[44px]">
-             {/* Banner */}
-             <div className="h-48 rounded-b-[48px] relative overflow-hidden bg-gray-100 flex items-center justify-center">
-                {data.business?.banner ? (
-                   <img src={data.business.banner} className="w-full h-full object-cover" alt="Banner" />
-                ) : (
-                   <div className="w-full h-full bg-slate-800" />
+             {/* Banner with Content Inside */}
+             <div 
+               className="h-60 rounded-b-[48px] relative overflow-hidden flex flex-col items-center justify-start text-center px-6 pt-10"
+               style={{ backgroundColor: data.business?.themeColor || '#1e293b' }}
+             >
+                {data.business?.banner && (
+                   <img src={data.business.banner} className="absolute inset-0 w-full h-full object-cover opacity-50" alt="Banner" />
                 )}
+                
+                <div className="relative z-10 flex flex-col items-center">
+                   {/* Logo */}
+                   <div className="w-20 h-20 rounded-full border-4 border-white shadow-2xl overflow-hidden bg-white flex items-center justify-center mb-4">
+                      {data.business?.logo ? (
+                         <img src={data.business.logo} alt="Logo" className="w-full h-full object-cover" />
+                      ) : (
+                         <Building2 className="w-10 h-10 text-gray-300" />
+                      )}
+                   </div>
+
+                   <h1 className="text-2xl font-medium text-white tracking-tight mb-1 drop-shadow-md">
+                      {data.business?.companyName || 'Business Name'}
+                   </h1>
+                   {data.business?.headline && (
+                      <p className="text-[13px] text-white/90 font-normal leading-relaxed drop-shadow-md max-w-xs">
+                         {data.business.headline}
+                      </p>
+                   )}
+                </div>
              </div>
 
-             <div className="relative z-10 flex flex-col pt-4 px-6">
-                 {/* Logo that overlaps the banner */}
-                 <div className="w-24 h-24 rounded-[32px] border-4 border-white shadow-xl overflow-hidden bg-white flex items-center justify-center shrink-0 -mt-16 mb-4 relative z-20 mx-auto">
-                    {data.business?.logo ? (
-                       <img src={data.business.logo} alt="Logo" className="w-full h-full object-cover" />
-                    ) : (
-                       <Building2 className="w-10 h-10 text-gray-300" />
-                    )}
-                 </div>
-
-                 <div className="text-center mb-8">
-                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                       {data.business?.companyName || 'Business Name'}
-                    </h1>
-                    {data.business?.headline && (
-                       <p className="text-[13px] text-gray-500 font-bold leading-relaxed mt-1">
-                          {data.business.headline}
-                       </p>
-                    )}
-                 </div>
-
-                 {/* Contact Actions Row */}
-                 <div className="flex items-center justify-center gap-4 mb-8">
+             <div className="relative z-20 flex flex-col px-6">
+                 {/* Contact Actions Row - Overlapping Banner */}
+                 <div className="flex items-center justify-center gap-4 -mt-10 mb-8">
                     {data.business?.contact?.phone && (
-                       <a href={`tel:${data.business.contact.phone}`} className="w-12 h-12 rounded-[20px] bg-blue-100 text-blue-600 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg shadow-blue-100/50">
-                          <Phone className="w-5 h-5 fill-current" />
+                       <a 
+                         href={`tel:${data.business.contact.phone}`} 
+                         className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
+                         style={{ color: data.business.accentColor || '#2563eb' }}
+                       >
+                          <Phone className="w-6 h-6" />
                        </a>
                     )}
                     {data.business?.contact?.email && (
-                       <a href={`mailto:${data.business.contact.email}`} className="w-12 h-12 rounded-[20px] bg-purple-100 text-purple-600 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg shadow-purple-100/50">
-                          <Mail className="w-5 h-5" />
+                       <a 
+                         href={`mailto:${data.business.contact.email}`} 
+                         className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
+                         style={{ color: data.business.accentColor || '#2563eb' }}
+                       >
+                          <Mail className="w-6 h-6" />
                        </a>
                     )}
                     {data.business?.contact?.website && (
-                       <a href={data.business.contact.website} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-[20px] bg-emerald-100 text-emerald-600 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg shadow-emerald-100/50">
-                          <Globe className="w-5 h-5" />
+                       <a 
+                         href={data.business.contact.website} 
+                         target="_blank" 
+                         rel="noopener noreferrer" 
+                         className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
+                         style={{ color: data.business.accentColor || '#2563eb' }}
+                       >
+                          <Globe className="w-6 h-6" />
                        </a>
                     )}
                  </div>
@@ -1179,8 +1414,8 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                  <div className="space-y-6">
                     {data.business?.about && (
                        <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100">
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">About Us</p>
-                          <p className="text-sm font-medium text-gray-700 leading-relaxed">
+                          <p className="text-[10px] font-normal text-gray-400 uppercase tracking-widest mb-2">About Us</p>
+                          <p className="text-sm font-normal text-gray-700 leading-relaxed">
                              {data.business.about}
                           </p>
                        </div>
@@ -1192,8 +1427,8 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                              <MapPin className="w-5 h-5 text-gray-400" />
                           </div>
                           <div>
-                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Location</p>
-                             <p className="text-sm font-bold text-gray-900 leading-tight">
+                             <p className="text-[10px] font-normal text-gray-400 uppercase tracking-widest mb-1">Location</p>
+                             <p className="text-sm font-normal text-gray-900 leading-tight">
                                 {data.business.contact.address}
                              </p>
                           </div>
@@ -1206,16 +1441,27 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                              <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
                                 <Clock className="w-5 h-5 text-gray-400" />
                              </div>
-                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Opening Hours</p>
+                             <p className="text-[10px] font-normal text-gray-400 uppercase tracking-widest">Opening Hours</p>
                           </div>
                           <div className="p-4 space-y-2.5">
                              {(['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as Array<keyof NonNullable<typeof data.business.openingHours>>).map((day) => {
                                 const hours = data.business!.openingHours![day];
                                 if (!hours) return null;
+                                
+                                const formatHours = (h: any) => {
+                                  if (typeof h === 'string') return h;
+                                  if (h.isClosed) return 'Closed';
+                                  if (h.from && h.to) return `${h.from} - ${h.to}`;
+                                  return null;
+                                };
+
+                                const displayHours = formatHours(hours);
+                                if (!displayHours) return null;
+
                                 return (
                                    <div key={day} className="flex justify-between items-center border-b border-gray-50 last:border-0 pb-2 last:pb-0">
-                                      <span className="text-xs font-bold text-gray-400 capitalize">{day}</span>
-                                      <span className="text-xs font-bold text-gray-900">{hours}</span>
+                                      <span className="text-xs font-normal text-gray-400 capitalize">{day}</span>
+                                      <span className="text-xs font-normal text-gray-900">{displayHours}</span>
                                    </div>
                                 );
                              })}
@@ -1240,11 +1486,11 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                        <UtensilsCrossed className="w-10 h-10" />
                     )}
                  </div>
-                 <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+                 <h1 className="text-lg font-normal text-gray-900 tracking-tight">
                     {data.menu?.restaurantName || 'Restaurant Menu'}
                  </h1>
                  {data.menu?.description && (
-                    <p className="text-[13px] text-gray-500 font-bold leading-relaxed mt-2 max-w-[280px] mx-auto">
+                    <p className="text-[13px] text-gray-500 font-normal leading-relaxed mt-2 max-w-[280px] mx-auto">
                        {data.menu.description}
                     </p>
                  )}
@@ -1253,24 +1499,24 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
              <div className="px-6 py-8 space-y-8 relative z-0">
                  {(data.menu?.categories && data.menu.categories.length > 0) ? data.menu.categories.map((category) => (
                     <div key={category.id} className="space-y-4">
-                       <h2 className="text-lg font-black text-gray-900 tracking-tight pl-2 border-l-4 border-blue-600">
+                       <h2 className="text-lg font-normal text-gray-900 tracking-tight pl-2 border-l-4 border-blue-600">
                           {category.name || 'Category'}
                        </h2>
                        <div className="space-y-4">
-                          {category.items.map((item) => (
-                             <div key={item.id} className="bg-white p-5 rounded-[28px] shadow-sm border border-gray-100 transition-transform hover:scale-[1.02]">
+                          {category.items.map((item, idx) => (
+                             <div key={idx} className="bg-white p-5 rounded-[28px] shadow-sm border border-gray-100 transition-transform hover:scale-[1.02]">
                                 <div className="flex justify-between items-start gap-4">
                                    <div className="flex-1">
-                                      <h3 className="font-bold text-gray-900 text-sm leading-tight">
+                                      <h3 className="font-normal text-gray-900 text-sm leading-tight">
                                          {item.name || 'Item Name'}
                                       </h3>
                                       {item.description && (
-                                         <p className="text-[11px] font-medium text-gray-500 mt-1 leading-relaxed">
+                                         <p className="text-[11px] font-normal text-gray-500 mt-1 leading-relaxed">
                                             {item.description}
                                          </p>
                                       )}
                                    </div>
-                                   <div className="font-black text-gray-900 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100 text-sm">
+                                   <div className="font-normal text-gray-900 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100 text-sm">
                                       {data.menu?.currency || '$'}{item.price || '0'}
                                    </div>
                                 </div>
@@ -1283,7 +1529,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                           <ClipboardList className="w-8 h-8 text-gray-400" />
                        </div>
-                       <h3 className="font-bold text-gray-900">Menu is empty</h3>
+                       <h3 className="font-normal text-gray-900">Menu is empty</h3>
                        <p className="text-xs text-gray-500 mt-1">Add categories and items to your menu.</p>
                     </div>
                  )}
@@ -1298,32 +1544,32 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                 <div className="w-24 h-24 bg-gradient-to-br from-yellow-400 to-orange-500 text-white rounded-[40px] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-orange-200">
                    <Ticket className="w-12 h-12" />
                 </div>
-                <h1 className="text-3xl font-black text-gray-900 mb-2">
+                <h1 className="text-lg font-normal text-gray-900 mb-2">
                    {data.coupon?.title || 'Special Offer!'}
                 </h1>
                 {data.coupon?.companyName && (
-                   <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">{data.coupon.companyName}</p>
+                   <p className="text-gray-500 text-sm font-normal uppercase tracking-widest">{data.coupon.companyName}</p>
                 )}
              </div>
 
              <div className="bg-white p-1 rounded-[40px] border-2 border-dashed border-orange-200 shadow-xl shadow-orange-100">
                 <div className="bg-orange-50 rounded-[36px] p-8 text-center space-y-6">
                    {data.coupon?.discount && (
-                      <div className="inline-block px-6 py-2 bg-orange-100 text-orange-600 rounded-full font-black text-xl tracking-tight">
+                      <div className="inline-block px-6 py-2 bg-orange-100 text-orange-600 rounded-full font-normal text-xl tracking-tight">
                          {data.coupon.discount}
                       </div>
                    )}
                    
                    {data.coupon?.description && (
-                      <p className="text-sm font-bold text-orange-900 leading-relaxed">
+                      <p className="text-sm font-normal text-orange-900 leading-relaxed">
                          {data.coupon.description}
                       </p>
                    )}
 
                    {data.coupon?.promoCode && (
                       <div className="pt-4 space-y-2">
-                         <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Your Promo Code</p>
-                         <div className="font-mono text-2xl font-black text-gray-900 tracking-wider bg-white py-4 px-6 rounded-2xl border-2 border-gray-100 inline-block shadow-sm">
+                         <p className="text-[10px] font-normal text-orange-400 uppercase tracking-widest">Your Promo Code</p>
+                         <div className="font-mono text-2xl font-normal text-gray-900 tracking-wider bg-white py-4 px-6 rounded-2xl border-2 border-gray-100 inline-block shadow-sm">
                             {data.coupon.promoCode}
                          </div>
                       </div>
@@ -1332,7 +1578,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
              </div>
 
              {data.coupon?.validUntil && (
-                <div className="flex items-center justify-center gap-2 text-gray-500 text-xs font-bold uppercase tracking-widest">
+                <div className="flex items-center justify-center gap-2 text-gray-500 text-xs font-normal uppercase tracking-widest">
                    <Clock className="w-4 h-4" />
                    Valid until {new Date(data.coupon.validUntil).toLocaleDateString()}
                 </div>
@@ -1345,7 +1591,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
                    alert('Promo code copied!');
                  }
                }}
-               className="w-full py-5 bg-gray-900 text-white rounded-[32px] font-black text-lg shadow-2xl shadow-gray-200 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
+               className="w-full py-5 bg-gray-900 text-white rounded-[32px] font-normal text-lg shadow-2xl shadow-gray-200 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
              >
                Copy Code
              </button>
@@ -1359,7 +1605,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
               <ShieldCheck className="w-10 h-10" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Dynamic Content</h1>
+              <h1 className="text-xl font-normal text-gray-900">Dynamic Content</h1>
               <p className="text-gray-500 mt-2">The content for this QR code is ready.</p>
             </div>
             <pre className="text-left text-xs bg-gray-50 p-4 rounded-xl overflow-auto border border-gray-100 max-h-48 font-mono">
@@ -1372,12 +1618,12 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
 
   if (isWizardPreview) {
     return (
-      <div className="w-full min-h-full flex flex-col p-6 bg-white pb-32">
+      <div className="w-full min-h-full flex flex-col p-6 bg-white pb-32 font-walsheim">
           <div className="flex items-center justify-center gap-2 mb-8 opacity-40">
             <div className="w-5 h-5 rounded-lg bg-blue-600 flex items-center justify-center">
                 <ShieldCheck className="text-white w-3 h-3" />
             </div>
-            <span className="text-[10px] font-bold text-gray-900 tracking-tight">QR Thrive</span>
+            <span className="text-[10px] font-normal text-gray-900 tracking-tight">QR Thrive</span>
           </div>
           {renderContent()}
       </div>
@@ -1385,21 +1631,21 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-8 flex items-center justify-center font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-8 flex items-center justify-center font-walsheim">
       <div className="w-full max-w-[480px] bg-white rounded-[48px] shadow-[0_40px_100px_rgba(0,0,0,0.06)] border border-gray-50 p-8 sm:p-12 relative overflow-hidden">
         {/* Branding Header */}
         <div className="flex items-center justify-center gap-2 mb-12">
             <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center">
                <ShieldCheck className="text-white w-5 h-5" />
             </div>
-            <span className="text-lg font-bold text-gray-900">QR Thrive</span>
+            <span className="text-lg font-normal text-gray-900">QR Thrive</span>
         </div>
 
         {renderContent()}
 
         {/* Footer info */}
         <div className="mt-16 text-center">
-            <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-4">Powered by QR Thrive Enterprise</p>
+            <p className="text-[10px] font-normal text-gray-300 uppercase tracking-widest mb-4">Powered by QR Thrive Enterprise</p>
             <div className="flex justify-center gap-6 opacity-30">
                <Globe className="w-4 h-4" />
                <ShieldCheck className="w-4 h-4" />
@@ -1415,34 +1661,6 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data, isWizardPreview }) => {
   );
 };
 
-const getSocialConfig = (platform: string) => {
-  switch (platform) {
-    case 'instagram': return { 
-      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>, 
-      color: 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600' 
-    };
-    case 'facebook': return { 
-      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>, 
-      color: 'bg-[#1877F2]' 
-    };
-    case 'twitter': return { 
-      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>, 
-      color: 'bg-black' 
-    };
-    case 'linkedin': return { 
-      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.37 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451c.979 0 1.778-.773 1.778-1.729V1.729C24 .774 23.204 0 22.225 0z"/></svg>, 
-      color: 'bg-[#0A66C2]' 
-    };
-    case 'youtube': return { 
-      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>, 
-      color: 'bg-[#FF0000]' 
-    };
-    case 'tiktok': return { 
-      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.01.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.06-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96s3.35-1.92 5.27-1.74c1.1.07 2.13.44 3.06 1.06V.02z"/></svg>, 
-      color: 'bg-black' 
-    };
-    default: return { icon: Share2, color: 'bg-gray-600' };
-  }
-};
+
 
 export default DynamicView;

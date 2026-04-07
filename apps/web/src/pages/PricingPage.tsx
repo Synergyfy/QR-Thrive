@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Check, ArrowRight, Plus, Minus, Zap } from 'lucide-react';
+import { Check, ArrowRight, Plus, Minus, Zap, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import PublicNav from '../components/PublicNav';
 import PublicFooter from '../components/PublicFooter';
+import { useCurrency } from '../hooks/useCurrency';
 
 const pricingFeatures = [
   "Unlimited QR Codes",
@@ -38,29 +39,30 @@ const faqs = [
   },
   {
     question: "What currency am I billed in?",
-    answer: "All our plans are billed in Nigerian Naira (₦). If you're paying with an international card, your bank will handle the conversion automatically."
+    answer: "Our plans are billed in your local currency where possible. If your local currency is not supported, you will be billed in USD ($). If you're paying with an international card, your bank will handle the conversion automatically."
   },
   {
     question: "Can I change my plan?",
     answer: "Yes, you can upgrade, downgrade, or cancel your plan at any time from your account settings."
   }
-];const plans = [
+];
+
+const plans = [
   {
     name: "Standard",
     cycle: "Monthly",
-    price: "5,000",
-    totalPrice: "5,000",
+    price: 5000,
     description: "Perfect for short-term projects and testing.",
-    billing: "Billed monthly",
+    billingPrefix: "Billed monthly (",
     popular: false
   },
   {
     name: "Annual",
     cycle: "Yearly",
-    price: "4,167",
-    totalPrice: "50,000",
+    price: 4167,
+    totalPrice: 50000,
     description: "Our best value for growing businesses.",
-    billing: "Billed annually (₦50,000)",
+    billingPrefix: "Billed annually (",
     popular: true,
     highlight: true,
     save: "16%"
@@ -68,10 +70,10 @@ const faqs = [
   {
     name: "Quarterly",
     cycle: "Quarterly",
-    price: "4,500",
-    totalPrice: "13,500",
+    price: 4500,
+    totalPrice: 13500,
     description: "A great middle ground for commitment.",
-    billing: "Billed quarterly (₦13,500)",
+    billingPrefix: "Billed quarterly (",
     popular: false,
     save: "10%"
   }
@@ -79,12 +81,36 @@ const faqs = [
 
 export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const { currency, convertPrice, setCurrency, allCurrencies } = useCurrency();
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-blue-500/30 flex flex-col">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-blue-500/30 flex flex-col font-['Poppins']">
       <PublicNav />
 
       <main className="flex-grow pt-32 pb-24">
+        {/* Currency Switcher Floating */}
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100]">
+           <div className="bg-white/80 backdrop-blur-xl border border-slate-200/50 p-1.5 rounded-2xl shadow-2xl shadow-blue-900/10 flex items-center gap-1">
+              <div className="flex items-center gap-2 px-3 mr-1 text-slate-400">
+                <Globe className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Currency</span>
+              </div>
+              {allCurrencies.map((c) => (
+                <button
+                  key={c.code}
+                  onClick={() => setCurrency(c.code as any)}
+                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                    currency.code === c.code 
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105' 
+                      : 'text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  {c.code}
+                </button>
+              ))}
+           </div>
+        </div>
+
         {/* Hero Section */}
         <section className="pt-16 pb-12 px-4 text-center max-w-4xl mx-auto relative">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-400/20 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
@@ -112,7 +138,7 @@ export default function PricingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
             {plans.map((plan, idx) => (
               <motion.div 
-                key={plan.cycle}
+                key={plan.name}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 + (idx * 0.1) }}
@@ -142,9 +168,9 @@ export default function PricingPage() {
                   
                   <div className="flex items-center gap-4 mb-2">
                     <div className="flex items-baseline gap-1">
-                      <span className={`text-2xl font-bold ${plan.highlight ? 'text-slate-400' : 'text-slate-400'}`}>₦</span>
+                      <span className={`text-2xl font-bold ${plan.highlight ? 'text-slate-400' : 'text-slate-400'}`}>{currency.symbol}</span>
                       <span className={`text-6xl font-black tracking-tighter ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
-                        {plan.price}
+                        {convertPrice(plan.price)}
                       </span>
                       <span className={`text-sm font-bold opacity-60 ml-1 ${plan.highlight ? 'text-white' : 'text-slate-500'}`}>
                         / month
@@ -159,7 +185,7 @@ export default function PricingPage() {
                     )}
                   </div>
                   <p className={`text-xs font-bold mt-1 uppercase tracking-widest opacity-60 ${plan.highlight ? 'text-blue-400' : 'text-blue-600'}`}>
-                    {plan.billing}
+                    {plan.billingPrefix}{currency.symbol}{convertPrice(plan.totalPrice || plan.price)})
                   </p>
                 </div>
 
@@ -214,7 +240,7 @@ export default function PricingPage() {
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
                 <h4 className="text-2xl font-black text-slate-900 tracking-tight">API Integration</h4>
                 <div className="bg-blue-50 text-blue-600 font-black text-xs uppercase tracking-widest px-5 py-2.5 rounded-full inline-block border border-blue-100">
-                  + ₦12,500/month (Annual)
+                  + {currency.symbol}{convertPrice(12500)}/month (Annual)
                 </div>
               </div>
               <p className="text-slate-500 font-medium mb-6 leading-relaxed">

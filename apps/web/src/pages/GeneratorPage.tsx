@@ -8,7 +8,6 @@ import ColorsPanel from '../components/panels/ColorsPanel';
 import LogoPanel from '../components/panels/LogoPanel';
 import FramePanel from '../components/panels/FramePanel';
 import AuthModal from '../components/AuthModal';
-import { isQRDataValid } from '../utils/qrValidation';
 import {
   Type,
   Zap,
@@ -22,23 +21,47 @@ import {
   ChevronRight,
   BarChart3,
   Image as ImageIcon,
-  type LucideIcon
+  Palette,
+  Frame,
+  Image as LogoIcon,
+  LayoutGrid,
+  type LucideIcon,
+  ChevronLeft,
+  FileText,
+  Video,
+  User,
+  SmartphoneNfc,
+  Music,
+  Building2,
+  UtensilsCrossed,
+  Link2,
+  Users,
+  Ticket,
+  Phone
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 import PublicNav from '../components/PublicNav';
 import PublicFooter from '../components/PublicFooter';
+import DynamicView from '../components/DynamicView';
 import { useCurrentUser } from '../hooks/useApi';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const FAQ_DATA = [
+  { q: "How do I ensure my QR code is scannable?", a: "Just keep the contrast high (dark code, light background) and avoid overly complex designs. Using the 'Q' or 'H' error correction levels in the Design panel helps." },
+  { q: "Can I change the QR code design after generation?", a: "Yes, you can modify any settings in the panel and the preview will update instantly." },
+  { q: "Are these QR codes free to use?", a: "Yes, you can generate and export QR codes for personal and commercial use directly from this platform." },
+  { q: "What format should I download?", a: "PNG is great for digital use (social media/web), while SVG is recommended for print as it can be scaled to any size without losing quality." }
+];
+
 const INITIAL_CONFIG: QRConfiguration = {
   data: {
     type: 'url',
-    url: window.location.origin,
+    url: 'https://qr-thrive.com',
   },
   design: {
     dots: {
@@ -73,21 +96,65 @@ const INITIAL_CONFIG: QRConfiguration = {
     color: '#000000',
     textColor: '#ffffff'
   },
-  width: 300,
-  height: 300,
-  margin: 15,
+  width: 400,
+  height: 400,
+  margin: 20,
   isDynamic: false,
   shortId: '7KxR9p',
 };
+
+const FacebookIcon = (props: any) => (
+  <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+  </svg>
+);
+
+const InstagramIcon = (props: any) => (
+  <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+  </svg>
+);
+
+interface QRTypeOption {
+  id: QRType;
+  icon: any;
+  title: string;
+  description: string;
+  category: 'dynamic' | 'static';
+}
+
+const qrTypes: QRTypeOption[] = [
+  { id: 'url', icon: Globe, title: 'Website', description: 'Link to any website URL', category: 'static' },
+  { id: 'pdf', icon: FileText, title: 'PDF', description: 'Show a PDF', category: 'dynamic' },
+  { id: 'links', icon: Link2, title: 'List of Links', description: 'Share multiple links', category: 'dynamic' },
+  { id: 'vcard', icon: User, title: 'vCard', description: 'Share a digital business card', category: 'dynamic' },
+  { id: 'business', icon: Building2, title: 'Business', description: 'Share information about your business', category: 'dynamic' },
+  { id: 'video', icon: Video, title: 'Video', description: 'Show a video', category: 'dynamic' },
+  { id: 'image', icon: ImageIcon, title: 'Images', description: 'Share multiple images', category: 'dynamic' },
+  { id: 'facebook', icon: FacebookIcon, title: 'Facebook', description: 'Share your Facebook page', category: 'dynamic' },
+  { id: 'instagram', icon: InstagramIcon, title: 'Instagram', description: 'Share your Instagram', category: 'dynamic' },
+  { id: 'socials', icon: Users, title: 'Social Media', description: 'Share your social channels', category: 'dynamic' },
+  { id: 'whatsapp', icon: Phone, title: 'WhatsApp', description: 'Get WhatsApp messages', category: 'dynamic' },
+  { id: 'mp3', icon: Music, title: 'MP3', description: 'Share an audio file', category: 'dynamic' },
+  { id: 'menu', icon: UtensilsCrossed, title: 'Menu', description: 'Create a restaurant menu', category: 'dynamic' },
+  { id: 'app', icon: SmartphoneNfc, title: 'Apps', description: 'Redirect to an app store', category: 'dynamic' },
+  { id: 'coupon', icon: Ticket, title: 'Coupon', description: 'Share a coupon', category: 'dynamic' },
+  { id: 'wifi', icon: Wifi, title: 'WiFi', description: 'Connect to a Wi-Fi network', category: 'static' },
+];
 
 function GeneratorPage() {
   const { data: userData } = useCurrentUser();
   const user = userData?.user;
   
+  const [step, setStep] = useState<'type' | 'content' | 'design'>('type');
+  const [hoveredType, setHoveredType] = useState<QRType | null>(null);
   const [config, setConfig] = useState<QRConfiguration>(INITIAL_CONFIG);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(null);
 
-  const [designTab, setDesignTab] = useState<'shape' | 'frame' | 'logo'>('shape');
+  const [designTab, setDesignTab] = useState<'shape' | 'frame' | 'logo' | 'colors'>('shape');
 
   const updateConfig = (updates: Partial<QRConfiguration>) => {
     setConfig(prev => ({ ...prev, ...updates }));
@@ -98,13 +165,13 @@ function GeneratorPage() {
       const typeChanged = updates.type && updates.type !== prev.data.type;
       const newType = updates.type || prev.data.type;
       
-      const dynamicTypes: QRType[] = ['socials', 'event', 'image'];
+      const dynamicTypes: QRType[] = ['socials', 'event', 'image', 'pdf', 'vcard', 'business', 'video', 'facebook', 'instagram', 'whatsapp', 'mp3', 'menu', 'app', 'coupon'];
       const shouldBeDynamic = dynamicTypes.includes(newType);
 
       if (typeChanged) {
         return {
           ...prev,
-          data: { type: updates.type } as any,
+          data: { type: updates.type, ...updates } as any,
           isDynamic: shouldBeDynamic
         };
       }
@@ -131,6 +198,16 @@ function GeneratorPage() {
     }
   }, [config.data, config.isDynamic, config.shortId]);
 
+  const handleNext = () => {
+    if (step === 'type' && config.data.type) setStep('content');
+    else if (step === 'content') setStep('design');
+  };
+
+  const handleBack = () => {
+    if (step === 'content') setStep('type');
+    else if (step === 'design') setStep('content');
+  };
+
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
@@ -142,126 +219,240 @@ function GeneratorPage() {
         <div className="max-w-7xl mx-auto">
 
           {/* This is the Main Generator Card - The 1-2-3 Psychology Container */}
-          <div className="bg-white rounded-[40px] shadow-[0_30px_1000px_rgba(37,99,235,0.06)] border border-gray-100 flex flex-col lg:flex-row relative">
-            {/* Left Content Column (Steps 1 & 2) */}
-            <div className="flex-1 min-w-0 p-6 sm:p-10 lg:p-16 border-b lg:border-b-0 lg:border-r border-gray-100 rounded-t-[40px] lg:rounded-r-none lg:rounded-l-[40px] overflow-hidden">
-              {/* Step 1: Content Type */}
-              <div className="mb-1">
-                <div className="flex items-center gap-4 mb-10">
-                  <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-lg font-bold shadow-lg shadow-blue-200">1</div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 leading-none mb-1">Choose Content</h2>
-                    {/* <p className="text-sm text-gray-400 font-bold uppercase tracking-widest">Complete the details below</p> */}
-                  </div>
+          <div className="bg-white rounded-[40px] shadow-[0_30px_1000px_rgba(37,99,235,0.06)] border border-gray-100 flex flex-col lg:flex-row relative min-h-[700px] overflow-visible">
+            {/* Left Content Column */}
+            <div className="flex-1 min-w-0 p-6 sm:p-10 lg:p-12 border-b lg:border-b-0 lg:border-r border-gray-100 flex flex-col">
+              
+              {/* Stepper Header */}
+              <div className="flex items-center gap-4 mb-8">
+                <div className="flex items-center gap-1.5">
+                  {(['type', 'content', 'design'] as const).map((s, idx) => (
+                    <div key={s} className="flex items-center">
+                      <div className={cn(
+                        "w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all",
+                        step === s ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : 
+                        (idx < ['type', 'content', 'design'].indexOf(step) ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-400")
+                      )}>
+                        {idx + 1}
+                      </div>
+                      {idx < 2 && (
+                        <div className={cn(
+                          "w-6 h-0.5 mx-1 rounded-full",
+                          idx < ['type', 'content', 'design'].indexOf(step) ? "bg-gray-900" : "bg-gray-100"
+                        )} />
+                      )}
+                    </div>
+                  ))}
                 </div>
-                <div className="bg-gray-50/50 p-6 sm:p-10 rounded-[32px] border border-gray-50">
-                   <ContentPanel config={config} updateData={updateData} />
+                <div className="h-4 w-px bg-gray-100 mx-2" />
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 leading-none">
+                    {step === 'type' && "Choose Type"}
+                    {step === 'content' && "Add Content"}
+                    {step === 'design' && "Design QR"}
+                  </h2>
                 </div>
               </div>
 
-              <div className="h-px bg-gray-50/50 w-full mb-1" />
+              {/* Step Content Area */}
+              <div className="flex-1">
+                {step === 'type' && (
+                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {qrTypes.map(type => (
+                        <button
+                          key={type.id}
+                          onMouseEnter={() => setHoveredType(type.id)}
+                          onMouseLeave={() => setHoveredType(null)}
+                          onClick={() => {
+                            updateData({ type: type.id });
+                            handleNext();
+                          }}
+                          className={cn(
+                            "flex flex-col items-center text-center p-4 rounded-[24px] border-2 transition-all hover:scale-[1.02] active:scale-[0.98] group relative",
+                            config.data.type === type.id 
+                              ? "border-blue-600 bg-blue-50/10 shadow-sm" 
+                              : "border-gray-50 bg-gray-50/50 hover:border-blue-100"
+                          )}
+                        >
+                          <div className={cn(
+                            "w-10 h-10 rounded-xl flex items-center justify-center transition-all mb-2",
+                            config.data.type === type.id 
+                              ? "bg-blue-600 text-white shadow-md shadow-blue-100" 
+                              : "bg-white text-gray-400 group-hover:text-blue-600"
+                          )}>
+                            <type.icon className="w-5 h-5" />
+                          </div>
+                          <span className="font-bold text-gray-900 text-[10px] tracking-tight">{type.title}</span>
+                          {type.category === 'dynamic' && (
+                            <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-              {/* Step 2: Design */}
-              <div>
-                <div className="flex items-center gap-4 mb-10">
-                  <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-lg font-bold shadow-lg shadow-blue-200">2</div>
-                  <div className="flex-1 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900 leading-none mb-1">Design Your QR</h2>
-                      {/* <p className="text-sm text-gray-400 font-bold uppercase tracking-widest">Customize frames, shapes & logos</p> */}
-                    </div>
-                    {/* Tabs for Design Section */}
-                    <div className="flex bg-gray-100 p-1.5 rounded-2xl md:mt-0 transition-all">
-                      <button
-                        onClick={() => setDesignTab('shape')}
-                        className={cn(
-                          "px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all",
-                          designTab === 'shape' ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"
-                        )}
-                      >
-                        Shape
-                      </button>
-                      <button
-                        onClick={() => setDesignTab('frame')}
-                        className={cn(
-                          "px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all",
-                          designTab === 'frame' ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"
-                        )}
-                      >
-                        Frame
-                      </button>
-                      <button
-                        onClick={() => setDesignTab('logo')}
-                        className={cn(
-                          "px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all",
-                          designTab === 'logo' ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"
-                        )}
-                      >
-                        Logo
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-gray-50/50 rounded-[32px] p-6 sm:p-10 border border-gray-50 overflow-hidden max-w-full">
+                {step === 'content' && (
                   <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                    {designTab === 'shape' && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                        <DesignPanel design={config.design} updateDesign={updateDesign} />
-                        <ColorsPanel design={config.design} updateDesign={updateDesign} />
-                      </div>
-                    )}
-                    {designTab === 'frame' && (
-                      <FramePanel config={config} updateConfig={updateConfig} />
-                    )}
-                    {designTab === 'logo' && (
-                      <LogoPanel config={config} updateConfig={updateConfig} />
-                    )}
+                    <ContentPanel config={config} updateData={updateData} hideTypeSelector={true} />
                   </div>
-                </div>
+                )}
+
+                {step === 'design' && (
+                  <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
+                    <div className="flex bg-gray-100 p-1 rounded-2xl">
+                      {(['shape', 'frame', 'logo'] as const).map(tab => (
+                        <button
+                          key={tab}
+                          onClick={() => setDesignTab(tab)}
+                          className={cn(
+                            "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                            designTab === tab ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"
+                          )}
+                        >
+                          {tab === 'shape' && <Palette className="w-4 h-4" />}
+                          {tab === 'frame' && <Frame className="w-4 h-4" />}
+                          {tab === 'logo' && <LogoIcon className="w-4 h-4" />}
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="bg-gray-50 rounded-[32px] p-6 border border-gray-50">
+                      {designTab === 'shape' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <DesignPanel design={config.design} updateDesign={updateDesign} />
+                          <ColorsPanel design={config.design} updateDesign={updateDesign} />
+                        </div>
+                      )}
+                      {designTab === 'frame' && <FramePanel config={config} updateConfig={updateConfig} />}
+                      {designTab === 'logo' && <LogoPanel config={config} updateConfig={updateConfig} />}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Navigation Actions */}
+              <div className="mt-8 pt-8 border-t border-gray-50 flex items-center justify-between">
+                <button
+                  onClick={handleBack}
+                  disabled={step === 'type'}
+                  className={cn(
+                    "px-6 py-3 rounded-xl text-xs font-bold transition-all flex items-center gap-2",
+                    step === 'type' ? "opacity-0 pointer-events-none" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  )}
+                >
+                  <ChevronLeft className="w-4 h-4" /> Back
+                </button>
+                <button
+                  onClick={handleNext}
+                  disabled={step === 'design'}
+                  className={cn(
+                    "px-10 py-3 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-lg",
+                    step === 'design' ? "opacity-0 pointer-events-none" : "bg-blue-600 text-white shadow-blue-100 hover:bg-blue-700 active:scale-95"
+                  )}
+                >
+                  Next <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
-            {/* Right Preview Column (Step 3) */}
-            <div className="w-full lg:w-[480px] bg-gray-50/40 p-6 sm:p-10 lg:p-12 flex flex-col items-center justify-start min-h-[500px] rounded-b-[40px] lg:rounded-l-none lg:rounded-r-[40px]">
-              <div className="sticky top-24 w-full flex flex-col items-center">
-                <div className="flex items-center justify-center gap-4 mb-10">
-                  <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-lg font-bold shadow-lg shadow-blue-200">3</div>
-                  <h2 className="text-2xl font-bold text-gray-900">Download Ready</h2>
-                </div>
+            {/* Right Preview Column */}
+            <div className="w-full lg:w-[440px] bg-[#F8FAFC] min-h-[600px] relative shrink-0">
+              <div className="lg:sticky lg:top-28 w-full p-6 sm:p-10 lg:p-12 flex flex-col items-center">
                 
-                <div className="w-full max-w-[300px] mb-12 transform group transition-all duration-500 hover:scale-[1.02]">
-                  {config.isDynamic && !user ? (
-                    <div className="bg-white/60 backdrop-blur-md rounded-3xl p-8 border border-blue-100 flex flex-col items-center text-center space-y-6 shadow-xl animate-in fade-in zoom-in-95 duration-500">
-                      <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center">
-                        <Zap className="w-8 h-8 fill-blue-600" />
-                      </div>
-                      <div className="space-y-2">
-                        <h4 className="text-lg font-bold text-gray-900 leading-tight">Signup Required</h4>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">To create dynamic QRs</p>
-                      </div>
-                      <button 
-                        onClick={() => setIsAuthModalOpen(true)}
-                        className="w-full py-4 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700 active:scale-[0.98] transition-all"
-                      >
-                         Unlock Now
-                      </button>
+                {step === 'design' ? (
+                  <div className="w-full flex flex-col items-center animate-in zoom-in-95 duration-500">
+                    <div className="flex items-center justify-center gap-3 mb-8">
+                      <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-sm font-bold shadow-lg shadow-blue-200">3</div>
+                      <h2 className="text-xl font-bold text-gray-900">Preview & Download</h2>
                     </div>
-                  ) : (
-                    <QRCodePreview config={config} isValid={isQRDataValid(config.data)} />
-                  )}
-                </div>
- 
-                <div className="w-full space-y-5 max-w-[300px]">
-                  <ExportPanel 
-                    config={config} 
-                    hasUser={!!user} 
-                    isValid={isQRDataValid(config.data)}
-                    onAuthRequired={() => setIsAuthModalOpen(true)} 
-                  />
-                  
-                </div>
 
+                    <div className="w-full max-w-[280px] mb-10 transform group transition-all duration-500 hover:scale-[1.02]">
+                       <div className="bg-white p-6 rounded-[40px] shadow-2xl shadow-blue-100/50 border border-white aspect-square flex items-center justify-center relative">
+                          {config.isDynamic && !user ? (
+                            <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-md rounded-[40px] flex flex-col items-center justify-center p-6 text-center space-y-4">
+                              <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
+                                <Zap className="w-6 h-6 fill-blue-600" />
+                              </div>
+                              <h4 className="text-sm font-bold text-gray-900">Signup for Dynamic QR</h4>
+                              <button 
+                                onClick={() => setIsAuthModalOpen(true)}
+                                className="w-full py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-100"
+                              >
+                                Join Free
+                              </button>
+                            </div>
+                          ) : null}
+                          <QRCodePreview config={config} isValid={true} />
+                       </div>
+                    </div>
+
+                    <div className="w-full space-y-4 max-w-[280px]">
+                      <ExportPanel 
+                        config={config} 
+                        hasUser={!!user} 
+                        isValid={true}
+                        onAuthRequired={() => setIsAuthModalOpen(true)} 
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative group animate-in fade-in slide-in-from-right-8 duration-700 w-full flex flex-col items-center">
+                    {/* Phone Mockup Case */}
+                    <div className="relative w-[280px] h-[575px] bg-gray-900 rounded-[50px] p-2.5 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.25)] border-[1px] border-gray-800 overflow-hidden shrink-0">
+                      {/* Notch */}
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 bg-gray-900 rounded-b-xl z-40 border-x border-b border-gray-800" />
+                      
+                      {/* Screen */}
+                      <div className="relative w-full h-full bg-white rounded-[40px] overflow-hidden flex flex-col">
+                        <div className="h-8 px-6 flex items-center justify-between text-[9px] font-bold text-gray-900 pt-2 shrink-0">
+                            <span>9:41</span>
+                            <div className="flex gap-1 items-center">
+                              <Wifi className="w-2.5 h-2.5" />
+                              <div className="w-4 h-2 border border-gray-900 rounded-[2px] p-[0.5px]">
+                                <div className="w-full h-full bg-gray-900 rounded-[0.5px]" />
+                              </div>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto hidden-scrollbar flex flex-col relative">
+                            {(hoveredType || config.data.type) ? (
+                               <div key={hoveredType || config.data.type} className="min-h-full animate-in fade-in slide-in-from-bottom-5 duration-700 flex flex-col">
+                                  <DynamicView 
+                                    data={hoveredType ? { type: hoveredType } as any : config.data} 
+                                    isWizardPreview={true} 
+                                  />
+                               </div>
+                            ) : (
+                              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 p-6">
+                                 <div className="w-32 h-32 bg-gray-50 rounded-2xl flex flex-col items-center justify-center border border-gray-100 relative">
+                                    <div className="absolute inset-4 border-4 border-gray-200 rounded-md"></div>
+                                    <LayoutGrid className="w-8 h-8 text-gray-200" />
+                                 </div>
+                                 <div className="space-y-1">
+                                    <h3 className="text-sm font-bold text-gray-900">Select a QR Type</h3>
+                                    <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Preview logic here</p>
+                                 </div>
+                              </div>
+                            )}
+                        </div>
+                        <div className="h-1 w-20 bg-gray-900 rounded-full mx-auto mb-2 shrink-0" />
+                      </div>
+                    </div>
+                    
+                    {/* Badge */}
+                    <div className="absolute -bottom-6 -right-6 lg:right-4 bg-white p-4 rounded-3xl shadow-xl border border-gray-50 flex items-center gap-3 animate-bounce">
+                      <div className="w-8 h-8 rounded-xl bg-green-100 text-green-600 flex items-center justify-center">
+                        <Zap className="w-4 h-4 fill-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-gray-900 uppercase leading-none">Live Dynamic</p>
+                        <p className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Real-time update</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -376,6 +567,29 @@ function GeneratorPage() {
             <QRTypeCard icon={Zap} title="App Deep Link" desc="Smart routing based on user's device OS." />
             <QRTypeCard icon={Shield} title="Secure Auth" desc="Use QR for MFA and secure verification flows." />
           </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="max-w-3xl mx-auto py-16 px-6">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-8 text-center">Frequently Asked Questions</h2>
+        <div className="space-y-3">
+          {FAQ_DATA.map((item, i) => (
+            <div key={i} className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+              <button
+                onClick={() => setFaqOpenIndex(faqOpenIndex === i ? null : i)}
+                className="w-full flex justify-between items-center p-5 text-left font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                {item.q}
+                <ChevronRight className={cn("w-5 h-5 transition-transform text-gray-400", faqOpenIndex === i && "rotate-90")} />
+              </button>
+              {faqOpenIndex === i && (
+                <div className="p-5 border-t border-gray-100 text-gray-600 bg-gray-50/50 leading-relaxed">
+                  {item.a}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </section>
 

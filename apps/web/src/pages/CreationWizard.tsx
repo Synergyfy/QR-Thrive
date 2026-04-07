@@ -20,7 +20,10 @@ import {
   Palette,
   Image as LogoIcon,
   Frame,
-  Loader2
+  Loader2,
+  LayoutGrid,
+  FileEdit,
+  X
 } from 'lucide-react';
 
 const FacebookIcon = (props: any) => (
@@ -56,6 +59,30 @@ function cn(...inputs: ClassValue[]) {
 }
 
 type Step = 'type' | 'content' | 'design';
+
+const HELP_CONTENT: Record<Step, { title: string; description: string; icon: any; color: string; image: string }> = {
+  type: {
+    title: "Select a QR code type",
+    description: "Select the type of QR code you need by clicking on the respective icon. You have up to 16 different options.",
+    icon: LayoutGrid,
+    color: "bg-blue-600",
+    image: "/inspo-2.png"
+  },
+  content: {
+    title: "Add content",
+    description: "Fill in the necessary information for your QR code. Depending on the type selected, you can add links, files, or text.",
+    icon: FileEdit,
+    color: "bg-purple-600",
+    image: "/inspo-2.png" // Using the same inspo-2 image as requested
+  },
+  design: {
+    title: "Design your QR code",
+    description: "Customize the appearance of your QR code. Change colors, add a frame, or upload your logo to make it unique.",
+    icon: Palette,
+    color: "bg-pink-600",
+    image: "/inspo-2.png"
+  }
+};
 
 interface QRTypeOption {
   id: string;
@@ -114,6 +141,8 @@ const CreationWizard: React.FC = () => {
     return 'type';
   });
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [hoveredType, setHoveredType] = useState<string | null>(null);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [config, setConfig] = useState<QRConfiguration>(INITIAL_CONFIG);
   const [designTab, setDesignTab] = useState<'shape' | 'frame' | 'logo' | 'colors'>('shape');
 
@@ -258,7 +287,7 @@ const CreationWizard: React.FC = () => {
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-100">
               <CheckCircle2 className="w-5 h-5" />
             </div>
-            <span className="text-lg font-black text-slate-900 tracking-tighter">QR Thrive</span>
+            <span className="text-lg font-bold text-slate-900 tracking-tighter">QR Thrive</span>
         </div>
 
         {/* Stepper (Centered) */}
@@ -267,7 +296,7 @@ const CreationWizard: React.FC = () => {
               <React.Fragment key={s.id}>
                 <div className="flex items-center gap-2">
                    <div className={cn(
-                     "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all",
+                     "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all",
                      step === s.id ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : 
                      steps.findIndex(x => x.id === step) > idx ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-500"
                    )}>
@@ -287,8 +316,11 @@ const CreationWizard: React.FC = () => {
 
         <div className="flex items-center gap-4 shrink-0">
            <div className="hidden sm:flex items-center gap-2 mr-4">
-              <button className="p-2 bg-slate-50 text-slate-400 rounded-lg border border-slate-100 hover:text-blue-600 transition-colors">
-                 <div className="w-5 h-5 border-2 border-current rounded-md flex items-center justify-center text-[10px] font-black">?</div>
+              <button 
+                onClick={() => setIsHelpOpen(true)}
+                className="p-2 bg-slate-50 text-slate-400 rounded-lg border border-slate-100 hover:text-blue-600 transition-colors"
+              >
+                 <div className="w-5 h-5 border-2 border-current rounded-md flex items-center justify-center text-[10px] font-bold">?</div>
               </button>
            </div>
            <button 
@@ -301,7 +333,7 @@ const CreationWizard: React.FC = () => {
             disabled={!selectedType || isSaving}
             onClick={handleNext}
             className={cn(
-              "px-6 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-lg min-w-[100px] justify-center tracking-widest uppercase",
+              "px-6 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-lg min-w-[100px] justify-center tracking-widest uppercase",
               selectedType ? "bg-blue-600 text-white shadow-blue-100 hover:bg-blue-700 active:scale-95" : "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
             )}
            >
@@ -324,12 +356,14 @@ const CreationWizard: React.FC = () => {
                {step === 'type' && (
                  <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="space-y-2">
-                       <h1 className="text-3xl font-black text-slate-900 tracking-tight">1. Select a type of QR code</h1>
+                       <h1 className="text-3xl font-bold text-slate-900 tracking-tight">1. Select a type of QR code</h1>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
                        {qrTypes.map(type => (
                           <button
                             key={type.id}
+                            onMouseEnter={() => setHoveredType(type.id)}
+                            onMouseLeave={() => setHoveredType(null)}
                             onClick={() => setSelectedType(type.id)}
                             className={cn(
                               "flex flex-col items-center text-center p-6 rounded-[2rem] border-2 transition-all hover:scale-[1.02] active:scale-[0.98] group relative overflow-hidden",
@@ -347,7 +381,7 @@ const CreationWizard: React.FC = () => {
                                 <type.icon className="w-7 h-7" />
                              </div>
                              <div className="space-y-1">
-                                <h3 className="font-black text-slate-900 text-sm tracking-tight">{type.title}</h3>
+                                <h3 className="font-bold text-slate-900 text-sm tracking-tight">{type.title}</h3>
                                 <p className="text-[10px] font-medium text-slate-400 leading-tight px-2">{type.description}</p>
                              </div>
                              {type.category === 'dynamic' && (
@@ -363,7 +397,7 @@ const CreationWizard: React.FC = () => {
                   <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
                      <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                           <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+                           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
                               2. {isEditing ? 'Edit Content' : qrTypes.find(t => t.id === selectedType)?.title}
                            </h1>
                            <p className="text-slate-400 font-medium">
@@ -371,7 +405,7 @@ const CreationWizard: React.FC = () => {
                            </p>
                         </div>
                         {!isEditing && (
-                          <button className="px-5 py-2.5 bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl flex items-center gap-2 shadow-lg shadow-blue-100">
+                          <button className="px-5 py-2.5 bg-blue-600 text-white text-xs font-bold uppercase tracking-widest rounded-xl flex items-center gap-2 shadow-lg shadow-blue-100">
                              <Zap className="w-3.5 h-3.5 fill-white" /> Bulk Creation
                           </button>
                         )}
@@ -385,7 +419,7 @@ const CreationWizard: React.FC = () => {
                {step === 'design' && (
                  <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                     <div className="space-y-2">
-                       <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+                       <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
                           3. {isEditing ? 'Edit Design' : 'Design QR Code'}
                        </h1>
                        <p className="text-slate-400 font-medium">Customize the look of your QR code to match your brand.</p>
@@ -397,7 +431,7 @@ const CreationWizard: React.FC = () => {
                               key={tab}
                               onClick={() => setDesignTab(tab)}
                               className={cn(
-                                "flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all",
+                                "flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all",
                                 designTab === tab ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
                               )}>
                                {tab === 'shape' && <Palette className="w-4 h-4" />}
@@ -430,12 +464,12 @@ const CreationWizard: React.FC = () => {
                        </div>
                     </div>
                     <div className="text-center space-y-4">
-                       <div className="px-4 py-2 bg-blue-50 text-blue-600 text-[9px] font-black uppercase tracking-[0.2em] rounded-full flex items-center gap-2 shadow-sm border border-blue-100/50">
+                       <div className="px-4 py-2 bg-blue-50 text-blue-600 text-[9px] font-bold uppercase tracking-[0.2em] rounded-full flex items-center gap-2 shadow-sm border border-blue-100/50">
                           <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
                           Check Live Dynamic Page
                        </div>
                        <div className="pt-2">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Live Designer</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Live Designer</p>
                           <h4 className="text-lg font-bold text-slate-900 leading-tight">Watch your scan transform</h4>
                        </div>
                     </div>
@@ -449,7 +483,7 @@ const CreationWizard: React.FC = () => {
                       
                       {/* Screen */}
                       <div className="relative w-full h-full bg-white rounded-[44px] overflow-hidden flex flex-col">
-                        <div className="h-10 px-8 flex items-center justify-between text-[11px] font-black text-slate-900 pt-3 shrink-0">
+                        <div className="h-10 px-8 flex items-center justify-between text-[11px] font-bold text-slate-900 pt-3 shrink-0">
                             <span>9:41</span>
                             <div className="flex gap-1.5 items-center">
                               <div className="flex gap-0.5">
@@ -465,9 +499,12 @@ const CreationWizard: React.FC = () => {
                         </div>
 
                         <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col relative">
-                            {selectedType ? (
-                               <div className="min-h-full animate-in fade-in slide-in-from-bottom-5 duration-700 flex flex-col">
-                                  <DynamicView data={config.data} isWizardPreview={true} />
+                            {(hoveredType || selectedType) ? (
+                               <div key={hoveredType || selectedType} className="min-h-full animate-in fade-in slide-in-from-bottom-5 duration-700 flex flex-col">
+                                  <DynamicView 
+                                    data={hoveredType ? { type: hoveredType } as any : config.data} 
+                                    isWizardPreview={true} 
+                                  />
                                </div>
                             ) : (
                               <div className="flex-1 flex flex-col items-center justify-center text-center space-y-10 animate-in fade-in duration-1000 p-6 pt-10">
@@ -478,7 +515,7 @@ const CreationWizard: React.FC = () => {
                                        <div className="absolute top-8 right-8 w-8 h-8 bg-slate-900"></div>
                                        <div className="absolute bottom-8 left-8 w-8 h-8 bg-slate-900"></div>
                                        <div className="absolute top-8 left-8 w-8 h-8 bg-slate-900"></div>
-                                       <div className="w-16 h-16 rounded-full bg-white shadow-xl flex items-center justify-center text-[10px] font-black text-slate-900 border border-slate-100 z-10 transition-transform group-hover:scale-110">
+                                       <div className="w-16 h-16 rounded-full bg-white shadow-xl flex items-center justify-center text-[10px] font-bold text-slate-900 border border-slate-100 z-10 transition-transform group-hover:scale-110">
                                           LOGO
                                        </div>
                                        {/* Random dots for QR feel */}
@@ -490,7 +527,7 @@ const CreationWizard: React.FC = () => {
                                     </div>
                                  </div>
                                  <div className="space-y-2">
-                                    <h3 className="text-xl font-black text-slate-900 leading-none">Select a type of QR code on the left</h3>
+                                    <h3 className="text-xl font-bold text-slate-900 leading-none">Select a type of QR code on the left</h3>
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-10">Start your journey here</p>
                                  </div>
                               </div>
@@ -505,6 +542,46 @@ const CreationWizard: React.FC = () => {
             </div>
          </div>
       </div>
+
+      {/* Help Modal */}
+      {isHelpOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setIsHelpOpen(false)} />
+          <div className="relative w-full max-w-lg bg-white rounded-[40px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <button 
+              onClick={() => setIsHelpOpen(false)}
+              className="absolute top-6 right-6 p-2 bg-slate-100 text-slate-400 rounded-full hover:bg-slate-200 transition-all z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="relative">
+               <div className={cn("h-64 flex items-center justify-center relative overflow-hidden", HELP_CONTENT[step].color)}>
+                  <img src={HELP_CONTENT[step].image} className="w-full h-full object-cover mix-blend-overlay opacity-40 absolute inset-0" />
+                  <div className="relative z-10 w-24 h-24 bg-white/20 backdrop-blur-xl rounded-3xl flex items-center justify-center border border-white/30 shadow-2xl">
+                     {React.createElement(HELP_CONTENT[step].icon, { className: "w-12 h-12 text-white" })}
+                  </div>
+               </div>
+
+               <div className="p-10 text-center space-y-6">
+                  <div className="space-y-2">
+                     <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{HELP_CONTENT[step].title}</h3>
+                     <p className="text-slate-500 font-medium leading-relaxed px-4">
+                        {HELP_CONTENT[step].description}
+                     </p>
+                  </div>
+
+                  <button 
+                    onClick={() => setIsHelpOpen(false)}
+                    className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-95"
+                  >
+                    Got it, thanks!
+                  </button>
+               </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
