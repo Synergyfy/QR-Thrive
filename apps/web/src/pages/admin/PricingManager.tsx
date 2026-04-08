@@ -9,10 +9,8 @@ import {
   CreditCard,
   ListTodo,
   HelpCircle,
-  Zap,
   Eye,
   Settings,
-  Star,
   Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -127,8 +125,8 @@ export default function PricingManager() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-4 px-6 py-5 rounded-3xl font-bold text-sm tracking-wide transition-all w-full text-left whitespace-nowrap lg:whitespace-normal group ${activeTab === tab.id
-                  ? 'bg-white text-blue-600 shadow-xl shadow-blue-900/5 ring-1 ring-slate-100'
-                  : 'text-slate-400 hover:bg-white hover:text-slate-600'
+                ? 'bg-white text-blue-600 shadow-xl shadow-blue-900/5 ring-1 ring-slate-100'
+                : 'text-slate-400 hover:bg-white hover:text-slate-600'
                 }`}
             >
               <div className={`p-2.5 rounded-xl transition-all ${activeTab === tab.id ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
