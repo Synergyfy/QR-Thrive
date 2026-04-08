@@ -502,7 +502,7 @@ const DashboardPage: React.FC = () => {
                      </button>
                      <button 
                        onClick={() => deleteFolder(folder.id)}
-                       className="p-1.5 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all mr-2"
+                       className="p-1.5 text-slate-300 hover:text-red-500 transition-all mr-2"
                      >
                        <X className="w-3 h-3" />
                      </button>
@@ -691,7 +691,7 @@ const DashboardPage: React.FC = () => {
                                    <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2 group-hover:text-blue-600 transition-colors cursor-pointer"
                                        onClick={() => { setRenamingQR(qr.id); setRenameValue(qr.name); }}>
                                       {qr.name}
-                                      <Edit2 className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                      <Edit2 className="w-3 h-3 transition-opacity" />
                                    </h3>
                                  )}
                               </div>
@@ -759,7 +759,7 @@ const DashboardPage: React.FC = () => {
                            <div className="flex gap-4 items-center bg-slate-50/50 p-6 rounded-[32px] border border-slate-50 relative overflow-hidden">
                               <div className="w-28 h-28 bg-white rounded-2xl shadow-inner border border-slate-100 shrink-0 relative overflow-hidden group/qr flex items-center justify-center p-2">
                                  <DashboardQRPreview config={qr.config} shortUrl={qr.shortUrl} />
-                                 <div className="absolute inset-0 bg-blue-600/60 backdrop-blur-sm opacity-0 group-hover/qr:opacity-100 transition-opacity flex items-center justify-center">
+                                 <div className="absolute inset-0 bg-blue-600/60 backdrop-blur-sm transition-opacity flex items-center justify-center">
                                     <ExternalLink className="text-white w-8 h-8" />
                                  </div>
                               </div>

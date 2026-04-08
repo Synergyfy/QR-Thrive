@@ -25,6 +25,10 @@ export const formsApi = {
   submitForm: async (shortId: string, answers: Record<string, any>): Promise<any> => {
     const { data } = await axios.post(`${API_URL}/public/forms/${shortId}/submit`, { answers });
     return data;
+  },
+  deleteSubmission: async (qrCodeId: string, submissionId: string): Promise<any> => {
+    const { data } = await axios.delete(`${API_URL}/forms/${qrCodeId}/submissions/${submissionId}`, { withCredentials: true });
+    return data;
   }
 };
 

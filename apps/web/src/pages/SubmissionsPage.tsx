@@ -76,8 +76,36 @@ const SubmissionsPage: React.FC = () => {
 
   const displayForm = useMemo(() => {
     if (id && MOCK_FORMS[id]) return MOCK_FORMS[id];
-    return form;
-  }, [form, id]);
+    if (form) return form;
+    
+    // Virtual form for Menu/Coupon from QR code config
+    if (qrCode) {
+       const config = qrCode.config as any;
+       const fields: any[] = [];
+       if (qrCode.type === 'menu' && config.data.menu?.customFields) {
+          config.data.menu.customFields.forEach((cf: any) => {
+             fields.push({ id: cf.id, label: cf.label, type: cf.type, order: fields.length, required: false });
+          });
+       } else if (qrCode.type === 'menu') {
+          fields.push({ id: 'cust', label: 'Customer', type: 'text', order: 0, required: true });
+          fields.push({ id: 'items', label: 'Ordered Items', type: 'text', order: 1, required: true });
+          fields.push({ id: 'table', label: 'Table No.', type: 'text', order: 2, required: true });
+       } else if (qrCode.type === 'coupon') {
+          fields.push({ id: 'email', label: 'Email', type: 'email', order: 0, required: true });
+       }
+
+       if (fields.length > 0) {
+          return {
+             id: `v-${id}`,
+             qrCodeId: id,
+             title: qrCode.name,
+             fields
+          };
+       }
+    }
+    
+    return null;
+  }, [form, id, qrCode]);
 
   const displaySubmissions = useMemo(() => {
     if (id && id.startsWith('mock-')) {
