@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:3005/api/v1');
 
-const formsApi = {
+export const formsApi = {
   getForm: async (qrCodeId: string): Promise<Form> => {
     const { data } = await axios.get(`${API_URL}/forms/${qrCodeId}`, { withCredentials: true });
     return data;
@@ -24,6 +24,10 @@ const formsApi = {
   },
   submitForm: async (shortId: string, answers: Record<string, any>): Promise<any> => {
     const { data } = await axios.post(`${API_URL}/public/forms/${shortId}/submit`, { answers });
+    return data;
+  },
+  deleteSubmission: async (qrCodeId: string, submissionId: string): Promise<any> => {
+    const { data } = await axios.delete(`${API_URL}/forms/${qrCodeId}/submissions/${submissionId}`, { withCredentials: true });
     return data;
   }
 };

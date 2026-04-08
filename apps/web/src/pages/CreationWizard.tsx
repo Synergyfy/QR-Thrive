@@ -50,7 +50,7 @@ import ContentPanel from '../components/panels/ContentPanel';
 import QRCodePreview from '../components/QRCodePreview';
 import DynamicView from '../components/DynamicView';
 import toast from 'react-hot-toast';
-import { useQRCode, useCreateQRCode, useUpdateQRCode } from '../hooks/useApi';
+import { useQRCode, useCreateQRCode, useUpdateQRCode, useCurrentUser } from '../hooks/useApi';
 import { uploadAllPendingFiles } from '../utils/upload';
 import { uploadApi } from '../services/api';
 
@@ -156,16 +156,31 @@ const CreationWizard: React.FC = () => {
     }
   }, [editId, existingQR]);
 
+  const { data: userData } = useCurrentUser();
+  const user = userData?.user;
+
   // Sync types for new QRs
   useEffect(() => {
     if (selectedType && !isEditing) {
-      setConfig(prev => ({
-        ...prev,
-        data: { ...prev.data, type: selectedType as any },
-        isDynamic: true // All QR codes should be dynamic by default
-      }));
+      setConfig(prev => {
+        const newData = { ...prev.data, type: selectedType as any } as any;
+        
+        // Auto-populate whatsappNumber for menu if user has a phone
+        if (selectedType === 'menu' && (user as any)?.phone) {
+          newData.menu = {
+            ...(newData.menu || {}),
+            whatsappNumber: (user as any).phone
+          };
+        }
+        
+        return {
+          ...prev,
+          data: newData,
+          isDynamic: true // All QR codes should be dynamic by default
+        };
+      });
     }
-  }, [selectedType, isEditing]);
+  }, [selectedType, isEditing, user]);
 
   const steps = [
     { id: 'type', label: 'Choose Type' },
