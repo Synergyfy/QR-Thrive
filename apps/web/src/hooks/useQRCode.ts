@@ -18,32 +18,32 @@ const getQRDataString = (config: QRConfiguration): string => {
     case 'sms':
       return `SMSTO:${data.sms?.number}:${data.sms?.message}`;
     case 'whatsapp':
-      return `https://wa.me/${data.whatsapp?.number}?text=${encodeURIComponent(data.whatsapp?.message || '')}`;
+      return `https://wa.me/${data.whatsapp?.phoneNumber || data.whatsapp?.number}?text=${encodeURIComponent(data.whatsapp?.message || '')}`;
     case 'phone':
       return `tel:${data.phone?.number}`;
     case 'instagram':
-      return `https://instagram.com/${data.social?.username}`;
+      return `https://instagram.com/${(data as any).social?.username}`;
     case 'facebook':
-      return `https://facebook.com/${data.social?.username}`;
+      return `https://facebook.com/${(data as any).social?.username}`;
     case 'linkedin':
-      return `https://linkedin.com/in/${data.social?.username}`;
+      return `https://linkedin.com/in/${(data as any).social?.username}`;
     case 'twitter':
-      return `https://twitter.com/${data.social?.username}`;
+      return `https://twitter.com/${(data as any).social?.username}`;
     case 'youtube':
-      return `https://youtube.com/@${data.social?.username}`;
+      return `https://youtube.com/@${(data as any).social?.username}`;
     case 'tiktok':
-      return `https://tiktok.com/@${data.social?.username}`;
+      return `https://tiktok.com/@${(data as any).social?.username}`;
     case 'crypto':
-      return data.crypto?.address || '';
+      return (data as any).crypto?.address || '';
     case 'event':
-      return `BEGIN:VEVENT\nSUMMARY:${data.event?.title}\nLOCATION:${data.event?.location}\nDESCRIPTION:${data.event?.description}\nEND:VEVENT`;
+      return `BEGIN:VEVENT\nSUMMARY:${(data as any).event?.title}\nLOCATION:${(data as any).event?.location}\nDESCRIPTION:${(data as any).event?.description}\nEND:VEVENT`;
     case 'socials':
       if (data.socials) {
-        const first = Object.values(data.socials).find(v => v);
-        return first || '';
+        const first = Object.values(data.socials).find(v => typeof v === 'string');
+        return (first as string) || '';
       }
       return '';
-    case 'image': return data.image?.url || '';
+    case 'image': return data.images?.[0]?.url || '';
     case 'pdf': return data.pdf?.url || '';
     case 'video': return data.video?.url || '';
     case 'mp3': return data.mp3?.url || '';
