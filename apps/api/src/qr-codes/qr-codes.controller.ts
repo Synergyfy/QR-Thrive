@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, Req, Query, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, Req, Query, Res, ForbiddenException } from '@nestjs/common';
 import { QRCodesService } from './qr-codes.service';
 import { CreateQRCodeDto } from './dto/create-qr-code.dto';
 import { UpdateQRCodeDto } from './dto/update-qr-code.dto';
@@ -111,6 +111,9 @@ export class QRCodesController {
 
       return res.redirect(url);
     } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
       return res.status(404).send('QR Code not found');
     }
   }

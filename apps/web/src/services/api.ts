@@ -7,6 +7,9 @@ import type {
   BackendQRCode,
   DashboardStats,
   Scan,
+  AdminStats,
+  AdminUsersResponse,
+  SystemConfig,
 } from '../types/api';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:3005/api/v1');
@@ -173,4 +176,12 @@ export const mediaApi = {
     );
     return res.data;
   }
+};
+
+export const adminApi = {
+  getStats: async () => (await apiClient.get<AdminStats>('/admin/stats')).data,
+  getUsers: async (params?: { page?: number; limit?: number; search?: string; status?: string }) => 
+    (await apiClient.get<AdminUsersResponse>('/admin/users', { params })).data,
+  getConfig: async () => (await apiClient.get<SystemConfig>('/admin/config')).data,
+  updateConfig: async (data: Partial<SystemConfig>) => (await apiClient.patch<SystemConfig>('/admin/config', data)).data,
 };

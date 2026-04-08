@@ -1,13 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQRCodeDto } from './dto/create-qr-code.dto';
 import { UpdateQRCodeDto } from './dto/update-qr-code.dto';
 import * as crypto from 'crypto';
 import { UAParser } from 'ua-parser-js';
 import * as geoip from 'geoip-lite';
+import { User, PlanType, Prisma } from '@prisma/client';
 
 import { FormsService } from '../forms/forms.service';
 import { UploadService } from '../upload/upload.service';
+
+const TRIAL_DAYS = 7;
 
 @Injectable()
 export class QRCodesService {
@@ -17,7 +20,23 @@ export class QRCodesService {
     private readonly uploadService: UploadService,
   ) {}
 
+  private isAccessActive(user: User): boolean {
+    if (user.plan === PlanType.PRO) return true;
+    
+    const now = new Date();
+    const trialExpiry = new Date(user.createdAt);
+    trialExpiry.setDate(trialExpiry.getDate() + TRIAL_DAYS);
+    
+    return now <= trialExpiry;
+  }
+
   async create(userId: string, createQRCodeDto: CreateQRCodeDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    
+    if (!user || !this.isAccessActive(user)) {
+      throw new ForbiddenException('Your trial has expired. Please upgrade to PRO to continue.');
+    }
+
     const shortId = crypto.randomBytes(4).toString('hex');
     
     const { data, design, frame, ...rest } = createQRCodeDto;
@@ -27,15 +46,15 @@ export class QRCodesService {
         ...rest,
         userId,
         shortId,
-        data: data as any,
-        design: design as any,
-        frame: frame as any,
+        data: data as Prisma.InputJsonValue,
+        design: design as Prisma.InputJsonValue,
+        frame: frame as Prisma.InputJsonValue,
       },
     });
 
     // If it's a form type, synchronize with the Form table
-    if (qrCode.type === 'form' && data && (data as any).form) {
-      const formData = (data as any).form;
+    if (qrCode.type === 'form' && data && (data as { form?: any }).form) {
+      const formData = (data as { form: any }).form;
       await this.formsService.createOrUpdateForm(userId, {
         qrCodeId: qrCode.id,
         title: formData.title || 'Untitled Form',
@@ -113,6 +132,12 @@ export class QRCodesService {
   }
 
   async update(id: string, userId: string, updateQRCodeDto: UpdateQRCodeDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    
+    if (!user || !this.isAccessActive(user)) {
+      throw new ForbiddenException('Your trial has expired. Please upgrade to PRO to continue.');
+    }
+
     const qrCode = await this.findOne(id, userId);
     
     const { data, design, frame, ...rest } = updateQRCodeDto;
@@ -121,15 +146,15 @@ export class QRCodesService {
       where: { id: qrCode.id },
       data: {
         ...rest,
-        data: data === undefined ? undefined : (data as any),
-        design: design === undefined ? undefined : (design as any),
-        frame: frame === undefined ? undefined : (frame as any),
+        data: data === undefined ? undefined : (data as Prisma.InputJsonValue),
+        design: design === undefined ? undefined : (design as Prisma.InputJsonValue),
+        frame: frame === undefined ? undefined : (frame as Prisma.InputJsonValue),
       },
     });
 
     // If it's a form type, synchronize with the Form table
-    if (updated.type === 'form' && data && (data as any).form) {
-      const formData = (data as any).form;
+    if (updated.type === 'form' && data && (data as { form?: any }).form) {
+      const formData = (data as { form: any }).form;
       await this.formsService.createOrUpdateForm(userId, {
         qrCodeId: updated.id,
         title: formData.title || 'Untitled Form',
@@ -145,14 +170,14 @@ export class QRCodesService {
     const qrCode = await this.findOne(id, userId);
 
     // Delete associated files from Cloudinary
-    await this.deleteCloudinaryFiles(qrCode.data);
+    await this.deleteCloudinaryFiles(qrCode.data as Record<string, any>);
 
     return this.prisma.qRCode.delete({
       where: { id: qrCode.id },
     });
   }
 
-  private async deleteCloudinaryFiles(data: any) {
+  private async deleteCloudinaryFiles(data: Record<string, any> | null) {
     if (!data) return;
 
     const fileFields = ['image', 'pdf', 'video', 'mp3'];
@@ -165,16 +190,33 @@ export class QRCodesService {
   }
 
   async duplicate(id: string, userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !this.isAccessActive(user)) {
+      throw new ForbiddenException('Your trial has expired. Please upgrade to PRO to continue.');
+    }
+
     const original = await this.findOne(id, userId);
     const shortId = crypto.randomBytes(4).toString('hex');
 
-    const { id: _, createdAt: __, updatedAt: ___, clicks: ____, shortId: _____, scans: ______, _count: _______, ...rest } = original as any;
+    // Destructure to remove fields that shouldn't be copied
+    const { 
+      id: _, 
+      createdAt: __, 
+      updatedAt: ___, 
+      clicks: ____, 
+      shortId: _____, 
+      scans: ______, 
+      ...rest 
+    } = original;
 
     return this.prisma.qRCode.create({
       data: {
-        ...rest,
+        ...(rest as any), // Cast rest to any for Prisma create compatibility with Json fields
         name: `${original.name} (Copy)`,
         shortId,
+        data: original.data as Prisma.InputJsonValue,
+        design: original.design as Prisma.InputJsonValue,
+        frame: original.frame as Prisma.InputJsonValue,
       },
     });
   }
@@ -183,6 +225,7 @@ export class QRCodesService {
     const qrCode = await this.prisma.qRCode.findUnique({
       where: { shortId },
       include: {
+        user: true,
         form: {
           include: { fields: { orderBy: { order: 'asc' } } }
         }
@@ -193,10 +236,14 @@ export class QRCodesService {
       throw new NotFoundException(`QR Code with shortId ${shortId} not found`);
     }
 
+    if (!this.isAccessActive(qrCode.user)) {
+      throw new ForbiddenException('This QR code is currently disabled. Owner subscription expired.');
+    }
+
     // If it's a form type and we have relational form data, sync it back into the 'data' field
     // so the frontend receives the correct database IDs (CUIDs)
     if (qrCode.type === 'form' && qrCode.form) {
-      const data = qrCode.data as any;
+      const data = qrCode.data as Record<string, any>;
       if (data && data.form) {
         data.form.fields = qrCode.form.fields.map(f => ({
           id: f.id,
@@ -217,10 +264,15 @@ export class QRCodesService {
   async recordScan(shortId: string, ip: string, userAgent: string) {
     const qrCode = await this.prisma.qRCode.findUnique({
       where: { shortId },
+      include: { user: true }
     });
 
     if (!qrCode) {
       throw new NotFoundException('QR Code not found');
+    }
+
+    if (!this.isAccessActive(qrCode.user)) {
+      throw new ForbiddenException('This QR code is currently disabled. Owner subscription expired.');
     }
 
     const parser = new UAParser(userAgent);
@@ -267,7 +319,7 @@ export class QRCodesService {
     const totalScans = qrCodes.reduce((acc, qr) => acc + qr.clicks, 0);
     
     // Unique visitors based on IP + User Agent across all QRs
-    const uniqueVisitorsMap = new Set();
+    const uniqueVisitorsMap = new Set<string>();
     qrCodes.forEach(qr => {
         qr.scans.forEach(scan => {
             uniqueVisitorsMap.add(`${scan.ip}-${scan.userAgent}`);
@@ -321,7 +373,7 @@ export class QRCodesService {
 
     const chartData = last7Days.map(date => {
         let scans = 0;
-        let unique = new Set();
+        const unique = new Set<string>();
         qrCodes.forEach(qr => {
             qr.scans.forEach(scan => {
                 if (scan.createdAt.toISOString().split('T')[0] === date) {

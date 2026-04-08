@@ -6,12 +6,14 @@ import cookieParser from 'cookie-parser';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import express from 'express';
+import helmet from 'helmet';
 
 // Explicitly export the bootstrap function
 export async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useLogger(app.get(PinoLogger));
 
+  app.use(helmet());
   app.setGlobalPrefix('api/v1');
 
   app.use(cookieParser());

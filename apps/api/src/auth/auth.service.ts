@@ -117,14 +117,23 @@ export class AuthService {
   async getUserById(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, firstName: true, lastName: true },
+      select: { id: true, email: true, firstName: true, lastName: true, role: true, plan: true },
     });
     return { user };
   }
 
   private async generateAndSetTokens(userId: string, res: Response, rememberMe: boolean = false) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, firstName: true, lastName: true, role: true, plan: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
     const accessToken = await this.jwtService.signAsync(
-      { sub: userId },
+      { sub: userId, role: user.role },
       {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET') || 'access_secret',
         expiresIn: '15m',
@@ -160,11 +169,6 @@ export class AuthService {
       secure: isProd,
       sameSite: isProd ? 'none' : 'lax',
       maxAge: refreshDays * 24 * 60 * 60 * 1000,
-    });
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, email: true, firstName: true, lastName: true },
     });
 
     return { user };

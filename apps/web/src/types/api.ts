@@ -5,6 +5,8 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
+  role: 'USER' | 'ADMIN';
+  plan: 'FREE' | 'PRO';
 }
 
 export interface AuthResponse {
@@ -91,4 +93,38 @@ export interface DashboardStats {
   countryDist: Record<string, number>;
   timeDist: Record<string, number>;
   chartData: Array<{ name: string; scans: number; unique: number }>;
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  totalQRs: number;
+  totalScans: number;
+  estimatedRevenue: number;
+  chartData: Array<{ name: string; qrs: number }>;
+}
+
+export interface AdminUser extends User {
+  name: string;
+  qrs: number;
+  subscriptionStatus: string | null;
+  createdAt: string;
+}
+
+export interface AdminUsersResponse {
+  users: AdminUser[];
+  total: number;
+  pages: number;
+}
+
+export interface SystemConfig {
+  id: number;
+  monthlyPrice: number;
+  quarterlyPrice: number;
+  yearlyPrice: number;
+  heroTitle: string;
+  heroSubtitle: string;
+  features: string[];
+  faqs: Array<{ question: string; answer: string }>;
+  createdAt: string;
+  updatedAt: string;
 }
