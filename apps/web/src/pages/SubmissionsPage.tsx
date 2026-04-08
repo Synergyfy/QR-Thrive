@@ -20,6 +20,71 @@ const SubmissionsPage: React.FC = () => {
   
   const { data: form, isLoading: loadingForm } = useForm(id);
   const { data: submissions = [], isLoading: loadingSubmissions } = useFormSubmissions(id);
+
+  // Mock Data for Dev Visibility
+  const MOCK_FORMS: Record<string, any> = {
+    'mock-qr-1': {
+      id: 'f1',
+      qrCodeId: 'mock-qr-1',
+      title: 'Customer Feedback',
+      description: 'General inquiry form',
+      fields: [
+        { id: 'name', type: 'text', label: 'Full Name', required: true, order: 0 },
+        { id: 'email', type: 'email', label: 'Email Address', required: true, order: 1 },
+        { id: 'msg', type: 'text', label: 'Message', required: false, order: 2 }
+      ]
+    },
+    'mock-qr-2': {
+      id: 'f2',
+      qrCodeId: 'mock-qr-2',
+      title: 'Dine-in Order',
+      description: 'Digital menu order form',
+      fields: [
+        { id: 'cust', type: 'text', label: 'Customer', required: true, order: 0 },
+        { id: 'items', type: 'text', label: 'Ordered Items', required: true, order: 1 },
+        { id: 'table', type: 'text', label: 'Table No.', required: true, order: 2 }
+      ]
+    }
+  };
+
+  const MOCK_LEADS: any[] = [
+    {
+      id: 'l1',
+      formId: 'f1',
+      qrCodeId: 'mock-qr-1',
+      answers: { name: 'Sarah Jenkins', email: 'sarah.j@gmail.com', msg: 'Interested in the premium plan.' },
+      ip: '192.168.1.1',
+      createdAt: new Date(Date.now() - 3600000).toISOString()
+    },
+    {
+      id: 'l2',
+      formId: 'f2',
+      qrCodeId: 'mock-qr-2',
+      answers: { cust: 'Marcus Aurelius', items: '2x Truffle Pasta, 1x Red Wine', table: 'B-12' },
+      ip: '192.168.1.5',
+      createdAt: new Date(Date.now() - 7200000).toISOString()
+    },
+    {
+      id: 'l3',
+      formId: 'f1',
+      qrCodeId: 'mock-qr-1',
+      answers: { name: 'David Chen', email: 'd.chen@techcorp.io', msg: 'The QR scan speed is impressive.' },
+      ip: '172.16.0.4',
+      createdAt: new Date(Date.now() - 86400000).toISOString()
+    }
+  ];
+
+  const displayForm = useMemo(() => {
+    if (id && MOCK_FORMS[id]) return MOCK_FORMS[id];
+    return form;
+  }, [form, id]);
+
+  const displaySubmissions = useMemo(() => {
+    if (id && id.startsWith('mock-')) {
+      return MOCK_LEADS.filter(l => l.qrCodeId === id);
+    }
+    return submissions;
+  }, [submissions, id]);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -36,14 +101,14 @@ const SubmissionsPage: React.FC = () => {
   });
 
   const filteredSubmissions = useMemo(() => {
-    if (!searchQuery.trim()) return submissions;
+    if (!searchQuery.trim()) return displaySubmissions;
     const q = searchQuery.toLowerCase();
-    return submissions.filter(sub => 
+    return displaySubmissions.filter(sub => 
       Object.values(sub.answers).some(val => 
         String(val).toLowerCase().includes(q)
       ) || (sub.ip && sub.ip.toLowerCase().includes(q))
     );
-  }, [submissions, searchQuery]);
+  }, [displaySubmissions, searchQuery]);
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
@@ -57,9 +122,9 @@ const SubmissionsPage: React.FC = () => {
   };
 
   const handleExport = () => {
-    if (!form || !submissions.length) return;
+    if (!displayForm || !displaySubmissions.length) return;
     
-    let dataToExport = [...submissions];
+    let dataToExport = [...displaySubmissions];
     
     // Sort by date descending (should already be from API, but let's be safe)
     dataToExport.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -80,11 +145,11 @@ const SubmissionsPage: React.FC = () => {
       return;
     }
 
-    const headers = ['Date', 'IP Address', ...form.fields.map(f => f.label)];
+    const headers = ['Date', 'IP Address', ...displayForm.fields.map((f: any) => f.label)];
     const rows = dataToExport.map(sub => [
       formatDate(sub.createdAt),
       sub.ip || 'N/A',
-      ...form.fields.map(f => sub.answers[f.id] || '')
+      ...displayForm.fields.map((f: any) => sub.answers[f.id] || '')
     ]);
     
     const csvContent = [
@@ -149,7 +214,7 @@ const SubmissionsPage: React.FC = () => {
               </div>
               <button 
                 onClick={() => setIsExportModalOpen(true)}
-                disabled={submissions.length === 0}
+                disabled={displaySubmissions.length === 0}
                 className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-100 disabled:opacity-50 disabled:grayscale"
               >
                 <Download className="w-4 h-4 stroke-[3]" /> Export CSV
@@ -185,7 +250,7 @@ const SubmissionsPage: React.FC = () => {
                   {/* Export Type Selection */}
                   <div className="grid grid-cols-1 gap-4">
                     {[
-                      { id: 'all', label: 'All Responses', desc: `Export all ${submissions.length} responses` },
+                      { id: 'all', label: 'All Responses', desc: `Export all ${displaySubmissions.length} responses` },
                       { id: 'last', label: 'Last N Responses', desc: 'Export the most recent entries' },
                       { id: 'range', label: 'Date Range', desc: 'Export responses within a period' },
                     ].map((opt) => (
@@ -279,7 +344,7 @@ const SubmissionsPage: React.FC = () => {
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-          {submissions.length === 0 ? (
+          {displaySubmissions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <div className="w-24 h-24 bg-slate-100 rounded-[32px] flex items-center justify-center mb-8 text-slate-300">
                 <ClipboardList className="w-12 h-12" />
@@ -296,7 +361,7 @@ const SubmissionsPage: React.FC = () => {
                   <thead>
                     <tr className="bg-slate-50/50 border-b border-slate-100">
                       <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Submitted Date</th>
-                      {form?.fields.map(field => (
+                      {displayForm?.fields.map((field: any) => (
                         <th key={field.id} className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                           {field.label}
                         </th>
@@ -312,7 +377,7 @@ const SubmissionsPage: React.FC = () => {
                               <span className="text-sm font-bold text-slate-900">{formatDate(sub.createdAt)}</span>
                            </div>
                         </td>
-                        {form?.fields.map(field => (
+                        {displayForm?.fields.map((field: any) => (
                           <td key={field.id} className="px-8 py-6 text-sm font-medium text-slate-600">
                             {Array.isArray(sub.answers[field.id]) 
                               ? sub.answers[field.id].join(', ') 

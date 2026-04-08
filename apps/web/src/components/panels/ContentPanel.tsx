@@ -26,30 +26,16 @@ import {
   Building2,
   UtensilsCrossed,
   Ticket,
-  Clock,
-  MapPin,
   Palette,
   Users,
+  CheckCircle,
+  Clock,
   Image as ImageIcon
 } from 'lucide-react';
 import type { QRConfiguration, QRData, QRType } from '../../types/qr';
 import FormBuilder from '../FormBuilder';
 import { countries } from '../../constants/countries';
 import ImageEditor from '../ImageEditor';
-
-const FacebookIcon = (props: any) => (
-  <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-  </svg>
-);
-
-const InstagramIcon = (props: any) => (
-  <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-  </svg>
-);
 
 interface ContentPanelProps {
   config: QRConfiguration;
@@ -78,7 +64,7 @@ const CollapsibleSection = ({ id, title, subtitle, icon: Icon, children, classNa
         </div>
         <ChevronDown className={cn("w-5 h-5 text-gray-400 transition-transform duration-300", isExpanded && "rotate-180")} />
       </button>
-      <div className={cn("transition-all duration-300 ease-in-out overflow-hidden border-t border-gray-100/50", isExpanded ? "max-h-[3000px] opacity-100" : "max-h-0 opacity-0 invisible")}>
+      <div className={cn("transition-all duration-300 ease-in-out overflow-hidden border-t border-gray-100/50", isExpanded ? "max-h-[5000px] opacity-100" : "max-h-0 opacity-0 invisible")}>
         <div className="p-6 bg-white space-y-6">
           {children}
         </div>
@@ -92,8 +78,8 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
   const [uploading, setUploading] = useState<string | null>(null);
   const [editingImage, setEditingImage] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    'personal-identity': true,
     'basic-info': true,
+    'personal-identity': true,
     'business-details': true,
     'restaurant-details': true,
     'design': true,
@@ -142,7 +128,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
 
        const newImages = await Promise.all(newImagesPromises);
        const currentImages = data.images || [];
-       updateData({ images: [...currentImages, ...newImages.map(img => ({ ...img, id: Math.random().toString() }))] } as any);
+       updateData({ images: [...currentImages, ...newImages] } as any);
     } catch (err) {
        console.error('Failed to handle multiple images:', err);
     } finally {
@@ -223,7 +209,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
         </div>
       )}
 
-      <div className="space-y-6">
+      <div className="animate-in fade-in slide-in-from-top-2 duration-500">
 
         <div className="bg-white rounded-[24px] p-1 border border-gray-100 shadow-sm">
            <div className="p-6">
@@ -263,122 +249,6 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
 
             {data.type === 'vcard' && (
               <div className="space-y-6">
-                <CollapsibleSection id="vcard-design" title="Colors & Styles" icon={Palette} isExpanded={expandedSections['vcard-design']} onToggle={toggleSection}>
-                  <div className="space-y-6">
-                    <div className="space-y-3">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Theme Color</p>
-                      <div className="flex flex-wrap gap-2">
-                        {['#2563eb', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#d97706', '#16a34a', '#059669', '#0891b2', '#1e293b'].map(c => (
-                          <button
-                            key={c}
-                            onClick={() => updateData({ vcard: { ...(data.vcard || {} as any), themeColor: c } } as any)}
-                            className={cn(
-                              "w-8 h-8 rounded-full border-2 transition-all",
-                              (data.vcard as any)?.themeColor === c ? "border-slate-900 scale-110 shadow-lg" : "border-transparent hover:scale-105"
-                            )}
-                            style={{ backgroundColor: c }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Accent Color (Icons & Buttons)</p>
-                      <div className="flex flex-wrap gap-2">
-                        {['#2563eb', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#d97706', '#16a34a', '#059669', '#0891b2', '#1e293b'].map(c => (
-                          <button
-                            key={c}
-                            onClick={() => updateData({ vcard: { ...(data.vcard || {} as any), accentColor: c } } as any)}
-                            className={cn(
-                              "w-8 h-8 rounded-full border-2 transition-all",
-                              (data.vcard as any)?.accentColor === c ? "border-slate-900 scale-110 shadow-lg" : "border-transparent hover:scale-105"
-                            )}
-                            style={{ backgroundColor: c }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </CollapsibleSection>
-
-                <CollapsibleSection 
-                  id="vcard-personal" 
-                  title="Personal Identity" 
-                  icon={User}
-                  isExpanded={expandedSections['vcard-personal']}
-                  onToggle={toggleSection}
-                >
-                   <div className="space-y-6">
-                      <div className="space-y-3">
-                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Profile Image</p>
-                         <div className="flex items-center gap-4">
-                             <label className="flex-1 px-4 py-4 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
-                                 <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                                     const file = e.target.files?.[0];
-                                     if (file) {
-                                         const reader = new FileReader();
-                                         reader.onloadend = () => {
-                                             updateData({ vcard: { ...(data.vcard || {} as any), avatar: reader.result as string }});
-                                         };
-                                         reader.readAsDataURL(file);
-                                     }
-                                 }} />
-                                 <Camera className="w-5 h-5 text-gray-400 group-hover:text-blue-500 mb-1 transition-colors" />
-                                 <span className="text-[11px] font-bold text-gray-400 group-hover:text-blue-500">Upload Photo</span>
-                             </label>
-                             {data.vcard?.avatar && (
-                                 <div className="w-20 h-20 rounded-xl border border-gray-100 overflow-hidden relative group shrink-0 shadow-sm bg-white">
-                                     <img src={data.vcard.avatar} alt="Avatar preview" className="w-full h-full object-cover" />
-                                     <button 
-                                       onClick={(e) => {
-                                           e.preventDefault();
-                                           updateData({ vcard: { ...(data.vcard || {} as any), avatar: undefined }});
-                                       }}
-                                       className="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center text-white backdrop-blur-sm transition-all"
-                                     >
-                                       <X className="w-5 h-5" />
-                                     </button>
-                                 </div>
-                             )}
-                         </div>
-                      </div>
-
-                      <div className="space-y-3">
-                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Banner Image</p>
-                         <div className="flex flex-col gap-3">
-                             <label className="w-full px-4 py-4 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
-                                 <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                                     const file = e.target.files?.[0];
-                                     if (file) {
-                                         const reader = new FileReader();
-                                         reader.onloadend = () => {
-                                             updateData({ vcard: { ...(data.vcard || {} as any), banner: reader.result as string }});
-                                         };
-                                         reader.readAsDataURL(file);
-                                     }
-                                 }} />
-                                 <Camera className="w-5 h-5 text-gray-400 group-hover:text-blue-500 mb-1 transition-colors" />
-                                 <span className="text-[11px] font-bold text-gray-400 group-hover:text-blue-500">Upload Banner</span>
-                             </label>
-                             {data.vcard?.banner && (
-                                 <div className="w-full aspect-[3/1] rounded-xl border border-gray-100 overflow-hidden relative group shadow-sm bg-white">
-                                     <img src={data.vcard.banner} alt="Banner preview" className="w-full h-full object-cover" />
-                                     <button 
-                                       onClick={(e) => {
-                                           e.preventDefault();
-                                           updateData({ vcard: { ...(data.vcard || {} as any), banner: undefined }});
-                                       }}
-                                       className="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center text-white backdrop-blur-sm transition-all"
-                                     >
-                                       <X className="w-5 h-5" />
-                                     </button>
-                                 </div>
-                             )}
-                         </div>
-                      </div>
-                   </div>
-                </CollapsibleSection>
-
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">First Name</p>
@@ -421,100 +291,6 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                     className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
                   />
                 </div>
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Website URL</p>
-                  <input
-                    type="url"
-                    value={data.vcard?.website || ''}
-                    onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), website: e.target.value } })}
-                    placeholder="https://example.com"
-                    className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
-                  />
-                </div>
-
-                <CollapsibleSection id="vcard-location" title="Location" icon={MapPin} isExpanded={expandedSections['vcard-location']} onToggle={toggleSection}>
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Address</p>
-                      <textarea
-                        value={data.vcard?.address || ''}
-                        onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), address: e.target.value } })}
-                        placeholder="123 Example Street, City, Country"
-                        rows={2}
-                        className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
-                      />
-                    </div>
-                </CollapsibleSection>
-
-                <CollapsibleSection id="vcard-company" title="Company Details" icon={Building2} isExpanded={expandedSections['vcard-company']} onToggle={toggleSection}>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Company</p>
-                        <input
-                          type="text"
-                          value={data.vcard?.company || ''}
-                          onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), company: e.target.value } })}
-                          placeholder="Company Name"
-                          className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Profession</p>
-                        <input
-                          type="text"
-                          value={data.vcard?.jobTitle || ''}
-                          onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), jobTitle: e.target.value } })}
-                          placeholder="Job Title"
-                          className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
-                        />
-                      </div>
-                    </div>
-                </CollapsibleSection>
-
-                <CollapsibleSection id="vcard-summary" title="Summary" icon={ClipboardList} isExpanded={expandedSections['vcard-summary']} onToggle={toggleSection}>
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">About You</p>
-                      <textarea
-                        value={data.vcard?.note || ''}
-                        onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), note: e.target.value } })}
-                        placeholder="Tell people a bit about yourself..."
-                        rows={3}
-                        className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
-                      />
-                    </div>
-                </CollapsibleSection>
-
-                <CollapsibleSection id="vcard-socials" title="Social Networks" icon={Share2} isExpanded={expandedSections['vcard-socials']} onToggle={toggleSection}>
-                    <div className="grid grid-cols-1 gap-4">
-                      {[
-                        { id: 'instagram' as const, icon: InstagramIcon, label: 'Instagram', placeholder: 'instagram.com/user' },
-                        { id: 'facebook' as const, icon: FacebookIcon, label: 'Facebook', placeholder: 'facebook.com/user' },
-                        { id: 'linkedin' as const, icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451c.979 0 1.778-.773 1.778-1.729V1.729C24 .774 23.204 0 22.225 0z"/></svg>, label: 'LinkedIn', placeholder: 'linkedin.com/in/user' },
-                        { id: 'twitter' as const, icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>, label: 'Twitter', placeholder: 'twitter.com/user' },
-                        { id: 'whatsapp' as const, icon: Phone, label: 'WhatsApp', placeholder: 'WhatsApp number' },
-                      ].map((social) => (
-                        <div key={social.id} className="relative group">
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-blue-600">
-                            <social.icon className="w-full h-full" />
-                          </div>
-                          <input
-                            type="text"
-                            value={(data.vcard?.socials as any)?.[social.id] || ''}
-                            onChange={(e) => updateData({ 
-                              vcard: { 
-                                ...(data.vcard || {}), 
-                                socials: { 
-                                  ...(data.vcard?.socials || {}), 
-                                  [social.id]: e.target.value 
-                                } 
-                              } 
-                            } as any)}
-                            placeholder={social.placeholder}
-                            className="w-full pl-12 pr-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-sm font-semibold bg-gray-50/30 transition-all"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                </CollapsibleSection>
               </div>
             )}
 
@@ -683,53 +459,148 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
 
             {data.type === 'socials' && (
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Your Social Profiles</p>
-                  <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-md font-bold">Dynamic Mode Recommended</span>
-                </div>
-                
-                <div className="grid grid-cols-1 gap-4">
-                  {[
-                    { id: 'instagram' as const, icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>, color: 'text-pink-600', placeholder: 'instagram.com/user' },
-                    { id: 'facebook' as const, icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>, color: 'text-blue-600', placeholder: 'facebook.com/user' },
-                    { id: 'twitter' as const, icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>, color: 'text-gray-900', placeholder: 'twitter.com/user' },
-                    { id: 'linkedin' as const, icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451c.979 0 1.778-.773 1.778-1.729V1.729C24 .774 23.204 0 22.225 0z"/></svg>, color: 'text-blue-700', placeholder: 'linkedin.com/in/user' },
-                    { id: 'youtube' as const, icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>, color: 'text-red-600', placeholder: 'youtube.com/@user' },
-                    { id: 'tiktok' as const, icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.01.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.06-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96s3.35-1.92 5.27-1.74c1.1.07 2.13.44 3.06 1.06V.02z"/></svg>, color: 'text-black', placeholder: 'tiktok.com/@user' },
-                  ].map((social) => (
-                    <div key={social.id} className="relative group flex items-center gap-3">
-                      <div className="flex-1 relative">
-                        <div className={cn("absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors", social.color)}>
-                          <social.icon className="w-full h-full" />
+                <CollapsibleSection
+                  id="social-info"
+                  title="Profile Information"
+                  icon={User}
+                  isExpanded={expandedSections['social-info'] !== false}
+                  onToggle={toggleSection}
+                >
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Display Name</p>
+                      <input
+                        type="text"
+                        value={data.socials?.name || ''}
+                        onChange={(e) => updateData({ socials: { ...(data.socials || {}), name: e.target.value } })}
+                        placeholder="e.g. John Doe"
+                        className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-sm font-semibold transition-all bg-gray-50/30"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Short Bio</p>
+                      <textarea
+                        value={data.socials?.bio || ''}
+                        onChange={(e) => updateData({ socials: { ...(data.socials || {}), bio: e.target.value } })}
+                        placeholder="Tell people about yourself..."
+                        rows={3}
+                        className="w-full p-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-sm font-semibold bg-gray-50/30 transition-all"
+                      />
+                    </div>
+                  </div>
+                </CollapsibleSection>
+
+                <CollapsibleSection
+                  id="social-images"
+                  title="Carousel Gallery"
+                  icon={ImageIcon}
+                  isExpanded={expandedSections['social-images']}
+                  onToggle={toggleSection}
+                >
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      {(data.socials?.images || []).map((img, idx) => (
+                        <div key={idx} className="relative group rounded-2xl overflow-hidden aspect-square border-2 border-gray-50 bg-gray-100">
+                          <img src={img.url} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center gap-2">
+                            <button
+                              onClick={() => setEditingImage(img.url)}
+                              className="p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/40 transition-colors"
+                            >
+                              <Palette className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                const newImages = [...(data.socials?.images || [])];
+                                newImages.splice(idx, 1);
+                                updateData({ socials: { ...(data.socials || {}), images: newImages } });
+                              }}
+                              className="p-2 bg-red-500 rounded-full text-white hover:bg-red-600 transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                   
                         </div>
-                        <input
-                          type="text"
-                          value={data.socials?.[social.id] || ''}
-                          onChange={(e) => updateData({ 
-                            socials: { 
-                              ...(data.socials || {}), 
-                              [social.id]: e.target.value 
-                            } 
-                          })}
-                          placeholder={social.placeholder}
-                          className="w-full pl-12 pr-10 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-sm font-semibold transition-all bg-gray-50/30"
-                        />
-                        {data.socials?.[social.id] && (
-                          <button 
-                            onClick={() => {
-                              const newSocials = { ...(data.socials || {}) };
-                              delete newSocials[social.id];
-                              updateData({ socials: newSocials });
+                      ))}
+                      <div className="space-y-2">
+                        <label className="aspect-square border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-600 hover:bg-blue-50/30 transition-all group">
+                          <Camera className="w-8 h-8 text-gray-300 group-hover:text-blue-500 transition-colors mb-2" />
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest group-hover:text-blue-600">Add Image</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => {
+                              const files = Array.from(e.target.files || []);
+                              files.forEach(file => {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => {
+                                  const url = ev.target?.result as string;
+                                  const newImages = [...(data.socials?.images || []), { id: Math.random().toString(), url }];
+                                  updateData({ socials: { ...(data.socials || {}), images: newImages } });
+                                };
+                                reader.readAsDataURL(file);
+                              });
                             }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 bg-gray-200 hover:bg-gray-300 text-gray-500 rounded-lg transition-all"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        )}
+                          />
+                        </label>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                </CollapsibleSection>
+
+                <CollapsibleSection
+                  id="social-channels"
+                  title="Social Channels"
+                  icon={Share2}
+                  isExpanded={expandedSections['social-channels']}
+                  onToggle={toggleSection}
+                >
+                  <div className="grid grid-cols-1 gap-4">
+                    {[
+                      { id: 'instagram' as const, icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>, color: 'text-pink-600', placeholder: 'instagram.com/user' },
+                      { id: 'facebook' as const, icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>, color: 'text-blue-600', placeholder: 'facebook.com/user' },
+                      { id: 'twitter' as const, icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>, color: 'text-gray-900', placeholder: 'twitter.com/user' },
+                      { id: 'linkedin' as const, icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451c.979 0 1.778-.773 1.778-1.729V1.729C24 .774 23.204 0 22.225 0z"/></svg>, color: 'text-blue-700', placeholder: 'linkedin.com/in/user' },
+                      { id: 'youtube' as const, icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>, color: 'text-red-600', placeholder: 'youtube.com/@user' },
+                      { id: 'tiktok' as const, icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.01.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.06-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96s3.35-1.92 5.27-1.74c1.1.07 2.13.44 3.06 1.06V.02z"/></svg>, color: 'text-black', placeholder: 'tiktok.com/@user' },
+                    ].map((social) => (
+                      <div key={social.id} className="relative group flex items-center gap-3">
+                        <div className="flex-1 relative">
+                          <div className={cn("absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors", social.color)}>
+                            <social.icon className="w-full h-full" />
+                          </div>
+                          <input
+                            type="text"
+                            value={data.socials?.[social.id] || ''}
+                            onChange={(e) => updateData({
+                              socials: {
+                                ...(data.socials || {}),
+                                [social.id]: e.target.value
+                              }
+                            })}
+                            placeholder={social.placeholder}
+                            className="w-full pl-12 pr-10 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-sm font-semibold transition-all bg-gray-50/30"
+                          />
+                          {data.socials?.[social.id] && (
+                            <button
+                              onClick={() => {
+                                const newSocials = { ...(data.socials || {}) };
+                                delete newSocials[social.id];
+                                updateData({ socials: newSocials });
+                              }}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 bg-gray-200 hover:bg-gray-300 text-gray-500 rounded-lg transition-all"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleSection>
               </div>
             )}
 
@@ -809,186 +680,56 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
               )}
 
               {data.type === 'image' && (
-                 <div className="space-y-6">
-                    <CollapsibleSection id="image-design" title="Colors & Styles" icon={Palette} isExpanded={expandedSections['image-design']} onToggle={toggleSection}>
-                        <div className="space-y-3">
-                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Background Color</p>
-                           <div className="flex flex-wrap gap-2">
-                             {['#166534', '#1e293b', '#2563eb', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#d97706', '#059669', '#0891b2'].map(c => (
-                               <button
-                                 key={c}
-                                 onClick={() => updateData({ imageGalleryInfo: { ...(data.imageGalleryInfo || {}), themeColor: c } })}
-                                 className={cn(
-                                   "w-8 h-8 rounded-full border-2 transition-all",
-                                   data.imageGalleryInfo?.themeColor === c ? "border-slate-900 scale-110 shadow-lg" : "border-transparent hover:scale-105"
-                                 )}
-                                 style={{ backgroundColor: c }}
-                               />
-                             ))}
-                           </div>
+                <div className="space-y-6 animate-in zoom-in-95 duration-300">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {(data.images || []).map((img, idx) => (
+                      <div key={idx} className="relative aspect-square bg-gray-100 rounded-2xl overflow-hidden group border-2 border-white shadow-sm hover:shadow-md transition-all">
+                        <img 
+                          src={img.url} 
+                          alt={`Gallery ${idx}`} 
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                           <button 
+                             onClick={() => {
+                               const newImages = [...(data.images || [])];
+                               newImages.splice(idx, 1);
+                               updateData({ images: newImages.length > 0 ? newImages : undefined } as any);
+                             }}
+                             className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                           >
+                             <X className="w-4 h-4" />
+                           </button>
                         </div>
-                    </CollapsibleSection>
-
-                    <CollapsibleSection id="image-info" title="Gallery Information" icon={User} isExpanded={expandedSections['image-info']} onToggle={toggleSection}>
-                        <div className="space-y-8">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                               <div className="space-y-3">
-                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Brand Logo</p>
-                                  <div className="flex items-center gap-4">
-                                      <label className="flex-1 px-4 py-4 border-2 border-dashed border-gray-100 rounded-xl hover:bg-gray-50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
-                                          <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                                              const file = e.target.files?.[0];
-                                              if (file) {
-                                                  const reader = new FileReader();
-                                                  reader.onloadend = () => {
-                                                      updateData({ imageGalleryInfo: { ...(data.imageGalleryInfo || {}), logoImage: { url: reader.result as string } }});
-                                                  };
-                                                  reader.readAsDataURL(file);
-                                              }
-                                          }} />
-                                          <Camera className="w-5 h-5 text-gray-300 group-hover:text-blue-500 mb-1 transition-colors" />
-                                          <span className="text-[10px] font-bold text-gray-300 group-hover:text-blue-500">Logo</span>
-                                      </label>
-                                      {data.imageGalleryInfo?.logoImage && (
-                                          <div className="w-20 h-20 rounded-xl border border-gray-100 overflow-hidden relative group shrink-0 shadow-sm bg-white p-2">
-                                              <img src={data.imageGalleryInfo.logoImage.url} alt="Logo" className="w-full h-full object-contain" />
-                                              <button 
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    updateData({ imageGalleryInfo: { ...(data.imageGalleryInfo || {}), logoImage: undefined }});
-                                                }}
-                                                className="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center text-white backdrop-blur-sm transition-all"
-                                              >
-                                                <X className="w-5 h-5" />
-                                              </button>
-                                          </div>
-                                      )}
-                                  </div>
-                               </div>
-
-                               <div className="space-y-3">
-                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Hero Banner</p>
-                                  <div className="flex flex-col gap-3">
-                                      <label className="w-full px-4 py-4 border-2 border-dashed border-gray-100 rounded-xl hover:bg-gray-50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
-                                          <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                                              const file = e.target.files?.[0];
-                                              if (file) {
-                                                  const reader = new FileReader();
-                                                  reader.onloadend = () => {
-                                                      updateData({ imageGalleryInfo: { ...(data.imageGalleryInfo || {}), bannerImage: { url: reader.result as string } }});
-                                                  };
-                                                  reader.readAsDataURL(file);
-                                              }
-                                          }} />
-                                          <Camera className="w-5 h-5 text-gray-300 group-hover:text-blue-500 mb-1 transition-colors" />
-                                          <span className="text-[10px] font-bold text-gray-300 group-hover:text-blue-500">Upload Header</span>
-                                      </label>
-                                      {data.imageGalleryInfo?.bannerImage && (
-                                          <div className="w-full aspect-[3/1] rounded-xl border border-gray-100 overflow-hidden relative group shadow-sm bg-white">
-                                              <img src={data.imageGalleryInfo.bannerImage.url} alt="Banner" className="w-full h-full object-cover" />
-                                              <button 
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    updateData({ imageGalleryInfo: { ...(data.imageGalleryInfo || {}), bannerImage: undefined }});
-                                                }}
-                                                className="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center text-white backdrop-blur-sm transition-all"
-                                              >
-                                                <X className="w-5 h-5" />
-                                              </button>
-                                          </div>
-                                      )}
-                                  </div>
-                               </div>
-                            </div>
-
-                            <div className="space-y-3">
-                               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Gallery Title</p>
-                               <input type="text" className="w-full px-4 py-3 border-2 border-slate-50 rounded-xl outline-none font-bold text-gray-900 bg-slate-50/50 text-sm focus:border-blue-600 transition-all" placeholder="e.g. Travel Photography" value={data.imageGalleryInfo?.title || ''} onChange={(e) => updateData({ imageGalleryInfo: { ...(data.imageGalleryInfo || {}), title: e.target.value } })} />
-                            </div>
-                            <div className="space-y-3">
-                               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Description</p>
-                               <textarea className="w-full px-4 py-3 border-2 border-slate-50 rounded-xl outline-none font-medium text-gray-900 bg-slate-50/50 text-sm focus:border-blue-600 transition-all" placeholder="Tell a story with your photos..." rows={3} value={data.imageGalleryInfo?.description || ''} onChange={(e) => updateData({ imageGalleryInfo: { ...(data.imageGalleryInfo || {}), description: e.target.value } })} />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                               <div className="space-y-3">
-                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Text</p>
-                                  <input type="text" className="w-full px-4 py-3 border-2 border-slate-50 rounded-xl outline-none font-bold text-gray-900 bg-slate-50/50 text-sm focus:border-blue-600 transition-all" placeholder="e.g. View More" value={data.imageGalleryInfo?.buttonText || ''} onChange={(e) => updateData({ imageGalleryInfo: { ...(data.imageGalleryInfo || {}), buttonText: e.target.value } })} />
-                               </div>
-                               <div className="space-y-3">
-                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button URL</p>
-                                  <input type="url" className="w-full px-4 py-3 border-2 border-slate-50 rounded-xl outline-none font-bold text-gray-900 bg-slate-50/50 text-sm focus:border-blue-600 transition-all" placeholder="https://..." value={data.imageGalleryInfo?.buttonUrl || ''} onChange={(e) => updateData({ imageGalleryInfo: { ...(data.imageGalleryInfo || {}), buttonUrl: e.target.value } })} />
-                               </div>
-                            </div>
-                        </div>
-                    </CollapsibleSection>
-
-                    <CollapsibleSection id="image-list" title="Gallery Photos" icon={ImageIcon} isExpanded={expandedSections['image-list']} onToggle={toggleSection}>
-                       <div className="space-y-6">
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                            {(data.images || []).map((img, idx) => (
-                              <div key={idx} className="relative aspect-square bg-gray-100 rounded-2xl overflow-hidden group border-2 border-white shadow-sm hover:shadow-md transition-all">
-                                <img 
-                                  src={img.url} 
-                                  alt={`Gallery ${idx}`} 
-                                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                                />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
-                                   <div className="flex gap-2">
-                                      <button 
-                                        onClick={() => {
-                                          const newImages = [...(data.images || [])];
-                                          newImages.splice(idx, 1);
-                                          updateData({ images: newImages.length > 0 ? newImages : undefined } as any);
-                                        }}
-                                        className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-lg"
-                                      >
-                                        <X className="w-4 h-4" />
-                                      </button>
-                                   </div>
-                                   <input 
-                                     type="text" 
-                                     placeholder="Add caption..."
-                                     value={img.caption || ''}
-                                     onClick={(e) => e.stopPropagation()}
-                                     onChange={(e) => {
-                                       const newImages = [...(data.images || [])];
-                                       newImages[idx] = { ...newImages[idx], caption: e.target.value };
-                                       updateData({ images: newImages });
-                                     }}
-                                     className="w-full text-[10px] bg-white/90 border-0 rounded-lg px-2 py-1 outline-none font-bold text-gray-900 shadow-lg"
-                                   />
-                                </div>
-                              </div>
-                            ))}
-                            
-                            <label className="relative aspect-square border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center space-y-2 hover:border-blue-400 hover:bg-blue-50/30 cursor-pointer transition-all group">
-                               <div className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
-                                  <Plus className="w-5 h-5" />
-                               </div>
-                               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Add Image</span>
-                               <input 
-                                 type="file" 
-                                 accept="image/*"
-                                 multiple
-                                 className="hidden"
-                                 onChange={(e) => {
-                                   const files = Array.from(e.target.files || []);
-                                   if (files.length > 0) {
-                                     handleMultipleImagesSelect(files);
-                                   }
-                                 }}
-                               />
-                            </label>
-                          </div>
-                          
-                          {(!data.images || data.images.length === 0) && (
-                            <div className="text-center py-4">
-                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none">Upload at least one image to your gallery</p>
-                            </div>
-                          )}
+                      </div>
+                    ))}
+                    
+                    <label className="relative aspect-square border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center space-y-2 hover:border-blue-400 hover:bg-blue-50/30 cursor-pointer transition-all group">
+                       <div className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                          <Plus className="w-5 h-5" />
                        </div>
-                    </CollapsibleSection>
-                 </div>
+                       <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Add Image</span>
+                       <input 
+                         type="file" 
+                         accept="image/*"
+                         multiple
+                         className="absolute inset-0 opacity-0 cursor-pointer"
+                         onChange={(e) => {
+                           const files = Array.from(e.target.files || []);
+                           if (files.length > 0) {
+                             handleMultipleImagesSelect(files);
+                           }
+                         }}
+                       />
+                    </label>
+                  </div>
+                  
+                  {(!data.images || data.images.length === 0) && (
+                    <div className="text-center py-4">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none">Upload at least one image to your gallery</p>
+                    </div>
+                  )}
+                </div>
               )}
 
               {data.type === 'video' && (
@@ -1143,184 +884,8 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                     </div>
                  </div>
               )}
-
-               {data.type === 'links' && (
-                  <div className="space-y-6">
-                     <CollapsibleSection id="links-design" title="Colors & Styles" icon={Palette} isExpanded={expandedSections['links-design']} onToggle={toggleSection}>
-                        <div className="space-y-6">
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Background Color</p>
-                              <div className="flex items-center gap-3">
-                                 <input type="color" className="w-10 h-10 rounded-xl cursor-pointer" value={data.linksInfo?.themeColor || '#1E293B'} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), themeColor: e.target.value } })} />
-                                 <input type="text" className="flex-1 px-4 py-2 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" value={data.linksInfo?.themeColor || '#1E293B'} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), themeColor: e.target.value } })} />
-                              </div>
-                           </div>
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Link Background Color</p>
-                              <div className="flex items-center gap-3">
-                                 <input type="color" className="w-10 h-10 rounded-xl cursor-pointer" value={data.linksInfo?.linkBgColor || '#F7F7F7'} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), linkBgColor: e.target.value } })} />
-                                 <input type="text" className="flex-1 px-4 py-2 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" value={data.linksInfo?.linkBgColor || '#F7F7F7'} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), linkBgColor: e.target.value } })} />
-                              </div>
-                           </div>
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Link Text Color</p>
-                              <div className="flex items-center gap-3">
-                                 <input type="color" className="w-10 h-10 rounded-xl cursor-pointer" value={data.linksInfo?.linkTextColor || '#7EC09F'} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), linkTextColor: e.target.value } })} />
-                                 <input type="text" className="flex-1 px-4 py-2 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" value={data.linksInfo?.linkTextColor || '#7EC09F'} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), linkTextColor: e.target.value } })} />
-                              </div>
-                           </div>
-                        </div>
-                    </CollapsibleSection>
-
-                     <CollapsibleSection id="links-info" title="Basic Information" icon={User} isExpanded={expandedSections['links-info']} onToggle={toggleSection}>
-                        <div className="space-y-6">
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Profile Image</p>
-                              <div className="flex items-center gap-3">
-                                 {data.linksInfo?.avatar ? (
-                                    <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 overflow-hidden relative group">
-                                       <img src={data.linksInfo.avatar} alt="Profile" className="w-full h-full object-cover" />
-                                       <button className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => { updateData({ linksInfo: { ...(data.linksInfo || {}), avatar: undefined } }); }}>
-                                          <X className="w-5 h-5 text-white" />
-                                       </button>
-                                    </div>
-                                 ) : (
-                                    <label className="w-16 h-16 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all shrink-0">
-                                       <Camera className="w-5 h-5 text-gray-400" />
-                                       <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                                          const file = e.target.files?.[0];
-                                          if (file) {
-                                             const reader = new FileReader();
-                                             reader.onload = (ev) => {
-                                                updateData({ linksInfo: { ...(data.linksInfo || {}), avatar: ev.target?.result as string } });
-                                             };
-                                             reader.readAsDataURL(file);
-                                          }
-                                       }} />
-                                    </label>
-                                 )}
-                              </div>
-                           </div>
-
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Banner Image</p>
-                              <div className="flex flex-col gap-3">
-                                  <label className="w-full px-4 py-4 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
-                                      <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                                          const file = e.target.files?.[0];
-                                          if (file) {
-                                              const reader = new FileReader();
-                                              reader.onloadend = () => {
-                                                  updateData({ linksInfo: { ...(data.linksInfo || {}), banner: reader.result as string }});
-                                              };
-                                              reader.readAsDataURL(file);
-                                          }
-                                      }} />
-                                      <Camera className="w-5 h-5 text-gray-400 group-hover:text-blue-500 mb-1 transition-colors" />
-                                      <span className="text-[11px] font-bold text-gray-400 group-hover:text-blue-500">Upload Banner</span>
-                                  </label>
-                                  {data.linksInfo?.banner && (
-                                      <div className="w-full aspect-[3/1] rounded-xl border border-gray-100 overflow-hidden relative group shadow-sm bg-white">
-                                          <img src={data.linksInfo.banner} alt="Banner preview" className="w-full h-full object-cover" />
-                                          <button 
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                updateData({ linksInfo: { ...(data.linksInfo || {}), banner: undefined }});
-                                            }}
-                                            className="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center text-white backdrop-blur-sm transition-all"
-                                          >
-                                            <X className="w-5 h-5" />
-                                          </button>
-                                      </div>
-                                  )}
-                              </div>
-                           </div>
-
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Title *</p>
-                              <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="E.g. Find me on social networks" value={data.linksInfo?.title || ''} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), title: e.target.value } })} />
-                           </div>
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Description</p>
-                              <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="E.g. New content every week in the links below" rows={3} value={data.linksInfo?.description || ''} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), description: e.target.value } })} />
-                           </div>
-
-                           <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-3">
-                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Phone</p>
-                                 <input type="tel" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="+1..." value={data.linksInfo?.phone || ''} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), phone: e.target.value } })} />
-                              </div>
-                              <div className="space-y-3">
-                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Email</p>
-                                 <input type="email" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="hello@me.com" value={data.linksInfo?.email || ''} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), email: e.target.value } })} />
-                              </div>
-                           </div>
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Website URL</p>
-                              <input type="url" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="https://..." value={data.linksInfo?.website || ''} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), website: e.target.value } })} />
-                           </div>
-                        </div>
-                    </CollapsibleSection>
-
-                     <CollapsibleSection id="links-list" title="List of Links" icon={Link} isExpanded={expandedSections['links-list']} onToggle={toggleSection}>
-                       <div className="space-y-6">
-                           {(data.linksList || []).map((link: any, idx: number) => (
-                              <div key={link.id || idx} className="border border-gray-100 p-4 rounded-2xl relative bg-white shadow-sm overflow-hidden">
-                                <button className="absolute top-4 right-4 p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100" onClick={() => { const newList = [...(data.linksList || [])]; newList.splice(idx, 1); updateData({ linksList: newList }); }}><X className="w-4 h-4" /></button>
-                                 <div className="space-y-4 pt-8">
-                                   <div className="space-y-2">
-                                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Link Image / Logo</p>
-                                      <div className="flex items-center gap-3">
-                                         {link.icon ? (
-                                            <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 overflow-hidden relative group">
-                                               <img src={link.icon} alt="Link logo" className="w-full h-full object-cover" />
-                                               <button className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => { const newList = [...(data.linksList || [])]; newList[idx].icon = undefined; updateData({ linksList: newList }); }}>
-                                                  <X className="w-4 h-4 text-white" />
-                                               </button>
-                                            </div>
-                                         ) : (
-                                            <label className="w-12 h-12 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all shrink-0">
-                                               <Camera className="w-4 h-4 text-gray-400" />
-                                               <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                                                  const file = e.target.files?.[0];
-                                                  if (file) {
-                                                     const reader = new FileReader();
-                                                     reader.onload = (ev) => {
-                                                        const newList = [...(data.linksList || [])];
-                                                        newList[idx] = { ...newList[idx], icon: ev.target?.result as string };
-                                                        updateData({ linksList: newList });
-                                                     };
-                                                     reader.readAsDataURL(file);
-                                                  }
-                                               }} />
-                                            </label>
-                                         )}
-                                         <div className="flex-1 space-y-2">
-                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Link text</p>
-                                            <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-sm font-bold text-gray-900 transition-all bg-gray-50/30" placeholder="Name of the link" value={link.title || ''} onChange={(e) => { const newList = [...(data.linksList || [])]; newList[idx] = { ...newList[idx], title: e.target.value }; updateData({ linksList: newList }); }} />
-                                         </div>
-                                      </div>
-                                   </div>
-                                   <div className="space-y-2">
-                                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">URL</p>
-                                      <input type="url" className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-sm font-bold text-gray-900 transition-all bg-gray-50/30" placeholder="E.g. https://mywebsite.com/" value={link.url || ''} onChange={(e) => { const newList = [...(data.linksList || [])]; newList[idx] = { ...newList[idx], url: e.target.value }; updateData({ linksList: newList }); }} />
-                                   </div>
-                                </div>
-                             </div>
-                          ))}
-                          <button 
-                            onClick={() => updateData({ linksList: [...(data.linksList || []), { title: '', url: '', icon: '' }] })}
-                            className="w-full py-4 bg-blue-50/50 border-2 border-dashed border-blue-200 text-blue-600 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
-                          >
-                             <Plus className="w-5 h-5" /> Add Link
-                          </button>
-                       </div>
-                    </CollapsibleSection>
-                 </div>
-              )}
-
                {data.type === 'form' && (
-                 <div className="space-y-8">
+                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="flex items-center justify-between">
                        <div className="space-y-1">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1">Form Builder</p>
@@ -1361,385 +926,532 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                        />
                     </div>
                  </div>
-               )}
+                 )}
 
               {data.type === 'business' && (
                 <div className="space-y-6">
-                   <div className="space-y-3">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Theme Color</p>
-                      <div className="flex flex-wrap gap-2">
-                        {['#2563eb', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#d97706', '#16a34a', '#059669', '#0891b2', '#1e293b'].map(c => (
-                          <button
-                            key={c}
-                            onClick={() => updateData({ business: { ...(data.business || {} as any), themeColor: c } } as any)}
-                            className={cn(
-                              "w-8 h-8 rounded-full border-2 transition-all",
-                              (data.business as any)?.themeColor === c ? "border-slate-900 scale-110 shadow-lg" : "border-transparent hover:scale-105"
-                            )}
-                            style={{ backgroundColor: c }}
-                          />
-                        ))}
+                  <CollapsibleSection id="business-details" title="Company Information" subtitle="Basic Details" icon={Building2} isExpanded={expandedSections['business-details']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Company Name</p>
+                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="Acme Inc." value={data.business?.companyName || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), companyName: e.target.value } })} />
                       </div>
-                   </div>
-
-                   <div className="space-y-3">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Accent Color (Icons & Buttons)</p>
-                      <div className="flex flex-wrap gap-2">
-                        {['#2563eb', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#d97706', '#16a34a', '#059669', '#0891b2', '#1e293b'].map(c => (
-                          <button
-                            key={c}
-                            onClick={() => updateData({ business: { ...(data.business || {} as any), accentColor: c } } as any)}
-                            className={cn(
-                              "w-8 h-8 rounded-full border-2 transition-all",
-                              (data.business as any)?.accentColor === c ? "border-slate-900 scale-110 shadow-lg" : "border-transparent hover:scale-105"
-                            )}
-                            style={{ backgroundColor: c }}
-                          />
-                        ))}
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Headline</p>
+                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="We build amazing things" value={data.business?.headline || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), headline: e.target.value } })} />
                       </div>
-                   </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">About</p>
+                        <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="Tell people about your business..." rows={3} value={data.business?.about || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), about: e.target.value } })} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Logo</p>
+                          <label className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
+                            {data.business?.logo ? <img src={data.business.logo} className="w-full h-full object-contain p-2" /> : <><ImageIcon className="w-5 h-5 text-gray-400" /><span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Upload Logo</span></>}
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) { const reader = new FileReader(); reader.onload = (ev) => updateData({ business: { ...(data.business || {}), logo: ev.target?.result as string } }); reader.readAsDataURL(file); }
+                            }} />
+                          </label>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Banner</p>
+                          <label className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
+                            {data.business?.banner ? <img src={data.business.banner} className="w-full h-full object-cover" /> : <><ImageIcon className="w-5 h-5 text-gray-400" /><span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Upload Banner</span></>}
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) { const reader = new FileReader(); reader.onload = (ev) => updateData({ business: { ...(data.business || {}), banner: ev.target?.result as string } }); reader.readAsDataURL(file); }
+                            }} />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </CollapsibleSection>
 
-                   <CollapsibleSection id="business-details" title="Business Details" icon={Building2} isExpanded={expandedSections['business-details']} onToggle={toggleSection}>
-                       <div className="space-y-6">
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Business Logo</p>
-                              <div className="flex items-center gap-4">
-                                  <label className="flex-1 px-4 py-4 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
-                                      <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                                          const file = e.target.files?.[0];
-                                          if (file) {
-                                              const reader = new FileReader();
-                                              reader.onloadend = () => {
-                                                  updateData({ business: { ...(data.business || {}), logo: reader.result as string }});
-                                              };
-                                              reader.readAsDataURL(file);
-                                          }
-                                      }} />
-                                      <Camera className="w-5 h-5 text-gray-400 group-hover:text-blue-500 mb-1 transition-colors" />
-                                      <span className="text-[11px] font-bold text-gray-400 group-hover:text-blue-500">Upload Logo</span>
-                                  </label>
-                                  {data.business?.logo && (
-                                      <div className="w-20 h-20 rounded-xl border border-gray-100 overflow-hidden relative group shrink-0 shadow-sm bg-white">
-                                          <img src={data.business.logo} alt="Logo preview" className="w-full h-full object-cover" />
-                                          <button 
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                updateData({ business: { ...(data.business || {}), logo: undefined }});
-                                            }}
-                                            className="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center text-white backdrop-blur-sm transition-all"
-                                          >
-                                            <X className="w-5 h-5" />
-                                          </button>
-                                      </div>
-                                  )}
-                              </div>
-                           </div>
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Banner Image</p>
-                              <div className="flex flex-col gap-3">
-                                  <label className="w-full px-4 py-4 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
-                                      <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                                          const file = e.target.files?.[0];
-                                          if (file) {
-                                              const reader = new FileReader();
-                                              reader.onloadend = () => {
-                                                  updateData({ business: { ...(data.business || {}), banner: reader.result as string }});
-                                              };
-                                              reader.readAsDataURL(file);
-                                          }
-                                      }} />
-                                      <Camera className="w-5 h-5 text-gray-400 group-hover:text-blue-500 mb-1 transition-colors" />
-                                      <span className="text-[11px] font-bold text-gray-400 group-hover:text-blue-500">Upload Banner</span>
-                                  </label>
-                                  {data.business?.banner && (
-                                      <div className="w-full aspect-[2/1] rounded-xl border border-gray-100 overflow-hidden relative group shadow-sm bg-white">
-                                          <img src={data.business.banner} alt="Banner preview" className="w-full h-full object-cover" />
-                                          <button 
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                updateData({ business: { ...(data.business || {}), banner: undefined }});
-                                            }}
-                                            className="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center text-white backdrop-blur-sm transition-all"
-                                          >
-                                            <X className="w-5 h-5" />
-                                          </button>
-                                      </div>
-                                  )}
-                              </div>
-                           </div>
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Company Name</p>
-                              <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="Your Business Ltd." value={data.business?.companyName || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), companyName: e.target.value } })} />
-                           </div>
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Headline</p>
-                              <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Best Coffee in Town" value={data.business?.headline || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), headline: e.target.value } })} />
-                           </div>
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">About Us</p>
-                              <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="Describe your business..." rows={3} value={data.business?.about || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), about: e.target.value } })} />
-                           </div>
-                       </div>
-                   </CollapsibleSection>
-                   
-                   <CollapsibleSection id="business-contact" title="Contact" icon={Phone} isExpanded={expandedSections['business-contact']} onToggle={toggleSection}>
-                       <div className="space-y-6">
-                           <div className="grid grid-cols-2 gap-4">
-                             <div className="space-y-3">
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Email</p>
-                                <input type="email" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="hello@business.com" value={data.business?.contact?.email || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), contact: { ...(data.business?.contact || {}), email: e.target.value } } })} />
-                             </div>
-                             <div className="space-y-3">
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Phone</p>
-                                <input type="tel" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="+1..." value={data.business?.contact?.phone || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), contact: { ...(data.business?.contact || {}), phone: e.target.value } } })} />
-                             </div>
-                           </div>
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Website</p>
-                              <input type="url" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="https://" value={data.business?.contact?.website || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), contact: { ...(data.business?.contact || {}), website: e.target.value } } })} />
-                           </div>
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Address</p>
-                              <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="123 Example Street" rows={2} value={data.business?.contact?.address || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), contact: { ...(data.business?.contact || {}), address: e.target.value } } })} />
-                           </div>
-                       </div>
-                   </CollapsibleSection>
+                  <CollapsibleSection id="business-contact" title="Contact Details" icon={Phone} isExpanded={expandedSections['business-contact']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Email</p>
+                          <input type="email" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="hello@company.com" value={data.business?.contact?.email || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), contact: { ...(data.business?.contact || {}), email: e.target.value } } })} />
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Phone</p>
+                          <input type="tel" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="+1 234 567 890" value={data.business?.contact?.phone || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), contact: { ...(data.business?.contact || {}), phone: e.target.value } } })} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Website</p>
+                        <input type="url" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="https://company.com" value={data.business?.contact?.website || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), contact: { ...(data.business?.contact || {}), website: e.target.value } } })} />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Address</p>
+                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="123 Main Street, City" value={data.business?.contact?.address || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), contact: { ...(data.business?.contact || {}), address: e.target.value } } })} />
+                      </div>
+                    </div>
+                  </CollapsibleSection>
 
-                   <CollapsibleSection id="business-hours" title="Opening Hours" icon={Clock} isExpanded={expandedSections['business-hours']} onToggle={toggleSection}>
-                       <div className="space-y-4">
-                          {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => {
-                              const dayData = (data.business?.openingHours as any)?.[day];
-                              const isClosed = typeof dayData === 'object' ? !!dayData.isClosed : dayData === 'Closed';
-                              const fromTime = typeof dayData === 'object' ? dayData.from : '';
-                              const toTime = typeof dayData === 'object' ? dayData.to : '';
+                  <CollapsibleSection id="business-socials" title="Social Media" icon={Share2} isExpanded={expandedSections['business-socials']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      {[
+                        { key: 'facebook', label: 'Facebook', placeholder: 'facebook.com/company' },
+                        { key: 'instagram', label: 'Instagram', placeholder: 'instagram.com/company' },
+                        { key: 'twitter', label: 'Twitter / X', placeholder: 'x.com/company' },
+                        { key: 'linkedin', label: 'LinkedIn', placeholder: 'linkedin.com/company/name' },
+                        { key: 'youtube', label: 'YouTube', placeholder: 'youtube.com/@company' },
+                      ].map(s => (
+                        <div key={s.key} className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">{s.label}</p>
+                          <input type="url" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder={s.placeholder} value={(data.business?.socials as any)?.[s.key] || ''} onChange={(e) => updateData({ business: { ...(data.business || {}), socials: { ...(data.business?.socials || {}), [s.key]: e.target.value } } })} />
+                        </div>
+                      ))}
+                    </div>
+                  </CollapsibleSection>
 
-                              return (
-                                  <div key={day} className="space-y-2">
-                                      <div className="flex items-center justify-between">
-                                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{day}</p>
-                                         <button 
-                                           onClick={() => {
-                                               const currentHours = data.business?.openingHours || {};
-                                               updateData({
-                                                   business: {
-                                                       ...(data.business || {}),
-                                                       openingHours: {
-                                                           ...currentHours,
-                                                           [day]: { from: fromTime || '09:00', to: toTime || '17:00', isClosed: !isClosed }
-                                                       }
-                                                   }
-                                               } as any);
-                                           }}
-                                           className={cn(
-                                             "px-3 py-1 rounded-full text-[10px] font-bold transition-all",
-                                             isClosed ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
-                                           )}
-                                         >
-                                           {isClosed ? 'Closed' : 'Open'}
-                                         </button>
-                                      </div>
-                                      
-                                      {!isClosed && (
-                                         <div className="flex items-center gap-2">
-                                             <div className="flex-1">
-                                                 <p className="text-[9px] font-bold text-gray-400 uppercase mb-1 ml-1">From</p>
-                                                 <input
-                                                     type="time"
-                                                     className="w-full px-3 py-2 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-xs focus:border-blue-500 transition-colors"
-                                                     value={fromTime}
-                                                     onChange={(e) => {
-                                                         const currentHours = data.business?.openingHours || {};
-                                                         updateData({
-                                                             business: {
-                                                                 ...(data.business || {}),
-                                                                 openingHours: {
-                                                                     ...currentHours,
-                                                                     [day]: { from: e.target.value, to: toTime || '17:00', isClosed: false }
-                                                                 }
-                                                             }
-                                                         } as any);
-                                                     }}
-                                                 />
-                                             </div>
-                                             <div className="flex-1">
-                                                 <p className="text-[9px] font-bold text-gray-400 uppercase mb-1 ml-1">To</p>
-                                                 <input
-                                                     type="time"
-                                                     className="w-full px-3 py-2 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-xs focus:border-blue-500 transition-colors"
-                                                     value={toTime}
-                                                     onChange={(e) => {
-                                                         const currentHours = data.business?.openingHours || {};
-                                                         updateData({
-                                                             business: {
-                                                                 ...(data.business || {}),
-                                                                 openingHours: {
-                                                                     ...currentHours,
-                                                                     [day]: { from: fromTime || '09:00', to: e.target.value, isClosed: false }
-                                                                 }
-                                                             }
-                                                         } as any);
-                                                     }}
-                                                 />
-                                             </div>
-                                         </div>
-                                      )}
-                                  </div>
-                              );
-                          })}
-                       </div>
-                   </CollapsibleSection>
+                  <CollapsibleSection id="business-hours" title="Opening Hours" icon={Clock} isExpanded={expandedSections['business-hours']} onToggle={toggleSection}>
+                    <div className="space-y-3">
+                      {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => {
+                        const hours = data.business?.openingHours?.[day as keyof typeof data.business.openingHours];
+                        const hourObj = typeof hours === 'object' ? hours : { from: '09:00', to: '17:00', isClosed: false };
+                        const isClosed = typeof hours === 'object' ? hours.isClosed : false;
+                        return (
+                          <div key={day} className="flex items-center gap-3">
+                            <span className="text-xs font-bold text-gray-700 capitalize w-20">{day}</span>
+                            <button
+                              onClick={() => {
+                                const newHours = { ...(data.business?.openingHours || {}) };
+                                (newHours as any)[day] = { ...hourObj, isClosed: !isClosed };
+                                updateData({ business: { ...(data.business || {}), openingHours: newHours } });
+                              }}
+                              className={cn("px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all", isClosed ? "bg-red-50 text-red-500 border-red-100" : "bg-green-50 text-green-600 border-green-100")}
+                            >
+                              {isClosed ? 'Closed' : 'Open'}
+                            </button>
+                            {!isClosed && (
+                              <>
+                                <input type="time" className="px-2 py-1.5 border border-gray-100 rounded-lg text-xs font-bold" value={hourObj.from || '09:00'} onChange={(e) => {
+                                  const newHours = { ...(data.business?.openingHours || {}) };
+                                  (newHours as any)[day] = { ...hourObj, from: e.target.value };
+                                  updateData({ business: { ...(data.business || {}), openingHours: newHours } });
+                                }} />
+                                <span className="text-gray-400 text-xs">to</span>
+                                <input type="time" className="px-2 py-1.5 border border-gray-100 rounded-lg text-xs font-bold" value={hourObj.to || '17:00'} onChange={(e) => {
+                                  const newHours = { ...(data.business?.openingHours || {}) };
+                                  (newHours as any)[day] = { ...hourObj, to: e.target.value };
+                                  updateData({ business: { ...(data.business || {}), openingHours: newHours } });
+                                }} />
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection id="business-design" title="Colors & Branding" icon={Palette} isExpanded={expandedSections['business-design']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Theme Color</p>
+                          <div className="flex items-center gap-2">
+                            <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.business?.themeColor || '#3b82f6'} onChange={(e) => updateData({ business: { ...(data.business || {}), themeColor: e.target.value } })} />
+                            <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm" value={data.business?.themeColor || '#3b82f6'} onChange={(e) => updateData({ business: { ...(data.business || {}), themeColor: e.target.value } })} />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Accent Color</p>
+                          <div className="flex items-center gap-2">
+                            <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.business?.accentColor || '#10b981'} onChange={(e) => updateData({ business: { ...(data.business || {}), accentColor: e.target.value } })} />
+                            <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm" value={data.business?.accentColor || '#10b981'} onChange={(e) => updateData({ business: { ...(data.business || {}), accentColor: e.target.value } })} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CollapsibleSection>
                 </div>
               )}
 
               {data.type === 'menu' && (
                 <div className="space-y-6">
-                    <CollapsibleSection id="menu-design" title="Colors & Styles" icon={Palette} isExpanded={expandedSections['menu-design']} onToggle={toggleSection}>
-                        <div className="space-y-3">
-                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Theme Color</p>
-                           <div className="flex flex-wrap gap-2">
-                             {['#2563eb', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#d97706', '#16a34a', '#059669', '#0891b2', '#1e293b'].map(c => (
-                               <button
-                                 key={c}
-                                 onClick={() => updateData({ menu: { ...(data.menu || {} as any), themeColor: c } } as any)}
-                                 className={cn(
-                                   "w-8 h-8 rounded-full border-2 transition-all",
-                                   (data.menu as any)?.themeColor === c ? "border-slate-900 scale-110 shadow-lg" : "border-transparent hover:scale-105"
-                                 )}
-                                 style={{ backgroundColor: c }}
-                               />
-                             ))}
-                           </div>
+                  <CollapsibleSection id="menu-info" title="Restaurant Details" icon={UtensilsCrossed} isExpanded={expandedSections['restaurant-details']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Restaurant Name</p>
+                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. The Golden Fork" value={data.menu?.restaurantName || ''} onChange={(e) => updateData({ menu: { ...(data.menu || {}), restaurantName: e.target.value } })} />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Description</p>
+                        <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="Describe your restaurant..." rows={2} value={data.menu?.description || ''} onChange={(e) => updateData({ menu: { ...(data.menu || {}), description: e.target.value } })} />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Currency Symbol</p>
+                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="$" value={data.menu?.currency || ''} onChange={(e) => updateData({ menu: { ...(data.menu || {}), currency: e.target.value } })} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Logo</p>
+                          <label className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
+                            {data.menu?.logo ? <img src={data.menu.logo} className="w-full h-full object-contain p-2" /> : <><ImageIcon className="w-5 h-5 text-gray-400" /><span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Upload Logo</span></>}
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) { const reader = new FileReader(); reader.onload = (ev) => updateData({ menu: { ...(data.menu || {}), logo: ev.target?.result as string } }); reader.readAsDataURL(file); }
+                            }} />
+                          </label>
                         </div>
-                   </CollapsibleSection>
-
-                    <CollapsibleSection id="menu-details" title="Restaurant Details" icon={UtensilsCrossed} isExpanded={expandedSections['menu-details']} onToggle={toggleSection}>
-                        <div className="space-y-6">
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Restaurant Name</p>
-                              <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. The Great Cafe" value={data.menu?.restaurantName || ''} onChange={(e) => updateData({ menu: { ...(data.menu || {}), restaurantName: e.target.value } })} />
-                           </div>
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Description</p>
-                              <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Authentic Italian Cuisine" value={data.menu?.description || ''} onChange={(e) => updateData({ menu: { ...(data.menu || {}), description: e.target.value } })} />
-                           </div>
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Currency</p>
-                              <input type="text" className="w-24 px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="$" value={data.menu?.currency || ''} onChange={(e) => updateData({ menu: { ...(data.menu || {}), currency: e.target.value } })} />
-                           </div>
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Banner</p>
+                          <label className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
+                            {data.menu?.banner ? <img src={data.menu.banner} className="w-full h-full object-cover" /> : <><ImageIcon className="w-5 h-5 text-gray-400" /><span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Upload Banner</span></>}
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) { const reader = new FileReader(); reader.onload = (ev) => updateData({ menu: { ...(data.menu || {}), banner: ev.target?.result as string } }); reader.readAsDataURL(file); }
+                            }} />
+                          </label>
                         </div>
-                   </CollapsibleSection>
+                      </div>
+                    </div>
+                  </CollapsibleSection>
 
-                    <CollapsibleSection id="menu-items" title="Menu Categories & Items" icon={ClipboardList} isExpanded={expandedSections['menu-items']} onToggle={toggleSection}>
-                       <div className="space-y-6">
-                         {(data.menu?.categories || []).map((cat, cIdx) => (
-                            <div key={cIdx} className="border-2 border-gray-50 rounded-xl p-4 space-y-4">
-                               <div className="flex items-center gap-2">
-                                   <input type="text" className="flex-1 px-4 py-2 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 text-sm" placeholder="Category Name (e.g. Starters)" value={cat.name} onChange={(e) => {
-                                       const newCategories = [...(data.menu?.categories || [])];
-                                       newCategories[cIdx].name = e.target.value;
-                                       updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
-                                   }} />
-                                   <button onClick={() => {
-                                       const newCategories = [...(data.menu?.categories || [])];
-                                       newCategories.splice(cIdx, 1);
-                                       updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
-                                   }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                                      <X className="w-5 h-5" />
-                                   </button>
-                               </div>
-                               
-                               <div className="pl-4 border-l-2 border-gray-50 space-y-3">
-                                  {cat.items.map((item, iIdx) => (
-                                     <div key={iIdx} className="flex flex-col gap-2 bg-gray-50 p-3 rounded-xl relative">
-                                        <button className="absolute top-2 right-2 text-red-400 hover:text-red-600 hover:bg-red-50 p-1 rounded-md" onClick={() => {
-                                              const newCategories = [...(data.menu?.categories || [])];
-                                              newCategories[cIdx].items.splice(iIdx, 1);
-                                              updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
-                                        }}>
-                                           <X className="w-4 h-4" />
-                                        </button>
-                                        <div className="flex gap-2 mr-6">
-                                            <input type="text" placeholder="Item Name" className="flex-1 px-3 py-2 rounded-lg text-sm font-bold bg-white outline-none border border-transparent focus:border-blue-500" value={item.name} onChange={(e) => {
-                                                const newCategories = [...(data.menu?.categories || [])];
-                                                newCategories[cIdx].items[iIdx].name = e.target.value;
-                                                updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
-                                            }} />
-                                            <input type="number" placeholder="Price" className="w-24 px-3 py-2 rounded-lg text-sm font-bold bg-white outline-none border border-transparent focus:border-blue-500" value={item.price || ''} onChange={(e) => {
-                                                const newCategories = [...(data.menu?.categories || [])];
-                                                newCategories[cIdx].items[iIdx].price = parseFloat(e.target.value) || 0;
-                                                updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
-                                            }} />
-                                        </div>
-                                        <input type="text" placeholder="Description (Optional)" className="w-full px-3 py-2 rounded-lg text-sm text-gray-600 bg-white outline-none border border-transparent focus:border-blue-500" value={item.description || ''} onChange={(e) => {
-                                              const newCategories = [...(data.menu?.categories || [])];
-                                              newCategories[cIdx].items[iIdx].description = e.target.value;
-                                              updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
-                                        }} />
-                                     </div>
-                                  ))}
-                                  <button onClick={() => {
-                                      const newCategories = [...(data.menu?.categories || [])];
-                                      newCategories[cIdx].items.push({ id: Math.random().toString(), name: '', price: 0 });
-                                      updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
-                                  }} className="text-xs font-bold text-blue-600 flex items-center gap-1 hover:underline p-1">
-                                     <Plus className="w-3 h-3" /> Add Item
-                                  </button>
-                               </div>
+                  <CollapsibleSection id="menu-design" title="Colors & Styles" icon={Palette} isExpanded={expandedSections['design']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Theme Color</p>
+                        <div className="flex items-center gap-2">
+                          <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.menu?.themeColor || '#3b82f6'} onChange={(e) => updateData({ menu: { ...(data.menu || {}), themeColor: e.target.value } })} />
+                          <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm" value={data.menu?.themeColor || '#3b82f6'} onChange={(e) => updateData({ menu: { ...(data.menu || {}), themeColor: e.target.value } })} />
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {['#3b82f6','#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#8b5cf6','#ec4899','#1e293b'].map(c => (
+                          <button key={c} onClick={() => updateData({ menu: { ...(data.menu || {}), themeColor: c } })} className={cn("w-8 h-8 rounded-full border-2 transition-all", data.menu?.themeColor === c ? "border-gray-900 scale-110" : "border-transparent")} style={{ backgroundColor: c }} />
+                        ))}
+                      </div>
+                    </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection id="menu-items" title="Menu Categories & Items" icon={ClipboardList} isExpanded={expandedSections['menu-items'] !== false} onToggle={toggleSection}>
+                    <div className="space-y-6">
+                      {(data.menu?.categories || []).map((cat, cIdx) => (
+                        <div key={cIdx} className="border-2 border-gray-50 rounded-xl p-4 space-y-4">
+                          <div className="flex items-center gap-2">
+                            <input type="text" className="flex-1 px-4 py-2 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 text-sm" placeholder="Category Name (e.g. Starters)" value={cat.name} onChange={(e) => {
+                              const newCategories = [...(data.menu?.categories || [])];
+                              newCategories[cIdx] = { ...newCategories[cIdx], name: e.target.value };
+                              updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                            }} />
+                            <button onClick={() => {
+                              const newCategories = [...(data.menu?.categories || [])];
+                              newCategories.splice(cIdx, 1);
+                              updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                            }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                          <div className="pl-4 border-l-2 border-gray-50 space-y-3">
+                            {cat.items.map((item, iIdx) => (
+                              <div key={iIdx} className="flex flex-col gap-2 bg-gray-50 p-3 rounded-xl relative">
+                                <button className="absolute top-2 right-2 text-red-400 hover:text-red-600 hover:bg-red-50 p-1 rounded-md" onClick={() => {
+                                  const newCategories = [...(data.menu?.categories || [])];
+                                  newCategories[cIdx] = { ...newCategories[cIdx], items: newCategories[cIdx].items.filter((_, i) => i !== iIdx) };
+                                  updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                                }}>
+                                  <X className="w-4 h-4" />
+                                </button>
+                                <div className="flex gap-2 mr-6">
+                                  <label className="w-12 h-12 shrink-0 rounded-xl bg-white border border-gray-100 flex items-center justify-center cursor-pointer overflow-hidden group">
+                                    {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <Camera className="w-4 h-4 text-gray-400" />}
+                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const reader = new FileReader();
+                                        reader.onload = (ev) => {
+                                          const newCategories = [...(data.menu?.categories || [])];
+                                          const newItems = [...newCategories[cIdx].items];
+                                          newItems[iIdx] = { ...newItems[iIdx], image: ev.target?.result as string };
+                                          newCategories[cIdx] = { ...newCategories[cIdx], items: newItems };
+                                          updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                                        };
+                                        reader.readAsDataURL(file);
+                                      }
+                                    }} />
+                                  </label>
+                                  <input type="text" placeholder="Item Name" className="flex-1 px-3 py-2 rounded-lg text-sm font-bold bg-white outline-none border border-transparent focus:border-blue-500" value={item.name} onChange={(e) => {
+                                    const newCategories = [...(data.menu?.categories || [])];
+                                    const newItems = [...newCategories[cIdx].items];
+                                    newItems[iIdx] = { ...newItems[iIdx], name: e.target.value };
+                                    newCategories[cIdx] = { ...newCategories[cIdx], items: newItems };
+                                    updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                                  }} />
+                                  <input type="text" placeholder="Price" className="w-20 px-3 py-2 rounded-lg text-sm font-bold bg-white outline-none border border-transparent focus:border-blue-500" value={item.price ? item.price.toLocaleString() : ''} onChange={(e) => {
+                                    const rawValue = e.target.value.replace(/,/g, '');
+                                    const value = parseFloat(rawValue) || 0;
+                                    const newCategories = [...(data.menu?.categories || [])];
+                                    const newItems = [...newCategories[cIdx].items];
+                                    newItems[iIdx] = { ...newItems[iIdx], price: value };
+                                    newCategories[cIdx] = { ...newCategories[cIdx], items: newItems };
+                                    updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                                  }} />
+                                </div>
+                                <input type="text" placeholder="Description (Optional)" className="w-full px-3 py-2 rounded-lg text-sm text-gray-600 bg-white outline-none border border-transparent focus:border-blue-500" value={item.description || ''} onChange={(e) => {
+                                  const newCategories = [...(data.menu?.categories || [])];
+                                  const newItems = [...newCategories[cIdx].items];
+                                  newItems[iIdx] = { ...newItems[iIdx], description: e.target.value };
+                                  newCategories[cIdx] = { ...newCategories[cIdx], items: newItems };
+                                  updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                                }} />
+                              </div>
+                            ))}
+                            <button onClick={() => {
+                              const newCategories = [...(data.menu?.categories || [])];
+                              newCategories[cIdx] = { ...newCategories[cIdx], items: [...newCategories[cIdx].items, { id: Math.random().toString(), name: '', price: 0 }] };
+                              updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                            }} className="text-xs font-bold text-blue-600 flex items-center gap-1 hover:underline p-1">
+                              <Plus className="w-3 h-3" /> Add Item
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      <button onClick={() => {
+                        const newCategories = [...(data.menu?.categories || []), { id: Math.random().toString(), name: '', items: [] }];
+                        updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
+                      }} className="w-full py-3 bg-blue-50 text-blue-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors">
+                        <Plus className="w-4 h-4" /> Add Category
+                      </button>
+                    </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection id="menu-fields" title="Checkout Form Fields" icon={Type} isExpanded={expandedSections['menu-fields']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <p className="text-xs text-gray-500">Customize what info you collect from customers at checkout.</p>
+                      {(data.menu?.customFields || []).map((field, fIdx) => (
+                        <div key={fIdx} className="flex items-center gap-2 bg-gray-50 p-3 rounded-xl">
+                          <input type="text" className="flex-1 px-3 py-2 rounded-lg text-sm font-bold bg-white outline-none border border-transparent focus:border-blue-500" placeholder="Field Label" value={field.label}  onChange={(e) => {
+                            const newFields = [...(data.menu?.customFields || [])];
+                            newFields[fIdx] = { ...newFields[fIdx], label: e.target.value };
+                            updateData({ menu: { ...(data.menu || {}), customFields: newFields }});
+                          }} />
+                          <select className="px-3 py-2 rounded-lg text-sm font-bold bg-white outline-none border border-gray-100 cursor-pointer" value={field.type} onChange={(e) => {
+                            const newFields = [...(data.menu?.customFields || [])];
+                            newFields[fIdx] = { ...newFields[fIdx], type: e.target.value };
+                            updateData({ menu: { ...(data.menu || {}), customFields: newFields }});
+                          }}>
+                            <option value="text">Text</option>
+                            <option value="email">Email</option>
+                            <option value="tel">Phone</option>
+                            <option value="textarea">Textarea</option>
+                          </select>
+                          <button onClick={() => {
+                            const newFields = [...(data.menu?.customFields || [])];
+                            newFields.splice(fIdx, 1);
+                            updateData({ menu: { ...(data.menu || {}), customFields: newFields }});
+                          }} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                      <button onClick={() => {
+                        const newFields = [...(data.menu?.customFields || []), { id: Math.random().toString(), label: '', type: 'text' }];
+                        updateData({ menu: { ...(data.menu || {}), customFields: newFields }});
+                      }} className="text-xs font-bold text-blue-600 flex items-center gap-1 hover:underline p-1">
+                        <Plus className="w-3 h-3" /> Add Field
+                      </button>
+                    </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection id="menu-success" title="Success Screen" icon={CheckCircle} isExpanded={expandedSections['menu-success']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Success Title</p>
+                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="Order Placed!" value={data.menu?.successTitle || ''} onChange={(e) => updateData({ menu: { ...(data.menu || {}), successTitle: e.target.value } })} />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Success Message</p>
+                        <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="Thank you! Your order is on the way." rows={2} value={data.menu?.successMessage || ''} onChange={(e) => updateData({ menu: { ...(data.menu || {}), successMessage: e.target.value } })} />
+                      </div>
+                    </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection id="menu-whatsapp" title="WhatsApp Lead" icon={Phone} isExpanded={expandedSections['menu-whatsapp']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">Show WhatsApp button</p>
+                          <p className="text-xs text-gray-400">Display a "Chat with us" button on the order success screen</p>
+                        </div>
+                        <button
+                          onClick={() => updateData({ menu: { ...(data.menu || {}), showWhatsappCta: !data.menu?.showWhatsappCta } })}
+                          className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${data.menu?.showWhatsappCta ? 'bg-[#25D366]' : 'bg-gray-200'}`}
+                        >
+                          <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform duration-200 ${data.menu?.showWhatsappCta ? 'translate-x-5' : 'translate-x-0'}`} />
+                        </button>
+                      </div>
+
+                      {data.menu?.showWhatsappCta && (
+                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">WhatsApp Number (with country code)</p>
+                          <div className="relative">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#25D366]">
+                              <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                              </svg>
                             </div>
-                         ))}
-                         
-                         <button onClick={() => {
-                             const newCategories = [...(data.menu?.categories || []), { id: Math.random().toString(), name: '', items: [] }];
-                             updateData({ menu: { ...(data.menu || {}), categories: newCategories }});
-                         }} className="w-full py-3 bg-blue-50 text-blue-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors">
-                             <Plus className="w-4 h-4" /> Add Category
-                         </button>
-                       </div>
-                   </CollapsibleSection>
+                            <input type="tel" className="w-full pl-10 pr-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="+234 801 234 5678" value={data.menu?.whatsappNumber || ''} onChange={(e) => updateData({ menu: { ...(data.menu || {}), whatsappNumber: e.target.value } })} />
+                          </div>
+                          <p className="text-[10px] text-gray-400 italic">Include country code (e.g. +234, +1, +44). This number will be used for the WhatsApp CTA on the success screen.</p>
+                        </div>
+                      )}
+                    </div>
+                  </CollapsibleSection>
                 </div>
               )}
 
               {data.type === 'coupon' && (
                 <div className="space-y-6">
-                   <div className="border border-gray-100 rounded-[24px] overflow-hidden">
-                       <div className="p-4 bg-gray-50 flex items-center gap-3 border-b border-gray-100">
-                          <Ticket className="w-5 h-5 text-gray-500" />
-                          <div className="flex-1">
-                             <p className="text-sm font-bold text-gray-900">Coupon Details</p>
-                          </div>
-                       </div>
-                       <div className="p-6 bg-white space-y-6">
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Coupon Title</p>
-                              <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. 50% Off First Purchase" value={data.coupon?.title || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), title: e.target.value } })} />
-                           </div>
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Description</p>
-                              <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="Describe the offer..." rows={2} value={data.coupon?.description || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), description: e.target.value } })} />
-                           </div>
-                           <div className="grid grid-cols-2 gap-4">
-                             <div className="space-y-3">
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Discount</p>
-                                <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. $10 OFF" value={data.coupon?.discount || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), discount: e.target.value } })} />
-                             </div>
-                             <div className="space-y-3">
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Promo Code</p>
-                                <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. SUMMER50" value={data.coupon?.promoCode || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), promoCode: e.target.value } })} />
-                             </div>
-                           </div>
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Valid Until</p>
-                              <input type="date" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" value={data.coupon?.validUntil || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), validUntil: e.target.value } })} />
-                           </div>
-                           <div className="space-y-3">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Company Name</p>
-                              <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="Business Name" value={data.coupon?.companyName || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), companyName: e.target.value } })} />
-                           </div>
-                       </div>
-                   </div>
+                  <CollapsibleSection id="coupon-details" title="Coupon Details" icon={Ticket} isExpanded={expandedSections['coupon-details']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Coupon Title</p>
+                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. 50% Off First Purchase" value={data.coupon?.title || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), title: e.target.value } })} />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Description</p>
+                        <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="Describe the offer..." rows={2} value={data.coupon?.description || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), description: e.target.value } })} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Discount</p>
+                          <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. 20% OFF" value={data.coupon?.discount || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), discount: e.target.value } })} />
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Promo Code</p>
+                          <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. SUMMER50" value={data.coupon?.promoCode || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), promoCode: e.target.value } })} />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Valid Until</p>
+                          <input type="date" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" value={data.coupon?.validUntil || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), validUntil: e.target.value } })} />
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Company Name</p>
+                          <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="Business Name" value={data.coupon?.companyName || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), companyName: e.target.value } })} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Terms & Conditions</p>
+                        <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Valid for in-store purchases only..." rows={2} value={data.coupon?.terms || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), terms: e.target.value } })} />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Website</p>
+                        <input type="url" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="https://company.com" value={data.coupon?.website || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), website: e.target.value } })} />
+                      </div>
+                    </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection id="coupon-design" title="Design & Branding" icon={Palette} isExpanded={expandedSections['coupon-design']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Theme Color</p>
+                        <div className="flex items-center gap-2">
+                          <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.coupon?.themeColor || '#8b5cf6'} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), themeColor: e.target.value } })} />
+                          <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm" value={data.coupon?.themeColor || '#8b5cf6'} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), themeColor: e.target.value } })} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Banner Image</p>
+                        <label className="w-full h-28 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
+                          {data.coupon?.banner ? <img src={data.coupon.banner} className="w-full h-full object-cover" /> : <><ImageIcon className="w-5 h-5 text-gray-400" /><span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Upload Banner</span></>}
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) { const reader = new FileReader(); reader.onload = (ev) => updateData({ coupon: { ...(data.coupon || {}), banner: ev.target?.result as string } }); reader.readAsDataURL(file); }
+                          }} />
+                        </label>
+                      </div>
+                    </div>
+                  </CollapsibleSection>
                 </div>
               )}
 
+              {data.type === 'links' && (
+                <div className="space-y-6">
+                  <CollapsibleSection id="links-info" title="Profile & Appearance" icon={User} isExpanded={expandedSections['links-info'] !== false} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Page Title</p>
+                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="My Links" value={data.linksInfo?.title || ''} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), title: e.target.value } })} />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Description</p>
+                        <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="A short bio or tagline..." rows={2} value={data.linksInfo?.description || ''} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), description: e.target.value } })} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Avatar</p>
+                          <label className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
+                            {data.linksInfo?.avatar ? <img src={data.linksInfo.avatar} className="w-full h-full object-contain p-2" /> : <><User className="w-5 h-5 text-gray-400" /><span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Upload Avatar</span></>}
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) { const reader = new FileReader(); reader.onload = (ev) => updateData({ linksInfo: { ...(data.linksInfo || {}), avatar: ev.target?.result as string } }); reader.readAsDataURL(file); }
+                            }} />
+                          </label>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Banner</p>
+                          <label className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
+                            {data.linksInfo?.banner ? <img src={data.linksInfo.banner} className="w-full h-full object-cover" /> : <><ImageIcon className="w-5 h-5 text-gray-400" /><span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Upload Banner</span></>}
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) { const reader = new FileReader(); reader.onload = (ev) => updateData({ linksInfo: { ...(data.linksInfo || {}), banner: ev.target?.result as string } }); reader.readAsDataURL(file); }
+                            }} />
+                          </label>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Theme Color</p>
+                        <div className="flex items-center gap-2">
+                          <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.linksInfo?.themeColor || '#3b82f6'} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), themeColor: e.target.value } })} />
+                          <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm" value={data.linksInfo?.themeColor || '#3b82f6'} onChange={(e) => updateData({ linksInfo: { ...(data.linksInfo || {}), themeColor: e.target.value } })} />
+                        </div>
+                      </div>
+                    </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection id="links-list" title="Your Links" icon={Link} isExpanded={expandedSections['links-list'] !== false} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      {(data.linksList || []).map((link, lIdx) => (
+                        <div key={lIdx} className="flex items-center gap-2 bg-gray-50 p-3 rounded-xl">
+                          <div className="flex-1 space-y-2">
+                            <input type="text" className="w-full px-3 py-2 rounded-lg text-sm font-bold bg-white outline-none border border-transparent focus:border-blue-500" placeholder="Link Title" value={link.title} onChange={(e) => {
+                              const newLinks = [...(data.linksList || [])];
+                              newLinks[lIdx] = { ...newLinks[lIdx], title: e.target.value };
+                              updateData({ linksList: newLinks });
+                            }} />
+                            <input type="url" className="w-full px-3 py-2 rounded-lg text-sm font-medium bg-white outline-none border border-transparent focus:border-blue-500" placeholder="https://..." value={link.url} onChange={(e) => {
+                              const newLinks = [...(data.linksList || [])];
+                              newLinks[lIdx] = { ...newLinks[lIdx], url: e.target.value };
+                              updateData({ linksList: newLinks });
+                            }} />
+                          </div>
+                          <button onClick={() => {
+                            const newLinks = [...(data.linksList || [])];
+                            newLinks.splice(lIdx, 1);
+                            updateData({ linksList: newLinks });
+                          }} className="p-2 text-red-400 hover:bg-red-50 rounded-lg shrink-0">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                      <button onClick={() => {
+                        const newLinks = [...(data.linksList || []), { title: '', url: '' }];
+                        updateData({ linksList: newLinks });
+                      }} className="w-full py-3 bg-blue-50 text-blue-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors">
+                        <Plus className="w-4 h-4" /> Add Link
+                      </button>
+                    </div>
+                  </CollapsibleSection>
+                </div>
+              )}
             </div>
          </div>
 

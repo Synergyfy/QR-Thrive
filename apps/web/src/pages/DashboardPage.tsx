@@ -3,7 +3,7 @@ import {
   LayoutGrid, QrCode, Archive, BarChart3, User, Settings, Crown,
   Search, Plus, MoreVertical, Calendar, ExternalLink, Edit2, Brush, Globe,
   ChevronDown, ChevronRight, Bell, FolderOpen, Trash2, Copy, Printer,
-  RefreshCw, X, FolderPlus, ArrowRight, Edit3, ClipboardList
+  RefreshCw, X, FolderPlus, ArrowRight, Edit3, ClipboardList, Users
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
@@ -16,6 +16,7 @@ import DashboardQRPreview from '../components/DashboardQRPreview';
 import QRCodeStyling from 'qr-code-styling';
 import { LogOut } from 'lucide-react';
 import ScansModal from '../components/ScansModal';
+import LeadsPanel from '../components/LeadsPanel';
 
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
@@ -454,6 +455,7 @@ const DashboardPage: React.FC = () => {
               { id: 'active', icon: LayoutGrid, label: 'Active', count: activeQRs.length },
               { id: 'archived', icon: Archive, label: 'Archived', count: archivedQRs.length },
               { id: 'stats', icon: BarChart3, label: 'Stats' },
+              { id: 'leads', icon: Users, label: 'Lead Capturing' },
             ].map((item) => (
               <button
                 key={item.id}
@@ -634,6 +636,8 @@ const DashboardPage: React.FC = () => {
 
            {activeTab === 'stats' ? (
              <StatsPanel codes={qrCodes} />
+           ) : activeTab === 'leads' ? (
+             <LeadsPanel codes={qrCodes} />
            ) : (
              <>
                {/* Empty State */}

@@ -47,10 +47,19 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
   socials: {
     type: 'socials',
     socials: {
+      name: 'Sarah Ann Peters',
+      bio: "Hi! I'm Sarah Ann Peters. Welcome to my social media hub! The links below will connect you with my channels on every popular platform.",
+      images: [
+        { id: 'd1', url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80" },
+        { id: 'd2', url: "https://images.unsplash.com/photo-1531746020798-e7953e3e83f8?auto=format&fit=crop&w=400&q=80" },
+        { id: 'd3', url: "https://images.unsplash.com/photo-1554151228-14d9def656e4?auto=format&fit=crop&w=400&q=80" }
+      ],
       instagram: 'https://instagram.com/webcrafters',
       facebook: 'https://facebook.com/webcrafters',
       twitter: 'https://twitter.com/webcrafters',
-      linkedin: 'https://linkedin.com/company/webcrafters'
+      linkedin: 'https://linkedin.com/company/webcrafters',
+      youtube: 'https://youtube.com/webcrafters',
+      tiktok: 'https://tiktok.com/@webcrafters'
     }
   },
   links: {
@@ -110,6 +119,7 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
   pdf: {
     type: 'pdf',
     pdf: {
+      id: 'demo-pdf',
       name: 'Business_Proposal.pdf',
       url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
     }
@@ -117,21 +127,24 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
   video: {
     type: 'video',
     video: {
+      id: 'demo-video',
+      url: 'https://www.w3schools.com/html/mov_bbb.mp4',
       name: 'Product_Demo.mp4',
-      url: 'https://www.w3schools.com/html/mov_bbb.mp4'
+      platform: 'other'
     }
   },
   image: {
     type: 'image',
     images: [
-      { url: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d', name: 'Workstation' },
-      { url: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085', name: 'Coding' },
-      { url: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c', name: 'Terminal' }
+      { id: 'img1', url: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d', name: 'Workstation' },
+      { id: 'img2', url: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085', name: 'Coding' },
+      { id: 'img3', url: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c', name: 'Terminal' }
     ]
   },
   mp3: {
     type: 'mp3',
     mp3: {
+      id: 'demo-mp3',
       name: 'Podcast_Episode_1.mp3',
       url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
     }

@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:3005/api/v1');
 
-const formsApi = {
+export const formsApi = {
   getForm: async (qrCodeId: string): Promise<Form> => {
     const { data } = await axios.get(`${API_URL}/forms/${qrCodeId}`, { withCredentials: true });
     return data;

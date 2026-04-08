@@ -1,27 +1,14 @@
-GT Walsheim Pro - 400
+[plugin:vite:oxc] Transform failed with 1 error:
 
-Family
-"GT Walsheim Pro", sans-serif
-Style
-normal
-Weight
-400
-Color
-rgb(17, 24, 39)
-Size
-16px
-Line Height
-24pxGT Walsheim Pro - 400
-
-Family
-"GT Walsheim Pro", sans-serif
-Style
-normal
-Weight
-400
-Color
-rgb(17, 24, 39)
-Size
-16px
-Line Height
-24px
+[PARSE_ERROR] Error: Expected corresponding JSX closing tag for 'div'.
+     ╭─[ src/components/panels/ContentPanel.tsx:302:23 ]
+     │
+ 200 │                   <div className="space-y-6">
+     │                    ─┬─  
+     │                     ╰─── Opened here
+     │ 
+ 302 │                     </CollapsibleSection>
+     │                       ─────────┬────────  
+     │                                ╰────────── Expected `</div>`
+─────╯
+C:/Users/PC/Desktop/QR-Thrive/apps/web/src/components/panels/ContentPanel.tsx

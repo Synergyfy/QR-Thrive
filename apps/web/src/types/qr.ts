@@ -30,6 +30,7 @@ export type QRType =
   | 'coupon';
   
 export interface FileData {
+  id: string;
   url: string;
   name?: string;
   size?: number;
@@ -39,6 +40,32 @@ export interface FileData {
 export interface PendingFile {
   file: File;
   signedUrl?: string;
+}
+
+export interface MenuData {
+  themeColor?: string;
+  restaurantName?: string;
+  description?: string;
+  logo?: string;
+  banner?: string;
+  currency?: string;
+  categories?: {
+    id: string;
+    name: string;
+    items: {
+      id: string;
+      name: string;
+      description?: string;
+      price: number;
+      image?: string;
+      flags?: string[];
+    }[];
+  }[];
+  successTitle?: string;
+  successMessage?: string;
+  customFields?: { id: string; label: string; type: string }[];
+  showWhatsappCta?: boolean;
+  whatsappNumber?: string;
 }
 
 export interface QRData {
@@ -63,16 +90,50 @@ export interface QRData {
     buttonUrl?: string;
     themeColor?: string;
   };
-  pdf?: FileData & { pendingFile?: PendingFile };
+  pdf?: FileData & { 
+    pendingFile?: PendingFile;
+    companyName?: string;
+    title?: string;
+    description?: string;
+    previewImage?: string;
+    themeColor?: string;
+    textColor?: string;
+    buttonColor?: string;
+    buttonTextColor?: string;
+  };
   video?: {
+    id?: string;
     url: string;
     name?: string;
     size?: number;
     publicId?: string;
     platform?: 'youtube' | 'vimeo' | 'other';
     pendingFile?: PendingFile;
+    companyName?: string;
+    title?: string;
+    description?: string;
+    footerText?: string;
+    themeColor?: string;
+    textColor?: string;
+    buttonColor?: string;
+    buttonTextColor?: string;
   };
-  mp3?: FileData & { pendingFile?: PendingFile };
+  mp3?: FileData & { 
+    pendingFile?: PendingFile;
+    companyName?: string;
+    title?: string;
+    description?: string;
+    themeColor?: string;
+    textColor?: string;
+    buttonColor?: string;
+    buttonTextColor?: string;
+  };
+  facebook?: {
+    name?: string;
+    bio?: string;
+    logo?: string;
+    banner?: string;
+  };
   app?: {
     ios?: string;
     android?: string;
@@ -131,6 +192,9 @@ export interface QRData {
     platform: 'instagram' | 'facebook' | 'linkedin' | 'twitter' | 'youtube' | 'tiktok';
   };
   socials?: {
+    name?: string;
+    bio?: string;
+    images?: (FileData & { pendingFile?: PendingFile; caption?: string })[];
     instagram?: string;
     facebook?: string;
     linkedin?: string;
@@ -213,25 +277,7 @@ export interface QRData {
       sunday?: string | { from: string; to: string; isClosed?: boolean };
     };
   };
-  menu?: {
-    themeColor?: string;
-    restaurantName?: string;
-    description?: string;
-    logo?: string;
-    currency?: string;
-    categories?: {
-      id: string;
-      name: string;
-      items: {
-        id: string;
-        name: string;
-        description?: string;
-        price: number;
-        image?: string;
-        flags?: string[]; // e.g. vegan, spicy, gluten-free
-      }[];
-    }[];
-  };
+  menu?: MenuData;
   coupon?: {
     themeColor?: string;
     title?: string;
