@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   CreditCard,
   Globe2,
@@ -8,7 +9,8 @@ import {
   Settings,
   Settings2,
   Activity,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -27,6 +29,7 @@ import type { Plan } from '../../types/api';
 import type { QRType } from '../../types/qr';
 
 // Sub-components
+import { Tooltip } from '../../components/ui/Tooltip';
 import PricingSummary from './pricing/PricingSummary';
 import PlanEconomics from './pricing/PlanEconomics';
 import RegionalLogic from './pricing/RegionalLogic';
@@ -95,18 +98,40 @@ export default function PricingManager() {
     e.preventDefault();
     if (!editingPlan) return;
 
-    upsertPlan.mutate(editingPlan, {
-      onSuccess: () => {
-        setIsPlanModalOpen(false);
-        setEditingPlan(null);
-      }
+    const promise = new Promise((resolve, reject) => {
+      upsertPlan.mutate(editingPlan, {
+        onSuccess: () => {
+          setIsPlanModalOpen(false);
+          setEditingPlan(null);
+          resolve(true);
+        },
+        onError: (err) => reject(err)
+      });
+    });
+
+    toast.promise(promise, {
+      loading: 'Saving plan asset...',
+      success: 'Plan configuration updated successfully!',
+      error: 'Failed to save plan. Please try again.'
     });
   };
 
   const handleConfirmDelete = () => {
     if (planToDelete) {
-      deletePlan.mutate(planToDelete.id, {
-        onSuccess: () => setPlanToDelete(null)
+      const promise = new Promise((resolve, reject) => {
+        deletePlan.mutate(planToDelete.id, {
+          onSuccess: () => {
+             setPlanToDelete(null);
+             resolve(true);
+          },
+          onError: (err) => reject(err)
+        });
+      });
+
+      toast.promise(promise, {
+        loading: 'Decommissioning asset...',
+        success: 'Plan removed from registry.',
+        error: 'Failed to delete plan.'
       });
     }
   };
@@ -216,7 +241,20 @@ export default function PricingManager() {
                              setIsPlanModalOpen(true);
                           }}
                           onDeletePlan={setPlanToDelete}
-                          onUpdateConfig={(config) => updatePricingConfig.mutate(config)}
+                          onUpdateConfig={(config) => {
+                            const promise = new Promise((resolve, reject) => {
+                              updatePricingConfig.mutate(config, {
+                                onSuccess: () => resolve(true),
+                                onError: (err) => reject(err)
+                              });
+                            });
+                            toast.promise(promise, {
+                              loading: 'Propagating logic updates...',
+                              success: 'Global economics updated!',
+                              error: 'Failed to update protocols.'
+                            });
+                          }}
+                          isUpdatingConfig={updatePricingConfig.isPending}
                           onCreatePlan={() => {
                              setEditingPlan({ 
                                name: '', 
@@ -293,7 +331,9 @@ export default function PricingManager() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 pl-2">System Name</label>
+                      <Tooltip content="Unique name for identifying this plan tier.">
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 pl-2 cursor-help">System Name</label>
+                      </Tooltip>
                       <input
                         type="text"
                         required
@@ -304,7 +344,9 @@ export default function PricingManager() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 pl-2">Descriptive Pitch</label>
+                      <Tooltip content="A short marketing pitch shown to potential subscribers.">
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 pl-2 cursor-help">Descriptive Pitch</label>
+                      </Tooltip>
                       <textarea
                         value={editingPlan.description || ''}
                         onChange={(e) => setEditingPlan({ ...editingPlan, description: e.target.value })}
@@ -316,7 +358,9 @@ export default function PricingManager() {
 
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 pl-2">Max Dynamic Nodes</label>
+                      <Tooltip content="The total number of dynamic QR codes allowed for this tier.">
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 pl-2 cursor-help">Max Dynamic QR code</label>
+                      </Tooltip>
                       <input
                         type="number"
                         required
@@ -328,7 +372,9 @@ export default function PricingManager() {
                     <div className="flex gap-4">
                        <label className="flex-grow flex items-center justify-between p-4 bg-slate-50 rounded-2xl cursor-pointer group">
                           <div>
-                             <p className="text-[10px] font-black uppercase text-slate-900">Show as Popular</p>
+                             <Tooltip content="Displays a 'Most Popular' ribbon on this plan in the frontend.">
+                                <p className="text-[10px] font-black uppercase text-slate-900 cursor-help">Show as Popular</p>
+                             </Tooltip>
                              <p className="text-[9px] text-slate-400 font-medium tracking-tight">Highlight in front-end</p>
                           </div>
                           <input 
@@ -340,7 +386,9 @@ export default function PricingManager() {
                        </label>
                        <label className="flex-grow flex items-center justify-between p-4 bg-slate-50 rounded-2xl cursor-pointer group">
                           <div>
-                             <p className="text-[10px] font-black uppercase text-slate-900">System Default</p>
+                             <Tooltip content="The default plan automatically assigned to new signups.">
+                                <p className="text-[10px] font-black uppercase text-slate-900 cursor-help">System Default</p>
+                             </Tooltip>
                              <p className="text-[9px] text-slate-400 font-medium tracking-tight">Self-onboarding plan</p>
                           </div>
                           <input 
@@ -355,7 +403,9 @@ export default function PricingManager() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pl-2">Tier Pricing (Monthly)</label>
+                  <Tooltip content="Monthly rates per economic tier. Quarterly and Yearly are auto-calculated.">
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pl-2 cursor-help">Tier Pricing (Monthly)</label>
+                  </Tooltip>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-6 rounded-[2.5rem]">
                     <div className="bg-white rounded-2xl p-4">
                       <div className="flex items-center gap-2 mb-3">
@@ -431,7 +481,9 @@ export default function PricingManager() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pl-2">Capabilities Protocol</label>
+                  <Tooltip content="Toggle specific QR features available for this tier.">
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pl-2 cursor-help">Capabilities Protocol</label>
+                  </Tooltip>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 bg-slate-50 p-6 rounded-[2.5rem]">
                     {QR_TYPES_LIST.map((type) => (
                       <button
@@ -481,10 +533,19 @@ export default function PricingManager() {
                     type="submit"
                     form="plan-form"
                     onClick={handleSavePlan}
-                    className="flex items-center gap-3 bg-blue-600 hover:bg-blue-700 text-white px-10 py-3.5 rounded-2xl font-black text-xs transition-all shadow-xl shadow-blue-600/30 active:scale-95"
+                    disabled={upsertPlan.isPending}
+                    className={`flex items-center gap-3 px-10 py-3.5 rounded-2xl font-black text-xs transition-all shadow-xl active:scale-95 ${
+                      upsertPlan.isPending 
+                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/30'
+                    }`}
                   >
+                    {upsertPlan.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ArrowRight className="w-4 h-4" />
+                    )}
                     {upsertPlan.isPending ? 'Propagating...' : 'Commit Changes'}
-                    <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
