@@ -21,6 +21,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:prod": "npx dotenv-cli -e .env.prod -- prisma migrate deploy",
+    "prisma:migrate:test": "npx dotenv-cli -e .env.test -- prisma migrate deploy",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
