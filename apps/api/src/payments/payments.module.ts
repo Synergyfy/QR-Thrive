@@ -4,8 +4,10 @@ import { ConfigModule } from '@nestjs/config';
 import { PaystackService } from './paystack.service';
 import { PaymentsController } from './payments.controller';
 
+import { PricingModule } from '../pricing/pricing.module';
+
 @Module({
-  imports: [HttpModule, ConfigModule],
+  imports: [HttpModule, ConfigModule, PricingModule],
   providers: [PaystackService],
   controllers: [PaymentsController],
   exports: [PaystackService],
