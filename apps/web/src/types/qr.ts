@@ -30,7 +30,7 @@ export type QRType =
   | 'coupon';
   
 export interface FileData {
-  id: string;
+  id?: string;
   url: string;
   name?: string;
   size?: number;
