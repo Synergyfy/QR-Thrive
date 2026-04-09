@@ -13,7 +13,27 @@ export async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useLogger(app.get(PinoLogger));
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: [`'self'`],
+          styleSrc: [`'self'`, `'unsafe-inline'`, 'https://cdnjs.cloudflare.com'],
+          imgSrc: [
+            `'self'`,
+            'data:',
+            'validator.swagger.io',
+            'https://cdnjs.cloudflare.com',
+          ],
+          scriptSrc: [
+            `'self'`,
+            `'unsafe-inline'`,
+            'https://cdnjs.cloudflare.com',
+          ],
+        },
+      },
+    }),
+  );
   app.setGlobalPrefix('api/v1');
 
   app.use(cookieParser());
@@ -30,7 +50,7 @@ export async function bootstrap() {
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
   app.enableCors({
-    origin: ['http://localhost:5173', 'https://qrthrive.vercel.app', 'https://www.qrthrive.com'],
+    origin: ['http://localhost:5173', 'https://qrthrive.vercel.app', 'https://www.qrthrive.com', 'https://test.qrthrive.com'],
     credentials: true,
   });
 
@@ -51,7 +71,15 @@ export async function bootstrap() {
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document, {
+  SwaggerModule.setup('api-docs', app, document, {
+    customfavIcon:
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/favicon-16x16.png',
+    customCssUrl:
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css',
+    customJs: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.min.js',
+    ],
     swaggerOptions: {
       persistAuthorization: true,
     },
@@ -70,7 +98,7 @@ if (!process.env.VERCEL) {
     expressInstance.listen(port, () => {
       const baseUrl = `http://localhost:${port}`;
       logger.log(`Application is running on: ${baseUrl}`);
-      logger.log(`Swagger documentation is available at: ${baseUrl}/api/docs`);
+      logger.log(`Swagger documentation is available at: ${baseUrl}/api-docs`);
     });
   });
 }
