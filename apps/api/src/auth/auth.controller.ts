@@ -1,6 +1,11 @@
 import { Controller, Post, Body, Res, Req, Get } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SignupDto, LoginDto, AdminSignupDto } from './dto/auth.dto';
+import {
+  SignupDto,
+  LoginDto,
+  AdminSignupDto,
+  GoogleLoginDto,
+} from './dto/auth.dto';
 import type { Response, Request } from 'express';
 import { Public } from './decorators/public.decorator';
 import {
@@ -71,6 +76,18 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     return this.authService.login(loginDto, res);
+  }
+
+  @Public()
+  @Post('google')
+  @ApiOperation({ summary: 'Login or signup with Google' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiResponse({ status: 401, description: 'Invalid Google token' })
+  async googleLogin(
+    @Body() googleLoginDto: GoogleLoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.googleLogin(googleLoginDto, res);
   }
 
   @Public()

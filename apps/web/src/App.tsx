@@ -13,9 +13,14 @@ import UsersManagement from './pages/admin/Users';
 import PricingManager from './pages/admin/PricingManager';
 import SettingsPage from './pages/admin/Settings';
 
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
 function App() {
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
   return (
-    <BrowserRouter>
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <BrowserRouter>
       <Toaster 
         position="top-right"
         toastOptions={{
@@ -59,7 +64,8 @@ function App() {
         {/* Catch-all for 404s */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </GoogleOAuthProvider>
   );
 }
 

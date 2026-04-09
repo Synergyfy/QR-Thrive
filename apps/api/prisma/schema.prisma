@@ -15,10 +15,12 @@ model User {
   email         String         @unique
   firstName     String
   lastName      String
-  password      String
+  password      String?
   role          Role           @default(USER)
   plan          PlanType       @default(FREE)
   isBanned      Boolean        @default(false)
+  googleId      String?        @unique
+  avatar        String?
   
   // Paystack Integration
   paystackCustomerCode     String?   @unique

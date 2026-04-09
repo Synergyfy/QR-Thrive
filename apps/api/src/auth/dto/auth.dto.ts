@@ -90,3 +90,13 @@ export class LoginDto {
   @IsOptional()
   rememberMe?: boolean;
 }
+
+export class GoogleLoginDto {
+  @ApiProperty({
+    description: 'The ID Token received from Google',
+    example: 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjY0...',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Google ID token is required' })
+  token: string;
+}

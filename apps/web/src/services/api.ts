@@ -59,6 +59,11 @@ export const authApi = {
     localStorage.setItem(SESSION_HINT_KEY, 'true');
     return res.data;
   },
+  googleLogin: async (token: string) => {
+    const res = await apiClient.post<AuthResponse>('/auth/google', { token });
+    localStorage.setItem(SESSION_HINT_KEY, 'true');
+    return res.data;
+  },
   logout: async () => {
     localStorage.removeItem(SESSION_HINT_KEY);
     return (await apiClient.post('/auth/logout')).data;
