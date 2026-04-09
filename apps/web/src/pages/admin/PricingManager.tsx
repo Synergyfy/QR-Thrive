@@ -11,8 +11,7 @@ import {
   HelpCircle,
   Eye,
   Settings,
-  Globe,
-  Info
+  Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSystemConfig, useUpdateSystemConfig } from '../../hooks/useAdmin';
@@ -212,7 +211,7 @@ export default function PricingManager() {
                         />
                       </div>
                     </div>
-                  ))}
+                  </div>
                   <p className="mt-4 text-[10px] text-slate-400 flex items-center gap-2 italic">
                     <Info className="w-3 h-3" />
                     Changing these values will automatically create or update the corresponding plans on Paystack.
