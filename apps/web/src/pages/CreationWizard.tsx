@@ -146,6 +146,7 @@ const CreationWizard: React.FC = () => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [config, setConfig] = useState<QRConfiguration>(INITIAL_CONFIG);
   const [designTab, setDesignTab] = useState<'shape' | 'frame' | 'logo' | 'colors'>('shape');
+  const [previewMode, setPreviewMode] = useState<'preview' | 'qr'>('preview');
 
   // Load existing QR when editing
   useEffect(() => {
@@ -398,7 +399,7 @@ const CreationWizard: React.FC = () => {
                              </div>
                              <div className="space-y-1">
                                 <h3 className="font-bold text-slate-900 text-sm tracking-tight">{type.title}</h3>
-                                <p className="text-[10px] font-medium text-slate-400 leading-tight px-2">{type.description}</p>
+                                <p className="text-xs font-medium text-slate-400 leading-tight px-2">{type.description}</p>
                              </div>
                              {type.category === 'dynamic' && (
                                 <div className="absolute top-3 right-3 w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
@@ -471,8 +472,34 @@ const CreationWizard: React.FC = () => {
          {/* Right Side: Preview (Fixed) */}
          <div className="fixed top-20 right-0 bottom-0 w-[480px] bg-white border-l border-slate-100 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] z-30 p-12 flex flex-col items-center justify-center overflow-y-auto custom-scrollbar">
             <div className="w-full flex flex-col items-center">
-               
-               {step === 'design' && selectedType ? (
+               {selectedType && (
+                  <div className="mb-10 w-full max-w-[240px] p-1.5 bg-blue-50/50 rounded-full border border-blue-100 flex items-center relative group/switcher shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+                     <div className={cn(
+                       "absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-blue-600 rounded-full shadow-lg shadow-blue-200 transition-all duration-300 ease-out z-10",
+                       previewMode === 'qr' ? "left-[calc(50%+3px)]" : "left-1.5"
+                     )} />
+                     <button 
+                       onClick={() => setPreviewMode('preview')}
+                       className={cn(
+                         "flex-1 py-3 text-[10px] font-black uppercase tracking-widest relative z-20 transition-colors duration-300",
+                         previewMode === 'preview' ? "text-white" : "text-blue-400 hover:text-blue-600"
+                       )}
+                     >
+                        Preview
+                     </button>
+                     <button 
+                       onClick={() => setPreviewMode('qr')}
+                       className={cn(
+                         "flex-1 py-3 text-[10px] font-black uppercase tracking-widest relative z-20 transition-colors duration-300",
+                         previewMode === 'qr' ? "text-white" : "text-blue-400 hover:text-blue-600"
+                       )}
+                     >
+                        QR Code
+                     </button>
+                  </div>
+               )}
+
+               {(step === 'design' || previewMode === 'qr') && selectedType ? (
                   <div className="w-full max-w-[340px] animate-in zoom-in-95 duration-500 flex flex-col items-center">
                     <div className="bg-white p-8 rounded-[48px] shadow-2xl shadow-slate-200/50 border border-slate-50 mb-8 w-full aspect-square flex items-center justify-center">
                        <div className="w-full h-full flex items-center justify-center">
@@ -515,10 +542,10 @@ const CreationWizard: React.FC = () => {
                         </div>
 
                         <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col relative">
-                            {(hoveredType || selectedType) ? (
-                               <div key={hoveredType || selectedType} className="min-h-full animate-in fade-in slide-in-from-bottom-5 duration-700 flex flex-col">
+                            {(step === 'type' ? (hoveredType || selectedType) : selectedType) ? (
+                               <div key={step === 'type' ? (hoveredType || selectedType) : selectedType} className="min-h-full animate-in fade-in slide-in-from-bottom-5 duration-700 flex flex-col">
                                   <DynamicView 
-                                    data={hoveredType ? { type: hoveredType } as any : config.data} 
+                                    data={step === 'type' && hoveredType ? { type: hoveredType } as any : config.data} 
                                     isWizardPreview={true} 
                                   />
                                </div>
