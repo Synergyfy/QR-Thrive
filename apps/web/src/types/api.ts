@@ -6,12 +6,55 @@ export interface User {
   firstName: string;
   lastName: string;
   role: 'USER' | 'ADMIN';
-  plan: 'FREE' | 'PRO';
+  planId?: string;
+  subscriptionStatus?: 'active' | 'canceled' | 'past_due' | 'trialing' | null;
+  billingCycle?: 'monthly' | 'quarterly' | 'yearly' | null;
   isBanned?: boolean;
 }
 
 export interface AuthResponse {
   user: User;
+}
+
+export interface Tier {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
+export interface Country {
+  code: string;
+  name: string;
+  tierId: string;
+  currencyCode: string;
+  currencySymbol: string;
+  tier?: Tier;
+}
+
+export interface Plan {
+  id: string;
+  name: string;
+  description: string | null;
+  qrCodeLimit: number;
+  qrCodeTypes: string[];
+  isPopular: boolean;
+  isDefault: boolean;
+  isActive: boolean;
+  prices?: PlanPrice[];
+}
+
+export interface PlanPrice {
+  planId: string;
+  tierId: string;
+  monthlyPriceUSD: number;
+  quarterlyPriceUSD: number;
+  yearlyPriceUSD: number;
+  tier?: Tier;
+}
+
+export interface PricingConfig {
+  quarterlyDiscount: number;
+  yearlyDiscount: number;
 }
 
 export interface BackendFolder {
@@ -113,7 +156,7 @@ export interface AdminStats {
 export interface AdminUser extends User {
   name: string;
   qrs: number;
-  subscriptionStatus: string | null;
+  subscriptionStatus: 'active' | 'canceled' | 'past_due' | 'trialing' | null | undefined;
   isBanned: boolean;
   createdAt: string;
 }

@@ -93,6 +93,7 @@ model Plan {
   isActive      Boolean     @default(true)
   prices        PlanPrice[]
   users         User[]
+  deletedAt     DateTime?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 }
@@ -103,9 +104,11 @@ model PlanPrice {
   plan            Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
   tierId          String
   tier            Tier     @relation(fields: [tierId], references: [id], onDelete: Cascade)
-  monthlyPriceUSD Float
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  monthlyPriceUSD   Float
+  quarterlyPriceUSD Float    @default(0)
+  yearlyPriceUSD    Float    @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@unique([planId, tierId])
 }

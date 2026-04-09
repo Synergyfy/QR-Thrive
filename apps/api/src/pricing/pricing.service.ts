@@ -33,6 +33,7 @@ export class PricingService {
 
   /**
    * Calculates the price for each interval based on the monthly price and system discounts.
+   * NOTE: This is now primary used for seeding or bulk updates.
    */
   calculateIntervalPrices(monthlyPrice: number, quarterlyDiscount: number, yearlyDiscount: number) {
     const quarterly = (monthlyPrice * 3) * (1 - quarterlyDiscount / 100);
@@ -52,10 +53,12 @@ export class PricingService {
     const countryCode = this.getCountryCodeByIp(ip);
     const countryInfo = await this.getCountryInfo(countryCode);
     const tierId = countryInfo?.tierId;
-    const config = await this.prisma.systemConfig.findFirst();
 
     const plans = await this.prisma.plan.findMany({
-      where: { isActive: true },
+      where: { 
+        isActive: true,
+        deletedAt: null
+      },
       include: {
         prices: {
           where: { tierId: tierId || undefined },
@@ -65,24 +68,16 @@ export class PricingService {
     });
 
     return plans.map(plan => {
-      // Find the price for the specific tier, or default to some baseline if needed
-      // Actually, if we don't have a price for this tier, we might want to default to Tier 1
-      let priceEntry = plan.prices[0];
+      // Find the price for the specific tier
+      const priceEntry = plan.prices[0];
       
-      // If no price found for this specific tier, fetch the Tier 1 price as fallback
-      if (!priceEntry && !plan.isDefault && tierId) {
-          // This would require an extra query or pre-fetching all prices.
-          // For now, let's assume we have seeded tiers properly.
-      }
-
-      const monthlyPrice = priceEntry?.monthlyPriceUSD || 0;
       const prices = plan.isDefault 
         ? { monthly: 0, quarterly: 0, yearly: 0 }
-        : this.calculateIntervalPrices(
-            monthlyPrice, 
-            config?.quarterlyDiscount || 0, 
-            config?.yearlyDiscount || 0
-          );
+        : {
+            monthly: priceEntry?.monthlyPriceUSD || 0,
+            quarterly: priceEntry?.quarterlyPriceUSD || 0,
+            yearly: priceEntry?.yearlyPriceUSD || 0,
+          };
 
       return {
         id: plan.id,
@@ -106,7 +101,6 @@ export class PricingService {
     const countryCode = this.getCountryCodeByIp(ip);
     const countryInfo = await this.getCountryInfo(countryCode);
     const tierId = countryInfo?.tierId;
-    const config = await this.prisma.systemConfig.findFirst();
 
     const plan = await this.prisma.plan.findUnique({
       where: { id: planId },
@@ -120,14 +114,13 @@ export class PricingService {
     if (!plan) throw new NotFoundException('Plan not found');
 
     const priceEntry = plan.prices[0];
-    const monthlyPrice = priceEntry?.monthlyPriceUSD || 0;
     const prices = plan.isDefault 
       ? { monthly: 0, quarterly: 0, yearly: 0 }
-      : this.calculateIntervalPrices(
-          monthlyPrice, 
-          config?.quarterlyDiscount || 0, 
-          config?.yearlyDiscount || 0
-        );
+      : {
+          monthly: priceEntry?.monthlyPriceUSD || 0,
+          quarterly: priceEntry?.quarterlyPriceUSD || 0,
+          yearly: priceEntry?.yearlyPriceUSD || 0,
+        };
 
     return {
       ...plan,
@@ -185,9 +178,29 @@ export class PricingService {
   async updatePricingConfig(quarterlyDiscount: number, yearlyDiscount: number) {
     const config = await this.prisma.systemConfig.findFirst();
     if (!config) throw new NotFoundException('System config not found');
-    return this.prisma.systemConfig.update({
+    
+    // 1. Update the config itself
+    const updatedConfig = await this.prisma.systemConfig.update({
       where: { id: config.id },
       data: { quarterlyDiscount, yearlyDiscount },
     });
+
+    // 2. Recalculate and update ALL stored plan prices to maintain sync
+    const allPrices = await this.prisma.planPrice.findMany();
+    
+    for (const price of allPrices) {
+        const quarterlyPriceUSD = Number(((price.monthlyPriceUSD * 3) * (1 - quarterlyDiscount / 100)).toFixed(2));
+        const yearlyPriceUSD = Number(((price.monthlyPriceUSD * 12) * (1 - yearlyDiscount / 100)).toFixed(2));
+
+        await this.prisma.planPrice.update({
+            where: { id: price.id },
+            data: {
+                quarterlyPriceUSD,
+                yearlyPriceUSD
+            }
+        });
+    }
+
+    return updatedConfig;
   }
 }
