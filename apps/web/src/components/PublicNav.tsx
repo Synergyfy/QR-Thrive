@@ -68,16 +68,44 @@ export default function PublicNav() {
             {/* Desktop Action Buttons */}
             <div className="hidden md:flex items-center gap-4">
               {user ? (
-                <div className="flex items-center gap-4">
+                <div className="relative group">
                   <button 
-                    onClick={() => navigate(getDashboardPath(user.role))}
-                    className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full transition-all border border-blue-100"
+                    onClick={() => setIsMenuOpen(!isMenuOpen)} // Reusing menu open state for dropdown or adding a new bit
+                    onMouseEnter={() => setIsMenuOpen(true)}
+                    className="flex items-center gap-3 pl-4 pr-3 py-1.5 bg-white hover:bg-gray-50 rounded-full transition-all border border-gray-100 shadow-sm group"
                   >
-                    <LayoutGrid size={16} /> My Dashboard
+                    <div className="flex flex-col items-end -space-y-1">
+                      <span className="text-sm font-bold text-gray-900">{user.firstName} {user.lastName}</span>
+                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">{user.role}</span>
+                    </div>
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-black text-xs shadow-lg shadow-blue-200">
+                      {user.firstName[0]}{user.lastName[0]}
+                    </div>
                   </button>
-                  <button onClick={handleLogout} className="w-10 h-10 flex items-center justify-center bg-gray-50 text-gray-400 hover:text-red-500 rounded-full border border-gray-100 transition-colors">
-                    <LogOut size={18} />
-                  </button>
+
+                  {/* Dropdown Menu */}
+                  <div className="absolute right-0 mt-3 w-64 bg-white rounded-3xl shadow-2xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 p-2 transform origin-top-right group-hover:translate-y-0 translate-y-2">
+                    <div className="p-4 border-b border-gray-50 mb-2">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Logged in as</p>
+                      <p className="text-sm font-bold text-gray-900 truncate">{user.email}</p>
+                    </div>
+                    
+                    <button 
+                      onClick={() => navigate(getDashboardPath(user.role))}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all"
+                    >
+                      <LayoutGrid size={18} /> My Dashboard
+                    </button>
+                    
+                    <div className="h-px bg-gray-50 my-2" />
+                    
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                    >
+                      <LogOut size={18} /> Logout Session
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <>
