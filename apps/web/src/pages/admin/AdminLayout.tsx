@@ -8,7 +8,8 @@ import {
   Bell, 
   Search, 
   Menu,
-  Loader2
+  Loader2,
+  MessageSquare
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
@@ -18,6 +19,7 @@ const sidebarLinks = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
   { name: 'User Management', icon: UsersIcon, path: '/admin/users' },
   { name: 'Pricing Manager', icon: CreditCard, path: '/admin/pricing' },
+  { name: 'Support Chat', icon: MessageSquare, path: '/admin/support' },
   { name: 'Settings', icon: Settings, path: '/admin/settings' },
 ];
 

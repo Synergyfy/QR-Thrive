@@ -57,7 +57,7 @@ export default function PricingPage() {
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-blue-500/30 flex flex-col font-['Poppins']">
       <PublicNav />
 
-      <main className="flex-grow pt-32 pb-24">
+      <main className="flex-grow pt-24 pb-24">
         {/* Currency Switcher Floating */}
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100]">
            <div className="bg-white/80 backdrop-blur-xl border border-slate-200/50 p-1.5 rounded-2xl shadow-2xl shadow-blue-900/10 flex items-center gap-1">
@@ -82,7 +82,7 @@ export default function PricingPage() {
         </div>
 
         {/* Hero Section */}
-        <section className="pt-16 pb-12 px-4 text-center max-w-4xl mx-auto relative">
+        <section className="pt-8 pb-12 px-4 text-center max-w-4xl mx-auto relative">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-400/20 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
           
           <motion.div
