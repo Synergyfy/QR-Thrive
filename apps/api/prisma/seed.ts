@@ -10,26 +10,26 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('Seeding tiers...');
   const tier1 = await prisma.tier.upsert({
-    where: { name: 'Tier 1' },
+    where: { name: 'High Income' },
     update: {},
-    create: { name: 'Tier 1' },
+    create: { name: 'High Income' },
   });
 
   const tier2 = await prisma.tier.upsert({
-    where: { name: 'Tier 2' },
+    where: { name: 'Middle Income' },
     update: {},
-    create: { name: 'Tier 2' },
+    create: { name: 'Middle Income' },
   });
 
   const tier3 = await prisma.tier.upsert({
-    where: { name: 'Tier 3' },
+    where: { name: 'Low Income' },
     update: {},
-    create: { name: 'Tier 3' },
+    create: { name: 'Low Income' },
   });
 
   console.log('Seeding countries...');
   const countries = [
-    // Tier 1
+    // High Income
     { code: 'US', name: 'United States', currencyCode: 'USD', currencySymbol: '$', tierId: tier1.id },
     { code: 'GB', name: 'United Kingdom', currencyCode: 'GBP', currencySymbol: '£', tierId: tier1.id },
     { code: 'CA', name: 'Canada', currencyCode: 'CAD', currencySymbol: '$', tierId: tier1.id },
@@ -38,14 +38,14 @@ async function main() {
     { code: 'FR', name: 'France', currencyCode: 'EUR', currencySymbol: '€', tierId: tier1.id },
     { code: 'JP', name: 'Japan', currencyCode: 'JPY', currencySymbol: '¥', tierId: tier1.id },
     
-    // Tier 2
+    // Middle Income
     { code: 'BR', name: 'Brazil', currencyCode: 'BRL', currencySymbol: 'R$', tierId: tier2.id },
     { code: 'IN', name: 'India', currencyCode: 'INR', currencySymbol: '₹', tierId: tier2.id },
     { code: 'MX', name: 'Mexico', currencyCode: 'MXN', currencySymbol: '$', tierId: tier2.id },
     { code: 'TR', name: 'Turkey', currencyCode: 'TRY', currencySymbol: '₺', tierId: tier2.id },
     { code: 'ZA', name: 'South Africa', currencyCode: 'ZAR', currencySymbol: 'R', tierId: tier2.id },
     
-    // Tier 3
+    // Low Income
     { code: 'NG', name: 'Nigeria', currencyCode: 'NGN', currencySymbol: '₦', tierId: tier3.id },
     { code: 'PK', name: 'Pakistan', currencyCode: 'PKR', currencySymbol: '₨', tierId: tier3.id },
     { code: 'EG', name: 'Egypt', currencyCode: 'EGP', currencySymbol: 'E£', tierId: tier3.id },
@@ -62,13 +62,16 @@ async function main() {
   }
 
   console.log('Seeding plans...');
-  const freePlan = await prisma.plan.upsert({
+  await prisma.plan.upsert({
     where: { name: 'Free' },
     update: {
       qrCodeLimit: 5,
       qrCodeTypes: [QRType.url, QRType.text],
       isDefault: true,
       isActive: true,
+      highIncomeMonthlyUSD: 0,
+      middleIncomeMonthlyUSD: 0,
+      lowIncomeMonthlyUSD: 0,
     },
     create: {
       name: 'Free',
@@ -77,16 +80,22 @@ async function main() {
       qrCodeTypes: [QRType.url, QRType.text],
       isDefault: true,
       isActive: true,
+      highIncomeMonthlyUSD: 0,
+      middleIncomeMonthlyUSD: 0,
+      lowIncomeMonthlyUSD: 0,
     },
   });
   
-  const planPro = await prisma.plan.upsert({
+  await prisma.plan.upsert({
     where: { name: 'Pro' },
     update: {
       qrCodeLimit: 100,
       qrCodeTypes: Object.values(QRType),
       isPopular: true,
       isActive: true,
+      highIncomeMonthlyUSD: 20,
+      middleIncomeMonthlyUSD: 10,
+      lowIncomeMonthlyUSD: 5,
     },
     create: {
       name: 'Pro',
@@ -95,29 +104,11 @@ async function main() {
       qrCodeTypes: Object.values(QRType),
       isPopular: true,
       isActive: true,
+      highIncomeMonthlyUSD: 20,
+      middleIncomeMonthlyUSD: 10,
+      lowIncomeMonthlyUSD: 5,
     },
   });
-
-  console.log('Seeding plan prices...');
-  const prices = [
-    // Pro Plan Prices in USD
-    { planId: planPro.id, tierId: tier1.id, monthlyPriceUSD: 20 },
-    { planId: planPro.id, tierId: tier2.id, monthlyPriceUSD: 10 },
-    { planId: planPro.id, tierId: tier3.id, monthlyPriceUSD: 5 },
-  ];
-
-  for (const price of prices) {
-    await prisma.planPrice.upsert({
-      where: {
-        planId_tierId: {
-          planId: price.planId,
-          tierId: price.tierId,
-        },
-      },
-      update: price,
-      create: price,
-    });
-  }
 
   console.log('Seeding system config...');
   await prisma.systemConfig.upsert({

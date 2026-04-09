@@ -77,6 +77,27 @@ export class CreatePlanDto {
   @IsBoolean()
   @IsOptional()
   isDefault?: boolean;
+
+  // High Income Tier - Monthly Price (quarterly/yearly auto-calculated)
+  @ApiPropertyOptional({ example: 20.0 })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  highIncomeMonthlyUSD?: number;
+
+  // Middle Income Tier - Monthly Price
+  @ApiPropertyOptional({ example: 10.0 })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  middleIncomeMonthlyUSD?: number;
+
+  // Low Income Tier - Monthly Price
+  @ApiPropertyOptional({ example: 5.0 })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  lowIncomeMonthlyUSD?: number;
 }
 
 export class UpdatePlanDto extends CreatePlanDto {
@@ -84,15 +105,4 @@ export class UpdatePlanDto extends CreatePlanDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
-}
-
-export class SetPlanPriceDto {
-  @ApiProperty({ example: 'tier_id_here' })
-  @IsString()
-  tierId: string;
-
-  @ApiProperty({ example: 20.0, description: 'Monthly price in USD' })
-  @IsNumber()
-  @Min(0)
-  monthlyPriceUSD: number;
 }

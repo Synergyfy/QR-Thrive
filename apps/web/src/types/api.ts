@@ -20,6 +20,9 @@ export interface Tier {
   id: string;
   name: string;
   description: string | null;
+  _count?: {
+    countries: number;
+  };
 }
 
 export interface Country {
@@ -40,16 +43,21 @@ export interface Plan {
   isPopular: boolean;
   isDefault: boolean;
   isActive: boolean;
-  prices?: PlanPrice[];
-}
-
-export interface PlanPrice {
-  planId: string;
-  tierId: string;
-  monthlyPriceUSD: number;
-  quarterlyPriceUSD: number;
-  yearlyPriceUSD: number;
-  tier?: Tier;
+  
+  // High Income Tier Prices
+  highIncomeMonthlyUSD: number;
+  highIncomeQuarterlyUSD: number;
+  highIncomeYearlyUSD: number;
+  
+  // Middle Income Tier Prices
+  middleIncomeMonthlyUSD: number;
+  middleIncomeQuarterlyUSD: number;
+  middleIncomeYearlyUSD: number;
+  
+  // Low Income Tier Prices
+  lowIncomeMonthlyUSD: number;
+  lowIncomeQuarterlyUSD: number;
+  lowIncomeYearlyUSD: number;
 }
 
 export interface PricingConfig {

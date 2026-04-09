@@ -52,32 +52,40 @@ export class PricingService {
   async getLocalizedPlans(ip: string) {
     const countryCode = this.getCountryCodeByIp(ip);
     const countryInfo = await this.getCountryInfo(countryCode);
-    const tierId = countryInfo?.tierId;
+    const tierName = countryInfo?.tier?.name || 'High Income';
 
     const plans = await this.prisma.plan.findMany({
       where: { 
         isActive: true,
         deletedAt: null
       },
-      include: {
-        prices: {
-          where: { tierId: tierId || undefined },
-        },
-      },
       orderBy: { qrCodeLimit: 'asc' },
     });
 
     return plans.map(plan => {
-      // Find the price for the specific tier
-      const priceEntry = plan.prices[0];
-      
-      const prices = plan.isDefault 
-        ? { monthly: 0, quarterly: 0, yearly: 0 }
-        : {
-            monthly: priceEntry?.monthlyPriceUSD || 0,
-            quarterly: priceEntry?.quarterlyPriceUSD || 0,
-            yearly: priceEntry?.yearlyPriceUSD || 0,
+      let prices = { monthly: 0, quarterly: 0, yearly: 0 };
+
+      if (!plan.isDefault) {
+        if (tierName.includes('High')) {
+          prices = {
+            monthly: plan.highIncomeMonthlyUSD || 0,
+            quarterly: plan.highIncomeQuarterlyUSD || 0,
+            yearly: plan.highIncomeYearlyUSD || 0,
           };
+        } else if (tierName.includes('Middle')) {
+          prices = {
+            monthly: plan.middleIncomeMonthlyUSD || 0,
+            quarterly: plan.middleIncomeQuarterlyUSD || 0,
+            yearly: plan.middleIncomeYearlyUSD || 0,
+          };
+        } else if (tierName.includes('Low')) {
+          prices = {
+            monthly: plan.lowIncomeMonthlyUSD || 0,
+            quarterly: plan.lowIncomeQuarterlyUSD || 0,
+            yearly: plan.lowIncomeYearlyUSD || 0,
+          };
+        }
+      }
 
       return {
         id: plan.id,
@@ -100,27 +108,37 @@ export class PricingService {
   async getPlanWithPricing(planId: string, ip: string) {
     const countryCode = this.getCountryCodeByIp(ip);
     const countryInfo = await this.getCountryInfo(countryCode);
-    const tierId = countryInfo?.tierId;
+    const tierName = countryInfo?.tier?.name || 'High Income';
 
     const plan = await this.prisma.plan.findUnique({
       where: { id: planId },
-      include: {
-        prices: {
-          where: { tierId: tierId || undefined },
-        },
-      },
     });
 
     if (!plan) throw new NotFoundException('Plan not found');
 
-    const priceEntry = plan.prices[0];
-    const prices = plan.isDefault 
-      ? { monthly: 0, quarterly: 0, yearly: 0 }
-      : {
-          monthly: priceEntry?.monthlyPriceUSD || 0,
-          quarterly: priceEntry?.quarterlyPriceUSD || 0,
-          yearly: priceEntry?.yearlyPriceUSD || 0,
+    let prices = { monthly: 0, quarterly: 0, yearly: 0 };
+
+    if (!plan.isDefault) {
+      if (tierName.includes('High')) {
+        prices = {
+          monthly: plan.highIncomeMonthlyUSD || 0,
+          quarterly: plan.highIncomeQuarterlyUSD || 0,
+          yearly: plan.highIncomeYearlyUSD || 0,
         };
+      } else if (tierName.includes('Middle')) {
+        prices = {
+          monthly: plan.middleIncomeMonthlyUSD || 0,
+          quarterly: plan.middleIncomeQuarterlyUSD || 0,
+          yearly: plan.middleIncomeYearlyUSD || 0,
+        };
+      } else if (tierName.includes('Low')) {
+        prices = {
+          monthly: plan.lowIncomeMonthlyUSD || 0,
+          quarterly: plan.lowIncomeQuarterlyUSD || 0,
+          yearly: plan.lowIncomeYearlyUSD || 0,
+        };
+      }
+    }
 
     return {
       ...plan,
@@ -135,10 +153,15 @@ export class PricingService {
   async getAllTiers() {
     return this.prisma.tier.findMany({
       include: { _count: { select: { countries: true } } },
+      orderBy: { name: 'asc' },
     });
   }
 
   async createTier(name: string) {
+    const tierCount = await this.prisma.tier.count();
+    if (tierCount >= 3) {
+      throw new Error('Cannot create more than 3 tiers. Tiers are predefined: High Income, Middle Income, Low Income.');
+    }
     return this.prisma.tier.create({ data: { name } });
   }
 
@@ -147,6 +170,14 @@ export class PricingService {
   }
 
   async deleteTier(id: string) {
+    const tier = await this.prisma.tier.findUnique({
+      where: { id },
+      include: { _count: { select: { countries: true } } },
+    });
+    if (!tier) throw new NotFoundException('Tier not found');
+    if (tier._count.countries > 0) {
+      throw new Error(`Cannot delete tier "${tier.name}" because it has ${tier._count.countries} country(ies) assigned. Move the countries first.`);
+    }
     return this.prisma.tier.delete({ where: { id } });
   }
 
@@ -179,28 +210,9 @@ export class PricingService {
     const config = await this.prisma.systemConfig.findFirst();
     if (!config) throw new NotFoundException('System config not found');
     
-    // 1. Update the config itself
-    const updatedConfig = await this.prisma.systemConfig.update({
+    return this.prisma.systemConfig.update({
       where: { id: config.id },
       data: { quarterlyDiscount, yearlyDiscount },
     });
-
-    // 2. Recalculate and update ALL stored plan prices to maintain sync
-    const allPrices = await this.prisma.planPrice.findMany();
-    
-    for (const price of allPrices) {
-        const quarterlyPriceUSD = Number(((price.monthlyPriceUSD * 3) * (1 - quarterlyDiscount / 100)).toFixed(2));
-        const yearlyPriceUSD = Number(((price.monthlyPriceUSD * 12) * (1 - yearlyDiscount / 100)).toFixed(2));
-
-        await this.prisma.planPrice.update({
-            where: { id: price.id },
-            data: {
-                quarterlyPriceUSD,
-                yearlyPriceUSD
-            }
-        });
-    }
-
-    return updatedConfig;
   }
 }

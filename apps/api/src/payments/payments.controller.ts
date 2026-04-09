@@ -76,19 +76,23 @@ export class PaymentsController {
       throw new BadRequestException('Invalid price for the selected interval.');
     }
 
-    // 4. Initialize transaction
+    // 5. Initialize transaction
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new BadRequestException('User not found');
+
+    // Get tier name for metadata
+    const countryCode = this.pricingService.getCountryCodeByIp(ip);
+    const countryInfo = await this.pricingService.getCountryInfo(countryCode);
 
     return this.paystackService.initializeTransaction(
       user.email,
       amount,
-      undefined, 
+      undefined, // Paystack plan code - can be added later if needed
       { 
         userId, 
         planId, 
         interval,
-        tierName: (plan as any).prices[0]?.tier?.name || 'Unknown'
+        tierName: countryInfo?.tier?.name || 'Unknown'
       },
     );
   }

@@ -64,9 +64,8 @@ model SystemConfig {
 
 model Tier {
   id        String    @id @default(cuid())
-  name      String    @unique // e.g., "Tier 1", "Tier 2", "Tier 3"
+  name      String    @unique // e.g., "High Income", "Middle Income", "Low Income"
   countries Country[]
-  prices    PlanPrice[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
@@ -91,26 +90,26 @@ model Plan {
   isPopular     Boolean     @default(false)
   isDefault     Boolean     @default(false)
   isActive      Boolean     @default(true)
-  prices        PlanPrice[]
+  
+  // High Income Tier Prices
+  highIncomeMonthlyUSD    Float @default(0)
+  highIncomeQuarterlyUSD  Float @default(0)
+  highIncomeYearlyUSD     Float @default(0)
+  
+  // Middle Income Tier Prices
+  middleIncomeMonthlyUSD    Float @default(0)
+  middleIncomeQuarterlyUSD  Float @default(0)
+  middleIncomeYearlyUSD     Float @default(0)
+  
+  // Low Income Tier Prices
+  lowIncomeMonthlyUSD    Float @default(0)
+  lowIncomeQuarterlyUSD  Float @default(0)
+  lowIncomeYearlyUSD     Float @default(0)
+  
   users         User[]
   deletedAt     DateTime?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
-}
-
-model PlanPrice {
-  id              String   @id @default(cuid())
-  planId          String
-  plan            Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
-  tierId          String
-  tier            Tier     @relation(fields: [tierId], references: [id], onDelete: Cascade)
-  monthlyPriceUSD   Float
-  quarterlyPriceUSD Float    @default(0)
-  yearlyPriceUSD    Float    @default(0)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  @@unique([planId, tierId])
 }
 
 model Folder {

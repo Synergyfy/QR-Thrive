@@ -1,15 +1,43 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreatePlanDto, UpdatePlanDto, SetPlanPriceDto } from '../pricing/pricing.dto';
+import { CreatePlanDto, UpdatePlanDto } from '../pricing/pricing.dto';
 
 @Injectable()
 export class PlansService {
   constructor(private prisma: PrismaService) {}
 
+  private calculatePrices(monthlyPrice: number, quarterlyDiscount: number, yearlyDiscount: number) {
+    const quarterly = Number(((monthlyPrice * 3) * (1 - quarterlyDiscount / 100)).toFixed(2));
+    const yearly = Number(((monthlyPrice * 12) * (1 - yearlyDiscount / 100)).toFixed(2));
+    return { quarterly, yearly };
+  }
+
+  private async processPlanPrices(data: any) {
+    const config = await this.prisma.systemConfig.findFirst();
+    const quarterlyDiscount = config?.quarterlyDiscount || 0;
+    const yearlyDiscount = config?.yearlyDiscount || 0;
+
+    const result = { ...data };
+
+    const tiers = [
+      { prefix: 'highIncome', field: 'highIncomeMonthlyUSD' },
+      { prefix: 'middleIncome', field: 'middleIncomeMonthlyUSD' },
+      { prefix: 'lowIncome', field: 'lowIncomeMonthlyUSD' },
+    ];
+
+    for (const tier of tiers) {
+      const monthly = data[tier.field] || 0;
+      const { quarterly, yearly } = this.calculatePrices(monthly, quarterlyDiscount, yearlyDiscount);
+      result[`${tier.prefix}QuarterlyUSD`] = quarterly;
+      result[`${tier.prefix}YearlyUSD`] = yearly;
+    }
+
+    return result;
+  }
+
   async findAll() {
     return this.prisma.plan.findMany({
       where: { deletedAt: null },
-      include: { prices: { include: { tier: true } } },
       orderBy: { qrCodeLimit: 'asc' },
     });
   }
@@ -17,25 +45,26 @@ export class PlansService {
   async findOne(id: string) {
     const plan = await this.prisma.plan.findUnique({
       where: { id },
-      include: { prices: { include: { tier: true } } },
     });
     if (!plan || plan.deletedAt) throw new NotFoundException('Plan not found');
     return plan;
   }
 
   async create(data: CreatePlanDto) {
+    const processedData = await this.processPlanPrices(data);
     return this.prisma.plan.create({
       data: {
-        ...data,
+        ...processedData,
         isActive: true,
       },
     });
   }
 
   async update(id: string, data: UpdatePlanDto) {
+    const processedData = await this.processPlanPrices(data);
     return this.prisma.plan.update({
       where: { id },
-      data,
+      data: processedData,
     });
   }
 
@@ -61,36 +90,6 @@ export class PlansService {
     // Otherwise, perform hard delete
     return this.prisma.plan.delete({
       where: { id },
-    });
-  }
-
-  async setPrice(planId: string, data: SetPlanPriceDto) {
-    const config = await this.prisma.systemConfig.findFirst();
-    const quarterlyDiscount = config?.quarterlyDiscount || 0;
-    const yearlyDiscount = config?.yearlyDiscount || 0;
-
-    const quarterlyPriceUSD = Number(((data.monthlyPriceUSD * 3) * (1 - quarterlyDiscount / 100)).toFixed(2));
-    const yearlyPriceUSD = Number(((data.monthlyPriceUSD * 12) * (1 - yearlyDiscount / 100)).toFixed(2));
-
-    return this.prisma.planPrice.upsert({
-      where: {
-        planId_tierId: {
-          planId,
-          tierId: data.tierId,
-        },
-      },
-      update: {
-        monthlyPriceUSD: data.monthlyPriceUSD,
-        quarterlyPriceUSD,
-        yearlyPriceUSD,
-      },
-      create: {
-        planId,
-        tierId: data.tierId,
-        monthlyPriceUSD: data.monthlyPriceUSD,
-        quarterlyPriceUSD,
-        yearlyPriceUSD,
-      },
     });
   }
 }

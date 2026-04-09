@@ -198,8 +198,6 @@ export const adminApi = {
   getPlans: async () => (await apiClient.get<Plan[]>('/plans/all')).data,
   createPlan: async (data: Partial<Plan>) => (await apiClient.post<Plan>('/plans', data)).data,
   updatePlan: async (id: string, data: Partial<Plan>) => (await apiClient.patch<Plan>(`/plans/${id}`, data)).data,
-  setPlanPrice: async (planId: string, data: { tierId: string; monthlyPriceUSD: number }) => 
-    (await apiClient.post(`/plans/${planId}/price`, data)).data,
   deletePlan: async (id: string) => (await apiClient.delete(`/plans/${id}`)).data,
 
   // Pricing & Geography

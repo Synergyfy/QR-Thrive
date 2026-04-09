@@ -84,17 +84,6 @@ export const useUpsertPlan = () => {
   });
 };
 
-export const useSetPlanPrice = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ planId, tierId, monthlyPriceUSD }: { planId: string; tierId: string; monthlyPriceUSD: number }) =>
-      adminApi.setPlanPrice(planId, { tierId, monthlyPriceUSD }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adminPlans'] });
-    },
-  });
-};
-
 export const useDeletePlan = () => {
   const queryClient = useQueryClient();
   return useMutation({
