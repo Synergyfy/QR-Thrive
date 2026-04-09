@@ -8,7 +8,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import { SignupDto, LoginDto } from './dto/auth.dto';
+import { SignupDto, LoginDto, AdminSignupDto } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
 import type { Response } from 'express';
 
@@ -44,15 +44,56 @@ export class AuthService {
           password: hashedPassword,
           firstName,
           lastName,
+          role: 'USER',
         },
       });
 
-      this.logger.log(`User created: ${email}`);
+      this.logger.log(`User created: ${email} with role: USER`);
       return this.generateAndSetTokens(user.id, res, true);
     } catch (error) {
       if (error instanceof ConflictException) throw error;
       this.logger.error(`Signup error for ${email}:`, error.stack);
       throw new InternalServerErrorException('Error creating user');
+    }
+  }
+
+  async signupAdmin(adminSignupDto: AdminSignupDto, res: Response) {
+    const { email, password, confirmPassword, firstName, lastName, adminSecret } = adminSignupDto;
+
+    if (password !== confirmPassword) {
+      throw new ConflictException('Passwords do not match');
+    }
+
+    const secret = this.configService.get<string>('ADMIN_CREATION_SECRET');
+    if (!secret || adminSecret !== secret) {
+      throw new UnauthorizedException('Invalid admin creation secret');
+    }
+
+    try {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email },
+      });
+      if (existingUser) {
+        throw new ConflictException('User with this email already exists');
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = await this.prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          firstName,
+          lastName,
+          role: 'ADMIN',
+        },
+      });
+
+      this.logger.log(`Admin user created: ${email}`);
+      return this.generateAndSetTokens(user.id, res, true);
+    } catch (error) {
+      if (error instanceof ConflictException) throw error;
+      this.logger.error(`Admin signup error for ${email}:`, error.stack);
+      throw new InternalServerErrorException('Error creating admin user');
     }
   }
 

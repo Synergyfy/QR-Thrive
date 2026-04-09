@@ -53,6 +53,7 @@ import toast from 'react-hot-toast';
 import { useQRCode, useCreateQRCode, useUpdateQRCode, useCurrentUser } from '../hooks/useApi';
 import { uploadAllPendingFiles } from '../utils/upload';
 import { uploadApi } from '../services/api';
+import { getDashboardPath } from '../utils/auth';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -264,7 +265,7 @@ const CreationWizard: React.FC = () => {
         });
         toast.success('QR Code created successfully!');
       }
-      navigate('/dashboard');
+      navigate(getDashboardPath(user?.role));
     } catch (error: any) {
       await cleanupUploadedFiles();
       toast.error(error?.response?.data?.message || 'Failed to save QR Code');
@@ -278,9 +279,9 @@ const CreationWizard: React.FC = () => {
   const handleBack = () => {
     if (isEditing) {
       // In edit mode, back always goes to dashboard
-      navigate('/dashboard');
+      navigate(getDashboardPath(user?.role));
     } else if (step === 'type') {
-      navigate('/dashboard');
+      navigate(getDashboardPath(user?.role));
     } else {
       setStep(steps[steps.findIndex(s => s.id === step) - 1].id as Step);
     }
@@ -298,7 +299,7 @@ const CreationWizard: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
       {/* Navbar */}
       <nav className="h-16 bg-white border-b border-slate-100 px-8 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => navigate('/dashboard')}>
+        <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => navigate(getDashboardPath(user?.role))}>
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-100">
               <CheckCircle2 className="w-5 h-5" />
             </div>

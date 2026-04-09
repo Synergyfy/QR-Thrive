@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Zap, LayoutGrid, LogOut, Menu, X } from 'lucide-react';
 import { useCurrentUser, useLogout } from '../hooks/useApi';
+import { getDashboardPath } from '../utils/auth';
 import AuthModal from './AuthModal';
 
 export default function PublicNav() {
@@ -36,7 +37,7 @@ export default function PublicNav() {
             <div className="hidden md:flex items-center gap-8">
               {user && (
                 <button 
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate(getDashboardPath(user.role))}
                   className="flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors"
                 >
                   <LayoutGrid className="w-4 h-4" /> Go to Dashboard
