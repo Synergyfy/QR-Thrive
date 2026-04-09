@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useLogin, useSignup } from '../hooks/useApi';
+import { getDashboardPath } from '../utils/auth';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -71,13 +72,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
         onSuccess(res.user);
         toast.success(`Welcome back, ${res.user.firstName}!`);
         onClose();
-        navigate('/dashboard');
+        navigate(getDashboardPath(res.user.role));
       } else {
         const res = await signupMutation.mutateAsync({ email, password, confirmPassword, firstName, lastName, phone });
         onSuccess(res.user);
         toast.success('Account created successfully!');
         onClose();
-        navigate('/dashboard');
+        navigate(getDashboardPath(res.user.role));
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Authentication failed');

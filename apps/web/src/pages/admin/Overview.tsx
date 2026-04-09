@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { 
   Users, 
   QrCode, 
@@ -8,6 +9,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useAdminStats, useAdminUsers } from '../../hooks/useAdmin';
 import { useCurrency } from '../../hooks/useCurrency';
 import { formatDistanceToNow } from 'date-fns';
@@ -21,7 +23,9 @@ const colorMap: Record<string, string> = {
 };
 
 export default function Overview() {
-  const { data: statsData, isLoading: statsLoading } = useAdminStats();
+  const navigate = useNavigate();
+  const [range, setRange] = useState('7d');
+  const { data: statsData, isLoading: statsLoading } = useAdminStats(range);
   const { data: usersData, isLoading: usersLoading } = useAdminUsers({ limit: 5 });
   const { currency, convertPrice } = useCurrency();
 
@@ -37,32 +41,32 @@ export default function Overview() {
     { 
       name: 'Total QR Codes Generated', 
       value: statsData?.totalQRs.toLocaleString() || '0', 
-      change: '+14.5%', // These could be calculated from backend too
-      trend: 'up', 
+      change: `${(statsData?.trends?.qrs || 0) >= 0 ? '+' : ''}${statsData?.trends?.qrs}%`,
+      trend: (statsData?.trends?.qrs || 0) >= 0 ? 'up' : 'down', 
       icon: QrCode, 
       color: 'blue' 
     },
     { 
       name: 'Total Registered Users', 
       value: statsData?.totalUsers.toLocaleString() || '0', 
-      change: '+8.2%', 
-      trend: 'up', 
+      change: `${(statsData?.trends?.users || 0) >= 0 ? '+' : ''}${statsData?.trends?.users}%`,
+      trend: (statsData?.trends?.users || 0) >= 0 ? 'up' : 'down', 
       icon: Users, 
       color: 'emerald' 
     },
     { 
       name: 'Estimated Monthly Revenue', 
       value: `${currency.symbol}${convertPrice(statsData?.estimatedRevenue || 0)}`, 
-      change: '+22.4%', 
-      trend: 'up', 
+      change: `${(statsData?.trends?.revenue || 0) >= 0 ? '+' : ''}${statsData?.trends?.revenue}%`,
+      trend: (statsData?.trends?.revenue || 0) >= 0 ? 'up' : 'down', 
       icon: DollarSign, 
       color: 'indigo' 
     },
     { 
       name: 'Active Scans', 
       value: statsData?.totalScans.toLocaleString() || '0', 
-      change: '-2.1%', 
-      trend: 'down', 
+      change: `${(statsData?.trends?.scans || 0) >= 0 ? '+' : ''}${statsData?.trends?.scans}%`,
+      trend: (statsData?.trends?.scans || 0) >= 0 ? 'up' : 'down', 
       icon: Activity, 
       color: 'rose' 
     },
@@ -109,10 +113,14 @@ export default function Overview() {
               <h3 className="text-lg font-bold text-slate-800 tracking-tight">QR Generation Growth</h3>
               <p className="text-xs text-slate-400 font-medium">Daily statistics of QR codes created across the platform.</p>
             </div>
-            <select className="bg-slate-50 border border-slate-200 text-xs font-bold px-4 py-2 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20">
-              <option>Last 7 Days</option>
-              <option>Last 30 Days</option>
-              <option>All Time</option>
+            <select 
+              value={range}
+              onChange={(e) => setRange(e.target.value)}
+              className="bg-slate-50 border border-slate-200 text-xs font-bold px-4 py-2 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
+            >
+              <option value="7d">Last 7 Days</option>
+              <option value="30d">Last 30 Days</option>
+              <option value="all">All Time</option>
             </select>
           </div>
 
@@ -137,7 +145,10 @@ export default function Overview() {
                     </div>
                   </div>
                   <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                    {day.name}
+                    {range === '30d' 
+                      ? (i % 5 === 0 || i === (statsData?.chartData.length || 0) - 1 ? day.name : '')
+                      : day.name
+                    }
                   </span>
                 </div>
               );
@@ -149,7 +160,10 @@ export default function Overview() {
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-slate-800 tracking-tight">Recent Signups</h3>
-            <button className="text-blue-600 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-all">
+            <button 
+              onClick={() => navigate('/admin/users')}
+              className="text-blue-600 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-all"
+            >
               View All
             </button>
           </div>
@@ -192,3 +206,4 @@ export default function Overview() {
     </div>
   );
 }
+

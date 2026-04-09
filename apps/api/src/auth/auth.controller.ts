@@ -1,8 +1,14 @@
 import { Controller, Post, Body, Res, Req, Get } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SignupDto, LoginDto } from './dto/auth.dto';
+import { SignupDto, LoginDto, AdminSignupDto } from './dto/auth.dto';
 import type { Response, Request } from 'express';
 import { Public } from './decorators/public.decorator';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 interface RequestWithUser extends Request {
   user: {
@@ -10,12 +16,19 @@ interface RequestWithUser extends Request {
   };
 }
 
+@ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
   @Post('signup')
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiResponse({
+    status: 201,
+    description: 'User successfully created and tokens set in cookies.',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid input or user exists.' })
   async signup(
     @Body() signupDto: SignupDto,
     @Res({ passthrough: true }) res: Response,
@@ -24,7 +37,35 @@ export class AuthController {
   }
 
   @Public()
+  @Post('signup-admin')
+  @ApiOperation({ summary: 'Register a new admin user' })
+  @ApiResponse({
+    status: 201,
+    description: 'Admin user successfully created and tokens set in cookies.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid admin secret.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input or user exists.',
+  })
+  async signupAdmin(
+    @Body() adminSignupDto: AdminSignupDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.signupAdmin(adminSignupDto, res);
+  }
+
+  @Public()
   @Post('login')
+  @ApiOperation({ summary: 'Authenticate a user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Login successful, tokens set in cookies.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -34,6 +75,12 @@ export class AuthController {
 
   @Public()
   @Post('refresh')
+  @ApiOperation({ summary: 'Refresh access token using refresh token cookie' })
+  @ApiResponse({
+    status: 200,
+    description: 'Tokens refreshed and updated in cookies.',
+  })
+  @ApiResponse({ status: 401, description: 'Invalid refresh token.' })
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -44,12 +91,18 @@ export class AuthController {
 
   @Public()
   @Post('logout')
+  @ApiOperation({ summary: 'Logout a user and clear cookies' })
+  @ApiResponse({ status: 200, description: 'Logged out successfully.' })
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = (req as any).cookies['refreshToken'];
     return this.authService.logout(refreshToken, res);
   }
 
   @Get('me')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get current authenticated user profile' })
+  @ApiResponse({ status: 200, description: 'User profile retrieved.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async me(@Req() req: RequestWithUser) {
     const userId = req.user.userId;
     return this.authService.getUserById(userId);

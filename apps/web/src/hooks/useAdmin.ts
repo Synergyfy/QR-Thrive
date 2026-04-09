@@ -2,10 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../services/api';
 import type { AdminStats, AdminUsersResponse, SystemConfig } from '../types/api';
 
-export const useAdminStats = () => {
+export const useAdminStats = (range = '7d') => {
   return useQuery<AdminStats>({
-    queryKey: ['adminStats'],
-    queryFn: adminApi.getStats,
+    queryKey: ['adminStats', range],
+    queryFn: () => adminApi.getStats(range),
     refetchOnWindowFocus: true,
     staleTime: 30000, // 30 seconds
   });
@@ -34,5 +34,31 @@ export const useUpdateSystemConfig = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['systemConfig'] });
     },
+  });
+};
+
+export const useBanUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => adminApi.banUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+    },
+  });
+};
+
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => adminApi.deleteUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+    },
+  });
+};
+
+export const useExportUsers = () => {
+  return useMutation({
+    mutationFn: adminApi.exportUsers,
   });
 };

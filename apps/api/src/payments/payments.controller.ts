@@ -2,7 +2,6 @@ import {
   Controller,
   Post,
   Req,
-  Res,
   HttpCode,
   HttpStatus,
   Logger,
@@ -10,11 +9,19 @@ import {
   Headers,
   Body,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
 import { PaystackService } from './paystack.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { Public } from '../auth/decorators/public.decorator';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiBody,
+  ApiHeader,
+} from '@nestjs/swagger';
 
+@ApiTags('Payments')
 @Controller('payments')
 export class PaymentsController {
   private readonly logger = new Logger(PaymentsController.name);
@@ -25,6 +32,20 @@ export class PaymentsController {
   ) {}
 
   @Post('initialize')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Initialize a Paystack transaction for subscription' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        amount: { type: 'number', example: 5000, description: 'Amount in kobo/lowest currency unit' },
+        planCode: { type: 'string', example: 'PLN_123456', description: 'Optional Paystack plan code' },
+      },
+      required: ['amount'],
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Transaction initialized successfully.' })
+  @ApiResponse({ status: 400, description: 'User not found or invalid input.' })
   async initialize(
     @Req() req: { user: { userId: string } },
     @Body() body: { amount: number; planCode?: string },
@@ -47,6 +68,14 @@ export class PaymentsController {
   @Public()
   @Post('webhook')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Paystack Webhook endpoint' })
+  @ApiHeader({
+    name: 'x-paystack-signature',
+    description: 'HMAC SHA512 signature of the payload',
+    required: true,
+  })
+  @ApiResponse({ status: 200, description: 'Webhook processed successfully.' })
+  @ApiResponse({ status: 400, description: 'Invalid signature or payload.' })
   async handleWebhook(
     @Headers('x-paystack-signature') signature: string,
     @Body() body: { event: string; data: any },
