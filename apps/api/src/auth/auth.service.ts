@@ -8,19 +8,26 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import { SignupDto, LoginDto, AdminSignupDto } from './dto/auth.dto';
+import { SignupDto, LoginDto, AdminSignupDto, GoogleLoginDto } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
 import type { Response } from 'express';
+import { OAuth2Client } from 'google-auth-library';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
+  private readonly googleClient: OAuth2Client;
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+  ) {
+    this.googleClient = new OAuth2Client(
+      this.configService.get<string>('GOOGLE_CLIENT_ID'),
+    );
+  }
 
   async signup(signupDto: SignupDto, res: Response) {
     const { email, password, confirmPassword, firstName, lastName } = signupDto;
@@ -106,6 +113,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if (!user.password) {
+      this.logger.warn(`Login attempt for passwordless user (Google sign-in only): ${email}`);
+      throw new UnauthorizedException('Please log in with Google');
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       this.logger.warn(`Invalid password for user: ${email}`);
@@ -114,6 +126,78 @@ export class AuthService {
 
     this.logger.log(`User logged in: ${email}`);
     return this.generateAndSetTokens(user.id, res, rememberMe);
+  }
+
+  async googleLogin(googleLoginDto: GoogleLoginDto, res: Response) {
+    const { token } = googleLoginDto;
+
+    this.logger.log('Attempting Google login...');
+    if (!token) {
+      this.logger.error('No token provided in GoogleLoginDto');
+      throw new UnauthorizedException('No token provided');
+    }
+
+    try {
+      const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
+      this.logger.log(`Using Client ID: ${clientId}`);
+
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken: token,
+        audience: clientId,
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        throw new UnauthorizedException('Invalid Google token');
+      }
+
+      const {
+        email,
+        sub: googleId,
+        given_name: firstName,
+        family_name: lastName,
+        picture: avatar,
+      } = payload;
+
+      let user = await this.prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (user) {
+        // Block Admins from logging in with Google
+        if (user.role === 'ADMIN') {
+          this.logger.warn(`Admin login attempt via Google: ${email}`);
+          throw new UnauthorizedException('Admins cannot login with Google');
+        }
+
+        // Link Google ID if not already linked
+        if (!user.googleId) {
+          user = await this.prisma.user.update({
+            where: { id: user.id },
+            data: { googleId, avatar },
+          });
+        }
+      } else {
+        // Create new user
+        user = await this.prisma.user.create({
+          data: {
+            email,
+            googleId,
+            firstName: firstName || 'User',
+            lastName: lastName || '',
+            avatar,
+            role: 'USER',
+          },
+        });
+        this.logger.log(`New user created via Google: ${email}`);
+      }
+
+      return this.generateAndSetTokens(user.id, res, true);
+    } catch (error: any) {
+      if (error instanceof UnauthorizedException) throw error;
+      this.logger.error(`Google login error: ${error.message}`, error.stack);
+      throw new UnauthorizedException('Failed to authenticate with Google');
+    }
   }
 
   async refresh(refreshToken: string, res: Response) {
