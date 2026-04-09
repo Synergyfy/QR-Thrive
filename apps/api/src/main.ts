@@ -30,7 +30,7 @@ export async function bootstrap() {
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
   app.enableCors({
-    origin: ['http://localhost:5173', 'https://qrthrive.vercel.app'],
+    origin: ['http://localhost:5173', 'https://qrthrive.vercel.app', 'https://www.qrthrive.com'],
     credentials: true,
   });
 
