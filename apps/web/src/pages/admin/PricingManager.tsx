@@ -234,7 +234,11 @@ export default function PricingManager() {
                           tiers={tiers || []}
                           pricingConfig={pricingConfig || { quarterlyDiscount: 10, yearlyDiscount: 20 }}
                           onEditPlan={(plan) => {
-                             setEditingPlan(JSON.parse(JSON.stringify(plan)));
+                             setEditingPlan(JSON.parse(JSON.stringify({
+                               ...plan,
+                               isFree: plan.isFree || false,
+                               trialDays: plan.trialDays || 0
+                             })));
                              setHighIncomePrice(plan.highIncomeMonthlyUSD || 0);
                              setMiddleIncomePrice(plan.middleIncomeMonthlyUSD || 0);
                              setLowIncomePrice(plan.lowIncomeMonthlyUSD || 0);
@@ -261,6 +265,9 @@ export default function PricingManager() {
                                qrCodeLimit: 50, 
                                qrCodeTypes: [], 
                                isActive: true,
+                               isFree: false,
+                               isDefault: false,
+                               trialDays: 0,
                                highIncomeMonthlyUSD: 0,
                                middleIncomeMonthlyUSD: 0,
                                lowIncomeMonthlyUSD: 0
@@ -369,6 +376,21 @@ export default function PricingManager() {
                         className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-black text-slate-900 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
                       />
                     </div>
+                    <div>
+                       <Tooltip content="Number of trial days before first payment. Only for paid plans.">
+                         <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 pl-2 cursor-help">Trial Period (Days)</label>
+                       </Tooltip>
+                       <input
+                         type="number"
+                         required
+                         disabled={editingPlan.isFree}
+                         value={editingPlan.trialDays}
+                         onChange={(e) => setEditingPlan({ ...editingPlan, trialDays: Number(e.target.value) })}
+                         className={`w-full border-none rounded-2xl p-4 text-sm font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all ${
+                            editingPlan.isFree ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-slate-50 text-slate-900'
+                         }`}
+                       />
+                     </div>
                     <div className="flex gap-4">
                        <label className="flex-grow flex items-center justify-between p-4 bg-slate-50 rounded-2xl cursor-pointer group">
                           <div>
@@ -399,6 +421,37 @@ export default function PricingManager() {
                           />
                        </label>
                     </div>
+                    <div className="flex gap-4">
+                        <label className="flex-grow flex items-center justify-between p-4 bg-slate-50 rounded-2xl cursor-pointer group">
+                           <div>
+                              <Tooltip content="Mark this plan as completely free (no pricing).">
+                                 <p className="text-[10px] font-black uppercase text-slate-900 cursor-help">Is Free Plan</p>
+                              </Tooltip>
+                              <p className="text-[9px] text-slate-400 font-medium tracking-tight">Overrides all pricing</p>
+                           </div>
+                           <input 
+                             type="checkbox" 
+                             checked={editingPlan.isFree} 
+                             onChange={(e) => {
+                                const isFree = e.target.checked;
+                                setEditingPlan({ 
+                                    ...editingPlan, 
+                                    isFree,
+                                    trialDays: isFree ? 0 : editingPlan.trialDays,
+                                    highIncomeMonthlyUSD: isFree ? 0 : editingPlan.highIncomeMonthlyUSD,
+                                    middleIncomeMonthlyUSD: isFree ? 0 : editingPlan.middleIncomeMonthlyUSD,
+                                    lowIncomeMonthlyUSD: isFree ? 0 : editingPlan.lowIncomeMonthlyUSD,
+                                });
+                                if (isFree) {
+                                    setHighIncomePrice(0);
+                                    setMiddleIncomePrice(0);
+                                    setLowIncomePrice(0);
+                                }
+                             }}
+                             className="w-5 h-5 rounded-lg text-blue-600 focus:ring-blue-500" 
+                           />
+                        </label>
+                     </div>
                   </div>
                 </div>
 
@@ -418,13 +471,16 @@ export default function PricingManager() {
                           type="number"
                           min="0"
                           step="0.01"
+                          disabled={editingPlan.isFree}
                           value={highIncomePrice}
                           onChange={(e) => {
                             const val = Number(e.target.value);
                             setHighIncomePrice(val);
                             setEditingPlan(prev => prev ? { ...prev, highIncomeMonthlyUSD: val } : prev);
                           }}
-                          className="w-full bg-slate-50 border-none rounded-xl py-3 pl-7 pr-12 text-sm font-black text-slate-900 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                          className={`w-full border-none rounded-xl py-3 pl-7 pr-12 text-sm font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all ${
+                            editingPlan.isFree ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-slate-50 text-slate-900'
+                          }`}
                           placeholder="0.00"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] font-black uppercase">/ Monthly</span>
@@ -441,13 +497,16 @@ export default function PricingManager() {
                           type="number"
                           min="0"
                           step="0.01"
+                          disabled={editingPlan.isFree}
                           value={middleIncomePrice}
                           onChange={(e) => {
                             const val = Number(e.target.value);
                             setMiddleIncomePrice(val);
                             setEditingPlan(prev => prev ? { ...prev, middleIncomeMonthlyUSD: val } : prev);
                           }}
-                          className="w-full bg-slate-50 border-none rounded-xl py-3 pl-7 pr-12 text-sm font-black text-slate-900 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                          className={`w-full border-none rounded-xl py-3 pl-7 pr-12 text-sm font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all ${
+                            editingPlan.isFree ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-slate-50 text-slate-900'
+                          }`}
                           placeholder="0.00"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] font-black uppercase">/ Monthly</span>
@@ -464,13 +523,16 @@ export default function PricingManager() {
                           type="number"
                           min="0"
                           step="0.01"
+                          disabled={editingPlan.isFree}
                           value={lowIncomePrice}
                           onChange={(e) => {
                             const val = Number(e.target.value);
                             setLowIncomePrice(val);
                             setEditingPlan(prev => prev ? { ...prev, lowIncomeMonthlyUSD: val } : prev);
                           }}
-                          className="w-full bg-slate-50 border-none rounded-xl py-3 pl-7 pr-12 text-sm font-black text-slate-900 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                          className={`w-full border-none rounded-xl py-3 pl-7 pr-12 text-sm font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all ${
+                            editingPlan.isFree ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-slate-50 text-slate-900'
+                          }`}
                           placeholder="0.00"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] font-black uppercase">/ Monthly</span>

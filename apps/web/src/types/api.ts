@@ -7,8 +7,11 @@ export interface User {
   lastName: string;
   role: 'USER' | 'ADMIN';
   planId?: string;
-  subscriptionStatus?: 'active' | 'canceled' | 'past_due' | 'trialing' | null;
+  subscriptionStatus?: 'active' | 'canceled' | 'past_due' | 'trialing' | 'non-renewing' | null;
   billingCycle?: 'monthly' | 'quarterly' | 'yearly' | null;
+  trialStartedAt?: string | null;
+  trialEndsAt?: string | null;
+  hasUsedTrial?: boolean;
   isBanned?: boolean;
 }
 
@@ -42,6 +45,8 @@ export interface Plan {
   qrCodeTypes: string[];
   isPopular: boolean;
   isDefault: boolean;
+  isFree: boolean;
+  trialDays: number;
   isActive: boolean;
   
   // High Income Tier Prices
@@ -68,6 +73,8 @@ export interface PublicPlan {
   qrCodeTypes: string[];
   isPopular: boolean;
   isDefault: boolean;
+  isFree: boolean;
+  trialDays: number;
   currency: string;
   currencySymbol: string;
   pricing: {

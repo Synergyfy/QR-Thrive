@@ -29,8 +29,13 @@ model User {
   // Paystack Integration
   paystackCustomerCode     String?   @unique
   paystackSubscriptionCode String?   @unique
-  subscriptionStatus       String?   // e.g., "active", "non-renewing", "attention", "cancelled"
+  subscriptionStatus       String?   // e.g., "active", "non-renewing", "attention", "cancelled", "trialing"
   billingCycle             String?   // "monthly", "quarterly", "yearly"
+
+  // Trial System
+  trialStartedAt           DateTime?
+  trialEndsAt              DateTime?
+  hasUsedTrial             Boolean   @default(false)
 
   refreshTokens RefreshToken[]
   folders       Folder[]
@@ -89,6 +94,8 @@ model Plan {
   qrCodeTypes   QRType[]    // PostgreSQL supporting enum arrays
   isPopular     Boolean     @default(false)
   isDefault     Boolean     @default(false)
+  isFree        Boolean     @default(false)
+  trialDays     Int         @default(0)
   isActive      Boolean     @default(true)
   
   // High Income Tier Prices

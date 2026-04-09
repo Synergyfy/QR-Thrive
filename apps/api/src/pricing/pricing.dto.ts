@@ -78,6 +78,17 @@ export class CreatePlanDto {
   @IsOptional()
   isDefault?: boolean;
 
+  @ApiPropertyOptional({ example: false })
+  @IsBoolean()
+  @IsOptional()
+  isFree?: boolean;
+
+  @ApiPropertyOptional({ example: 7, description: 'Number of trial days' })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  trialDays?: number;
+
   // High Income Tier - Monthly Price (quarterly/yearly auto-calculated)
   @ApiPropertyOptional({ example: 20.0 })
   @IsNumber()

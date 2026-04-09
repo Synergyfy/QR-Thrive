@@ -12,12 +12,29 @@ export class PlansService {
     return { quarterly, yearly };
   }
 
+  private async ensureSingleDefault(isDefault: boolean) {
+    if (isDefault) {
+      await this.prisma.plan.updateMany({
+        where: { isDefault: true },
+        data: { isDefault: false },
+      });
+    }
+  }
+
   private async processPlanPrices(data: any) {
     const config = await this.prisma.systemConfig.findFirst();
     const quarterlyDiscount = config?.quarterlyDiscount || 0;
     const yearlyDiscount = config?.yearlyDiscount || 0;
 
     const result = { ...data };
+
+    // If it's a free plan, ensure all monthly prices are 0
+    if (data.isFree) {
+      result.highIncomeMonthlyUSD = 0;
+      result.middleIncomeMonthlyUSD = 0;
+      result.lowIncomeMonthlyUSD = 0;
+      result.trialDays = 0; // Free plans don't need trials
+    }
 
     const tiers = [
       { prefix: 'highIncome', field: 'highIncomeMonthlyUSD' },
@@ -26,7 +43,7 @@ export class PlansService {
     ];
 
     for (const tier of tiers) {
-      const monthly = data[tier.field] || 0;
+      const monthly = result[tier.field] || 0;
       const { quarterly, yearly } = this.calculatePrices(monthly, quarterlyDiscount, yearlyDiscount);
       result[`${tier.prefix}QuarterlyUSD`] = quarterly;
       result[`${tier.prefix}YearlyUSD`] = yearly;
@@ -51,6 +68,7 @@ export class PlansService {
   }
 
   async create(data: CreatePlanDto) {
+    if (data.isDefault) await this.ensureSingleDefault(true);
     const processedData = await this.processPlanPrices(data);
     return this.prisma.plan.create({
       data: {
@@ -61,6 +79,7 @@ export class PlansService {
   }
 
   async update(id: string, data: UpdatePlanDto) {
+    if (data.isDefault) await this.ensureSingleDefault(true);
     const processedData = await this.processPlanPrices(data);
     return this.prisma.plan.update({
       where: { id },

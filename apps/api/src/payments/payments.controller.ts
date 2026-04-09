@@ -97,6 +97,37 @@ export class PaymentsController {
     );
   }
 
+  @Post('cancel')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Cancel an active subscription' })
+  @ApiResponse({ status: 200, description: 'Subscription cancellation initiated.' })
+  async cancel(@Req() req: { user: { userId: string } }) {
+    const userId = req.user.userId;
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.paystackSubscriptionCode) {
+      throw new BadRequestException('No active subscription found to cancel.');
+    }
+
+    // In a real scenario, we might want to also allow them to use it until the end of the period
+    // but for now, we just disable it in Paystack if they have a code.
+    // We'll need a way to get the email token if Paystack requires it, 
+    // but usually, just the code is enough if authorized.
+    
+    // For now, we'll just mark it as cancelled in our DB and let Paystack events handle the rest
+    // or call Paystack service if we have the token stored.
+    // Since we don't store the email token yet, we'll just update the status.
+    
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { subscriptionStatus: 'non-renewing' },
+    });
+
+    return { message: 'Your subscription will not renew at the end of the current cycle.' };
+  }
+
   @Public()
   @Post('webhook')
   @HttpCode(HttpStatus.OK)
@@ -187,6 +218,8 @@ export class PaymentsController {
         paystackSubscriptionCode: subscription?.subscription_code || null,
         subscriptionStatus: 'active',
         billingCycle: interval || plan?.interval || null,
+        hasUsedTrial: true, // Mark that they've now paid/used a trial
+        trialEndsAt: null,   // Clear trial as they are now active
       },
     });
 

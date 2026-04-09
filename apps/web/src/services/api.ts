@@ -220,3 +220,7 @@ export const adminApi = {
     link.remove();
   },
 };
+  export const paymentsApi = {
+  initialize: async (data: { planId: string; interval: string }) => (await apiClient.post<{ authorization_url: string }>('/payments/initialize', data)).data,
+  cancelSubscription: async () => (await apiClient.post<{ message: string }>('/payments/cancel')).data,
+};

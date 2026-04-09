@@ -170,6 +170,8 @@ export class PricingService {
         qrCodeTypes: plan.qrCodeTypes,
         isPopular: plan.isPopular,
         isDefault: plan.isDefault,
+        isFree: plan.isFree,
+        trialDays: plan.trialDays,
         currency,
         currencySymbol: symbol,
         pricing,

@@ -144,4 +144,26 @@ export class PaystackService {
       throw new InternalServerErrorException('Error updating Paystack plan');
     }
   }
+
+  async disableSubscription(code: string, token: string) {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.baseUrl}/subscription/disable`,
+          {
+            code,
+            token,
+          },
+          { headers: this.headers },
+        ),
+      );
+      return response.data;
+    } catch (error) {
+      this.logger.error(
+        'Paystack subscription disable error:',
+        error.response?.data || error.message,
+      );
+      throw new InternalServerErrorException('Error disabling Paystack subscription');
+    }
+  }
 }

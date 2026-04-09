@@ -27,8 +27,10 @@ export default function PricingPage() {
       currencyCode: plan.currency,
       highlight: plan.isPopular,
       popular: plan.isPopular,
-      trial: !plan.isDefault,
-      cta: plan.isDefault ? "Start Free" : "Start 7-Day Free Trial",
+      isFree: plan.isFree,
+      trialDays: plan.trialDays,
+      trial: plan.trialDays > 0,
+      cta: plan.isFree ? "Start Now" : (plan.trialDays > 0 ? `Start ${plan.trialDays}-Day Free Trial` : "Get Started"),
       features: [
         `${plan.qrCodeLimit === -1 ? 'Unlimited' : plan.qrCodeLimit} Dynamic QR Codes`,
         ...((config?.features as string[]) || [])
@@ -95,10 +97,10 @@ export default function PricingPage() {
             transition={{ delay: 0.2 }}
             className="flex items-center justify-center gap-3 mb-12"
           >
-             <div className="px-5 py-2.5 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100 flex items-center gap-2 shadow-sm">
+              <div className="px-5 py-2.5 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100 flex items-center gap-2 shadow-sm">
                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-widest leading-none">All new users get 7 Days of PRO for free</span>
-             </div>
+                <span className="text-[10px] font-black uppercase tracking-widest leading-none">Try our premium features with a risk-free trial</span>
+              </div>
           </motion.div>
         </section>
 
@@ -126,10 +128,10 @@ export default function PricingPage() {
                   {/* Most Popular/Trial Badge */}
                   {(plan.popular || plan.trial) && (
                     <div className="absolute top-8 right-10">
-                       <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-5 py-2.5 rounded-full shadow-lg transition-transform group-hover:scale-110 ${
+                        <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-5 py-2.5 rounded-full shadow-lg transition-transform group-hover:scale-110 ${
                           plan.highlight ? 'bg-blue-600 text-white shadow-blue-500/40' : 'bg-slate-900 text-white'
                        }`}>
-                          {plan.trial ? '7-Day Trial' : 'Most Popular'}
+                          {plan.trial ? `${plan.trialDays}-Day Trial` : 'Most Popular'}
                        </span>
                     </div>
                   )}
