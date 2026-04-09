@@ -30,7 +30,7 @@ export type QRType =
   | 'coupon';
   
 export interface FileData {
-  id: string;
+  id?: string;
   url: string;
   name?: string;
   size?: number;
@@ -150,7 +150,11 @@ export interface QRData {
     jobTitle?: string;
     note?: string;
     avatar?: string;
+    avatarPublicId?: string;
+    avatarPendingFile?: PendingFile;
     banner?: string;
+    bannerPublicId?: string;
+    bannerPendingFile?: PendingFile;
     themeColor?: string;
     accentColor?: string;
     socials?: {

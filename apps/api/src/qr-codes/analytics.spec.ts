@@ -35,22 +35,23 @@ describe('QRCodesService Analytics', () => {
   it('should record a scan with location data', async () => {
     const shortId = 'test-id';
     const ip = '207.97.227.239'; // GitHub IP (USA)
-    const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
-    
+    const userAgent =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
+
     const mockQR = { id: 'qr-1', shortId, clicks: 0 };
     mockPrismaService.qRCode.findUnique.mockResolvedValue(mockQR);
-    
+
     (geoip.lookup as jest.Mock).mockReturnValue({
       city: 'San Francisco',
       country: 'US',
-      region: 'CA'
+      region: 'CA',
     });
 
     await service.recordScan(shortId, ip, userAgent);
 
     expect(mockPrismaService.qRCode.update).toHaveBeenCalledWith({
       where: { id: 'qr-1' },
-      data: { clicks: { increment: 1 } }
+      data: { clicks: { increment: 1 } },
     });
 
     expect(mockPrismaService.scan.create).toHaveBeenCalledWith({
@@ -62,7 +63,7 @@ describe('QRCodesService Analytics', () => {
         os: 'Windows',
         city: 'San Francisco',
         country: 'US',
-      })
+      }),
     });
   });
 });

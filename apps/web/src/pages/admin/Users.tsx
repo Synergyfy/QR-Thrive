@@ -8,30 +8,34 @@ import {
   ChevronRight,
   Shield,
   Trash2,
-  ExternalLink
+  ExternalLink,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAdminUsers } from '../../hooks/useAdmin';
+import { format } from 'date-fns';
 
-const users = [
-  { id: 1, name: "Adeola Johnson", email: "adeola.j@gmail.com", plan: "Standard", qrs: 12, status: "Active", joined: "Oct 12, 2025", avatar: "AJ" },
-  { id: 2, name: "John Smith", email: "john_smith@corp.com", plan: "Annual", qrs: 45, status: "Active", joined: "Sep 20, 2025", avatar: "JS" },
-  { id: 3, name: "Chidi Okafor", email: "chidi.okafor@tech.io", plan: "Quarterly", qrs: 28, status: "Inactive", joined: "Nov 05, 2025", avatar: "CO" },
-  { id: 4, name: "Maria Garcia", email: "m.garcia@outlook.com", plan: "Standard", qrs: 5, status: "Active", joined: "Dec 30, 2025", avatar: "MG" },
-  { id: 5, name: "Ibrahim Lawal", email: "i.lawal@fintech.ng", plan: "Annual", qrs: 112, status: "Active", joined: "Jan 15, 2026", avatar: "IL" },
-  { id: 6, name: "Sarah Connor", email: "s.connor@resistance.net", plan: "Standard", qrs: 3, status: "Banned", joined: "Feb 02, 2026", avatar: "SC" },
-  { id: 7, name: "David Miller", email: "d.miller@gmail.com", plan: "Quarterly", qrs: 18, status: "Active", joined: "Mar 10, 2026", avatar: "DM" },
-];
 
 export default function UsersManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All');
+  const [page, setPage] = useState(1);
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = selectedStatus === 'All' || user.status === selectedStatus;
-    return matchesSearch && matchesStatus;
+  const { data, isLoading } = useAdminUsers({
+    page,
+    search: searchTerm,
+    status: selectedStatus === 'All' ? undefined : selectedStatus.toLowerCase(),
   });
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setPage(1);
+  };
+
+  const handleStatusChange = (status: string) => {
+    setSelectedStatus(status);
+    setPage(1);
+  };
 
   return (
     <div className="space-y-6">
@@ -59,7 +63,7 @@ export default function UsersManagement() {
             type="text" 
             placeholder="Search by name, email..." 
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearch}
             className="w-full bg-slate-50 border-none rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
           />
         </div>
@@ -68,7 +72,7 @@ export default function UsersManagement() {
           {['All', 'Active', 'Inactive', 'Banned'].map((status) => (
             <button
               key={status}
-              onClick={() => setSelectedStatus(status)}
+              onClick={() => handleStatusChange(status)}
               className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
                 selectedStatus === status 
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' 
@@ -86,7 +90,13 @@ export default function UsersManagement() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden min-h-[400px] relative">
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          </div>
+        )}
+        
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -101,7 +111,7 @@ export default function UsersManagement() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               <AnimatePresence mode='popLayout'>
-                {filteredUsers.map((user, idx) => (
+                {(data?.users || []).map((user, idx: number) => (
                   <motion.tr 
                     layout
                     initial={{ opacity: 0 }}
@@ -117,12 +127,12 @@ export default function UsersManagement() {
                          idx % 3 === 1 ? 'from-amber-100 to-orange-100 text-amber-600' : 
                          'from-rose-100 to-pink-100 text-rose-600'
                         }`}>
-                          {user.avatar}
+                          {user.firstName[0]}{user.lastName[0]}
                         </div>
                         <div>
                           <p className="text-sm font-bold text-slate-800 leading-tight flex items-center gap-1.5">
-                            {user.name}
-                            {user.plan === 'Annual' && <Shield className="w-3 h-3 text-blue-500" />}
+                            {user.firstName} {user.lastName}
+                            {user.plan === 'PRO' && <Shield className="w-3 h-3 text-blue-500" />}
                           </p>
                           <p className="text-[10px] text-slate-400 font-medium">{user.email}</p>
                         </div>
@@ -130,9 +140,7 @@ export default function UsersManagement() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
-                        user.plan === 'Annual' ? 'bg-indigo-50 text-indigo-600' : 
-                        user.plan === 'Quarterly' ? 'bg-blue-50 text-blue-600' : 
-                        'bg-slate-50 text-slate-500'
+                        user.plan === 'PRO' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-500'
                       }`}>
                         {user.plan}
                       </span>
@@ -151,14 +159,16 @@ export default function UsersManagement() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className={`w-1.5 h-1.5 rounded-full ${
-                          user.status === 'Active' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 
-                          user.status === 'Inactive' ? 'bg-slate-300' : 
-                          'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]'
+                          user.subscriptionStatus === 'active' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 
+                          user.subscriptionStatus === 'cancelled' ? 'bg-slate-300' : 
+                          'bg-amber-500'
                         }`}></div>
-                        <span className="text-xs font-bold text-slate-600">{user.status}</span>
+                        <span className="text-xs font-bold text-slate-600 capitalize">{user.subscriptionStatus || 'N/A'}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">{user.joined}</td>
+                    <td className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                      {format(new Date(user.createdAt), 'MMM dd, yyyy')}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-blue-600 transition-all shadow-none hover:shadow-sm border border-transparent hover:border-slate-100">
@@ -182,18 +192,34 @@ export default function UsersManagement() {
         {/* Pagination */}
         <div className="bg-slate-50/50 px-6 py-4 flex items-center justify-between border-t border-slate-100">
           <p className="text-xs font-bold text-slate-500">
-            Showing <span className="text-slate-800">{filteredUsers.length}</span> of <span className="text-slate-800">128</span> users
+            Showing <span className="text-slate-800">{(data?.users || []).length}</span> of <span className="text-slate-800">{data?.total || 0}</span> users
           </p>
           <div className="flex items-center gap-2">
-            <button className="p-2 bg-white border border-slate-200 rounded-xl text-slate-400 disabled:opacity-50">
+            <button 
+              disabled={page === 1}
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              className="p-2 bg-white border border-slate-200 rounded-xl text-slate-400 disabled:opacity-50 hover:bg-slate-50 transition-all"
+            >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <div className="flex items-center gap-1">
-              <button className="w-8 h-8 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase">1</button>
-              <button className="w-8 h-8 rounded-xl bg-transparent text-slate-400 text-[10px] font-black uppercase hover:bg-slate-200">2</button>
-              <button className="w-8 h-8 rounded-xl bg-transparent text-slate-400 text-[10px] font-black uppercase hover:bg-slate-200">3</button>
+              {Array.from({ length: data?.pages || 1 }, (_, i) => (
+                <button 
+                  key={i + 1}
+                  onClick={() => setPage(i + 1)}
+                  className={`w-8 h-8 rounded-xl text-[10px] font-black uppercase transition-all ${
+                    page === i + 1 ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
             </div>
-            <button className="p-2 bg-white border border-slate-200 rounded-xl text-slate-400">
+            <button 
+              disabled={page === data?.pages}
+              onClick={() => setPage(p => Math.min(data?.pages || 1, p + 1))}
+              className="p-2 bg-white border border-slate-200 rounded-xl text-slate-400 disabled:opacity-50 hover:bg-slate-50 transition-all"
+            >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>

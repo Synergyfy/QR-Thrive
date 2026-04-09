@@ -1,4 +1,11 @@
-import { IsEnum, IsString, IsOptional, IsBoolean, IsInt, IsObject } from 'class-validator';
+import {
+  IsEnum,
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsInt,
+  IsObject,
+} from 'class-validator';
 import { FormFieldType } from '@prisma/client';
 
 export class FormFieldDto {

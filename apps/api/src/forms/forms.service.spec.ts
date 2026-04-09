@@ -52,34 +52,49 @@ describe('FormsService', () => {
     it('should validate number correctly', () => {
       const field = { type: FormFieldType.number, label: 'Age' };
       expect(() => (service as any).validateValue(field, '25')).not.toThrow();
-      expect(() => (service as any).validateValue(field, 'abc')).toThrow(BadRequestException);
+      expect(() => (service as any).validateValue(field, 'abc')).toThrow(
+        BadRequestException,
+      );
     });
 
     it('should validate range correctly', () => {
-      const field = { 
-        type: FormFieldType.range, 
-        label: 'Score', 
-        validation: { min: 0, max: 10 } 
+      const field = {
+        type: FormFieldType.range,
+        label: 'Score',
+        validation: { min: 0, max: 10 },
       };
       expect(() => (service as any).validateValue(field, '5')).not.toThrow();
-      expect(() => (service as any).validateValue(field, '-1')).toThrow(BadRequestException);
-      expect(() => (service as any).validateValue(field, '11')).toThrow(BadRequestException);
+      expect(() => (service as any).validateValue(field, '-1')).toThrow(
+        BadRequestException,
+      );
+      expect(() => (service as any).validateValue(field, '11')).toThrow(
+        BadRequestException,
+      );
     });
 
     it('should validate email correctly', () => {
       const field = { type: FormFieldType.email, label: 'Email' };
-      expect(() => (service as any).validateValue(field, 'test@example.com')).not.toThrow();
-      expect(() => (service as any).validateValue(field, 'invalid-email')).toThrow(BadRequestException);
+      expect(() =>
+        (service as any).validateValue(field, 'test@example.com'),
+      ).not.toThrow();
+      expect(() =>
+        (service as any).validateValue(field, 'invalid-email'),
+      ).toThrow(BadRequestException);
     });
 
     it('should validate select options correctly', () => {
-      const field = { 
-        type: FormFieldType.select, 
-        label: 'Color', 
-        options: [{ label: 'Red', value: 'red' }, { label: 'Blue', value: 'blue' }] 
+      const field = {
+        type: FormFieldType.select,
+        label: 'Color',
+        options: [
+          { label: 'Red', value: 'red' },
+          { label: 'Blue', value: 'blue' },
+        ],
       };
       expect(() => (service as any).validateValue(field, 'red')).not.toThrow();
-      expect(() => (service as any).validateValue(field, 'green')).toThrow(BadRequestException);
+      expect(() => (service as any).validateValue(field, 'green')).toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -88,24 +103,43 @@ describe('FormsService', () => {
       mockPrismaService.qRCode.findUnique.mockResolvedValue({
         form: {
           id: 'form-1',
-          fields: [{ id: 'f1', label: 'Name', required: true, type: FormFieldType.text }]
-        }
+          fields: [
+            {
+              id: 'f1',
+              label: 'Name',
+              required: true,
+              type: FormFieldType.text,
+            },
+          ],
+        },
       });
 
-      await expect(service.submitForm('short', { answers: {} }))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        service.submitForm('short', { answers: {} }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should create submission if validation passes', async () => {
       mockPrismaService.qRCode.findUnique.mockResolvedValue({
         form: {
           id: 'form-1',
-          fields: [{ id: 'f1', label: 'Name', required: true, type: FormFieldType.text }]
-        }
+          fields: [
+            {
+              id: 'f1',
+              label: 'Name',
+              required: true,
+              type: FormFieldType.text,
+            },
+          ],
+        },
       });
-      mockPrismaService.formSubmission.create.mockResolvedValue({ id: 'sub-1' });
+      mockPrismaService.formSubmission.create.mockResolvedValue({
+        id: 'sub-1',
+      });
 
-      const res = await service.submitForm('short', { answers: { f1: 'John' } });
+      const res = await service.submitForm('short', {
+        answers: { f1: 'John' },
+      });
       expect(res).toBeDefined();
       expect(mockPrismaService.formSubmission.create).toHaveBeenCalled();
     });

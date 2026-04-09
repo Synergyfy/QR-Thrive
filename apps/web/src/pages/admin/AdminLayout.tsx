@@ -1,20 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
-  Users, 
+  Users as UsersIcon, 
   CreditCard, 
   Settings, 
   LogOut, 
   Bell, 
   Search, 
-  Menu
+  Menu,
+  Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import { useCurrentUser } from '../../hooks/useApi';
 
 const sidebarLinks = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
-  { name: 'User Management', icon: Users, path: '/admin/users' },
+  { name: 'User Management', icon: UsersIcon, path: '/admin/users' },
   { name: 'Pricing Manager', icon: CreditCard, path: '/admin/pricing' },
   { name: 'Settings', icon: Settings, path: '/admin/settings' },
 ];
@@ -23,7 +25,27 @@ export default function AdminLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
+  const { data: authData, isLoading } = useCurrentUser();
 
+  useEffect(() => {
+    if (!isLoading && (!authData?.user || authData.user.role !== 'ADMIN')) {
+      navigate('/dashboard');
+    }
+  }, [authData, isLoading, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-blue-600">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!authData?.user || authData.user.role !== 'ADMIN') {
+    return null;
+  }
+
+  const user = authData.user;
   const activeLink = sidebarLinks.find(link => link.path === location.pathname) || sidebarLinks[0];
 
   return (
@@ -115,11 +137,11 @@ export default function AdminLayout() {
               
               <div className="flex items-center gap-3">
                 <div className="text-right hidden sm:block">
-                  <p className="text-xs font-bold text-slate-800 leading-none">Admin User</p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Super Admin</p>
+                  <p className="text-xs font-bold text-slate-800 leading-none">{user.firstName} {user.lastName}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">{user.role}</p>
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-black text-xs shadow-lg shadow-blue-200">
-                  AD
+                  {user.firstName[0]}{user.lastName[0]}
                 </div>
               </div>
             </div>

@@ -249,46 +249,287 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
 
             {data.type === 'vcard' && (
               <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">First Name</p>
-                    <input
-                      type="text"
-                      value={data.vcard?.firstName || ''}
-                      onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), firstName: e.target.value } })}
-                      placeholder="John"
-                      className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
-                    />
+                <CollapsibleSection
+                  id="vcard-personal"
+                  title="Personal Information"
+                  icon={User}
+                  isExpanded={expandedSections['vcard-personal'] !== false}
+                  onToggle={toggleSection}
+                >
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">First Name</p>
+                        <input
+                          type="text"
+                          value={data.vcard?.firstName || ''}
+                          onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), firstName: e.target.value } })}
+                          placeholder="John"
+                          className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all text-sm"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Last Name</p>
+                        <input
+                          type="text"
+                          value={data.vcard?.lastName || ''}
+                          onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), lastName: e.target.value } })}
+                          placeholder="Doe"
+                          className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Job Title</p>
+                      <input
+                        type="text"
+                        value={data.vcard?.jobTitle || ''}
+                        onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), jobTitle: e.target.value } })}
+                        placeholder="CEO / Founder"
+                        className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Company</p>
+                      <input
+                        type="text"
+                        value={data.vcard?.company || ''}
+                        onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), company: e.target.value } })}
+                        placeholder="Acme Inc."
+                        className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all text-sm"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Last Name</p>
-                    <input
-                      type="text"
-                      value={data.vcard?.lastName || ''}
-                      onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), lastName: e.target.value } })}
-                      placeholder="Doe"
-                      className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
-                    />
+                </CollapsibleSection>
+
+                <CollapsibleSection
+                  id="vcard-contact"
+                  title="Contact Details"
+                  icon={Phone}
+                  isExpanded={expandedSections['vcard-contact']}
+                  onToggle={toggleSection}
+                >
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email Address</p>
+                      <input
+                        type="email"
+                        value={data.vcard?.email || ''}
+                        onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), email: e.target.value } })}
+                        placeholder="john@example.com"
+                        className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all text-sm"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Mobile Number</p>
+                        <input
+                          type="tel"
+                          value={data.vcard?.mobile || ''}
+                          onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), mobile: e.target.value } })}
+                          placeholder="+1 234 567 890"
+                          className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all text-sm"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Work Phone</p>
+                        <input
+                          type="tel"
+                          value={data.vcard?.phone || ''}
+                          onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), phone: e.target.value } })}
+                          placeholder="+1 234 567 891"
+                          className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Website URL</p>
+                      <input
+                        type="url"
+                        value={data.vcard?.website || ''}
+                        onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), website: e.target.value } })}
+                        placeholder="https://example.com"
+                        className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Physical Address</p>
+                      <input
+                        type="text"
+                        value={data.vcard?.address || ''}
+                        onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), address: e.target.value } })}
+                        placeholder="123 Main St, City, Country"
+                        className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all text-sm"
+                      />
+                    </div>
                   </div>
-                </div>
+                </CollapsibleSection>
+
+                <CollapsibleSection
+                  id="vcard-branding"
+                  title="Profile & Branding"
+                  icon={Palette}
+                  isExpanded={expandedSections['vcard-branding']}
+                  onToggle={toggleSection}
+                >
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Avatar / Photo</p>
+                        <label className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
+                          {data.vcard?.avatar ? (
+                            <img src={data.vcard.avatar} className="w-full h-full object-cover" />
+                          ) : (
+                            <>
+                              <ImageIcon className="w-5 h-5 text-gray-400" />
+                              <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Upload Photo</span>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => {
+                                  updateData({ 
+                                    vcard: { 
+                                      ...(data.vcard || {}), 
+                                      avatar: ev.target?.result as string,
+                                      avatarPendingFile: { file }
+                                    } 
+                                  } as any);
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Banner Image</p>
+                        <label className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
+                          {data.vcard?.banner ? (
+                            <img src={data.vcard.banner} className="w-full h-full object-cover" />
+                          ) : (
+                            <>
+                              <ImageIcon className="w-5 h-5 text-gray-400" />
+                              <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Upload Banner</span>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => {
+                                  updateData({ 
+                                    vcard: { 
+                                      ...(data.vcard || {}), 
+                                      banner: ev.target?.result as string,
+                                      bannerPendingFile: { file }
+                                    } 
+                                  } as any);
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Theme Color</p>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer"
+                            value={data.vcard?.themeColor || '#2563eb'}
+                            onChange={(e) => updateData({ vcard: { ...(data.vcard || {}), themeColor: e.target.value } } as any)}
+                          />
+                          <input
+                            type="text"
+                            className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm"
+                            value={data.vcard?.themeColor || '#2563eb'}
+                            onChange={(e) => updateData({ vcard: { ...(data.vcard || {}), themeColor: e.target.value } } as any)}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Accent Color</p>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer"
+                            value={data.vcard?.accentColor || '#111827'}
+                            onChange={(e) => updateData({ vcard: { ...(data.vcard || {}), accentColor: e.target.value } } as any)}
+                          />
+                          <input
+                            type="text"
+                            className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm"
+                            value={data.vcard?.accentColor || '#111827'}
+                            onChange={(e) => updateData({ vcard: { ...(data.vcard || {}), accentColor: e.target.value } } as any)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleSection>
+
+                <CollapsibleSection
+                  id="vcard-socials"
+                  title="Social Links"
+                  icon={Share2}
+                  isExpanded={expandedSections['vcard-socials']}
+                  onToggle={toggleSection}
+                >
+                  <div className="grid grid-cols-1 gap-4">
+                    {[
+                      { id: 'instagram' as const, label: 'Instagram', placeholder: 'instagram.com/user' },
+                      { id: 'facebook' as const, label: 'Facebook', placeholder: 'facebook.com/user' },
+                      { id: 'twitter' as const, label: 'Twitter / X', placeholder: 'twitter.com/user' },
+                      { id: 'linkedin' as const, label: 'LinkedIn', placeholder: 'linkedin.com/in/user' },
+                      { id: 'youtube' as const, label: 'YouTube', placeholder: 'youtube.com/@user' },
+                      { id: 'tiktok' as const, label: 'TikTok', placeholder: 'tiktok.com/@user' },
+                      { id: 'github' as const, label: 'GitHub', placeholder: 'github.com/user' },
+                      { id: 'whatsapp' as const, label: 'WhatsApp', placeholder: '+1234567890' },
+                    ].map((s) => (
+                      <div key={s.id} className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{s.label}</p>
+                        <input
+                          type="text"
+                          value={(data.vcard?.socials as any)?.[s.id] || ''}
+                          onChange={(e) => updateData({
+                            vcard: {
+                              ...(data.vcard || {}),
+                              socials: {
+                                ...(data.vcard?.socials || {}),
+                                [s.id]: e.target.value
+                              }
+                            }
+                          } as any)}
+                          placeholder={s.placeholder}
+                          className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-sm font-semibold transition-all bg-gray-50/30"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleSection>
+
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email Address</p>
-                  <input
-                    type="email"
-                    value={data.vcard?.email || ''}
-                    onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), email: e.target.value } })}
-                    placeholder="john@example.com"
-                    className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Mobile Number</p>
-                  <input
-                    type="tel"
-                    value={data.vcard?.mobile || ''}
-                    onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), mobile: e.target.value } })}
-                    placeholder="+1 234 567 890"
-                    className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold bg-gray-50/30 transition-all"
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Note / Bio</p>
+                  <textarea
+                    value={data.vcard?.note || ''}
+                    onChange={(e) => updateData({ vcard: { ...(data.vcard || {} as any), note: e.target.value } })}
+                    placeholder="Tell people a bit about yourself..."
+                    rows={3}
+                    className="w-full p-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-sm font-semibold bg-gray-50/30 transition-all"
                   />
                 </div>
               </div>

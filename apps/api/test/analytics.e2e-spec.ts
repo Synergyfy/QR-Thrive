@@ -43,14 +43,17 @@ describe('Analytics (e2e)', () => {
       },
     });
     userId = user.id;
-    authToken = jwtService.sign({ sub: user.id, email: user.email }, { secret: 'access_secret' });
+    authToken = jwtService.sign(
+      { sub: user.id, email: user.email },
+      { secret: 'access_secret' },
+    );
   });
 
   afterAll(async () => {
     await prisma.scan.deleteMany();
     await prisma.qRCode.deleteMany();
     if (userId) {
-        await prisma.user.deleteMany({ where: { id: userId } });
+      await prisma.user.deleteMany({ where: { id: userId } });
     }
     await app.close();
   });
@@ -64,7 +67,12 @@ describe('Analytics (e2e)', () => {
         name: 'Analytics Test',
         type: 'url',
         data: { url: 'https://google.com' },
-        design: { dots: { type: 'rounded', color: '#000000' }, background: { color: '#ffffff' }, cornersSquare: { type: 'square' }, cornersDot: { type: 'dot' } },
+        design: {
+          dots: { type: 'rounded', color: '#000000' },
+          background: { color: '#ffffff' },
+          cornersSquare: { type: 'square' },
+          cornersDot: { type: 'dot' },
+        },
         frame: { type: 'none' },
       })
       .expect(201);
@@ -74,12 +82,13 @@ describe('Analytics (e2e)', () => {
 
     // 2. Simulate a scan from a specific IP
     const testIp = '8.8.8.8';
-    const testUA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1';
-    
+    const testUA =
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1';
+
     (geoip.lookup as jest.Mock).mockReturnValue({
       city: 'Mountain View',
       country: 'US',
-      region: 'CA'
+      region: 'CA',
     });
 
     await request(app.getHttpServer())

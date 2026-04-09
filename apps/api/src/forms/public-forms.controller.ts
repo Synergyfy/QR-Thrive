@@ -21,9 +21,12 @@ export class PublicFormsController {
     @Body() submitDto: SubmitFormDto,
     @Req() req: Request,
   ) {
-    const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown';
+    const ip =
+      (req.headers['x-forwarded-for'] as string) ||
+      req.socket.remoteAddress ||
+      'unknown';
     const userAgent = req.headers['user-agent'] || 'unknown';
-    
+
     return this.formsService.submitForm(shortId, submitDto, ip, userAgent);
   }
 }

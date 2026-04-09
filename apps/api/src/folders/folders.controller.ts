@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Param,
+  Delete,
+  Req,
+} from '@nestjs/common';
 import { FoldersService } from './folders.service';
 import { CreateFolderDto, UpdateFolderDto } from './dto/folder.dto';
 import type { Request } from 'express';
@@ -14,7 +23,10 @@ export class FoldersController {
   constructor(private readonly foldersService: FoldersService) {}
 
   @Post()
-  create(@Req() req: RequestWithUser, @Body() createFolderDto: CreateFolderDto) {
+  create(
+    @Req() req: RequestWithUser,
+    @Body() createFolderDto: CreateFolderDto,
+  ) {
     return this.foldersService.create(req.user.userId, createFolderDto);
   }
 
@@ -29,7 +41,11 @@ export class FoldersController {
   }
 
   @Put(':id')
-  update(@Req() req: RequestWithUser, @Param('id') id: string, @Body() updateFolderDto: UpdateFolderDto) {
+  update(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+    @Body() updateFolderDto: UpdateFolderDto,
+  ) {
     return this.foldersService.update(id, req.user.userId, updateFolderDto);
   }
 

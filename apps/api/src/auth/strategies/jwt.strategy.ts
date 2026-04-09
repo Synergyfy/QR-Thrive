@@ -14,11 +14,12 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         },
       ]),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_ACCESS_SECRET') || 'access_secret',
+      secretOrKey:
+        configService.get<string>('JWT_ACCESS_SECRET') || 'access_secret',
     });
   }
 
   async validate(payload: any) {
-    return { userId: payload.sub };
+    return { userId: payload.sub, role: payload.role };
   }
 }
