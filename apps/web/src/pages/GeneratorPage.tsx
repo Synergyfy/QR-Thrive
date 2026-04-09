@@ -266,6 +266,7 @@ function GeneratorPage() {
                           onMouseLeave={() => setHoveredType(null)}
                           onClick={() => {
                             updateData({ type: type.id });
+                            setHoveredType(null);
                             handleNext();
                           }}
                           className={cn(
@@ -417,10 +418,10 @@ function GeneratorPage() {
                         </div>
 
                         <div className="flex-1 overflow-y-auto hidden-scrollbar flex flex-col relative">
-                            {(hoveredType || config.data.type) ? (
-                               <div key={hoveredType || config.data.type} className="min-h-full animate-in fade-in slide-in-from-bottom-5 duration-700 flex flex-col">
+                            {(step === 'type' ? (hoveredType || config.data.type) : config.data.type) ? (
+                               <div key={step === 'type' ? (hoveredType || config.data.type) : config.data.type} className="min-h-full animate-in fade-in slide-in-from-bottom-5 duration-700 flex flex-col">
                                   <DynamicView 
-                                    data={hoveredType ? { type: hoveredType } as any : config.data} 
+                                    data={step === 'type' && hoveredType ? { type: hoveredType } as any : config.data} 
                                     isWizardPreview={true} 
                                   />
                                </div>
