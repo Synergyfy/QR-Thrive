@@ -7,7 +7,7 @@ import {
   Loader2,
   Eye
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+
 import toast from 'react-hot-toast';
 import { useSystemConfig, useUpdateSystemConfig } from '../../hooks/useAdmin';
 

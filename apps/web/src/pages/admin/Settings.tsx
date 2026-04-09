@@ -4,7 +4,6 @@ import {
   Plus,
   Trash2,
   Check,
-  Info,
   Type,
   ListTodo,
   HelpCircle,

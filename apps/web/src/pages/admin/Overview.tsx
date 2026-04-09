@@ -39,32 +39,32 @@ export default function Overview() {
     { 
       name: 'Total QR Codes Generated', 
       value: statsData?.totalQRs.toLocaleString() || '0', 
-      change: `${statsData?.trends.qrs >= 0 ? '+' : ''}${statsData?.trends.qrs}%`,
-      trend: (statsData?.trends.qrs || 0) >= 0 ? 'up' : 'down', 
+      change: `${(statsData?.trends?.qrs || 0) >= 0 ? '+' : ''}${statsData?.trends?.qrs}%`,
+      trend: (statsData?.trends?.qrs || 0) >= 0 ? 'up' : 'down', 
       icon: QrCode, 
       color: 'blue' 
     },
     { 
       name: 'Total Registered Users', 
       value: statsData?.totalUsers.toLocaleString() || '0', 
-      change: `${statsData?.trends.users >= 0 ? '+' : ''}${statsData?.trends.users}%`,
-      trend: (statsData?.trends.users || 0) >= 0 ? 'up' : 'down', 
+      change: `${(statsData?.trends?.users || 0) >= 0 ? '+' : ''}${statsData?.trends?.users}%`,
+      trend: (statsData?.trends?.users || 0) >= 0 ? 'up' : 'down', 
       icon: Users, 
       color: 'emerald' 
     },
     { 
       name: 'Estimated Monthly Revenue', 
       value: `${currency.symbol}${convertPrice(statsData?.estimatedRevenue || 0)}`, 
-      change: `${statsData?.trends.revenue >= 0 ? '+' : ''}${statsData?.trends.revenue}%`,
-      trend: (statsData?.trends.revenue || 0) >= 0 ? 'up' : 'down', 
+      change: `${(statsData?.trends?.revenue || 0) >= 0 ? '+' : ''}${statsData?.trends?.revenue}%`,
+      trend: (statsData?.trends?.revenue || 0) >= 0 ? 'up' : 'down', 
       icon: DollarSign, 
       color: 'indigo' 
     },
     { 
       name: 'Active Scans', 
       value: statsData?.totalScans.toLocaleString() || '0', 
-      change: `${statsData?.trends.scans >= 0 ? '+' : ''}${statsData?.trends.scans}%`,
-      trend: (statsData?.trends.scans || 0) >= 0 ? 'up' : 'down', 
+      change: `${(statsData?.trends?.scans || 0) >= 0 ? '+' : ''}${statsData?.trends?.scans}%`,
+      trend: (statsData?.trends?.scans || 0) >= 0 ? 'up' : 'down', 
       icon: Activity, 
       color: 'rose' 
     },
