@@ -9,7 +9,8 @@ import {
   HelpCircle, 
   Zap,
   Settings,
-  Globe
+  Globe,
+  Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -74,14 +75,6 @@ export default function PricingManager() {
     });
     setConfig(newConfig);
   };
-
-  if (isLoading) {
-    return (
-      <div className="h-[60vh] flex items-center justify-center text-blue-600">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-20">
@@ -350,11 +343,11 @@ export default function PricingManager() {
                         </div>
                       </div>
                     </div>
-                    <p className="mt-4 text-[10px] text-slate-400 flex items-center gap-2 italic">
-                      <Info className="w-3 h-3" />
-                      Changing these values will automatically create or update the corresponding plans on Paystack.
-                    </p>
-                  </div>
+                  ))}
+                  <p className="mt-4 text-[10px] text-slate-400 flex items-center gap-2 italic">
+                    <Info className="w-3 h-3" />
+                    Changing these values will automatically create or update the corresponding plans on Paystack.
+                  </p>
                 </div>
               </motion.div>
             )}
