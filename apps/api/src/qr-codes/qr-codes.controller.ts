@@ -10,11 +10,13 @@ import {
   Query,
   Res,
   ForbiddenException,
+  UseGuards,
 } from '@nestjs/common';
 import { QRCodesService } from './qr-codes.service';
 import { CreateQRCodeDto } from './dto/create-qr-code.dto';
 import { UpdateQRCodeDto } from './dto/update-qr-code.dto';
 import { Public } from '../auth/decorators/public.decorator';
+import { UsageGuard } from '../pricing/usage.guard';
 import type { Request, Response } from 'express';
 import {
   ApiTags,
@@ -38,9 +40,11 @@ export class QRCodesController {
   constructor(private readonly qrCodesService: QRCodesService) {}
 
   @Post()
+  @UseGuards(UsageGuard)
   @ApiOperation({ summary: 'Create a new QR code' })
   @ApiResponse({ status: 201, description: 'QR code created successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input.' })
+  @ApiResponse({ status: 403, description: 'Usage limit reached or QR type not allowed.' })
   create(
     @Req() req: RequestWithUser,
     @Body() createQRCodeDto: CreateQRCodeDto,
@@ -115,9 +119,11 @@ export class QRCodesController {
   }
 
   @Post(':id/duplicate')
+  @UseGuards(UsageGuard)
   @ApiOperation({ summary: 'Duplicate an existing QR code' })
   @ApiParam({ name: 'id', description: 'The unique identifier of the QR code to duplicate' })
   @ApiResponse({ status: 201, description: 'QR code duplicated successfully.' })
+  @ApiResponse({ status: 403, description: 'Usage limit reached.' })
   duplicate(@Req() req: RequestWithUser, @Param('id') id: string) {
     return this.qrCodesService.duplicate(id, req.user.userId);
   }

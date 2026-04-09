@@ -15,6 +15,7 @@ import { MediaModule } from './media/media.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
+import { PricingModule } from './pricing/pricing.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { AdminModule } from './admin/admin.module';
     MediaModule,
     PaymentsModule,
     AdminModule,
+    PricingModule,
   ],
   controllers: [AppController],
   providers: [
