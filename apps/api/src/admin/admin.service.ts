@@ -18,7 +18,7 @@ export class AdminService {
     private paystackService: PaystackService,
   ) {}
 
-  async getStats() {
+  async getStats(range = '7d') {
     const config = await this.getConfig();
     const monthlyPrice = config.monthlyPrice;
 
@@ -31,30 +31,63 @@ export class AdminService {
 
     const estimatedRevenue = proUsers * monthlyPrice;
 
-    // Growth trend (last 7 days) for chart
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      d.setHours(0, 0, 0, 0);
-      return d;
-    }).reverse();
+    // Handle different ranges for chart data
+    let periods: Date[] = [];
+    if (range === '30d') {
+      periods = Array.from({ length: 30 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }).reverse();
+    } else if (range === 'all') {
+      // Monthly resolution for the last 12 months for "All Time"
+      periods = Array.from({ length: 12 }, (_, i) => {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        d.setDate(1);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }).reverse();
+    } else {
+      // Default to last 7 days daily resolution
+      periods = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }).reverse();
+    }
 
     const chartData = await Promise.all(
-      last7Days.map(async (date) => {
-        const nextDay = new Date(date);
-        nextDay.setDate(nextDay.getDate() + 1);
+      periods.map(async (date) => {
+        const nextPeriod = new Date(date);
+        if (range === 'all') {
+          nextPeriod.setMonth(nextPeriod.getMonth() + 1);
+        } else {
+          nextPeriod.setDate(nextPeriod.getDate() + 1);
+        }
 
         const count = await this.prisma.qRCode.count({
           where: {
             createdAt: {
               gte: date,
-              lt: nextDay,
+              lt: nextPeriod,
             },
           },
         });
 
+        let label = '';
+        if (range === '7d') {
+          label = date.toLocaleDateString('en-US', { weekday: 'short' });
+        } else if (range === '30d') {
+          label = date.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+        } else {
+          label = date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+        }
+
         return {
-          name: date.toLocaleDateString('en-US', { weekday: 'short' }),
+          name: label,
           qrs: count,
         };
       }),

@@ -35,10 +35,11 @@ export class AdminController {
   @ApiBearerAuth('JWT-auth')
   @Get('stats')
   @ApiOperation({ summary: 'Get global system statistics (Admin only)' })
+  @ApiQuery({ name: 'range', required: false, type: String, enum: ['7d', '30d', 'all'], example: '7d' })
   @ApiResponse({ status: 200, description: 'Stats retrieved successfully.' })
   @ApiResponse({ status: 403, description: 'Forbidden - requires admin role.' })
-  async getStats() {
-    return this.adminService.getStats();
+  async getStats(@Query('range') range = '7d') {
+    return this.adminService.getStats(range);
   }
 
   @Roles(Role.ADMIN)

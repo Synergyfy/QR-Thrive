@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { 
   Users, 
   QrCode, 
@@ -23,7 +24,8 @@ const colorMap: Record<string, string> = {
 
 export default function Overview() {
   const navigate = useNavigate();
-  const { data: statsData, isLoading: statsLoading } = useAdminStats();
+  const [range, setRange] = useState('7d');
+  const { data: statsData, isLoading: statsLoading } = useAdminStats(range);
   const { data: usersData, isLoading: usersLoading } = useAdminUsers({ limit: 5 });
   const { currency, convertPrice } = useCurrency();
 
@@ -111,10 +113,14 @@ export default function Overview() {
               <h3 className="text-lg font-bold text-slate-800 tracking-tight">QR Generation Growth</h3>
               <p className="text-xs text-slate-400 font-medium">Daily statistics of QR codes created across the platform.</p>
             </div>
-            <select className="bg-slate-50 border border-slate-200 text-xs font-bold px-4 py-2 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20">
-              <option>Last 7 Days</option>
-              <option>Last 30 Days</option>
-              <option>All Time</option>
+            <select 
+              value={range}
+              onChange={(e) => setRange(e.target.value)}
+              className="bg-slate-50 border border-slate-200 text-xs font-bold px-4 py-2 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
+            >
+              <option value="7d">Last 7 Days</option>
+              <option value="30d">Last 30 Days</option>
+              <option value="all">All Time</option>
             </select>
           </div>
 
@@ -139,7 +145,10 @@ export default function Overview() {
                     </div>
                   </div>
                   <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                    {day.name}
+                    {range === '30d' 
+                      ? (i % 5 === 0 || i === (statsData?.chartData.length || 0) - 1 ? day.name : '')
+                      : day.name
+                    }
                   </span>
                 </div>
               );

@@ -179,7 +179,7 @@ export const mediaApi = {
 };
 
 export const adminApi = {
-  getStats: async () => (await apiClient.get<AdminStats>('/admin/stats')).data,
+  getStats: async (range = '7d') => (await apiClient.get<AdminStats>('/admin/stats', { params: { range } })).data,
   getUsers: async (params?: { page?: number; limit?: number; search?: string; status?: string }) => 
     (await apiClient.get<AdminUsersResponse>('/admin/users', { params })).data,
   getConfig: async () => (await apiClient.get<SystemConfig>('/admin/config')).data,
