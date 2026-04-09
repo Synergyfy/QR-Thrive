@@ -6,82 +6,52 @@ import PublicNav from '../components/PublicNav';
 import PublicFooter from '../components/PublicFooter';
 import { useCurrency } from '../hooks/useCurrency';
 
-const pricingFeatures = [
-  "Unlimited QR Codes",
-  "Unlimited Scans",
-  "Download PNG & SVG",
-  "Dynamic & Static QR Codes",
-  "Custom Landing Pages",
-  "Scan statistics (how many, when and where)",
-  "API Access",
-  "Bulk Creation",
-  "5 Team Members",
-  "Cancel any time",
-  "7-day money back guarantee"
-];
-
-const faqs = [
-  {
-    question: "How does billing work?",
-    answer: "We bill you securely via our payment processor. You can choose to be billed monthly, quarterly, or yearly. Your subscription will automatically renew at the end of each billing cycle."
-  },
-  {
-    question: "What happens if I want to make changes on my QR Codes?",
-    answer: "With our dynamic QR codes, you can change the destination URL or content at any time without having to reprint or recreate the QR code itself."
-  },
-  {
-    question: "Is there a free trial?",
-    answer: "Yes, we offer a 7-day money-back guarantee so you can try out all our premium features risk-free."
-  },
-  {
-    question: "How long until I get my QR Codes?",
-    answer: "Instantly! As soon as you configure and generate your QR code, it's ready to be downloaded and used in your marketing materials."
-  },
-  {
-    question: "What currency am I billed in?",
-    answer: "Our plans are billed in your local currency where possible. If your local currency is not supported, you will be billed in USD ($). If you're paying with an international card, your bank will handle the conversion automatically."
-  },
-  {
-    question: "Can I change my plan?",
-    answer: "Yes, you can upgrade, downgrade, or cancel your plan at any time from your account settings."
-  }
-];
-
-const plans = [
-  {
-    name: "Standard",
-    cycle: "Monthly",
-    price: 5000,
-    description: "Perfect for short-term projects and testing.",
-    billingPrefix: "Billed monthly (",
-    popular: false
-  },
-  {
-    name: "Annual",
-    cycle: "Yearly",
-    price: 4167,
-    totalPrice: 50000,
-    description: "Our best value for growing businesses.",
-    billingPrefix: "Billed annually (",
-    popular: true,
-    highlight: true,
-    save: "16%"
-  },
-  {
-    name: "Quarterly",
-    cycle: "Quarterly",
-    price: 4500,
-    totalPrice: 13500,
-    description: "A great middle ground for commitment.",
-    billingPrefix: "Billed quarterly (",
-    popular: false,
-    save: "10%"
-  }
-];
+import { getPricingConfig } from '../config/pricing';
 
 export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const { currency, convertPrice, setCurrency, allCurrencies } = useCurrency();
+  const { currency, market, tier, setCurrency, allCurrencies } = useCurrency();
+  const config = getPricingConfig();
+  
+  // Get data for current market/tier
+  const tierData = market === 'local' ? config.local : config.international[tier];
+  const copy = {
+    badge: tierData.badge,
+    title: tierData.title,
+    subtitle: tierData.subtitle
+  };
+
+  // Process plans with currency multipliers if not NGN
+  const rawPlans = tierData.plans;
+  const multiplier = currency.code === 'GBP' ? 0.8 : (currency.code === 'EUR' ? 0.9 : 1);
+  
+  const currentPlans = rawPlans.map(plan => ({
+    ...plan,
+    price: plan.price === 0 ? 0 : Math.round(plan.price * multiplier)
+  }));
+
+  const faqs = [
+    {
+      question: "How long is the free trial?",
+      answer: "Every new account starts with 7 days of PRO access. You can explore all premium features like advanced QR types and full lead capture. After 7 days, if you don't upgrade, you'll be moved to our generous Free Forever plan."
+    },
+    {
+      question: "What are the limits on the Free plan?",
+      answer: `Our Free plan is designed to help you get started. It includes ${market === 'local' ? '2' : '1'} dynamic QR code and 50 scans per month. To remove these limits and the QRThrive branding, you can upgrade to PRO at any time.`
+    },
+    {
+      question: "Can I change my content after printing?",
+      answer: "Yes! That's the power of our Dynamic QR codes. You can update the link, phone number, or menu items any time without changing the physical QR code itself."
+    },
+    {
+      question: "How does regional pricing work?",
+      answer: "We believe in being affordable everywhere. We detect your location to offer the most relevant currency and pricing structure for your local market, ensuring you get the best value."
+    },
+    {
+      question: "Can I cancel my subscription?",
+      answer: "Absolutely. You can cancel at any time from your dashboard. Your premium features will remain active until the end of your current billing cycle."
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-blue-500/30 flex flex-col font-['Poppins']">
@@ -93,7 +63,7 @@ export default function PricingPage() {
            <div className="bg-white/80 backdrop-blur-xl border border-slate-200/50 p-1.5 rounded-2xl shadow-2xl shadow-blue-900/10 flex items-center gap-1">
               <div className="flex items-center gap-2 px-3 mr-1 text-slate-400">
                 <Globe className="w-4 h-4" />
-                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Currency</span>
+                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Market</span>
               </div>
               {allCurrencies.map((c) => (
                 <button
@@ -115,12 +85,20 @@ export default function PricingPage() {
         <section className="pt-16 pb-12 px-4 text-center max-w-4xl mx-auto relative">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-400/20 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
           
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="inline-block px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-blue-100 mb-6"
+          >
+             {copy.badge}
+          </motion.div>
+
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 text-slate-900"
+            className="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 text-slate-900 leading-[1.1]"
           >
-            Turn Every Scan Into a <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400">Customer</span>
+             <div dangerouslySetInnerHTML={{ __html: copy.title }} />
           </motion.h1>
           
           <motion.p 
@@ -129,89 +107,104 @@ export default function PricingPage() {
             transition={{ delay: 0.1 }}
             className="text-lg md:text-xl text-slate-600 mb-6 leading-relaxed max-w-2xl mx-auto"
           >
-            Qrthrive helps you create powerful, branded QR codes that don't just link — they track, convert, and grow your business.
+            {copy.subtitle}
           </motion.p>
+
+          {/* Trial Trigger Banner */}
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex items-center justify-center gap-3 mb-12"
+          >
+             <div className="px-5 py-2.5 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100 flex items-center gap-2 shadow-sm">
+                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-widest leading-none">All new users get 7 Days of PRO for free</span>
+             </div>
+          </motion.div>
         </section>
 
         {/* Pricing Cards Section */}
         <section className="max-w-7xl mx-auto px-4 mb-24 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-            {plans.map((plan, idx) => (
+            {currentPlans.map((plan, idx) => (
               <motion.div 
                 key={plan.name}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 + (idx * 0.1) }}
-                className={`flex flex-col relative rounded-[2.5rem] p-8 transition-all duration-500 overflow-hidden group ${
+                className={`flex flex-col relative rounded-[3rem] p-10 transition-all duration-500 overflow-hidden group ${
                   plan.highlight 
-                    ? 'bg-slate-900 text-white shadow-2xl shadow-blue-500/20 scale-105 z-20 md:-translate-y-4' 
+                    ? 'bg-slate-900 text-white shadow-[0_40px_100px_-20px_rgba(37,99,235,0.2)] scale-105 z-20 md:-translate-y-4 border border-blue-500/30' 
                     : 'bg-white border border-slate-100 shadow-xl shadow-blue-900/5 z-10'
                 }`}
               >
-                {/* Most Popular Badge */}
-                {plan.popular && (
-                  <div className="absolute top-6 right-8">
-                     <span className="bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-full shadow-lg shadow-blue-500/40">
-                        Most Popular
+                {/* Most Popular/Trial Badge */}
+                {(plan.popular || plan.trial) && (
+                  <div className="absolute top-8 right-10">
+                     <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-5 py-2.5 rounded-full shadow-lg transition-transform group-hover:scale-110 ${
+                        plan.highlight ? 'bg-blue-600 text-white shadow-blue-500/40' : 'bg-slate-900 text-white'
+                     }`}>
+                        {plan.trial ? '7-Day Trial' : 'Most Popular'}
                      </span>
                   </div>
                 )}
 
                 {/* Plan Content */}
                 <div className="mb-10 pt-4">
-                  <h3 className={`text-xl font-black tracking-tight mb-2 ${plan.highlight ? 'text-blue-400' : 'text-slate-900'}`}>
+                  <h3 className={`text-2xl font-black tracking-tight mb-2 ${plan.highlight ? 'text-blue-400' : 'text-slate-900'}`}>
                     {plan.name}
                   </h3>
-                  <p className={`text-sm font-medium leading-relaxed mb-8 ${plan.highlight ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <p className={`text-sm font-medium leading-relaxed mb-10 ${plan.highlight ? 'text-slate-400' : 'text-slate-500'}`}>
                     {plan.description}
                   </p>
                   
-                  <div className="flex items-center gap-4 mb-2">
-                    <div className="flex items-baseline gap-1">
-                      <span className={`text-2xl font-bold ${plan.highlight ? 'text-slate-400' : 'text-slate-400'}`}>{currency.symbol}</span>
-                      <span className={`text-6xl font-black tracking-tighter ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
-                        {convertPrice(plan.price)}
-                      </span>
-                      <span className={`text-sm font-bold opacity-60 ml-1 ${plan.highlight ? 'text-white' : 'text-slate-500'}`}>
-                        / month
-                      </span>
-                    </div>
-                    {plan.save && (
-                      <div className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
-                        plan.highlight ? 'bg-blue-600 text-white' : 'bg-emerald-100 text-emerald-600'
-                      }`}>
-                        SAVE {plan.save}
-                      </div>
-                    )}
+                  <div className="flex items-baseline gap-1 mb-2">
+                    <span className={`text-3xl font-bold ${plan.highlight ? 'text-slate-400' : 'text-slate-400'}`}>{currency.symbol}</span>
+                    <span className={`text-7xl font-black tracking-tighter ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
+                       {plan.price === 0 ? '0' : (market === 'local' ? plan.price.toLocaleString() : plan.price)}
+                    </span>
+                    <span className={`text-sm font-bold opacity-60 ml-2 ${plan.highlight ? 'text-white' : 'text-slate-500'}`}>
+                      / month
+                    </span>
                   </div>
-                  <p className={`text-xs font-bold mt-1 uppercase tracking-widest opacity-60 ${plan.highlight ? 'text-blue-400' : 'text-blue-600'}`}>
-                    {plan.billingPrefix}{currency.symbol}{convertPrice(plan.totalPrice || plan.price)})
-                  </p>
                 </div>
 
-                <div className="space-y-4 mb-10 flex-grow">
-                  {pricingFeatures.slice(0, plan.highlight ? pricingFeatures.length : 8).map((feature, fIdx) => (
-                    <div key={fIdx} className="flex items-center gap-3">
-                      <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
+                <div className="space-y-6 mb-12 flex-grow">
+                  {plan.features.map((feature, fIdx) => (
+                    <div key={fIdx} className="flex items-center gap-4">
+                      <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
                         plan.highlight ? 'bg-blue-600/20' : 'bg-blue-50'
                       }`}>
-                        <Check className={`w-3 h-3 font-bold ${plan.highlight ? 'text-blue-400' : 'text-blue-600'}`} />
+                        <Check className={`w-3.5 h-3.5 font-bold ${plan.highlight ? 'text-blue-400' : 'text-blue-600'}`} />
                       </div>
-                      <span className={`text-sm font-medium ${plan.highlight ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <span className={`text-sm font-bold tracking-tight ${plan.highlight ? 'text-slate-200' : 'text-slate-700'}`}>
                         {feature}
                       </span>
                     </div>
                   ))}
                 </div>
 
-                <button className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
-                   plan.highlight 
-                    ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-600/30' 
-                    : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
-                }`}>
-                  Get Started
-                  <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                </button>
+                <div className="space-y-3">
+                  <button className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
+                     plan.highlight 
+                      ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30' 
+                      : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
+                  }`}>
+                    {plan.cta}
+                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
+                  </button>
+
+                  {plan.trial && (
+                    <button className={`w-full py-4 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] transition-all border-2 flex justify-center items-center gap-2 hover:bg-white/10 ${
+                       plan.highlight 
+                        ? 'border-white/10 text-white/60 hover:text-white hover:border-white/30' 
+                        : 'border-slate-100 text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                    }`}>
+                       No Trial? Get Started Now
+                    </button>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>
@@ -220,49 +213,58 @@ export default function PricingPage() {
         {/* Add-Ons Section */}
         <section className="max-w-4xl mx-auto px-4 mb-24">
           <div className="text-center mb-10">
-            <h3 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Powerful Add-Ons</h3>
-            <p className="text-slate-500 font-medium max-w-xl mx-auto">Enhance your experience with additional features for developers and businesses.</p>
+            <h3 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Enterprise Add-Ons</h3>
+            <p className="text-slate-500 font-medium max-w-xl mx-auto">Enhance your experience with additional features for developers and high-volume businesses.</p>
           </div>
 
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl shadow-blue-900/5 border border-slate-100 flex flex-col md:flex-row gap-10 items-center relative overflow-hidden"
+            className="bg-white rounded-[3rem] p-10 md:p-14 shadow-2xl shadow-blue-900/5 border border-slate-100 flex flex-col md:flex-row gap-12 items-center relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 p-32 bg-blue-50 rounded-full -translate-y-1/2 translate-x-1/2 -z-10 blur-3xl opacity-50"></div>
             
-            <div className="bg-blue-600 w-20 h-20 rounded-3xl flex items-center justify-center flex-shrink-0 shadow-xl shadow-blue-200">
-              <Zap className="w-10 h-10 text-white fill-white" />
+            <div className="bg-blue-600 w-24 h-24 rounded-[2rem] flex items-center justify-center flex-shrink-0 shadow-2xl shadow-blue-200">
+              <Zap className="w-12 h-12 text-white fill-white" />
             </div>
             
             <div className="flex-grow text-center md:text-left">
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-                <h4 className="text-2xl font-black text-slate-900 tracking-tight">API Integration</h4>
-                <div className="bg-blue-50 text-blue-600 font-black text-xs uppercase tracking-widest px-5 py-2.5 rounded-full inline-block border border-blue-100">
-                  + {currency.symbol}{convertPrice(12500)}/month (Annual)
+                <h4 className="text-3xl font-black text-slate-900 tracking-tight">Full API Access</h4>
+                <div className="bg-blue-50 text-blue-600 font-black text-xs uppercase tracking-widest px-6 py-3 rounded-full inline-block border border-blue-100 shadow-sm">
+                  + {currency.symbol}{market === 'local' ? '10,000' : (currency.code === 'USD' ? '25.00' : (currency.code === 'GBP' ? '20.00' : '22.00'))}/mo
                 </div>
               </div>
-              <p className="text-slate-500 font-medium mb-6 leading-relaxed">
-                Automate your QR creation workflow with our high-speed API. Includes webhooks and dedicated support.
+              <p className="text-slate-500 font-medium mb-8 leading-relaxed text-lg">
+                Automate your QR creation workflow with our high-speed API. Perfect for high-volume generation, dynamic updates, and custom integrations.
               </p>
-              <div className="flex items-start gap-3 bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
-                   <Check className="w-3.5 h-3.5 text-emerald-600" />
-                </div>
-                <p className="text-xs text-slate-700 font-bold leading-relaxed uppercase tracking-wider">
-                  Includes all Pro features + API access + Data streaming
-                </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                 {[
+                   'Unlimited programmatic QRs',
+                   'Webhook notifications',
+                   'Custom domain routing',
+                   '24/7 Developer support'
+                 ].map(item => (
+                   <div key={item} className="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                         <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      </div>
+                      <p className="text-[10px] text-slate-700 font-black uppercase tracking-widest">
+                        {item}
+                      </p>
+                   </div>
+                 ))}
               </div>
             </div>
           </motion.div>
         </section>
 
         {/* FAQ Section */}
-        <section className="max-w-3xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">Frequently Asked Questions</h2>
-            <p className="text-slate-500">Here's what you need to know about your Qrthrive license, based on the questions we are asked the most.</p>
+        <section className="max-w-4xl mx-auto px-4 mb-16">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Common Questions</h2>
+            <p className="text-slate-500 font-medium">Everything you need to know about the QRThrive ecosystem.</p>
           </div>
 
           <div className="space-y-4">
@@ -273,17 +275,21 @@ export default function PricingPage() {
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.05 }}
                 key={idx} 
-                className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                className="bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
               >
                 <button 
                   onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  className="w-full px-6 py-5 text-left flex justify-between items-center bg-white"
+                  className="w-full px-8 py-6 text-left flex justify-between items-center group"
                 >
-                  <span className="font-semibold text-slate-800 pr-8">{faq.question}</span>
+                  <span className="font-bold text-slate-800 text-lg pr-8 group-hover:text-blue-600 transition-colors">{faq.question}</span>
                   {openFaq === idx ? (
-                    <Minus className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                    <div className="bg-slate-100 p-2 rounded-xl">
+                       <Minus className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                    </div>
                   ) : (
-                    <Plus className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                    <div className="bg-slate-50 p-2 rounded-xl">
+                       <Plus className="w-5 h-5 text-slate-400 flex-shrink-0 group-hover:text-blue-600" />
+                    </div>
                   )}
                 </button>
                 <AnimatePresence>
@@ -294,8 +300,10 @@ export default function PricingPage() {
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
                     >
-                      <div className="px-6 pb-5 pt-0 text-slate-600 leading-relaxed border-t border-slate-50 mt-2">
-                        {faq.answer}
+                      <div className="px-8 pb-8 pt-0 text-slate-500 font-medium leading-relaxed border-t border-slate-50">
+                        <div className="pt-4">
+                           {faq.answer}
+                        </div>
                       </div>
                     </motion.div>
                   )}
