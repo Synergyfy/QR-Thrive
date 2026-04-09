@@ -6,6 +6,9 @@ import {
   Query,
   UseGuards,
   ParseIntPipe,
+  Param,
+  Delete,
+  Res,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -13,6 +16,7 @@ import { Role } from '@prisma/client';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Public } from '../auth/decorators/public.decorator';
 import { UpdateSystemConfigDto } from './dto/update-system-config.dto';
+import type { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -71,5 +75,32 @@ export class AdminController {
   @ApiResponse({ status: 400, description: 'Invalid input.' })
   async updateConfig(@Body() body: UpdateSystemConfigDto) {
     return this.adminService.updateConfig(body);
+  }
+
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('users/:id/ban')
+  @ApiOperation({ summary: 'Toggle user ban status (Admin only)' })
+  async banUser(@Param('id') id: string) {
+    return this.adminService.banUser(id);
+  }
+
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @Delete('users/:id')
+  @ApiOperation({ summary: 'Delete a user (Admin only)' })
+  async deleteUser(@Param('id') id: string) {
+    return this.adminService.deleteUser(id);
+  }
+
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @Get('users/export')
+  @ApiOperation({ summary: 'Export all users to CSV (Admin only)' })
+  async exportUsers(@Res() res: Response) {
+    const csv = await this.adminService.exportUsers();
+    res.header('Content-Type', 'text/csv');
+    res.attachment('users-export.csv');
+    return res.send(csv);
   }
 }

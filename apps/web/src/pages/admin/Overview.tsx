@@ -8,6 +8,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useAdminStats, useAdminUsers } from '../../hooks/useAdmin';
 import { useCurrency } from '../../hooks/useCurrency';
 import { formatDistanceToNow } from 'date-fns';
@@ -21,6 +22,7 @@ const colorMap: Record<string, string> = {
 };
 
 export default function Overview() {
+  const navigate = useNavigate();
   const { data: statsData, isLoading: statsLoading } = useAdminStats();
   const { data: usersData, isLoading: usersLoading } = useAdminUsers({ limit: 5 });
   const { currency, convertPrice } = useCurrency();
@@ -37,32 +39,32 @@ export default function Overview() {
     { 
       name: 'Total QR Codes Generated', 
       value: statsData?.totalQRs.toLocaleString() || '0', 
-      change: '+14.5%', // These could be calculated from backend too
-      trend: 'up', 
+      change: `${statsData?.trends.qrs >= 0 ? '+' : ''}${statsData?.trends.qrs}%`,
+      trend: (statsData?.trends.qrs || 0) >= 0 ? 'up' : 'down', 
       icon: QrCode, 
       color: 'blue' 
     },
     { 
       name: 'Total Registered Users', 
       value: statsData?.totalUsers.toLocaleString() || '0', 
-      change: '+8.2%', 
-      trend: 'up', 
+      change: `${statsData?.trends.users >= 0 ? '+' : ''}${statsData?.trends.users}%`,
+      trend: (statsData?.trends.users || 0) >= 0 ? 'up' : 'down', 
       icon: Users, 
       color: 'emerald' 
     },
     { 
       name: 'Estimated Monthly Revenue', 
       value: `${currency.symbol}${convertPrice(statsData?.estimatedRevenue || 0)}`, 
-      change: '+22.4%', 
-      trend: 'up', 
+      change: `${statsData?.trends.revenue >= 0 ? '+' : ''}${statsData?.trends.revenue}%`,
+      trend: (statsData?.trends.revenue || 0) >= 0 ? 'up' : 'down', 
       icon: DollarSign, 
       color: 'indigo' 
     },
     { 
       name: 'Active Scans', 
       value: statsData?.totalScans.toLocaleString() || '0', 
-      change: '-2.1%', 
-      trend: 'down', 
+      change: `${statsData?.trends.scans >= 0 ? '+' : ''}${statsData?.trends.scans}%`,
+      trend: (statsData?.trends.scans || 0) >= 0 ? 'up' : 'down', 
       icon: Activity, 
       color: 'rose' 
     },
@@ -149,7 +151,10 @@ export default function Overview() {
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-slate-800 tracking-tight">Recent Signups</h3>
-            <button className="text-blue-600 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-all">
+            <button 
+              onClick={() => navigate('/admin/users')}
+              className="text-blue-600 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-all"
+            >
               View All
             </button>
           </div>
@@ -192,3 +197,4 @@ export default function Overview() {
     </div>
   );
 }
+

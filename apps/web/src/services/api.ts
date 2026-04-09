@@ -184,4 +184,16 @@ export const adminApi = {
     (await apiClient.get<AdminUsersResponse>('/admin/users', { params })).data,
   getConfig: async () => (await apiClient.get<SystemConfig>('/admin/config')).data,
   updateConfig: async (data: Partial<SystemConfig>) => (await apiClient.patch<SystemConfig>('/admin/config', data)).data,
+  banUser: async (id: string) => (await apiClient.patch(`/admin/users/${id}/ban`)).data,
+  deleteUser: async (id: string) => (await apiClient.delete(`/admin/users/${id}`)).data,
+  exportUsers: async () => {
+    const res = await apiClient.get('/admin/users/export', { responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'users-export.csv');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  },
 };

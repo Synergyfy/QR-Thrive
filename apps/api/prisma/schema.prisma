@@ -18,6 +18,7 @@ model User {
   password      String
   role          Role           @default(USER)
   plan          PlanType       @default(FREE)
+  isBanned      Boolean        @default(false)
   
   // Paystack Integration
   paystackCustomerCode     String?   @unique

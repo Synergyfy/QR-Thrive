@@ -7,6 +7,7 @@ export interface User {
   lastName: string;
   role: 'USER' | 'ADMIN';
   plan: 'FREE' | 'PRO';
+  isBanned?: boolean;
 }
 
 export interface AuthResponse {
@@ -101,12 +102,19 @@ export interface AdminStats {
   totalScans: number;
   estimatedRevenue: number;
   chartData: Array<{ name: string; qrs: number }>;
+  trends: {
+    users: number;
+    scans: number;
+    qrs: number;
+    revenue: number;
+  };
 }
 
 export interface AdminUser extends User {
   name: string;
   qrs: number;
   subscriptionStatus: string | null;
+  isBanned: boolean;
   createdAt: string;
 }
 
@@ -121,6 +129,9 @@ export interface SystemConfig {
   monthlyPrice: number;
   quarterlyPrice: number;
   yearlyPrice: number;
+  monthlyPlanCode?: string;
+  quarterlyPlanCode?: string;
+  yearlyPlanCode?: string;
   heroTitle: string;
   heroSubtitle: string;
   features: string[];

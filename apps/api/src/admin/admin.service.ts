@@ -19,6 +19,9 @@ export class AdminService {
   ) {}
 
   async getStats() {
+    const config = await this.getConfig();
+    const monthlyPrice = config.monthlyPrice;
+
     const [totalUsers, totalQRs, totalScans, proUsers] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.qRCode.count(),
@@ -26,11 +29,9 @@ export class AdminService {
       this.prisma.user.count({ where: { plan: 'PRO' } }),
     ]);
 
-    // Simple revenue estimation (In reality, fetch from payment records if available)
-    const monthlyPrice = 5000;
     const estimatedRevenue = proUsers * monthlyPrice;
 
-    // Growth trend (last 7 days)
+    // Growth trend (last 7 days) for chart
     const last7Days = Array.from({ length: 7 }, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - i);
@@ -59,12 +60,39 @@ export class AdminService {
       }),
     );
 
+    // Trends (Compare last 30 days vs previous 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+    const [currentPeriodUsers, previousPeriodUsers, currentPeriodScans, previousPeriodScans, currentPeriodQRs, previousPeriodQRs] = await Promise.all([
+      this.prisma.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+      this.prisma.user.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
+      this.prisma.scan.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+      this.prisma.scan.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
+      this.prisma.qRCode.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+      this.prisma.qRCode.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
+    ]);
+
+    const calculateChange = (current: number, previous: number) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      // Using Math.min/max to cap extreme values if necessary, though not strictly required
+      return Number(((current - previous) / previous * 100).toFixed(1));
+    };
+
     return {
       totalUsers,
       totalQRs,
       totalScans,
       estimatedRevenue,
       chartData,
+      trends: {
+        users: calculateChange(currentPeriodUsers, previousPeriodUsers),
+        scans: calculateChange(currentPeriodScans, previousPeriodScans),
+        qrs: calculateChange(currentPeriodQRs, previousPeriodQRs),
+        revenue: calculateChange(currentPeriodUsers, previousPeriodUsers), // Proxy for revenue growth
+      },
     };
   }
 
@@ -79,7 +107,12 @@ export class AdminService {
           { lastName: { contains: search, mode: 'insensitive' as const } },
         ],
       }),
-      // Status could map to user.subscriptionStatus or a new 'status' field
+      ...(status === 'active' && { subscriptionStatus: 'active', isBanned: false }),
+      ...(status === 'inactive' && { 
+        subscriptionStatus: { not: 'active' as const }, 
+        isBanned: false 
+      }),
+      ...(status === 'banned' && { isBanned: true }),
     };
 
     const [users, total] = await Promise.all([
@@ -96,6 +129,7 @@ export class AdminService {
           role: true,
           plan: true,
           subscriptionStatus: true,
+          isBanned: true,
           createdAt: true,
           _count: {
             select: { qrCodes: true },
@@ -164,6 +198,45 @@ export class AdminService {
       where: { id: config.id },
       data: data as any, // Prisma data matches DTO but need cast for Json fields
     });
+  }
+
+  async banUser(id: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+    return this.prisma.user.update({
+      where: { id },
+      data: { isBanned: !user.isBanned },
+    });
+  }
+
+  async deleteUser(id: string) {
+    return this.prisma.user.delete({
+      where: { id },
+    });
+  }
+
+  async exportUsers() {
+    const users = await this.prisma.user.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        plan: true,
+        subscriptionStatus: true,
+        isBanned: true,
+        createdAt: true,
+      },
+    });
+
+    const header = 'ID,Email,First Name,Last Name,Role,Plan,Status,Banned,Joined\n';
+    const rows = users.map(u => 
+      `${u.id},${u.email},${u.firstName},${u.lastName},${u.role},${u.plan},${u.subscriptionStatus || 'N/A'},${u.isBanned},${u.createdAt.toISOString()}`
+    ).join('\n');
+
+    return header + rows;
   }
 
   private async syncPlansWithPaystack(

@@ -36,3 +36,29 @@ export const useUpdateSystemConfig = () => {
     },
   });
 };
+
+export const useBanUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => adminApi.banUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+    },
+  });
+};
+
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => adminApi.deleteUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+    },
+  });
+};
+
+export const useExportUsers = () => {
+  return useMutation({
+    mutationFn: adminApi.exportUsers,
+  });
+};
