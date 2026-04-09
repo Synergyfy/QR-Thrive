@@ -18,9 +18,18 @@ export async function bootstrap() {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: [`'self'`],
-          styleSrc: [`'self'`, `'unsafe-inline'`],
-          imgSrc: [`'self'`, 'data:', 'validator.swagger.io'],
-          scriptSrc: [`'self'`, `https: 'unsafe-inline'`],
+          styleSrc: [`'self'`, `'unsafe-inline'`, 'https://cdnjs.cloudflare.com'],
+          imgSrc: [
+            `'self'`,
+            'data:',
+            'validator.swagger.io',
+            'https://cdnjs.cloudflare.com',
+          ],
+          scriptSrc: [
+            `'self'`,
+            `'unsafe-inline'`,
+            'https://cdnjs.cloudflare.com',
+          ],
         },
       },
     }),
@@ -63,6 +72,14 @@ export async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document, {
+    customfavIcon:
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/favicon-16x16.png',
+    customCssUrl:
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css',
+    customJs: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.min.js',
+    ],
     swaggerOptions: {
       persistAuthorization: true,
     },
