@@ -60,6 +60,23 @@ export interface Plan {
   lowIncomeYearlyUSD: number;
 }
 
+export interface PublicPlan {
+  id: string;
+  name: string;
+  description: string | null;
+  qrCodeLimit: number;
+  qrCodeTypes: string[];
+  isPopular: boolean;
+  isDefault: boolean;
+  currency: string;
+  currencySymbol: string;
+  pricing: {
+    monthly: number;
+    quarterly: number;
+    yearly: number;
+  };
+}
+
 export interface PricingConfig {
   quarterlyDiscount: number;
   yearlyDiscount: number;
@@ -177,12 +194,8 @@ export interface AdminUsersResponse {
 
 export interface SystemConfig {
   id: number;
-  monthlyPrice: number;
-  quarterlyPrice: number;
-  yearlyPrice: number;
-  monthlyPlanCode?: string;
-  quarterlyPlanCode?: string;
-  yearlyPlanCode?: string;
+  quarterlyDiscount: number;
+  yearlyDiscount: number;
   heroTitle: string;
   heroSubtitle: string;
   features: string[];
