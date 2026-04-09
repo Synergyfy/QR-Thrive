@@ -44,8 +44,8 @@ describe('Forms (e2e)', () => {
     userId = user.id;
     // secret matches what's in analytics.e2e-spec.ts or default
     authToken = jwtService.sign(
-      { sub: user.id, email: user.email }, 
-      { secret: 'access_secret' }
+      { sub: user.id, email: user.email },
+      { secret: 'access_secret' },
     );
   });
 
@@ -70,7 +70,12 @@ describe('Forms (e2e)', () => {
           name: 'My Custom Form',
           type: 'form',
           data: {},
-          design: { dots: { type: 'rounded', color: '#000000' }, background: { color: '#ffffff' }, cornersSquare: { type: 'square' }, cornersDot: { type: 'dot' } },
+          design: {
+            dots: { type: 'rounded', color: '#000000' },
+            background: { color: '#ffffff' },
+            cornersSquare: { type: 'square' },
+            cornersDot: { type: 'dot' },
+          },
           frame: { type: 'none' },
         });
 
@@ -96,15 +101,15 @@ describe('Forms (e2e)', () => {
             { type: 'text', label: 'Name', required: true, order: 0 },
             { type: 'email', label: 'Email', required: true, order: 1 },
             { type: 'number', label: 'Age', required: false, order: 2 },
-            { 
-              type: 'select', 
-              label: 'Satisfaction', 
-              required: true, 
+            {
+              type: 'select',
+              label: 'Satisfaction',
+              required: true,
               options: [
                 { label: 'High', value: 'high' },
-                { label: 'Low', value: 'low' }
+                { label: 'Low', value: 'low' },
               ],
-              order: 3 
+              order: 3,
             },
           ],
         });
@@ -116,10 +121,10 @@ describe('Forms (e2e)', () => {
 
       expect(formRes.body.fields).toHaveLength(4);
       const fields = formRes.body.fields;
-      const nameField = fields.find(f => f.label === 'Name');
-      const emailField = fields.find(f => f.label === 'Email');
-      const ageField = fields.find(f => f.label === 'Age');
-      const satField = fields.find(f => f.label === 'Satisfaction');
+      const nameField = fields.find((f) => f.label === 'Name');
+      const emailField = fields.find((f) => f.label === 'Email');
+      const ageField = fields.find((f) => f.label === 'Age');
+      const satField = fields.find((f) => f.label === 'Satisfaction');
       console.log('Step 2 finished.');
 
       // 3. Get Public Form
@@ -139,7 +144,7 @@ describe('Forms (e2e)', () => {
         .send({
           answers: {
             [nameField.id]: 'John Doe',
-            [satField.id]: 'high'
+            [satField.id]: 'high',
           },
         })
         .expect(400);

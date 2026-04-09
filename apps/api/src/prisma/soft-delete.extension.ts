@@ -9,18 +9,18 @@ export const softDeleteExtension = (client: any) => {
       $allModels: {
         async delete({ model, args }) {
           if (!SOFT_DELETE_MODELS.includes(model)) {
-            return (client as any)[model].delete(args);
+            return client[model].delete(args);
           }
-          return (client as any)[model].update({
+          return client[model].update({
             ...args,
             data: { deletedAt: new Date() },
           });
         },
         async deleteMany({ model, args }) {
           if (!SOFT_DELETE_MODELS.includes(model)) {
-            return (client as any)[model].deleteMany(args);
+            return client[model].deleteMany(args);
           }
-          return (client as any)[model].updateMany({
+          return client[model].updateMany({
             ...args,
             data: { deletedAt: new Date() },
           });
@@ -47,7 +47,11 @@ export const softDeleteExtension = (client: any) => {
         // so we check after fetching
         async findUnique({ model, args, query }) {
           const result = await query(args);
-          if (SOFT_DELETE_MODELS.includes(model) && result && (result as any).deletedAt) {
+          if (
+            SOFT_DELETE_MODELS.includes(model) &&
+            result &&
+            result.deletedAt
+          ) {
             return null;
           }
           return result;
@@ -56,4 +60,3 @@ export const softDeleteExtension = (client: any) => {
     },
   });
 };
-

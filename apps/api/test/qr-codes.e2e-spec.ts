@@ -27,8 +27,6 @@ describe('QRCodesController (e2e)', () => {
   });
 
   it('/qr-codes (GET) - fails without auth', () => {
-    return request(app.getHttpServer())
-      .get('/qr-codes')
-      .expect(401);
+    return request(app.getHttpServer()).get('/qr-codes').expect(401);
   });
 });

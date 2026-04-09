@@ -150,7 +150,11 @@ export interface QRData {
     jobTitle?: string;
     note?: string;
     avatar?: string;
+    avatarPublicId?: string;
+    avatarPendingFile?: PendingFile;
     banner?: string;
+    bannerPublicId?: string;
+    bannerPendingFile?: PendingFile;
     themeColor?: string;
     accentColor?: string;
     socials?: {

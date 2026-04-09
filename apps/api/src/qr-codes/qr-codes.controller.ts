@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, Req, Query, Res, ForbiddenException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Param,
+  Delete,
+  Req,
+  Query,
+  Res,
+  ForbiddenException,
+} from '@nestjs/common';
 import { QRCodesService } from './qr-codes.service';
 import { CreateQRCodeDto } from './dto/create-qr-code.dto';
 import { UpdateQRCodeDto } from './dto/update-qr-code.dto';
@@ -16,7 +28,10 @@ export class QRCodesController {
   constructor(private readonly qrCodesService: QRCodesService) {}
 
   @Post()
-  create(@Req() req: RequestWithUser, @Body() createQRCodeDto: CreateQRCodeDto) {
+  create(
+    @Req() req: RequestWithUser,
+    @Body() createQRCodeDto: CreateQRCodeDto,
+  ) {
     return this.qrCodesService.create(req.user.userId, createQRCodeDto);
   }
 
@@ -28,7 +43,12 @@ export class QRCodesController {
     @Query('type') type?: string,
     @Query('search') search?: string,
   ) {
-    return this.qrCodesService.findAll(req.user.userId, { status, folderId, type, search });
+    return this.qrCodesService.findAll(req.user.userId, {
+      status,
+      folderId,
+      type,
+      search,
+    });
   }
 
   @Get('stats')
@@ -47,7 +67,11 @@ export class QRCodesController {
   }
 
   @Put(':id')
-  update(@Req() req: RequestWithUser, @Param('id') id: string, @Body() updateQRCodeDto: UpdateQRCodeDto) {
+  update(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+    @Body() updateQRCodeDto: UpdateQRCodeDto,
+  ) {
     return this.qrCodesService.update(id, req.user.userId, updateQRCodeDto);
   }
 
@@ -75,23 +99,30 @@ export class QRCodesController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    let ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown';
-    
+    let ip =
+      (req.headers['x-forwarded-for'] as string) ||
+      req.socket.remoteAddress ||
+      'unknown';
+
     // If X-Forwarded-For contains multiple IPs, use the first one
     if (ip.includes(',')) {
       ip = ip.split(',')[0].trim();
     }
-    
+
     // Normalize IPv6-mapped IPv4 addresses
     if (ip.startsWith('::ffff:')) {
       ip = ip.substring(7);
     }
 
     const userAgent = req.headers['user-agent'] || 'unknown';
-    
+
     try {
-      const qrCode = await this.qrCodesService.recordScan(shortId, ip, userAgent);
-      
+      const qrCode = await this.qrCodesService.recordScan(
+        shortId,
+        ip,
+        userAgent,
+      );
+
       // Determine destination from data
       const data = qrCode.data as any;
       let url = '/';
@@ -99,7 +130,9 @@ export class QRCodesController {
       if (qrCode.type === 'url' && data.url) {
         url = data.url.startsWith('http') ? data.url : `https://${data.url}`;
       } else if (qrCode.type === 'whatsapp' && data.phoneNumber) {
-        const message = data.message ? `?text=${encodeURIComponent(data.message)}` : '';
+        const message = data.message
+          ? `?text=${encodeURIComponent(data.message)}`
+          : '';
         url = `https://wa.me/${data.phoneNumber}${message}`;
       } else if (qrCode.type === 'form') {
         url = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/s/${shortId}?scanned=1`;

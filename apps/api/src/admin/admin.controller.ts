@@ -1,12 +1,12 @@
-import { 
-  Controller, 
-  Get, 
-  Patch, 
-  Body, 
-  Query, 
-  UseGuards, 
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  Query,
+  UseGuards,
   HttpStatus,
-  ParseIntPipe
+  ParseIntPipe,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { Roles } from '../auth/decorators/roles.decorator';

@@ -28,10 +28,12 @@ import { AdminModule } from './admin/admin.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 100,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     PrismaModule,
     AuthModule,
     QRCodesModule,
@@ -55,6 +57,4 @@ import { AdminModule } from './admin/admin.module';
     },
   ],
 })
-export class AppModule { }
-
-
+export class AppModule {}

@@ -1,4 +1,8 @@
-import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
@@ -14,9 +18,12 @@ export class PaystackService {
     private configService: ConfigService,
     private httpService: HttpService,
   ) {
-    this.secretKey = this.configService.get<string>('PAYSTACK_SECRET_KEY') || '';
+    this.secretKey =
+      this.configService.get<string>('PAYSTACK_SECRET_KEY') || '';
     if (!this.secretKey) {
-      this.logger.error('PAYSTACK_SECRET_KEY is not defined in environment variables');
+      this.logger.error(
+        'PAYSTACK_SECRET_KEY is not defined in environment variables',
+      );
     }
   }
 
@@ -27,7 +34,12 @@ export class PaystackService {
     };
   }
 
-  async initializeTransaction(email: string, amount: number, plan?: string, metadata?: any) {
+  async initializeTransaction(
+    email: string,
+    amount: number,
+    plan?: string,
+    metadata?: any,
+  ) {
     try {
       const response = await firstValueFrom(
         this.httpService.post(
@@ -44,22 +56,35 @@ export class PaystackService {
       );
       return response.data.data;
     } catch (error) {
-      this.logger.error('Paystack initialize error:', error.response?.data || error.message);
-      throw new InternalServerErrorException('Error initializing Paystack transaction');
+      this.logger.error(
+        'Paystack initialize error:',
+        error.response?.data || error.message,
+      );
+      throw new InternalServerErrorException(
+        'Error initializing Paystack transaction',
+      );
     }
   }
 
   async verifyTransaction(reference: string) {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/transaction/verify/${reference}`, {
-          headers: this.headers,
-        }),
+        this.httpService.get(
+          `${this.baseUrl}/transaction/verify/${reference}`,
+          {
+            headers: this.headers,
+          },
+        ),
       );
       return response.data.data;
     } catch (error) {
-      this.logger.error('Paystack verify error:', error.response?.data || error.message);
-      throw new InternalServerErrorException('Error verifying Paystack transaction');
+      this.logger.error(
+        'Paystack verify error:',
+        error.response?.data || error.message,
+      );
+      throw new InternalServerErrorException(
+        'Error verifying Paystack transaction',
+      );
     }
   }
 
@@ -71,7 +96,11 @@ export class PaystackService {
     return hash === signature;
   }
 
-  async createPlan(name: string, amount: number, interval: 'monthly' | 'quarterly' | 'annually') {
+  async createPlan(
+    name: string,
+    amount: number,
+    interval: 'monthly' | 'quarterly' | 'annually',
+  ) {
     try {
       const response = await firstValueFrom(
         this.httpService.post(
@@ -86,7 +115,10 @@ export class PaystackService {
       );
       return response.data.data;
     } catch (error) {
-      this.logger.error('Paystack plan creation error:', error.response?.data || error.message);
+      this.logger.error(
+        'Paystack plan creation error:',
+        error.response?.data || error.message,
+      );
       throw new InternalServerErrorException('Error creating Paystack plan');
     }
   }
@@ -105,7 +137,10 @@ export class PaystackService {
       );
       return response.data.data;
     } catch (error) {
-      this.logger.error('Paystack plan update error:', error.response?.data || error.message);
+      this.logger.error(
+        'Paystack plan update error:',
+        error.response?.data || error.message,
+      );
       throw new InternalServerErrorException('Error updating Paystack plan');
     }
   }

@@ -1,11 +1,19 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { softDeleteExtension } from './soft-delete.extension';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(PrismaService.name);
   private _extended: any;
 
@@ -16,19 +24,21 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     }
 
     // Serverless optimized pool
-    const pool = new Pool({ 
+    const pool = new Pool({
       connectionString,
       max: process.env.VERCEL ? 3 : 10,
       idleTimeoutMillis: 10000,
       connectionTimeoutMillis: 30000,
-      ssl: connectionString.includes('supabase') || process.env.NODE_ENV === 'production' 
-        ? { rejectUnauthorized: false } 
-        : false
+      ssl:
+        connectionString.includes('supabase') ||
+        process.env.NODE_ENV === 'production'
+          ? { rejectUnauthorized: false }
+          : false,
     });
-    
+
     const adapter = new PrismaPg(pool as any);
-    
-    super({ 
+
+    super({
       adapter,
       log: ['query', 'info', 'warn', 'error'],
     });
@@ -52,7 +62,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   async onModuleInit() {
     try {
       await this.$connect();
-      this.logger.log('Successfully connected to database and initialized Soft-Delete Extension');
+      this.logger.log(
+        'Successfully connected to database and initialized Soft-Delete Extension',
+      );
     } catch (error) {
       this.logger.error('Failed to connect to database', error);
       throw error;

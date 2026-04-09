@@ -1,4 +1,12 @@
-import { Controller, Get, Patch, Body, Param, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  Param,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { MediaService } from './media.service';
 import { Request } from 'express';
 

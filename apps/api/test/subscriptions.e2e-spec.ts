@@ -29,7 +29,7 @@ describe('Subscriptions (e2e)', () => {
     app.use(cookieParser());
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
     await app.init();
-    
+
     prisma = app.get<PrismaService>(PrismaService);
     configService = app.get<ConfigService>(ConfigService);
   });
@@ -37,7 +37,7 @@ describe('Subscriptions (e2e)', () => {
   afterAll(async () => {
     // Clean up test user
     if (userId) {
-        await prisma.user.delete({ where: { id: userId } }).catch(() => {});
+      await prisma.user.delete({ where: { id: userId } }).catch(() => {});
     }
     await prisma.$disconnect();
     await app.close();
@@ -58,9 +58,12 @@ describe('Subscriptions (e2e)', () => {
     expect(res.body.user).toBeDefined();
     expect(res.body.user.plan).toBe('FREE');
     userId = res.body.user.id;
-    
-    const cookies = res.get('Set-Cookie');
-    accessToken = cookies.find(c => c.startsWith('accessToken=')).split(';')[0].split('=')[1];
+
+    const cookies = res.get('Set-Cookie') as string[];
+    const tokenCookie = cookies.find((c) => c.startsWith('accessToken='));
+    if (tokenCookie) {
+      accessToken = tokenCookie.split(';')[0].split('=')[1];
+    }
   });
 
   let qrId: string;
@@ -78,7 +81,7 @@ describe('Subscriptions (e2e)', () => {
         frame: {},
       })
       .expect(201);
-    
+
     qrId = res.body.id;
     shortId = res.body.shortId;
   });
@@ -92,10 +95,10 @@ describe('Subscriptions (e2e)', () => {
   it('Expire Trial manually in DB', async () => {
     const oldDate = new Date();
     oldDate.setDate(oldDate.getDate() - 10);
-    
+
     await prisma.user.update({
       where: { id: userId },
-      data: { createdAt: oldDate }
+      data: { createdAt: oldDate },
     });
   });
 
@@ -120,9 +123,10 @@ describe('Subscriptions (e2e)', () => {
   });
 
   it('Simulate Paystack upgrade to PRO', async () => {
-    const secretKey = configService.get<string>('PAYSTACK_SECRET_KEY') || 'access_secret';
+    const secretKey =
+      configService.get<string>('PAYSTACK_SECRET_KEY') || 'access_secret';
     const customerCode = `CUST_${Math.random().toString(36).substring(7)}`;
-    
+
     const payload = {
       event: 'charge.success',
       data: {
@@ -143,7 +147,7 @@ describe('Subscriptions (e2e)', () => {
       .expect(200);
 
     const updatedUser = await prisma.user.findUnique({ where: { id: userId } });
-    expect(updatedUser.plan).toBe('PRO');
+    expect(updatedUser?.plan).toBe('PRO');
   });
 
   it('Successfully create and scan after PRO upgrade', async () => {

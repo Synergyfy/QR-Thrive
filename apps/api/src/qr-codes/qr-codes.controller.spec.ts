@@ -49,7 +49,13 @@ describe('QRCodesController', () => {
 
   it('should create a qr code', async () => {
     const req = { user: { userId: 'user-1' } } as any;
-    const dto = { name: 'Test QR', type: QRType.url, data: { url: 'http://test.com' }, design: {}, frame: {} };
+    const dto = {
+      name: 'Test QR',
+      type: QRType.url,
+      data: { url: 'http://test.com' },
+      design: {},
+      frame: {},
+    };
     expect(await controller.create(req, dto)).toEqual({
       id: 'some-id',
       userId: 'user-1',

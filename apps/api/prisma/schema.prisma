@@ -108,6 +108,7 @@ enum QRType {
   tiktok
   crypto
   socials
+  links
   image
   event
   pdf
@@ -116,6 +117,7 @@ enum QRType {
   app
   business
   menu
+  coupon
   form
 }
 

@@ -39,7 +39,10 @@ describe('PaystackService', () => {
   });
 
   it('should correctly verify a valid webhook signature', () => {
-    const payload = JSON.stringify({ event: 'charge.success', data: { id: 123 } });
+    const payload = JSON.stringify({
+      event: 'charge.success',
+      data: { id: 123 },
+    });
     const signature = crypto
       .createHmac('sha512', mockSecretKey)
       .update(payload)

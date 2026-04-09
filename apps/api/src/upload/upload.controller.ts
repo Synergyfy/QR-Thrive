@@ -1,4 +1,15 @@
-import { Controller, Post, Body, BadRequestException, Delete, Param, UseInterceptors, UploadedFile, Req, ForbiddenException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  BadRequestException,
+  Delete,
+  Param,
+  UseInterceptors,
+  UploadedFile,
+  Req,
+  ForbiddenException,
+} from '@nestjs/common';
 import { UploadService } from './upload.service';
 import { IsString, IsNumber } from 'class-validator';
 import { Transform } from 'class-transformer';
@@ -32,25 +43,36 @@ export class UploadController {
 
   private isAccessActive(user: User): boolean {
     if (user.plan === 'PRO') return true;
-    
+
     const TRIAL_DAYS = 7;
     const now = new Date();
     const trialExpiry = new Date(user.createdAt);
     trialExpiry.setDate(trialExpiry.getDate() + TRIAL_DAYS);
-    
+
     return now <= trialExpiry;
   }
 
   @Post('signed-url')
-  async getSignedUrl(@Req() req: { user: { userId: string } }, @Body() dto: SignedUrlDto) {
-    const user = await this.prisma.user.findUnique({ where: { id: req.user.userId } });
-    
+  async getSignedUrl(
+    @Req() req: { user: { userId: string } },
+    @Body() dto: SignedUrlDto,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.userId },
+    });
+
     if (dto.fileType !== 'logo' && (!user || !this.isAccessActive(user))) {
-      throw new ForbiddenException('Your trial has expired. Please upgrade to PRO to continue uploading files.');
+      throw new ForbiddenException(
+        'Your trial has expired. Please upgrade to PRO to continue uploading files.',
+      );
     }
 
     try {
-      return await this.uploadService.getSignedUploadUrl(dto.fileType, dto.fileName, dto.fileSize);
+      return await this.uploadService.getSignedUploadUrl(
+        dto.fileType,
+        dto.fileName,
+        dto.fileSize,
+      );
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -61,12 +83,16 @@ export class UploadController {
   async uploadFile(
     @Req() req: { user: { userId: string } },
     @Body() dto: UploadFileDto,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
   ) {
-    const user = await this.prisma.user.findUnique({ where: { id: req.user.userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.userId },
+    });
 
     if (dto.fileType !== 'logo' && (!user || !this.isAccessActive(user))) {
-      throw new ForbiddenException('Your trial has expired. Please upgrade to PRO to continue uploading files.');
+      throw new ForbiddenException(
+        'Your trial has expired. Please upgrade to PRO to continue uploading files.',
+      );
     }
 
     if (!file) {
@@ -77,7 +103,7 @@ export class UploadController {
         dto.fileType,
         file.originalname,
         file.buffer,
-        file.mimetype
+        file.mimetype,
       );
     } catch (error) {
       throw new BadRequestException(error.message);

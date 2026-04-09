@@ -1,4 +1,10 @@
-import { IsNumber, IsString, IsArray, IsOptional, IsObject } from 'class-validator';
+import {
+  IsNumber,
+  IsString,
+  IsArray,
+  IsOptional,
+  IsObject,
+} from 'class-validator';
 
 export class UpdateSystemConfigDto {
   @IsString()

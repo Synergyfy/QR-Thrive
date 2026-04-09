@@ -1,14 +1,14 @@
-import { 
-  Controller, 
-  Post, 
-  Req, 
-  Res, 
-  HttpCode, 
-  HttpStatus, 
-  Logger, 
+import {
+  Controller,
+  Post,
+  Req,
+  Res,
+  HttpCode,
+  HttpStatus,
+  Logger,
   BadRequestException,
   Headers,
-  Body
+  Body,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { PaystackService } from './paystack.service';
@@ -25,10 +25,13 @@ export class PaymentsController {
   ) {}
 
   @Post('initialize')
-  async initialize(@Req() req: { user: { userId: string } }, @Body() body: { amount: number; planCode?: string }) {
+  async initialize(
+    @Req() req: { user: { userId: string } },
+    @Body() body: { amount: number; planCode?: string },
+  ) {
     const userId = req.user.userId;
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    
+
     if (!user) {
       throw new BadRequestException('User not found');
     }
@@ -37,7 +40,7 @@ export class PaymentsController {
       user.email,
       body.amount,
       body.planCode,
-      { userId: user.id }
+      { userId: user.id },
     );
   }
 
@@ -55,7 +58,10 @@ export class PaymentsController {
     // Since NestJS already parsed the body, we need to stringify it identically
     // Note: In production, it's safer to use a raw body middleware for webhooks
     const payload = JSON.stringify(body);
-    const isValid = this.paystackService.verifyWebhookSignature(payload, signature);
+    const isValid = this.paystackService.verifyWebhookSignature(
+      payload,
+      signature,
+    );
 
     if (!isValid) {
       this.logger.warn('Invalid Paystack signature');
@@ -80,7 +86,10 @@ export class PaymentsController {
           this.logger.log(`Unhandled Paystack event: ${event}`);
       }
     } catch (error) {
-      this.logger.error(`Error processing Paystack event ${event}:`, error.stack);
+      this.logger.error(
+        `Error processing Paystack event ${event}:`,
+        error.stack,
+      );
       // Still return 200 to Paystack to stop retries if it's a known error
     }
 
@@ -101,7 +110,9 @@ export class PaymentsController {
     });
 
     if (!user) {
-      this.logger.error(`User with email ${email} not found for charge.success`);
+      this.logger.error(
+        `User with email ${email} not found for charge.success`,
+      );
       return;
     }
 
@@ -143,7 +154,9 @@ export class PaymentsController {
     this.logger.log(`User ${email} downgraded to FREE (Subscription Disabled)`);
   }
 
-  private async handleInvoicePaymentFailed(data: { customer: { email: string } }) {
+  private async handleInvoicePaymentFailed(data: {
+    customer: { email: string };
+  }) {
     const { customer } = data;
     const email = customer.email;
     this.logger.warn(`Payment failed for user: ${email}`);

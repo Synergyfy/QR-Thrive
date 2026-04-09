@@ -45,7 +45,7 @@ export class MediaService {
     }
 
     const currentData = qrCode.data as any;
-    
+
     // Update the data field with the new secure_url
     // Depending on the QR type, we might want to store it differently
     // But generic 'url' or 'fileUrl' is a good start.
@@ -54,10 +54,18 @@ export class MediaService {
       ...currentData,
       fileUrl: secureUrl,
       // Also potentially update specific fields based on type if needed
-      ...(qrCode.type === 'image' && { image: { ...currentData?.image, url: secureUrl } }),
-      ...(qrCode.type === 'video' && { video: { ...currentData?.video, url: secureUrl } }),
-      ...(qrCode.type === 'pdf' && { pdf: { ...currentData?.pdf, url: secureUrl } }),
-      ...(qrCode.type === 'mp3' && { mp3: { ...currentData?.mp3, url: secureUrl } }),
+      ...(qrCode.type === 'image' && {
+        image: { ...currentData?.image, url: secureUrl },
+      }),
+      ...(qrCode.type === 'video' && {
+        video: { ...currentData?.video, url: secureUrl },
+      }),
+      ...(qrCode.type === 'pdf' && {
+        pdf: { ...currentData?.pdf, url: secureUrl },
+      }),
+      ...(qrCode.type === 'mp3' && {
+        mp3: { ...currentData?.mp3, url: secureUrl },
+      }),
     };
 
     return this.prisma.qRCode.update({

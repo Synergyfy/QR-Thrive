@@ -1,4 +1,9 @@
-import { Injectable, Logger, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaystackService } from '../payments/paystack.service';
 import { UpdateSystemConfigDto } from './dto/update-system-config.dto';
@@ -118,18 +123,21 @@ export class AdminService {
       config = await this.prisma.systemConfig.create({
         data: {
           features: [
-            "Unlimited QR Codes",
-            "Unlimited Scans",
-            "Download PNG & SVG",
-            "Dynamic & Static QR Codes",
-            "Custom Landing Pages",
-            "Scan statistics",
-            "API Access",
-            "Bulk Creation",
-            "Cancel any time",
+            'Unlimited QR Codes',
+            'Unlimited Scans',
+            'Download PNG & SVG',
+            'Dynamic & Static QR Codes',
+            'Custom Landing Pages',
+            'Scan statistics',
+            'API Access',
+            'Bulk Creation',
+            'Cancel any time',
           ],
           faqs: [
-            { question: "How does billing work?", answer: "Securely via Paystack." },
+            {
+              question: 'How does billing work?',
+              answer: 'Securely via Paystack.',
+            },
           ],
         },
       });
@@ -139,12 +147,15 @@ export class AdminService {
 
   async updateConfig(data: UpdateSystemConfigDto) {
     const config = await this.getConfig();
-    
+
     // Sync with Paystack if pricing changed
     if (
-      (data.monthlyPrice !== undefined && data.monthlyPrice !== config.monthlyPrice) ||
-      (data.quarterlyPrice !== undefined && data.quarterlyPrice !== config.quarterlyPrice) ||
-      (data.yearlyPrice !== undefined && data.yearlyPrice !== config.yearlyPrice)
+      (data.monthlyPrice !== undefined &&
+        data.monthlyPrice !== config.monthlyPrice) ||
+      (data.quarterlyPrice !== undefined &&
+        data.quarterlyPrice !== config.quarterlyPrice) ||
+      (data.yearlyPrice !== undefined &&
+        data.yearlyPrice !== config.yearlyPrice)
     ) {
       await this.syncPlansWithPaystack(data, config);
     }
@@ -155,23 +166,47 @@ export class AdminService {
     });
   }
 
-  private async syncPlansWithPaystack(newData: UpdateSystemConfigDto, oldData: SystemConfig) {
+  private async syncPlansWithPaystack(
+    newData: UpdateSystemConfigDto,
+    oldData: SystemConfig,
+  ) {
     // This logic would create or update plans on Paystack
     // For brevity, I'll implement a skeleton and assume Paystack handles plan creation
-    
-    if (newData.monthlyPrice !== undefined && newData.monthlyPrice !== oldData.monthlyPrice) {
-        const plan = await this.paystackService.createPlan('Pro Monthly', newData.monthlyPrice, 'monthly');
-        newData.monthlyPlanCode = plan.plan_code;
-    }
-    
-    if (newData.quarterlyPrice !== undefined && newData.quarterlyPrice !== oldData.quarterlyPrice) {
-        const plan = await this.paystackService.createPlan('Pro Quarterly', newData.quarterlyPrice, 'quarterly');
-        newData.quarterlyPlanCode = plan.plan_code;
+
+    if (
+      newData.monthlyPrice !== undefined &&
+      newData.monthlyPrice !== oldData.monthlyPrice
+    ) {
+      const plan = await this.paystackService.createPlan(
+        'Pro Monthly',
+        newData.monthlyPrice,
+        'monthly',
+      );
+      newData.monthlyPlanCode = plan.plan_code;
     }
 
-    if (newData.yearlyPrice !== undefined && newData.yearlyPrice !== oldData.yearlyPrice) {
-        const plan = await this.paystackService.createPlan('Pro Yearly', newData.yearlyPrice, 'annually');
-        newData.yearlyPlanCode = plan.plan_code;
+    if (
+      newData.quarterlyPrice !== undefined &&
+      newData.quarterlyPrice !== oldData.quarterlyPrice
+    ) {
+      const plan = await this.paystackService.createPlan(
+        'Pro Quarterly',
+        newData.quarterlyPrice,
+        'quarterly',
+      );
+      newData.quarterlyPlanCode = plan.plan_code;
+    }
+
+    if (
+      newData.yearlyPrice !== undefined &&
+      newData.yearlyPrice !== oldData.yearlyPrice
+    ) {
+      const plan = await this.paystackService.createPlan(
+        'Pro Yearly',
+        newData.yearlyPrice,
+        'annually',
+      );
+      newData.yearlyPlanCode = plan.plan_code;
     }
   }
 }
