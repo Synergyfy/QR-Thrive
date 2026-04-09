@@ -36,7 +36,6 @@ export default function PricingManager() {
     { id: 'Hero', icon: Type },
     { id: 'Plans', icon: CreditCard },
     { id: 'Features', icon: ListTodo },
-    { id: 'Add-ons', icon: Zap },
     { id: 'FAQs', icon: HelpCircle },
   ];
 
@@ -76,12 +75,20 @@ export default function PricingManager() {
     setConfig(newConfig);
   };
 
+  if (isLoading) {
+    return (
+      <div className="h-[60vh] flex items-center justify-center text-blue-600">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-900 rounded-[2rem] px-8 py-10 text-white relative overflow-hidden group shadow-2xl shadow-blue-500/10">
         <div className="absolute top-0 right-0 p-32 bg-blue-600/20 rounded-full -translate-y-1/2 translate-x-1/2 -z-10 blur-3xl opacity-50 transition-all duration-700 group-hover:bg-blue-600/30"></div>
         <div className="absolute bottom-0 left-0 p-32 bg-indigo-600/10 rounded-full translate-y-1/2 -translate-x-1/2 -z-10 blur-3xl opacity-50"></div>
-        
+
         <div className="flex items-center gap-6">
            <div className="w-16 h-16 bg-blue-600 rounded-3xl flex items-center justify-center shadow-xl shadow-blue-500/30">
              <Settings className="w-8 h-8 text-white" />
@@ -92,7 +99,7 @@ export default function PricingManager() {
                <Globe className="w-4 h-4 text-blue-500" />
                Configure regional pricing and tier-based growth strategies
             </p>
-           </div>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -151,15 +158,13 @@ export default function PricingManager() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-4 px-6 py-5 rounded-3xl font-bold text-sm tracking-wide transition-all w-full text-left whitespace-nowrap lg:whitespace-normal group ${
-                activeTab === tab.id 
-                  ? 'bg-white text-blue-600 shadow-xl shadow-blue-900/5 ring-1 ring-slate-100' 
-                  : 'text-slate-400 hover:bg-white hover:text-slate-600'
-              }`}
+              className={`flex items-center gap-4 px-6 py-5 rounded-3xl font-bold text-sm tracking-wide transition-all w-full text-left whitespace-nowrap lg:whitespace-normal group ${activeTab === tab.id
+                ? 'bg-white text-blue-600 shadow-xl shadow-blue-900/5 ring-1 ring-slate-100'
+                : 'text-slate-400 hover:bg-white hover:text-slate-600'
+                }`}
             >
-              <div className={`p-2.5 rounded-xl transition-all ${
-                 activeTab === tab.id ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
-              }`}>
+              <div className={`p-2.5 rounded-xl transition-all ${activeTab === tab.id ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
+                }`}>
                 <tab.icon className="w-5 h-5" />
               </div>
               {tab.id === 'Hero' || tab.id === 'Plans' ? `${tab.id} (Tier)` : tab.id}
@@ -345,7 +350,11 @@ export default function PricingManager() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    <p className="mt-4 text-[10px] text-slate-400 flex items-center gap-2 italic">
+                      <Info className="w-3 h-3" />
+                      Changing these values will automatically create or update the corresponding plans on Paystack.
+                    </p>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -384,7 +393,7 @@ export default function PricingManager() {
                     <div key={idx} className="flex items-center gap-3 group">
                       <div className="flex-grow flex items-center bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:bg-white focus-within:border-white">
                         <Check className="w-4 h-4 text-blue-500 flex-shrink-0 mr-3" />
-                        <input 
+                        <input
                           value={feature}
                           onChange={(e) => updateGlobalFeatures(idx, e.target.value)}
                           className="w-full bg-transparent border-none p-0 text-sm font-semibold text-slate-700 outline-none"

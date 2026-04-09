@@ -1,13 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQRCodeDto } from './dto/create-qr-code.dto';
 import { UpdateQRCodeDto } from './dto/update-qr-code.dto';
 import * as crypto from 'crypto';
 import { UAParser } from 'ua-parser-js';
 import * as geoip from 'geoip-lite';
+import { User, PlanType, Prisma } from '@prisma/client';
 
 import { FormsService } from '../forms/forms.service';
 import { UploadService } from '../upload/upload.service';
+
+const TRIAL_DAYS = 7;
 
 @Injectable()
 export class QRCodesService {
@@ -17,9 +24,27 @@ export class QRCodesService {
     private readonly uploadService: UploadService,
   ) {}
 
+  private isAccessActive(user: User): boolean {
+    if (user.plan === PlanType.PRO) return true;
+
+    const now = new Date();
+    const trialExpiry = new Date(user.createdAt);
+    trialExpiry.setDate(trialExpiry.getDate() + TRIAL_DAYS);
+
+    return now <= trialExpiry;
+  }
+
   async create(userId: string, createQRCodeDto: CreateQRCodeDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user || !this.isAccessActive(user)) {
+      throw new ForbiddenException(
+        'Your trial has expired. Please upgrade to PRO to continue.',
+      );
+    }
+
     const shortId = crypto.randomBytes(4).toString('hex');
-    
+
     const { data, design, frame, ...rest } = createQRCodeDto;
 
     const qrCode = await this.prisma.qRCode.create({
@@ -27,15 +52,15 @@ export class QRCodesService {
         ...rest,
         userId,
         shortId,
-        data: data as any,
-        design: design as any,
-        frame: frame as any,
+        data: data as Prisma.InputJsonValue,
+        design: design as Prisma.InputJsonValue,
+        frame: frame as Prisma.InputJsonValue,
       },
     });
 
     // If it's a form type, synchronize with the Form table
-    if (qrCode.type === 'form' && data && (data as any).form) {
-      const formData = (data as any).form;
+    if (qrCode.type === 'form' && data && (data as { form?: any }).form) {
+      const formData = (data as { form: any }).form;
       await this.formsService.createOrUpdateForm(userId, {
         qrCodeId: qrCode.id,
         title: formData.title || 'Untitled Form',
@@ -47,9 +72,17 @@ export class QRCodesService {
     return qrCode;
   }
 
-  async findAll(userId: string, filters: { status?: string; folderId?: string; type?: string; search?: string } = {}) {
+  async findAll(
+    userId: string,
+    filters: {
+      status?: string;
+      folderId?: string;
+      type?: string;
+      search?: string;
+    } = {},
+  ) {
     const { status, folderId, type, search } = filters;
-    
+
     return this.prisma.qRCode.findMany({
       where: {
         userId,
@@ -65,15 +98,15 @@ export class QRCodesService {
       },
       include: {
         _count: {
-          select: { scans: true }
+          select: { scans: true },
         },
         form: {
           select: {
             _count: {
-              select: { submissions: true }
-            }
-          }
-        }
+              select: { submissions: true },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -85,9 +118,9 @@ export class QRCodesService {
       include: {
         scans: {
           take: 10,
-          orderBy: { createdAt: 'desc' }
-        }
-      }
+          orderBy: { createdAt: 'desc' },
+        },
+      },
     });
 
     if (!qrCode) {
@@ -113,23 +146,33 @@ export class QRCodesService {
   }
 
   async update(id: string, userId: string, updateQRCodeDto: UpdateQRCodeDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user || !this.isAccessActive(user)) {
+      throw new ForbiddenException(
+        'Your trial has expired. Please upgrade to PRO to continue.',
+      );
+    }
+
     const qrCode = await this.findOne(id, userId);
-    
+
     const { data, design, frame, ...rest } = updateQRCodeDto;
 
     const updated = await this.prisma.qRCode.update({
       where: { id: qrCode.id },
       data: {
         ...rest,
-        data: data === undefined ? undefined : (data as any),
-        design: design === undefined ? undefined : (design as any),
-        frame: frame === undefined ? undefined : (frame as any),
+        data: data === undefined ? undefined : (data as Prisma.InputJsonValue),
+        design:
+          design === undefined ? undefined : (design as Prisma.InputJsonValue),
+        frame:
+          frame === undefined ? undefined : (frame as Prisma.InputJsonValue),
       },
     });
 
     // If it's a form type, synchronize with the Form table
-    if (updated.type === 'form' && data && (data as any).form) {
-      const formData = (data as any).form;
+    if (updated.type === 'form' && data && (data as { form?: any }).form) {
+      const formData = (data as { form: any }).form;
       await this.formsService.createOrUpdateForm(userId, {
         qrCodeId: updated.id,
         title: formData.title || 'Untitled Form',
@@ -145,36 +188,101 @@ export class QRCodesService {
     const qrCode = await this.findOne(id, userId);
 
     // Delete associated files from Cloudinary
-    await this.deleteCloudinaryFiles(qrCode.data);
+    await this.deleteCloudinaryFiles(qrCode);
 
     return this.prisma.qRCode.delete({
       where: { id: qrCode.id },
     });
   }
 
-  private async deleteCloudinaryFiles(data: any) {
-    if (!data) return;
+  private extractCloudinaryUrls(obj: any): string[] {
+    const urls: string[] = [];
+    if (!obj) return urls;
 
-    const fileFields = ['image', 'pdf', 'video', 'mp3'];
-    for (const field of fileFields) {
-      const fileData = data[field];
-      if (fileData && fileData.publicId) {
-        await this.uploadService.deleteFile(fileData.publicId);
+    if (typeof obj === 'string') {
+      if (obj.includes('cloudinary.com') && obj.includes('qr-thrive/')) {
+        urls.push(obj);
       }
+    } else if (Array.isArray(obj)) {
+      for (const item of obj) {
+        urls.push(...this.extractCloudinaryUrls(item));
+      }
+    } else if (typeof obj === 'object') {
+      for (const key of Object.keys(obj)) {
+        urls.push(...this.extractCloudinaryUrls(obj[key]));
+      }
+    }
+    return urls;
+  }
+
+  private extractPublicIdFromUrl(url: string): string | null {
+    if (
+      !url ||
+      typeof url !== 'string' ||
+      !url.includes('cloudinary.com') ||
+      !url.includes('qr-thrive/')
+    )
+      return null;
+    const startIndex = url.indexOf('qr-thrive/');
+    if (startIndex === -1) return null;
+
+    const publicIdWithExt = url.substring(startIndex);
+    const lastDotIndex = publicIdWithExt.lastIndexOf('.');
+    if (lastDotIndex !== -1) {
+      return publicIdWithExt.substring(0, lastDotIndex);
+    }
+    return publicIdWithExt;
+  }
+
+  private async deleteCloudinaryFiles(qrCode: any) {
+    if (!qrCode) return;
+
+    const urls = [
+      ...this.extractCloudinaryUrls(qrCode.data),
+      ...this.extractCloudinaryUrls(qrCode.logo),
+    ];
+
+    const publicIds = urls
+      .map((url) => this.extractPublicIdFromUrl(url))
+      .filter((id): id is string => id !== null);
+
+    const uniquePublicIds = [...new Set(publicIds)];
+
+    for (const publicId of uniquePublicIds) {
+      await this.uploadService.deleteFile(publicId);
     }
   }
 
   async duplicate(id: string, userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !this.isAccessActive(user)) {
+      throw new ForbiddenException(
+        'Your trial has expired. Please upgrade to PRO to continue.',
+      );
+    }
+
     const original = await this.findOne(id, userId);
     const shortId = crypto.randomBytes(4).toString('hex');
 
-    const { id: _, createdAt: __, updatedAt: ___, clicks: ____, shortId: _____, scans: ______, _count: _______, ...rest } = original as any;
+    // Destructure to remove fields that shouldn't be copied
+    const {
+      id: _,
+      createdAt: __,
+      updatedAt: ___,
+      clicks: ____,
+      shortId: _____,
+      scans: ______,
+      ...rest
+    } = original;
 
     return this.prisma.qRCode.create({
       data: {
-        ...rest,
+        ...(rest as any), // Cast rest to any for Prisma create compatibility with Json fields
         name: `${original.name} (Copy)`,
         shortId,
+        data: original.data as Prisma.InputJsonValue,
+        design: original.design as Prisma.InputJsonValue,
+        frame: original.frame as Prisma.InputJsonValue,
       },
     });
   }
@@ -183,22 +291,29 @@ export class QRCodesService {
     const qrCode = await this.prisma.qRCode.findUnique({
       where: { shortId },
       include: {
+        user: true,
         form: {
-          include: { fields: { orderBy: { order: 'asc' } } }
-        }
-      }
+          include: { fields: { orderBy: { order: 'asc' } } },
+        },
+      },
     });
 
     if (!qrCode) {
       throw new NotFoundException(`QR Code with shortId ${shortId} not found`);
     }
 
+    if (!this.isAccessActive(qrCode.user)) {
+      throw new ForbiddenException(
+        'This QR code is currently disabled. Owner subscription expired.',
+      );
+    }
+
     // If it's a form type and we have relational form data, sync it back into the 'data' field
     // so the frontend receives the correct database IDs (CUIDs)
     if (qrCode.type === 'form' && qrCode.form) {
-      const data = qrCode.data as any;
+      const data = qrCode.data as Record<string, any>;
       if (data && data.form) {
-        data.form.fields = qrCode.form.fields.map(f => ({
+        data.form.fields = qrCode.form.fields.map((f) => ({
           id: f.id,
           type: f.type,
           label: f.label,
@@ -217,16 +332,23 @@ export class QRCodesService {
   async recordScan(shortId: string, ip: string, userAgent: string) {
     const qrCode = await this.prisma.qRCode.findUnique({
       where: { shortId },
+      include: { user: true },
     });
 
     if (!qrCode) {
       throw new NotFoundException('QR Code not found');
     }
 
+    if (!this.isAccessActive(qrCode.user)) {
+      throw new ForbiddenException(
+        'This QR code is currently disabled. Owner subscription expired.',
+      );
+    }
+
     const parser = new UAParser(userAgent);
     const result = parser.getResult();
     const geo = geoip.lookup(ip);
-    
+
     if (!geo) {
       console.log(`[QRCodesService] No geo data found for IP: ${ip}`);
     }
@@ -251,7 +373,6 @@ export class QRCodesService {
       }),
     ]);
 
-
     return qrCode;
   }
 
@@ -265,13 +386,13 @@ export class QRCodesService {
 
     const totalQRs = qrCodes.length;
     const totalScans = qrCodes.reduce((acc, qr) => acc + qr.clicks, 0);
-    
+
     // Unique visitors based on IP + User Agent across all QRs
-    const uniqueVisitorsMap = new Set();
-    qrCodes.forEach(qr => {
-        qr.scans.forEach(scan => {
-            uniqueVisitorsMap.add(`${scan.ip}-${scan.userAgent}`);
-        });
+    const uniqueVisitorsMap = new Set<string>();
+    qrCodes.forEach((qr) => {
+      qr.scans.forEach((scan) => {
+        uniqueVisitorsMap.add(`${scan.ip}-${scan.userAgent}`);
+      });
     });
     const uniqueVisitors = uniqueVisitorsMap.size;
 
@@ -285,52 +406,52 @@ export class QRCodesService {
     const countryDist: Record<string, number> = {};
     // Time distribution (0-23 hours)
     const timeDist: Record<string, number> = {};
-    
+
     const oneHourAgo = new Date(Date.now() - 3600000);
     let scansLastHour = 0;
 
-    qrCodes.forEach(qr => {
-        qr.scans.forEach(scan => {
-            const d = scan.device || 'desktop';
-            deviceDist[d] = (deviceDist[d] || 0) + 1;
-            
-            const o = scan.os || 'unknown';
-            osDist[o] = (osDist[o] || 0) + 1;
+    qrCodes.forEach((qr) => {
+      qr.scans.forEach((scan) => {
+        const d = scan.device || 'desktop';
+        deviceDist[d] = (deviceDist[d] || 0) + 1;
 
-            const b = scan.browser || 'unknown';
-            browserDist[b] = (browserDist[b] || 0) + 1;
+        const o = scan.os || 'unknown';
+        osDist[o] = (osDist[o] || 0) + 1;
 
-            const c = scan.country || 'Unknown';
-            countryDist[c] = (countryDist[c] || 0) + 1;
+        const b = scan.browser || 'unknown';
+        browserDist[b] = (browserDist[b] || 0) + 1;
 
-            const hour = scan.createdAt.getHours().toString();
-            timeDist[hour] = (timeDist[hour] || 0) + 1;
+        const c = scan.country || 'Unknown';
+        countryDist[c] = (countryDist[c] || 0) + 1;
 
-            if (scan.createdAt >= oneHourAgo) {
-                scansLastHour++;
-            }
-        });
+        const hour = scan.createdAt.getHours().toString();
+        timeDist[hour] = (timeDist[hour] || 0) + 1;
+
+        if (scan.createdAt >= oneHourAgo) {
+          scansLastHour++;
+        }
+      });
     });
 
     // Time-based data (last 7 days)
     const last7Days = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        return d.toISOString().split('T')[0];
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      return d.toISOString().split('T')[0];
     }).reverse();
 
-    const chartData = last7Days.map(date => {
-        let scans = 0;
-        let unique = new Set();
-        qrCodes.forEach(qr => {
-            qr.scans.forEach(scan => {
-                if (scan.createdAt.toISOString().split('T')[0] === date) {
-                    scans++;
-                    unique.add(`${scan.ip}-${scan.userAgent}`);
-                }
-            });
+    const chartData = last7Days.map((date) => {
+      let scans = 0;
+      const unique = new Set<string>();
+      qrCodes.forEach((qr) => {
+        qr.scans.forEach((scan) => {
+          if (scan.createdAt.toISOString().split('T')[0] === date) {
+            scans++;
+            unique.add(`${scan.ip}-${scan.userAgent}`);
+          }
         });
-        return { name: date, scans, unique: unique.size };
+      });
+      return { name: date, scans, unique: unique.size };
     });
 
     return {

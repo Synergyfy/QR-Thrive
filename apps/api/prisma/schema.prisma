@@ -16,12 +16,54 @@ model User {
   firstName     String
   lastName      String
   password      String
+  role          Role           @default(USER)
+  plan          PlanType       @default(FREE)
+  
+  // Paystack Integration
+  paystackCustomerCode     String?   @unique
+  paystackSubscriptionCode String?   @unique
+  subscriptionStatus       String?   // e.g., "active", "non-renewing", "attention", "cancelled"
+  billingCycle             String?   // "monthly", "quarterly", "yearly"
+
   refreshTokens RefreshToken[]
   folders       Folder[]
   qrCodes       QRCode[]
   deletedAt     DateTime?      // Added for Soft-Delete
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum PlanType {
+  FREE
+  PRO
+}
+
+model SystemConfig {
+  id              Int      @id @default(1)
+  
+  // Pricing
+  monthlyPrice    Float    @default(5000)
+  quarterlyPrice  Float    @default(13500)
+  yearlyPrice     Float    @default(50000)
+  
+  // Paystack Plan Codes (Sync'd with Paystack)
+  monthlyPlanCode   String?
+  quarterlyPlanCode String?
+  yearlyPlanCode    String?
+  
+  // Content
+  heroTitle       String   @default("Turn Every Scan Into a Customer")
+  heroSubtitle    String   @default("Qrthrive helps you create powerful, branded QR codes.")
+  features        Json     // Array of strings
+  faqs            Json     // Array of {question, answer}
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model Folder {
@@ -66,6 +108,7 @@ enum QRType {
   tiktok
   crypto
   socials
+  links
   image
   event
   pdf
@@ -74,6 +117,7 @@ enum QRType {
   app
   business
   menu
+  coupon
   form
 }
 

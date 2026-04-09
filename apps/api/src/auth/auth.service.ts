@@ -1,4 +1,10 @@
-import { Injectable, UnauthorizedException, ConflictException, Logger, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
@@ -24,7 +30,9 @@ export class AuthService {
     }
 
     try {
-      const existingUser = await this.prisma.user.findUnique({ where: { email } });
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email },
+      });
       if (existingUser) {
         throw new ConflictException('User with this email already exists');
       }
@@ -80,7 +88,9 @@ export class AuthService {
 
       if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
         if (tokenRecord) {
-          await this.prisma.refreshToken.delete({ where: { id: tokenRecord.id } });
+          await this.prisma.refreshToken.delete({
+            where: { id: tokenRecord.id },
+          });
         }
         throw new UnauthorizedException('Invalid or expired refresh token');
       }
@@ -117,22 +127,51 @@ export class AuthService {
   async getUserById(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, firstName: true, lastName: true },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        plan: true,
+      },
     });
     return { user };
   }
 
-  private async generateAndSetTokens(userId: string, res: Response, rememberMe: boolean = false) {
+  private async generateAndSetTokens(
+    userId: string,
+    res: Response,
+    rememberMe: boolean = false,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        plan: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
     const accessToken = await this.jwtService.signAsync(
-      { sub: userId },
+      { sub: userId, role: user.role },
       {
-        secret: this.configService.get<string>('JWT_ACCESS_SECRET') || 'access_secret',
+        secret:
+          this.configService.get<string>('JWT_ACCESS_SECRET') ||
+          'access_secret',
         expiresIn: '15m',
       },
     );
 
     const refreshTokenString = await bcrypt.hash(Math.random().toString(), 10);
-    
+
     // Set refresh token expiration based on rememberMe
     const refreshDays = rememberMe ? 30 : 7;
     const expiresAt = new Date();
@@ -160,11 +199,6 @@ export class AuthService {
       secure: isProd,
       sameSite: isProd ? 'none' : 'lax',
       maxAge: refreshDays * 24 * 60 * 60 * 1000,
-    });
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, email: true, firstName: true, lastName: true },
     });
 
     return { user };

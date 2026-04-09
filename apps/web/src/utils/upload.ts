@@ -1,5 +1,5 @@
 import { mediaApi } from '../services/api';
-import type { PendingFile } from '../types/qr';
+import type { PendingFile, QRData } from '../types/qr';
 
 export const uploadPendingFile = async (
   pendingFile: PendingFile,
@@ -25,8 +25,8 @@ export const uploadPendingFile = async (
 };
 
 export const uploadAllPendingFiles = async (
-  data: any
-): Promise<any> => {
+  data: QRData
+): Promise<QRData> => {
   const updatedData = { ...data };
   if (updatedData.image?.pendingFile) {
     const result = await uploadPendingFile(updatedData.image.pendingFile, 'image');
@@ -45,7 +45,7 @@ export const uploadAllPendingFiles = async (
   
   if (updatedData.images && Array.isArray(updatedData.images)) {
     const uploadedImages = await Promise.all(
-      updatedData.images.map(async (img: any) => {
+      updatedData.images.map(async (img) => {
         if (img.pendingFile) {
           const result = await uploadPendingFile(img.pendingFile, 'image');
           if (result) {
@@ -62,7 +62,7 @@ export const uploadAllPendingFiles = async (
         return img; // Already uploaded
       })
     );
-    updatedData.images = uploadedImages.filter(Boolean);
+    updatedData.images = uploadedImages.filter((img): img is NonNullable<typeof img> => !!img);
   }
 
   if (updatedData.video?.pendingFile) {
@@ -103,6 +103,30 @@ export const uploadAllPendingFiles = async (
     } else {
       delete updatedData.mp3;
     }
+  }
+
+  if (updatedData.vcard?.avatarPendingFile) {
+    const result = await uploadPendingFile(updatedData.vcard.avatarPendingFile, 'image');
+    if (result) {
+      updatedData.vcard = { 
+        ...updatedData.vcard, 
+        avatar: result.url,
+        avatarPublicId: result.publicId
+      };
+    }
+    delete updatedData.vcard.avatarPendingFile;
+  }
+
+  if (updatedData.vcard?.bannerPendingFile) {
+    const result = await uploadPendingFile(updatedData.vcard.bannerPendingFile, 'image');
+    if (result) {
+      updatedData.vcard = { 
+        ...updatedData.vcard, 
+        banner: result.url,
+        bannerPublicId: result.publicId
+      };
+    }
+    delete updatedData.vcard.bannerPendingFile;
   }
 
   return updatedData;

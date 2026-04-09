@@ -1,4 +1,11 @@
-import { IsEnum, IsBoolean, IsOptional, IsObject, IsInt, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsBoolean,
+  IsOptional,
+  IsObject,
+  IsInt,
+  IsString,
+} from 'class-validator';
 import { QRType, QRStatus } from '@prisma/client';
 
 export class UpdateQRCodeDto {

@@ -1,4 +1,12 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, Matches, IsBoolean, IsOptional } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  Matches,
+  IsBoolean,
+  IsOptional,
+} from 'class-validator';
 
 export class SignupDto {
   @IsEmail({}, { message: 'Please provide a valid email address' })
@@ -15,7 +23,8 @@ export class SignupDto {
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
-    message: 'Password is too weak. Must contain uppercase, lowercase and number/special character',
+    message:
+      'Password is too weak. Must contain uppercase, lowercase and number/special character',
   })
   password: string;
 
