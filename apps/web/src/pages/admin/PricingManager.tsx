@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { 
   Save, 
   Plus, 
-  Trash2, 
   Check, 
   Type, 
   CreditCard, 
@@ -371,7 +370,6 @@ export default function PricingManager() {
                    </div>
                    <button 
                     onClick={() => {
-                        const newConfig = { ...config };
                         // Simplified: update global lists in state then save will apply to all plans
                         // For this demo, let's just edit the existing ones in the UI
                     }}

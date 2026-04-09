@@ -268,28 +268,7 @@ export default function PricingPage() {
           </div>
 
           <div className="space-y-4">
-            {[
-              {
-                question: "How long is the free trial?",
-                answer: "Every new account starts with 7 days of PRO access. You can explore all premium features like advanced QR types and full lead capture. After 7 days, if you don't upgrade, you'll be moved to our generous Free Forever plan."
-              },
-              {
-                question: "What are the limits on the Free plan?",
-                answer: `Our Free plan is designed to help you get started. It includes ${market === 'local' ? '2' : '1'} dynamic QR code and 50 scans per month. To remove these limits and the QRThrive branding, you can upgrade to PRO at any time.`
-              },
-              {
-                question: "Can I change my content after printing?",
-                answer: "Yes! That's the power of our Dynamic QR codes. You can update the link, phone number, or menu items any time without changing the physical QR code itself."
-              },
-              {
-                question: "How does regional pricing work?",
-                answer: "We believe in being affordable everywhere. We detect your location to offer the most relevant currency and pricing structure for your local market, ensuring you get the best value."
-              },
-              {
-                question: "Can I cancel my subscription?",
-                answer: "Absolutely. You can cancel at any time from your dashboard. Your premium features will remain active until the end of your current billing cycle."
-              }
-            ].map((faq, idx) => (
+            {faqs.map((faq, idx) => (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
