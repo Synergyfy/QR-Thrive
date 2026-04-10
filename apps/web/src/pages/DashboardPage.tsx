@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import toast from 'react-hot-toast';
-import { useFolders, useCreateFolder, useDeleteFolder, useQRCodes, useDeleteQRCode, useUpdateQRCode, useDuplicateQRCode, useCurrentUser, useLogout } from '../hooks/useApi';
+import { useFolders, useCreateFolder, useDeleteFolder, useQRCodes, useDeleteQRCode, useUpdateQRCode, useDuplicateQRCode, useCurrentUser, useLogout, useCancelSubscription } from '../hooks/useApi';
 import type { BackendQRCode } from '../types/api';
 import StatsPanel from '../components/StatsPanel';
 import DashboardQRPreview from '../components/DashboardQRPreview';
@@ -28,6 +28,7 @@ const DashboardPage: React.FC = () => {
   
   const { data: folders = [] } = useFolders();
   const { data: qrCodes = [] } = useQRCodes();
+  const cancelSubscriptionMutation = useCancelSubscription();
   const createFolderMutation = useCreateFolder();
   const deleteFolderMutation = useDeleteFolder();
   const deleteQRMutation = useDeleteQRCode();
@@ -539,14 +540,62 @@ const DashboardPage: React.FC = () => {
         </div>
 
         <div className="mt-auto p-6 space-y-3">
-           <button className="w-full p-4 bg-slate-900 rounded-2xl flex items-center justify-between group overflow-hidden relative">
-              <div className="relative z-10">
-                 <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-0.5">Professional Plan</p>
-                 <p className="text-sm font-bold text-white">Upgrade Now</p>
+           {user?.subscriptionStatus === 'trialing' ? (
+              <div className="w-full p-6 bg-blue-600 rounded-3xl space-y-4 shadow-xl shadow-blue-100">
+                 <div className="flex items-center justify-between text-white">
+                    <div className="flex items-center gap-2">
+                       <Crown className="w-5 h-5 fill-white" />
+                       <span className="text-[10px] font-black uppercase tracking-widest">Free Trial</span>
+                    </div>
+                    <span className="text-xs font-black">
+                       {user.trialEndsAt ? Math.max(0, Math.ceil((new Date(user.trialEndsAt).getTime() - new Date().getTime()) / (1000 * 3600 * 24))) : 0} days left
+                    </span>
+                 </div>
+                 <p className="text-sm font-bold text-white/90">You are currently exploring QR Thrive Pro.</p>
+                 <button 
+                   onClick={() => navigate('/pricing')}
+                   className="w-full py-3 bg-white text-blue-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-50 transition-all shadow-lg"
+                 >
+                    Secure Pro Access
+                 </button>
+                 <button 
+                   onClick={() => { if(window.confirm('Are you sure you want to cancel your trial?')) cancelSubscriptionMutation.mutate(); }}
+                   className="w-full text-[10px] font-bold text-white/60 hover:text-white transition-all text-center pt-1"
+                 >
+                    Cancel Trial
+                 </button>
               </div>
-              <Crown className="w-8 h-8 text-white/10 group-hover:text-blue-500 transition-colors transform rotate-12" />
-              <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/0 via-blue-600/0 to-blue-600/20 group-hover:to-blue-600/40 transition-all" />
-           </button>
+           ) : user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'non-renewing' ? (
+              <div className="w-full p-4 bg-slate-900 rounded-2xl flex items-center justify-between group overflow-hidden relative">
+                 <div className="relative z-10">
+                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-0.5">
+                      {user?.subscriptionStatus === 'non-renewing' ? 'Ending Soon' : 'Active Plan'}
+                    </p>
+                    <p className="text-sm font-bold text-white">Pro Subscriber</p>
+                 </div>
+                 {user?.subscriptionStatus !== 'non-renewing' && (
+                    <button 
+                      onClick={() => { if(window.confirm('Cancel subscription?')) cancelSubscriptionMutation.mutate(); }}
+                      className="relative z-20 p-2 text-slate-500 hover:text-red-400 transition-all rounded-lg hover:bg-white/10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                 )}
+                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/0 via-blue-600/0 to-blue-600/10" />
+              </div>
+           ) : (
+              <button 
+                onClick={() => navigate('/pricing')}
+                className="w-full p-4 bg-slate-900 rounded-2xl flex items-center justify-between group overflow-hidden relative"
+              >
+                 <div className="relative z-10">
+                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-0.5">Professional Plan</p>
+                    <p className="text-sm font-bold text-white">Upgrade Now</p>
+                 </div>
+                 <Crown className="w-8 h-8 text-white/10 group-hover:text-blue-500 transition-colors transform rotate-12" />
+                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/0 via-blue-600/0 to-blue-600/20 group-hover:to-blue-600/40 transition-all" />
+              </button>
+           )}
            <div className="flex items-center gap-3 p-3 text-slate-500 hover:text-slate-900 cursor-pointer transition-all hover:bg-slate-50 rounded-xl">
               <User className="w-5 h-5" /><span className="text-sm font-bold">Account</span>
            </div>

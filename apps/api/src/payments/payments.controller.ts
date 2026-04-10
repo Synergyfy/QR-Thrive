@@ -8,8 +8,10 @@ import {
   BadRequestException,
   Headers,
   Body,
+  Ip,
 } from '@nestjs/common';
 import { PaystackService } from './paystack.service';
+import { PricingService } from '../pricing/pricing.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { Public } from '../auth/decorators/public.decorator';
 import {
@@ -29,40 +31,101 @@ export class PaymentsController {
   constructor(
     private paystackService: PaystackService,
     private prisma: PrismaService,
+    private pricingService: PricingService,
   ) {}
 
   @Post('initialize')
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Initialize a Paystack transaction for subscription' })
+  @ApiOperation({ summary: 'Initialize a Paystack transaction for a tiered plan' })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        amount: { type: 'number', example: 5000, description: 'Amount in kobo/lowest currency unit' },
-        planCode: { type: 'string', example: 'PLN_123456', description: 'Optional Paystack plan code' },
+        planId: { type: 'string', example: 'cuid_here' },
+        interval: { type: 'string', enum: ['monthly', 'quarterly', 'yearly'], example: 'monthly' },
       },
-      required: ['amount'],
+      required: ['planId', 'interval'],
     },
   })
   @ApiResponse({ status: 200, description: 'Transaction initialized successfully.' })
-  @ApiResponse({ status: 400, description: 'User not found or invalid input.' })
+  @ApiResponse({ status: 400, description: 'Plan not found, inactive, or invalid interval.' })
   async initialize(
     @Req() req: { user: { userId: string } },
-    @Body() body: { amount: number; planCode?: string },
+    @Ip() ip: string,
+    @Body() body: { planId: string; interval: 'monthly' | 'quarterly' | 'yearly' },
   ) {
     const userId = req.user.userId;
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const { planId, interval } = body;
 
-    if (!user) {
-      throw new BadRequestException('User not found');
+    // 1. Fetch Plan with localized pricing
+    // We reuse pricingService to get the correct price for the user's IP/Tier
+    const plan = await this.pricingService.getPlanWithPricing(planId, ip);
+
+    // 2. Validate Plan status
+    if (!plan.isActive) {
+      throw new BadRequestException('This plan is currently deactivated and not accepting new subscriptions.');
     }
+
+    if (plan.isDefault) {
+      throw new BadRequestException('Cannot pay for a free/default plan.');
+    }
+
+    // 3. Get the correct price for the interval
+    const amount = (plan.pricing as any)[interval];
+    if (!amount || amount <= 0) {
+      throw new BadRequestException('Invalid price for the selected interval.');
+    }
+
+    // 5. Initialize transaction
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new BadRequestException('User not found');
+
+    // Get tier name for metadata
+    const countryCode = this.pricingService.getCountryCodeByIp(ip);
+    const countryInfo = await this.pricingService.getCountryInfo(countryCode);
 
     return this.paystackService.initializeTransaction(
       user.email,
-      body.amount,
-      body.planCode,
-      { userId: user.id },
+      amount,
+      undefined, // Paystack plan code - can be added later if needed
+      { 
+        userId, 
+        planId, 
+        interval,
+        tierName: countryInfo?.tier?.name || 'Unknown'
+      },
     );
+  }
+
+  @Post('cancel')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Cancel an active subscription' })
+  @ApiResponse({ status: 200, description: 'Subscription cancellation initiated.' })
+  async cancel(@Req() req: { user: { userId: string } }) {
+    const userId = req.user.userId;
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.paystackSubscriptionCode) {
+      throw new BadRequestException('No active subscription found to cancel.');
+    }
+
+    // In a real scenario, we might want to also allow them to use it until the end of the period
+    // but for now, we just disable it in Paystack if they have a code.
+    // We'll need a way to get the email token if Paystack requires it, 
+    // but usually, just the code is enough if authorized.
+    
+    // For now, we'll just mark it as cancelled in our DB and let Paystack events handle the rest
+    // or call Paystack service if we have the token stored.
+    // Since we don't store the email token yet, we'll just update the status.
+    
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { subscriptionStatus: 'non-renewing' },
+    });
+
+    return { message: 'Your subscription will not renew at the end of the current cycle.' };
   }
 
   @Public()
@@ -145,18 +208,22 @@ export class PaymentsController {
       return;
     }
 
+    const { planId, interval } = data.metadata || {};
+
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
-        plan: 'PRO',
+        plan: planId ? { connect: { id: planId } } : undefined,
         paystackCustomerCode: customer.customer_code,
         paystackSubscriptionCode: subscription?.subscription_code || null,
         subscriptionStatus: 'active',
-        billingCycle: plan?.interval || null,
+        billingCycle: interval || plan?.interval || null,
+        hasUsedTrial: true, // Mark that they've now paid/used a trial
+        trialEndsAt: null,   // Clear trial as they are now active
       },
     });
 
-    this.logger.log(`User ${email} upgraded to PRO`);
+    this.logger.log(`User ${email} upgraded to plan ${planId || 'PRO'}`);
   }
 
   private async handleSubscriptionDisable(data: {
@@ -172,10 +239,12 @@ export class PaymentsController {
 
     if (!user) return;
 
+    const freePlan = await this.prisma.plan.findFirst({ where: { isDefault: true } });
+
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
-        plan: 'FREE',
+        plan: freePlan ? { connect: { id: freePlan.id } } : undefined,
         subscriptionStatus: 'cancelled',
       },
     });

@@ -26,31 +26,22 @@ export class UpdateSystemConfigDto {
   heroSubtitle?: string;
 
   @ApiProperty({
-    description: 'Monthly subscription price in kobo (or the local currency unit)',
-    example: 5000,
+    description: 'Percentage discount for quarterly plans',
+    example: 10,
     required: false,
   })
   @IsNumber()
   @IsOptional()
-  monthlyPrice?: number;
+  quarterlyDiscount?: number;
 
   @ApiProperty({
-    description: 'Quarterly subscription price',
-    example: 13500,
+    description: 'Percentage discount for yearly plans',
+    example: 20,
     required: false,
   })
   @IsNumber()
   @IsOptional()
-  quarterlyPrice?: number;
-
-  @ApiProperty({
-    description: 'Yearly subscription price',
-    example: 50000,
-    required: false,
-  })
-  @IsNumber()
-  @IsOptional()
-  yearlyPrice?: number;
+  yearlyDiscount?: number;
 
   @ApiProperty({
     description: 'List of features displayed on the landing page',
@@ -70,31 +61,4 @@ export class UpdateSystemConfigDto {
   @IsArray()
   @IsOptional()
   faqs?: { question: string; answer: string }[];
-
-  @ApiProperty({
-    description: 'Paystack plan code for monthly subscription',
-    example: 'PLN_123456789',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  monthlyPlanCode?: string;
-
-  @ApiProperty({
-    description: 'Paystack plan code for quarterly subscription',
-    example: 'PLN_987654321',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  quarterlyPlanCode?: string;
-
-  @ApiProperty({
-    description: 'Paystack plan code for yearly subscription',
-    example: 'PLN_112233445',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  yearlyPlanCode?: string;
 }

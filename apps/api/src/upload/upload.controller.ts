@@ -15,7 +15,7 @@ import { IsString, IsNumber } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PrismaService } from '../prisma/prisma.service';
-import { User } from '@prisma/client';
+import { User, Plan } from '@prisma/client';
 import {
   ApiTags,
   ApiOperation,
@@ -71,15 +71,15 @@ export class UploadController {
     private readonly prisma: PrismaService,
   ) {}
 
-  private isAccessActive(user: User): boolean {
-    if (user.plan === 'PRO') return true;
+  private isAccessActive(user: User & { plan?: Plan | null }): boolean {
+    if (user.plan && !user.plan.isDefault) return true;
 
     const TRIAL_DAYS = 7;
     const now = new Date();
     const trialExpiry = new Date(user.createdAt);
     trialExpiry.setDate(trialExpiry.getDate() + TRIAL_DAYS);
 
-    return now <= trialExpiry;
+    return now <= trialExpiry || !!user.plan;
   }
 
   @Post('signed-url')
@@ -92,11 +92,12 @@ export class UploadController {
   ) {
     const user = await this.prisma.user.findUnique({
       where: { id: req.user.userId },
+      include: { plan: true },
     });
 
     if (dto.fileType !== 'logo' && (!user || !this.isAccessActive(user))) {
       throw new ForbiddenException(
-        'Your trial has expired. Please upgrade to PRO to continue uploading files.',
+        'Your access has expired. Please upgrade your plan to continue uploading files.',
       );
     }
 
@@ -140,11 +141,12 @@ export class UploadController {
   ) {
     const user = await this.prisma.user.findUnique({
       where: { id: req.user.userId },
+      include: { plan: true },
     });
 
     if (dto.fileType !== 'logo' && (!user || !this.isAccessActive(user))) {
       throw new ForbiddenException(
-        'Your trial has expired. Please upgrade to PRO to continue uploading files.',
+        'Your access has expired. Please upgrade your plan to continue uploading files.',
       );
     }
 

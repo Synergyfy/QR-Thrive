@@ -1,88 +1,138 @@
-import { useState } from 'react';
-import { Check, ArrowRight, Plus, Minus, Zap, Globe } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Check, ArrowRight, Plus, Minus, Zap, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { useNavigate } from 'react-router-dom';
 import PublicNav from '../components/PublicNav';
 import PublicFooter from '../components/PublicFooter';
-import { useCurrency } from '../hooks/useCurrency';
-
-import { getPricingConfig } from '../config/pricing';
+import AuthModal from '../components/AuthModal';
+import { usePublicPlans, usePublicConfig } from '../hooks/usePricing';
+import { useCurrentUser, useInitializePayment } from '../hooks/useApi';
+import { getDashboardPath } from '../utils/auth';
+import type { PublicPlan } from '../types/api';
+import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function PricingPage() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const { currency, market, tier, setCurrency, allCurrencies } = useCurrency();
-  const config = getPricingConfig();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PublicPlan | null>(null);
   
-  // Get data for current market/tier
-  const tierData = market === 'local' ? config.local : config.international[tier];
-  const copy = {
-    badge: tierData.badge,
-    title: tierData.title,
-    subtitle: tierData.subtitle
+  const { data: userData } = useCurrentUser();
+  const user = userData?.user;
+  const { data: plans, isLoading: plansLoading, error: plansError } = usePublicPlans();
+  const { data: config, isLoading: configLoading } = usePublicConfig();
+  const initializePayment = useInitializePayment();
+
+  const isLoading = plansLoading || configLoading;
+
+  // Process plans to fit the UI model
+  const currentPlans = useMemo(() => {
+    if (!plans) return [];
+    
+    return plans.map((plan: PublicPlan) => ({
+      name: plan.name,
+      description: plan.description || '',
+      price: plan.pricing.monthly,
+      currency: plan.currencySymbol,
+      currencyCode: plan.currency,
+      highlight: plan.isPopular,
+      popular: plan.isPopular,
+      isFree: plan.isFree,
+      trialDays: plan.trialDays,
+      trial: plan.trialDays > 0,
+      cta: plan.isFree ? "Start Now" : (plan.trialDays > 0 ? `Start ${plan.trialDays}-Day Free Trial` : "Get Started"),
+      features: [
+        `${plan.qrCodeLimit === -1 ? 'Unlimited' : plan.qrCodeLimit} Dynamic QR Codes`,
+        ...((config?.features as string[]) || [])
+      ]
+    }));
+  }, [plans, config]);
+
+  const handleJoinPlan = async (plan: PublicPlan) => {
+    if (!user) {
+      setSelectedPlan(plan);
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    if (plan.isFree) {
+      navigate(getDashboardPath(user.role));
+      return;
+    }
+
+    // Initialize payment for paid plans
+    try {
+      const data = await initializePayment.mutateAsync({
+        planId: plan.id,
+        interval: 'monthly'
+      });
+
+      if (data && (data as any).access_code) {
+        const handler = (window as any).PaystackPop.setup({
+          key: (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_b8e2d78705a6e87f87053e87053e87053e8705', // Use env or fallback for safety
+          email: user.email,
+          amount: Math.round(plan.pricing.monthly * 100),
+          access_code: (data as any).access_code,
+          onClose: () => {
+            toast.error('Payment window closed');
+          },
+          callback: (_response: any) => {
+            toast.success('Payment successful! Upgrading your account...');
+            // Invalidate user query to reflect new plan
+            queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+            // Redirect to dashboard after a short delay
+            setTimeout(() => {
+              navigate('/dashboard');
+            }, 1500);
+          }
+
+        });
+        handler.openIframe();
+      } else if (data && (data as any).authorization_url) {
+        // Fallback to redirect if access_code is missing but url exists
+        window.location.href = (data as any).authorization_url;
+      }
+    } catch (err) {
+      // Error handled by hook
+    }
   };
 
-  // Process plans with currency multipliers if not NGN
-  const rawPlans = tierData.plans;
-  const multiplier = currency.code === 'GBP' ? 0.8 : (currency.code === 'EUR' ? 0.9 : 1);
-  
-  const currentPlans = rawPlans.map(plan => ({
-    ...plan,
-    price: plan.price === 0 ? 0 : Math.round(plan.price * multiplier)
-  }));
-
-  const faqs = [
-    {
-      question: "How long is the free trial?",
-      answer: "Every new account starts with 7 days of PRO access. You can explore all premium features like advanced QR types and full lead capture. After 7 days, if you don't upgrade, you'll be moved to our generous Free Forever plan."
-    },
-    {
-      question: "What are the limits on the Free plan?",
-      answer: `Our Free plan is designed to help you get started. It includes ${market === 'local' ? '2' : '1'} dynamic QR code and 50 scans per month. To remove these limits and the QRThrive branding, you can upgrade to PRO at any time.`
-    },
-    {
-      question: "Can I change my content after printing?",
-      answer: "Yes! That's the power of our Dynamic QR codes. You can update the link, phone number, or menu items any time without changing the physical QR code itself."
-    },
-    {
-      question: "How does regional pricing work?",
-      answer: "We believe in being affordable everywhere. We detect your location to offer the most relevant currency and pricing structure for your local market, ensuring you get the best value."
-    },
-    {
-      question: "Can I cancel my subscription?",
-      answer: "Absolutely. You can cancel at any time from your dashboard. Your premium features will remain active until the end of your current billing cycle."
+  const handleAuthSuccess = () => {
+    setIsAuthModalOpen(false);
+    if (selectedPlan) {
+      handleJoinPlan(selectedPlan);
     }
-  ];
+  };
+
+  const displayFaqs = (config?.faqs as Array<{ question: string; answer: string }>) || [];
+
+  if (plansError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center p-8 bg-white rounded-3xl shadow-xl max-w-md border border-slate-100">
+           <h2 className="text-2xl font-black text-slate-900 mb-4">Something went wrong</h2>
+           <p className="text-slate-500 mb-8">We couldn't load the pricing information. Please try again later.</p>
+           <button 
+             onClick={() => window.location.reload()}
+             className="px-8 py-3 bg-blue-600 text-white font-black rounded-2xl shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-all"
+           >
+             Retry
+           </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-blue-500/30 flex flex-col font-['Poppins']">
       <PublicNav />
 
-      <main className="flex-grow pt-32 pb-24">
-        {/* Currency Switcher Floating */}
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100]">
-           <div className="bg-white/80 backdrop-blur-xl border border-slate-200/50 p-1.5 rounded-2xl shadow-2xl shadow-blue-900/10 flex items-center gap-1">
-              <div className="flex items-center gap-2 px-3 mr-1 text-slate-400">
-                <Globe className="w-4 h-4" />
-                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Market</span>
-              </div>
-              {allCurrencies.map((c) => (
-                <button
-                  key={c.code}
-                  onClick={() => setCurrency(c.code as any)}
-                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                    currency.code === c.code 
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105' 
-                      : 'text-slate-500 hover:bg-slate-50'
-                  }`}
-                >
-                  {c.code}
-                </button>
-              ))}
-           </div>
-        </div>
-
+      <main className="flex-grow pt-24 pb-24">
         {/* Hero Section */}
-        <section className="pt-16 pb-12 px-4 text-center max-w-4xl mx-auto relative">
+        <section className="pt-8 pb-12 px-4 text-center max-w-4xl mx-auto relative">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-400/20 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
           
           <motion.div
@@ -90,7 +140,7 @@ export default function PricingPage() {
             animate={{ opacity: 1, scale: 1 }}
             className="inline-block px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-blue-100 mb-6"
           >
-             {copy.badge}
+             {configLoading ? "..." : (plans?.[0]?.currency === 'NGN' ? "For Nigerian Businesses" : "Global Pricing")}
           </motion.div>
 
           <motion.h1 
@@ -98,7 +148,7 @@ export default function PricingPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 text-slate-900 leading-[1.1]"
           >
-             <div dangerouslySetInnerHTML={{ __html: copy.title }} />
+             {config?.heroTitle || "Turn Every Scan Into a Customer"}
           </motion.h1>
           
           <motion.p 
@@ -107,107 +157,113 @@ export default function PricingPage() {
             transition={{ delay: 0.1 }}
             className="text-lg md:text-xl text-slate-600 mb-6 leading-relaxed max-w-2xl mx-auto"
           >
-            {copy.subtitle}
+            {config?.heroSubtitle || "Join thousands of businesses using QR codes to grow their customer base."}
           </motion.p>
 
-          {/* Trial Trigger Banner */}
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="flex items-center justify-center gap-3 mb-12"
           >
-             <div className="px-5 py-2.5 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100 flex items-center gap-2 shadow-sm">
+              <div className="px-5 py-2.5 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100 flex items-center gap-2 shadow-sm">
                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-widest leading-none">All new users get 7 Days of PRO for free</span>
-             </div>
+                <span className="text-[10px] font-black uppercase tracking-widest leading-none">Try our premium features with a risk-free trial</span>
+              </div>
           </motion.div>
         </section>
 
         {/* Pricing Cards Section */}
-        <section className="max-w-7xl mx-auto px-4 mb-24 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-            {currentPlans.map((plan, idx) => (
-              <motion.div 
-                key={plan.name}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + (idx * 0.1) }}
-                className={`flex flex-col relative rounded-[3rem] p-10 transition-all duration-500 overflow-hidden group ${
-                  plan.highlight 
-                    ? 'bg-slate-900 text-white shadow-[0_40px_100px_-20px_rgba(37,99,235,0.2)] scale-105 z-20 md:-translate-y-4 border border-blue-500/30' 
-                    : 'bg-white border border-slate-100 shadow-xl shadow-blue-900/5 z-10'
-                }`}
-              >
-                {/* Most Popular/Trial Badge */}
-                {(plan.popular || plan.trial) && (
-                  <div className="absolute top-8 right-10">
-                     <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-5 py-2.5 rounded-full shadow-lg transition-transform group-hover:scale-110 ${
-                        plan.highlight ? 'bg-blue-600 text-white shadow-blue-500/40' : 'bg-slate-900 text-white'
-                     }`}>
-                        {plan.trial ? '7-Day Trial' : 'Most Popular'}
-                     </span>
-                  </div>
-                )}
+        <section className="max-w-7xl mx-auto px-4 mb-24 relative z-10 min-h-[400px]">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center pt-20">
+               <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
+               <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Locating best prices for you...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+              {currentPlans.map((plan, idx) => (
+                <motion.div 
+                  key={plan.name}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + (idx * 0.1) }}
+                  className={`flex flex-col relative rounded-[3rem] p-10 transition-all duration-500 overflow-hidden group ${
+                    plan.highlight 
+                      ? 'bg-slate-900 text-white shadow-[0_40px_100px_-20px_rgba(37,99,235,0.2)] scale-105 z-20 md:-translate-y-4 border border-blue-500/30' 
+                      : 'bg-white border border-slate-100 shadow-xl shadow-blue-900/5 z-10'
+                  }`}
+                >
+                  {/* Most Popular/Trial Badge */}
+                  {(plan.popular || plan.trial) && (
+                    <div className="absolute top-8 right-10">
+                        <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-5 py-2.5 rounded-full shadow-lg transition-transform group-hover:scale-110 ${
+                          plan.highlight ? 'bg-blue-600 text-white shadow-blue-500/40' : 'bg-slate-900 text-white'
+                       }`}>
+                          {plan.trial ? `${plan.trialDays}-Day Trial` : 'Most Popular'}
+                       </span>
+                    </div>
+                  )}
 
-                {/* Plan Content */}
-                <div className="mb-10 pt-4">
-                  <h3 className={`text-2xl font-black tracking-tight mb-2 ${plan.highlight ? 'text-blue-400' : 'text-slate-900'}`}>
-                    {plan.name}
-                  </h3>
-                  <p className={`text-sm font-medium leading-relaxed mb-10 ${plan.highlight ? 'text-slate-400' : 'text-slate-500'}`}>
-                    {plan.description}
-                  </p>
-                  
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <span className={`text-3xl font-bold ${plan.highlight ? 'text-slate-400' : 'text-slate-400'}`}>{currency.symbol}</span>
-                    <span className={`text-7xl font-black tracking-tighter ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
-                       {plan.price === 0 ? '0' : (market === 'local' ? plan.price.toLocaleString() : plan.price)}
-                    </span>
-                    <span className={`text-sm font-bold opacity-60 ml-2 ${plan.highlight ? 'text-white' : 'text-slate-500'}`}>
-                      / month
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-6 mb-12 flex-grow">
-                  {plan.features.map((feature, fIdx) => (
-                    <div key={fIdx} className="flex items-center gap-4">
-                      <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
-                        plan.highlight ? 'bg-blue-600/20' : 'bg-blue-50'
-                      }`}>
-                        <Check className={`w-3.5 h-3.5 font-bold ${plan.highlight ? 'text-blue-400' : 'text-blue-600'}`} />
-                      </div>
-                      <span className={`text-sm font-bold tracking-tight ${plan.highlight ? 'text-slate-200' : 'text-slate-700'}`}>
-                        {feature}
+                  {/* Plan Content */}
+                  <div className="mb-10 pt-4">
+                    <h3 className={`text-2xl font-black tracking-tight mb-2 ${plan.highlight ? 'text-blue-400' : 'text-slate-900'}`}>
+                      {plan.name}
+                    </h3>
+                    <p className={`text-sm font-medium leading-relaxed mb-10 ${plan.highlight ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {plan.description}
+                    </p>
+                    
+                    <div className="flex items-baseline gap-1 mb-2">
+                      <span className={`text-3xl font-bold text-slate-400`}>{plan.currency}</span>
+                      <span className={`text-7xl font-black tracking-tighter ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
+                         {plan.price === 0 ? '0' : plan.price.toLocaleString()}
+                      </span>
+                      <span className={`text-sm font-bold opacity-60 ml-2 ${plan.highlight ? 'text-white' : 'text-slate-500'}`}>
+                        / month
                       </span>
                     </div>
-                  ))}
-                </div>
+                  </div>
 
-                <div className="space-y-3">
-                  <button className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
-                     plan.highlight 
-                      ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30' 
-                      : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
-                  }`}>
-                    {plan.cta}
-                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
-                  </button>
+                  <div className="space-y-6 mb-12 flex-grow">
+                    {plan.features.map((feature, fIdx) => (
+                      <div key={fIdx} className="flex items-center gap-4">
+                        <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
+                          plan.highlight ? 'bg-blue-600/20' : 'bg-blue-50'
+                        }`}>
+                          <Check className={`w-3.5 h-3.5 font-bold ${plan.highlight ? 'text-blue-400' : 'text-blue-600'}`} />
+                        </div>
+                        <span className={`text-sm font-bold tracking-tight ${plan.highlight ? 'text-slate-200' : 'text-slate-700'}`}>
+                          {feature}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
 
-                  {plan.trial && (
-                    <button className={`w-full py-4 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] transition-all border-2 flex justify-center items-center gap-2 hover:bg-white/10 ${
-                       plan.highlight 
-                        ? 'border-white/10 text-white/60 hover:text-white hover:border-white/30' 
-                        : 'border-slate-100 text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                    }`}>
-                       No Trial? Get Started Now
+                  <div className="space-y-3">
+                    <button 
+                      onClick={() => handleJoinPlan(plans!.find(p => p.name === plan.name)!)}
+                      disabled={initializePayment.isPending}
+                      className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
+                        plan.highlight 
+                          ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30' 
+                          : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
+                      } ${initializePayment.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    >
+                      {initializePayment.isPending && selectedPlan?.name === plan.name ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          {plan.cta}
+                          <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
+                        </>
+                      )}
                     </button>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Add-Ons Section */}
@@ -233,7 +289,7 @@ export default function PricingPage() {
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
                 <h4 className="text-3xl font-black text-slate-900 tracking-tight">Full API Access</h4>
                 <div className="bg-blue-50 text-blue-600 font-black text-xs uppercase tracking-widest px-6 py-3 rounded-full inline-block border border-blue-100 shadow-sm">
-                  + {currency.symbol}{market === 'local' ? '10,000' : (currency.code === 'USD' ? '25.00' : (currency.code === 'GBP' ? '20.00' : '22.00'))}/mo
+                   Coming Soon
                 </div>
               </div>
               <p className="text-slate-500 font-medium mb-8 leading-relaxed text-lg">
@@ -268,7 +324,7 @@ export default function PricingPage() {
           </div>
 
           <div className="space-y-4">
-            {faqs.map((faq, idx) => (
+            {displayFaqs.map((faq, idx) => (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -315,6 +371,12 @@ export default function PricingPage() {
       </main>
 
       <PublicFooter />
+
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        onSuccess={handleAuthSuccess} 
+      />
     </div>
   );
 }

@@ -12,10 +12,22 @@ import Overview from './pages/admin/Overview';
 import UsersManagement from './pages/admin/Users';
 import PricingManager from './pages/admin/PricingManager';
 import SettingsPage from './pages/admin/Settings';
+import WhyUsPage from './pages/WhyUsPage';
+import SolutionsPage from './pages/SolutionsPage';
+import FAQPage from './pages/FAQPage';
+import FloatingChat from './components/FloatingChat';
+import AdminChat from './pages/admin/AdminChat';
+
+
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 function App() {
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
   return (
-    <BrowserRouter>
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <BrowserRouter>
+      <FloatingChat />
       <Toaster 
         position="top-right"
         toastOptions={{
@@ -35,6 +47,9 @@ function App() {
         {/* Public Landing & Generator */}
         <Route path="/" element={<GeneratorPage />} />
         <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/why-us" element={<WhyUsPage />} />
+        <Route path="/solutions" element={<SolutionsPage />} />
+        <Route path="/faq" element={<FAQPage />} />
 
         {/* Protected Dashboard Area */}
         <Route element={<ProtectedRoute />}>
@@ -54,12 +69,14 @@ function App() {
           <Route path="users" element={<UsersManagement />} />
           <Route path="pricing" element={<PricingManager />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="support" element={<AdminChat />} />
         </Route>
 
         {/* Catch-all for 404s */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </GoogleOAuthProvider>
   );
 }
 

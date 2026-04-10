@@ -9,7 +9,7 @@ import { UpdateQRCodeDto } from './dto/update-qr-code.dto';
 import * as crypto from 'crypto';
 import { UAParser } from 'ua-parser-js';
 import * as geoip from 'geoip-lite';
-import { User, PlanType, Prisma } from '@prisma/client';
+import { User, Prisma, Plan } from '@prisma/client';
 
 import { FormsService } from '../forms/forms.service';
 import { UploadService } from '../upload/upload.service';
@@ -24,22 +24,37 @@ export class QRCodesService {
     private readonly uploadService: UploadService,
   ) {}
 
-  private isAccessActive(user: User): boolean {
-    if (user.plan === PlanType.PRO) return true;
+  /**
+   * Checks if the user's access is active.
+   * Logic: 
+   * 1. If they have a plan that isn't the 'Free' plan (non-default), they are active.
+   * 2. If they have the default 'Free' plan, we might have a trial logic or just allow it within limits.
+   * Note: UsageGuard handles the actual limits (counts and types).
+   */
+  private isAccessActive(user: User & { plan?: Plan | null }): boolean {
+    if (user.plan && !user.plan.isDefault) return true;
 
     const now = new Date();
     const trialExpiry = new Date(user.createdAt);
     trialExpiry.setDate(trialExpiry.getDate() + TRIAL_DAYS);
 
-    return now <= trialExpiry;
+    return now <= trialExpiry || !!user.plan;
   }
 
   async create(userId: string, createQRCodeDto: CreateQRCodeDto) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({ 
+      where: { id: userId },
+      include: { plan: true }
+    });
 
-    if (!user || !this.isAccessActive(user)) {
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // UsageGuard already checks limits, but we check overall account status here
+    if (!this.isAccessActive(user)) {
       throw new ForbiddenException(
-        'Your trial has expired. Please upgrade to PRO to continue.',
+        'Your access has expired or is inactive. Please upgrade your plan to continue.',
       );
     }
 
@@ -146,11 +161,14 @@ export class QRCodesService {
   }
 
   async update(id: string, userId: string, updateQRCodeDto: UpdateQRCodeDto) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({ 
+      where: { id: userId },
+      include: { plan: true }
+    });
 
     if (!user || !this.isAccessActive(user)) {
       throw new ForbiddenException(
-        'Your trial has expired. Please upgrade to PRO to continue.',
+        'Your access has expired. Please upgrade your plan to continue.',
       );
     }
 
@@ -254,10 +272,13 @@ export class QRCodesService {
   }
 
   async duplicate(id: string, userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({ 
+      where: { id: userId },
+      include: { plan: true }
+    });
     if (!user || !this.isAccessActive(user)) {
       throw new ForbiddenException(
-        'Your trial has expired. Please upgrade to PRO to continue.',
+        'Your access has expired. Please upgrade your plan to continue.',
       );
     }
 
@@ -291,7 +312,7 @@ export class QRCodesService {
     const qrCode = await this.prisma.qRCode.findUnique({
       where: { shortId },
       include: {
-        user: true,
+        user: { include: { plan: true } },
         form: {
           include: { fields: { orderBy: { order: 'asc' } } },
         },
@@ -332,7 +353,7 @@ export class QRCodesService {
   async recordScan(shortId: string, ip: string, userAgent: string) {
     const qrCode = await this.prisma.qRCode.findUnique({
       where: { shortId },
-      include: { user: true },
+      include: { user: { include: { plan: true } } },
     });
 
     if (!qrCode) {

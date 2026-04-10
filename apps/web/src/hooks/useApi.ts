@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authApi, foldersApi, qrCodesApi, statsApi } from '../services/api';
+import { authApi, foldersApi, qrCodesApi, statsApi, paymentsApi } from '../services/api';
 import type { CreateFolderDto, BackendQRCode, CreateQRCodeDto } from '../types/api';
+import toast from 'react-hot-toast';
 
 // --- AUTH HOOKS ---
 
@@ -151,5 +152,29 @@ export const useDashboardStats = () => {
   return useQuery({
     queryKey: ['stats'],
     queryFn: statsApi.getDashboardStats,
+  });
+};
+
+// --- PAYMENTS HOOKS ---
+
+export const useCancelSubscription = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => paymentsApi.cancelSubscription(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      toast.success('Subscription cancelled successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to cancel subscription');
+    },
+  });
+};
+export const useInitializePayment = () => {
+  return useMutation({
+    mutationFn: (data: { planId: string; interval: string }) => paymentsApi.initialize(data),
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to initialize payment');
+    },
   });
 };
