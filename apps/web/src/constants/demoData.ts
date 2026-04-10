@@ -145,8 +145,15 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
     type: 'mp3',
     mp3: {
       id: 'demo-mp3',
-      name: 'Podcast_Episode_1.mp3',
-      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+      name: 'The Future of QR Technology',
+      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+      companyName: 'TechTalk Weekly',
+      title: 'Episode #42: Digital Engagement',
+      description: 'Join us as we discuss how QR codes are revolutionizing the way we interact with the physical world and digital content.',
+      themeColor: '#1e40af',
+      textColor: '#ffffff',
+      buttonColor: 'rgba(255,255,255,0.15)',
+      buttonTextColor: '#ffffff'
     }
   },
   menu: {
