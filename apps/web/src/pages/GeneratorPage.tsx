@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { QRConfiguration, QRType } from '../types/qr';
 import QRCodePreview from '../components/QRCodePreview';
 import ExportPanel from '../components/ExportPanel';
@@ -37,7 +38,8 @@ import {
   Link2,
   Users,
   Ticket,
-  Phone
+  Phone,
+  Calendar
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -141,12 +143,14 @@ const qrTypes: QRTypeOption[] = [
   { id: 'menu', icon: UtensilsCrossed, title: 'Menu', description: 'Create a restaurant menu', category: 'dynamic' },
   { id: 'app', icon: SmartphoneNfc, title: 'Apps', description: 'Redirect to an app store', category: 'dynamic' },
   { id: 'coupon', icon: Ticket, title: 'Coupon', description: 'Share a coupon', category: 'dynamic' },
+  { id: 'booking', icon: Calendar, title: 'Booking', description: 'Enable online bookings', category: 'dynamic' },
   { id: 'wifi', icon: Wifi, title: 'WiFi', description: 'Connect to a Wi-Fi network', category: 'static' },
 ];
 
 function GeneratorPage() {
   const { data: userData } = useCurrentUser();
   const user = userData?.user;
+  const [searchParams] = useSearchParams();
   
   const [step, setStep] = useState<'type' | 'content' | 'design'>('type');
   const [hoveredType, setHoveredType] = useState<QRType | null>(null);
@@ -155,6 +159,7 @@ function GeneratorPage() {
   const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(null);
 
   const [designTab, setDesignTab] = useState<'shape' | 'frame' | 'logo' | 'colors'>('shape');
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
 
   const updateConfig = (updates: Partial<QRConfiguration>) => {
     setConfig(prev => ({ ...prev, ...updates }));
@@ -165,7 +170,7 @@ function GeneratorPage() {
       const typeChanged = updates.type && updates.type !== prev.data.type;
       const newType = updates.type || prev.data.type;
       
-      const dynamicTypes: QRType[] = ['socials', 'event', 'image', 'pdf', 'vcard', 'business', 'video', 'facebook', 'instagram', 'whatsapp', 'mp3', 'menu', 'app', 'coupon'];
+      const dynamicTypes: QRType[] = ['socials', 'event', 'image', 'pdf', 'vcard', 'business', 'video', 'facebook', 'instagram', 'whatsapp', 'mp3', 'menu', 'app', 'coupon', 'booking'];
       const shouldBeDynamic = dynamicTypes.includes(newType);
 
       if (typeChanged) {
@@ -208,6 +213,17 @@ function GeneratorPage() {
     else if (step === 'design') setStep('content');
   };
 
+  // Auto-initialize from URL parameters (Integration with Vemtap)
+  useEffect(() => {
+    const typeParam = searchParams.get('type') as QRType | null;
+    const urlParam = searchParams.get('url');
+
+    if (typeParam === 'url' && urlParam) {
+      updateData({ type: 'url', url: urlParam });
+      setStep('content');
+    }
+  }, [searchParams]);
+
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
@@ -219,9 +235,9 @@ function GeneratorPage() {
         <div className="max-w-7xl mx-auto">
 
           {/* This is the Main Generator Card - The 1-2-3 Psychology Container */}
-          <div className="bg-white rounded-[40px] shadow-[0_30px_1000px_rgba(37,99,235,0.06)] border border-gray-100 flex flex-col lg:flex-row relative min-h-[700px] overflow-visible">
+          <div className="bg-white rounded-[40px] shadow-[0_30px_1000px_rgba(37,99,235,0.06)] border border-gray-100 flex flex-col lg:flex-row relative min-h-[600px] lg:min-h-[700px] overflow-visible">
             {/* Left Content Column */}
-            <div className="flex-1 min-w-0 p-6 sm:p-10 lg:p-12 border-b lg:border-b-0 lg:border-r border-gray-100 flex flex-col">
+            <div className="flex-1 min-w-0 p-5 sm:p-10 lg:p-12 border-b lg:border-b-0 lg:border-r border-gray-100 flex flex-col">
               
               {/* Stepper Header */}
               <div className="flex items-center gap-4 mb-8">
@@ -335,7 +351,7 @@ function GeneratorPage() {
               </div>
 
               {/* Navigation Actions */}
-              <div className="mt-8 pt-8 border-t border-gray-50 flex items-center justify-between">
+              <div className="mt-auto pt-8 border-t border-gray-50 flex items-center justify-between sticky bottom-0 bg-white/80 backdrop-blur-md pb-6 lg:static lg:bg-transparent lg:pb-0 z-40">
                 <button
                   onClick={handleBack}
                   disabled={step === 'type'}
@@ -360,8 +376,23 @@ function GeneratorPage() {
             </div>
 
             {/* Right Preview Column */}
-            <div className="w-full lg:w-[440px] bg-[#F8FAFC] min-h-[600px] relative shrink-0">
-              <div className="lg:sticky lg:top-28 w-full p-6 sm:p-10 lg:p-12 flex flex-col items-center">
+            <div className={cn(
+              "w-full lg:w-[440px] bg-[#F8FAFC] relative shrink-0 transition-all duration-500 overflow-hidden lg:overflow-visible lg:block self-stretch",
+              showMobilePreview ? "fixed inset-0 z-[100] h-screen bg-white" : "h-0 lg:h-auto"
+            )}>
+              <div className={cn(
+                "lg:sticky lg:top-28 w-full p-6 sm:p-10 lg:p-12 flex flex-col items-center",
+                showMobilePreview ? "h-full" : ""
+              )}>
+                
+                {showMobilePreview && (
+                  <button 
+                    onClick={() => setShowMobilePreview(false)}
+                    className="lg:hidden absolute top-6 right-6 w-10 h-10 bg-gray-900 text-white rounded-full flex items-center justify-center z-[110] shadow-xl"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                )}
                 
                 {step === 'design' ? (
                   <div className="w-full flex flex-col items-center animate-in zoom-in-95 duration-500">
@@ -401,14 +432,18 @@ function GeneratorPage() {
                   </div>
                 ) : (
                   <div className="relative group animate-in fade-in slide-in-from-right-8 duration-700 w-full flex flex-col items-center">
-                    {/* Phone Mockup Case */}
-                    <div className="relative w-[280px] h-[575px] bg-gray-900 rounded-[50px] p-2.5 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.25)] border-[1px] border-gray-800 overflow-hidden shrink-0">
+                    {/* Phone Mockup Case - Scaled for better mobile fit */}
+                    <div className="relative w-[280px] h-[575px] sm:w-[300px] sm:h-[615px] bg-gray-900 rounded-[50px] p-2.5 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.25)] border-[1px] border-gray-800 overflow-hidden shrink-0 scale-90 sm:scale-100 origin-top">
                       {/* Notch */}
                       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 bg-gray-900 rounded-b-xl z-40 border-x border-b border-gray-800" />
                       
                       {/* Screen */}
-                      <div className="relative w-full h-full bg-white rounded-[40px] overflow-hidden flex flex-col">
+                      <div className={cn(
+                        "relative w-full h-full rounded-[40px] overflow-hidden flex flex-col transition-colors duration-500",
+                        config.data.type === 'url' ? "" : "bg-white"
+                      )} style={{ backgroundColor: config.data.type === 'url' ? (config.data.urlPreview?.themeColor || '#00C9E0') : undefined }}>
                         <div className="h-8 px-6 flex items-center justify-between text-[9px] font-bold text-gray-900 pt-2 shrink-0">
+
                             <span>9:41</span>
                             <div className="flex gap-1 items-center">
                               <Wifi className="w-2.5 h-2.5" />
@@ -420,6 +455,7 @@ function GeneratorPage() {
 
                         <div className="flex-1 overflow-y-auto hidden-scrollbar flex flex-col relative">
                             {(step === 'type' ? (hoveredType || config.data.type) : config.data.type) ? (
+
                                <div key={step === 'type' ? (hoveredType || config.data.type) : config.data.type} className="min-h-full animate-in fade-in slide-in-from-bottom-5 duration-700 flex flex-col">
                                   <DynamicView 
                                     data={step === 'type' && hoveredType ? { type: hoveredType } as any : config.data} 
@@ -457,6 +493,25 @@ function GeneratorPage() {
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Floating Mobile Preview Toggle */}
+          <div className="lg:hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center pointer-events-none">
+             <button 
+              onClick={() => setShowMobilePreview(true)}
+              className="flex items-center gap-3 px-6 py-4 bg-gray-900 text-white rounded-[24px] font-bold shadow-2xl shadow-blue-200 active:scale-95 transition-all text-sm whitespace-nowrap border-4 border-white pointer-events-auto"
+             >
+                <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center">
+                   <Zap className="w-4 h-4 fill-white animate-pulse" />
+                </div>
+                Live Preview
+             </button>
+             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full mb-4">
+                <div className="bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100 flex items-center gap-2">
+                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                   <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest whitespace-nowrap">Editing Live</span>
+                </div>
+             </div>
           </div>
         </div>
       </section>

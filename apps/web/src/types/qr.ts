@@ -1,4 +1,5 @@
 import type { DotType, CornerDotType, CornerSquareType, ErrorCorrectionLevel, Mode, TypeNumber, GradientType } from "qr-code-styling";
+import type { FormField } from "./form";
 
 export type QRType = 
   | 'url' 
@@ -27,7 +28,8 @@ export type QRType =
   | 'form'
   | 'business'
   | 'menu'
-  | 'coupon';
+  | 'coupon'
+  | 'booking';
   
 export interface FileData {
   id?: string;
@@ -70,7 +72,9 @@ export interface MenuData {
 
 export interface QRData {
   type: QRType;
+  name?: string;
   url?: string;
+
   urlPreview?: {
     title?: string;
     description?: string;
@@ -232,17 +236,7 @@ export interface QRData {
   form?: {
     title: string;
     description?: string;
-    fields: {
-      id: string;
-      type: 'text' | 'number' | 'range' | 'checkbox' | 'select' | 'radio' | 'email' | 'phone';
-      label: string;
-      placeholder?: string;
-      helpText?: string;
-      required: boolean;
-      options?: { label: string; value: string }[];
-      validation?: { min?: number; max?: number; step?: number };
-      order: number;
-    }[];
+    fields: FormField[];
   };
   linksInfo?: {
     themeColor?: string;
@@ -305,6 +299,25 @@ export interface QRData {
     banner?: string;
     companyName?: string;
     website?: string;
+  };
+  booking?: {
+    businessName?: string;
+    title?: string;
+    description?: string;
+    location?: string;
+    bookingUrl?: string;
+    imageUrl?: string;
+    profileImageUrl?: string;
+    themeColor?: string;
+    buttonText?: string;
+    price?: string;
+    duration?: string;
+    destinationMode?: 'url' | 'calendar' | 'qr_link';
+    qrLinkId?: string;
+    customFormEnabled?: boolean;
+    customFormFields?: FormField[];
+    whatsappEnabled?: boolean;
+    whatsappNumber?: string;
   };
 }
 
