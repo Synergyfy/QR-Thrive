@@ -29,8 +29,13 @@ model User {
   // Paystack Integration
   paystackCustomerCode     String?   @unique
   paystackSubscriptionCode String?   @unique
-  subscriptionStatus       String?   // e.g., "active", "non-renewing", "attention", "cancelled"
+  subscriptionStatus       String?   // e.g., "active", "non-renewing", "attention", "cancelled", "trialing"
   billingCycle             String?   // "monthly", "quarterly", "yearly"
+
+  // Trial System
+  trialStartedAt           DateTime?
+  trialEndsAt              DateTime?
+  hasUsedTrial             Boolean   @default(false)
 
   refreshTokens RefreshToken[]
   folders       Folder[]
@@ -64,9 +69,8 @@ model SystemConfig {
 
 model Tier {
   id        String    @id @default(cuid())
-  name      String    @unique // e.g., "Tier 1", "Tier 2", "Tier 3"
+  name      String    @unique // e.g., "High Income", "Middle Income", "Low Income"
   countries Country[]
-  prices    PlanPrice[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
@@ -74,8 +78,8 @@ model Tier {
 model Country {
   code           String   @id // ISO 3166-1 alpha-2 (e.g., "US", "NG")
   name           String
-  currencyCode   String   // e.g., "USD", "NGN"
-  currencySymbol String   // e.g., "$", "₦"
+  currencyCode   String   @default("USD")
+  currencySymbol String   @default("$")
   tierId         String
   tier           Tier     @relation(fields: [tierId], references: [id])
   createdAt      DateTime @default(now())
@@ -90,24 +94,29 @@ model Plan {
   qrCodeTypes   QRType[]    // PostgreSQL supporting enum arrays
   isPopular     Boolean     @default(false)
   isDefault     Boolean     @default(false)
+  isFree        Boolean     @default(false)
+  trialDays     Int         @default(0)
   isActive      Boolean     @default(true)
-  prices        PlanPrice[]
+  
+  // High Income Tier Prices
+  highIncomeMonthlyUSD    Float @default(0)
+  highIncomeQuarterlyUSD  Float @default(0)
+  highIncomeYearlyUSD     Float @default(0)
+  
+  // Middle Income Tier Prices
+  middleIncomeMonthlyUSD    Float @default(0)
+  middleIncomeQuarterlyUSD  Float @default(0)
+  middleIncomeYearlyUSD     Float @default(0)
+  
+  // Low Income Tier Prices
+  lowIncomeMonthlyUSD    Float @default(0)
+  lowIncomeQuarterlyUSD  Float @default(0)
+  lowIncomeYearlyUSD     Float @default(0)
+  
   users         User[]
+  deletedAt     DateTime?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
-}
-
-model PlanPrice {
-  id              String   @id @default(cuid())
-  planId          String
-  plan            Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
-  tierId          String
-  tier            Tier     @relation(fields: [tierId], references: [id], onDelete: Cascade)
-  monthlyPriceUSD Float
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@unique([planId, tierId])
 }
 
 model Folder {

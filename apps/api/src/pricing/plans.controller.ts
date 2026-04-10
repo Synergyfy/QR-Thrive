@@ -25,7 +25,6 @@ import {
 import {
   CreatePlanDto,
   UpdatePlanDto,
-  SetPlanPriceDto,
 } from './pricing.dto';
 
 @ApiTags('Plans')
@@ -77,14 +76,5 @@ export class PlansController {
   @ApiOperation({ summary: 'Delete a plan (Admin only)' })
   async deletePlan(@Param('id') id: string) {
     return this.plansService.delete(id);
-  }
-
-  @Roles(Role.ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @Post(':id/price')
-  @ApiOperation({ summary: 'Set or update a monthly price for a specific tier (Admin only)' })
-  @ApiBody({ type: SetPlanPriceDto })
-  async setPlanPrice(@Param('id') id: string, @Body() body: SetPlanPriceDto) {
-    return this.plansService.setPrice(id, body);
   }
 }

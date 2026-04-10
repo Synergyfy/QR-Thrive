@@ -10,6 +10,10 @@ import type {
   AdminStats,
   AdminUsersResponse,
   SystemConfig,
+  Plan,
+  Tier,
+  Country,
+  PricingConfig,
 } from '../types/api';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:3005/api/v1');
@@ -189,6 +193,20 @@ export const adminApi = {
     (await apiClient.get<AdminUsersResponse>('/admin/users', { params })).data,
   getConfig: async () => (await apiClient.get<SystemConfig>('/admin/config')).data,
   updateConfig: async (data: Partial<SystemConfig>) => (await apiClient.patch<SystemConfig>('/admin/config', data)).data,
+  
+  // Plans Management
+  getPlans: async () => (await apiClient.get<Plan[]>('/plans/all')).data,
+  createPlan: async (data: Partial<Plan>) => (await apiClient.post<Plan>('/plans', data)).data,
+  updatePlan: async (id: string, data: Partial<Plan>) => (await apiClient.patch<Plan>(`/plans/${id}`, data)).data,
+  deletePlan: async (id: string) => (await apiClient.delete(`/plans/${id}`)).data,
+
+  // Pricing & Geography
+  getTiers: async () => (await apiClient.get<Tier[]>('/pricing/tiers')).data,
+  getCountries: async () => (await apiClient.get<Country[]>('/pricing/countries')).data,
+  upsertCountry: async (data: Partial<Country>) => (await apiClient.post<Country>('/pricing/countries', data)).data,
+  getPricingConfig: async () => (await apiClient.get<PricingConfig>('/pricing/config')).data,
+  updatePricingConfig: async (data: Partial<PricingConfig>) => (await apiClient.patch<PricingConfig>('/pricing/config', data)).data,
+
   banUser: async (id: string) => (await apiClient.patch(`/admin/users/${id}/ban`)).data,
   deleteUser: async (id: string) => (await apiClient.delete(`/admin/users/${id}`)).data,
   exportUsers: async () => {
@@ -201,4 +219,8 @@ export const adminApi = {
     link.click();
     link.remove();
   },
+};
+  export const paymentsApi = {
+  initialize: async (data: { planId: string; interval: string }) => (await apiClient.post<{ authorization_url: string }>('/payments/initialize', data)).data,
+  cancelSubscription: async () => (await apiClient.post<{ message: string }>('/payments/cancel')).data,
 };

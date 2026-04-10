@@ -29,6 +29,30 @@ export class AuthService {
     );
   }
 
+  private async getDefaultPlanData() {
+    const defaultPlan = await this.prisma.plan.findFirst({
+      where: { isDefault: true, isActive: true, deletedAt: null },
+    });
+
+    if (!defaultPlan) return {};
+
+    const planData: any = { planId: defaultPlan.id };
+
+    if (defaultPlan.isFree) {
+      planData.subscriptionStatus = 'active';
+    } else if (defaultPlan.trialDays > 0) {
+      const now = new Date();
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(now.getDate() + defaultPlan.trialDays);
+
+      planData.trialStartedAt = now;
+      planData.trialEndsAt = trialEndsAt;
+      planData.subscriptionStatus = 'trialing';
+    }
+
+    return planData;
+  }
+
   async signup(signupDto: SignupDto, res: Response) {
     const { email, password, confirmPassword, firstName, lastName } = signupDto;
 
@@ -45,6 +69,8 @@ export class AuthService {
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
+      const defaultPlanData = await this.getDefaultPlanData();
+      
       const user = await this.prisma.user.create({
         data: {
           email,
@@ -52,6 +78,7 @@ export class AuthService {
           firstName,
           lastName,
           role: 'USER',
+          ...defaultPlanData,
         },
       });
 
@@ -179,6 +206,8 @@ export class AuthService {
         }
       } else {
         // Create new user
+        const defaultPlanData = await this.getDefaultPlanData();
+        
         user = await this.prisma.user.create({
           data: {
             email,
@@ -187,6 +216,7 @@ export class AuthService {
             lastName: lastName || '',
             avatar,
             role: 'USER',
+            ...defaultPlanData,
           },
         });
         this.logger.log(`New user created via Google: ${email}`);

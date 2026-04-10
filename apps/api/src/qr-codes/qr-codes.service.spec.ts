@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { QRCodesService } from './qr-codes.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { QRType, PlanType } from '@prisma/client';
+import { QRType } from '@prisma/client';
 import { ForbiddenException } from '@nestjs/common';
 import { FormsService } from '../forms/forms.service';
 import { UploadService } from '../upload/upload.service';
@@ -17,7 +17,7 @@ describe('QRCodesService', () => {
         if (where.id === 'user-free-new') {
           return Promise.resolve({
             id: 'user-free-new',
-            plan: PlanType.FREE,
+            plan: undefined,
             createdAt: now,
           });
         }
@@ -26,7 +26,7 @@ describe('QRCodesService', () => {
           oldDate.setDate(oldDate.getDate() - 10);
           return Promise.resolve({
             id: 'user-free-old',
-            plan: PlanType.FREE,
+            plan: undefined,
             createdAt: oldDate,
           });
         }
@@ -35,7 +35,7 @@ describe('QRCodesService', () => {
           oldDate.setDate(oldDate.getDate() - 10);
           return Promise.resolve({
             id: 'user-pro',
-            plan: PlanType.PRO,
+            plan: undefined,
             createdAt: oldDate,
           });
         }
@@ -61,20 +61,20 @@ describe('QRCodesService', () => {
           return Promise.resolve({
             id: 'id1',
             shortId: 'short-free-new',
-            user: { plan: PlanType.FREE, createdAt: now },
+            user: { plan: undefined, createdAt: now },
           });
         }
         if (where.shortId === 'short-free-old') {
           return Promise.resolve({
             id: 'id2',
             shortId: 'short-free-old',
-            user: { plan: PlanType.FREE, createdAt: oldDate },
+            user: { plan: undefined, createdAt: oldDate },
           });
         }
         return Promise.resolve({
           id: 'existing-id',
           shortId: 'short',
-          user: { plan: PlanType.PRO, createdAt: oldDate },
+          user: { plan: undefined, createdAt: oldDate },
         });
       }),
       update: jest
