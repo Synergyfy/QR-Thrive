@@ -8,6 +8,9 @@ import {
   Mail, 
   Phone as PhoneIcon, 
   Hash, 
+  AlignLeft,
+  Calendar,
+  ToggleLeft,
   CheckSquare, 
   List, 
   CircleDot, 
@@ -28,13 +31,14 @@ interface FormBuilderProps {
 
 const FIELD_TYPES = [
   { id: 'text', label: 'Short Text', icon: Type },
+  { id: 'textarea', label: 'Long Text', icon: AlignLeft },
   { id: 'email', label: 'Email', icon: Mail },
   { id: 'phone', label: 'Phone', icon: PhoneIcon },
   { id: 'number', label: 'Number', icon: Hash },
-  { id: 'range', label: 'Range/Slider', icon: SlidersHorizontal },
+  { id: 'date', label: 'Date', icon: Calendar },
+  { id: 'boolean', label: 'Yes/No', icon: ToggleLeft },
   { id: 'checkbox', label: 'Checkbox', icon: CheckSquare },
   { id: 'select', label: 'Dropdown', icon: List },
-  { id: 'radio', label: 'Single Choice', icon: CircleDot },
 ] as const;
 
 const FormBuilder: React.FC<FormBuilderProps> = ({ fields, onChange }) => {

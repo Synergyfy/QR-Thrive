@@ -71,7 +71,9 @@ export interface MenuData {
 
 export interface QRData {
   type: QRType;
+  name?: string;
   url?: string;
+
   urlPreview?: {
     title?: string;
     description?: string;
@@ -314,10 +316,22 @@ export interface QRData {
     location?: string;
     bookingUrl?: string;
     imageUrl?: string;
+    profileImageUrl?: string;
     themeColor?: string;
     buttonText?: string;
     price?: string;
     duration?: string;
+    destinationMode?: 'url' | 'calendar' | 'qr_link';
+    qrLinkId?: string;
+    customFormEnabled?: boolean;
+    customFormFields?: Array<{
+      id: string;
+      type: 'text' | 'textarea' | 'number' | 'phone' | 'email' | 'date' | 'boolean';
+      label: string;
+      required: boolean;
+    }>;
+    whatsappEnabled?: boolean;
+    whatsappNumber?: string;
   };
 }
 

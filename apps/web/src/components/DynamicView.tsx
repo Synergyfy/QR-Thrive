@@ -117,9 +117,16 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
         menu: { ...(demo as any).menu, ...initialData.menu },
         coupon: { ...(demo as any).coupon, ...initialData.coupon },
         booking: { 
-          ...(demo as any).booking, 
+          ...(demo as any).booking,
           ...initialData.booking,
-          imageUrl: initialData.booking?.imageUrl || (demo as any).booking?.imageUrl
+          imageUrl: initialData.booking?.imageUrl || (demo as any).booking?.imageUrl,
+          profileImageUrl: initialData.booking?.profileImageUrl || (demo as any).booking?.profileImageUrl,
+          destinationMode: initialData.booking?.destinationMode || (demo as any).booking?.destinationMode || 'url',
+          qrLinkId: initialData.booking?.qrLinkId || (demo as any).booking?.qrLinkId,
+          customFormEnabled: initialData.booking?.customFormEnabled ?? (demo as any).booking?.customFormEnabled,
+          customFormFields: initialData.booking?.customFormFields || (demo as any).booking?.customFormFields || [],
+          whatsappEnabled: initialData.booking?.whatsappEnabled ?? (demo as any).booking?.whatsappEnabled,
+          whatsappNumber: initialData.booking?.whatsappNumber || (demo as any).booking?.whatsappNumber
         }
       } as QRData;
     }

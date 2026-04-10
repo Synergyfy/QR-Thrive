@@ -209,10 +209,12 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
       location: 'Downtown Wellness Center, NY',
       bookingUrl: 'https://calendly.com/demo-booking',
       imageUrl: 'https://images.unsplash.com/photo-1544161515-4ae6b918af99?w=800&h=600&fit=crop',
+      profileImageUrl: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=400&fit=crop',
       price: '$120',
       duration: '90 Min',
       themeColor: '#4f46e5',
-      buttonText: 'Schedule Session'
+      buttonText: 'Schedule Session',
+      destinationMode: 'calendar'
     }
   }
 };

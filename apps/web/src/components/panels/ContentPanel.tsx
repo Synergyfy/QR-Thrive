@@ -30,7 +30,10 @@ import {
   Users,
   CheckCircle,
   Clock,
-  Image as ImageIcon
+  ArrowRight,
+  Image as ImageIcon,
+  QrCode,
+  LayoutGrid
 } from 'lucide-react';
 import type { QRConfiguration, QRData, QRType } from '../../types/qr';
 import FormBuilder from '../FormBuilder';
@@ -212,7 +215,30 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
       <div className="animate-in fade-in slide-in-from-top-2 duration-500">
 
         <div className="bg-white rounded-[24px] p-1 border border-gray-100 shadow-sm">
-           <div className="p-6">
+           <div className="p-6 space-y-8">
+            {/* QR Code Name Section - Applied to ALL types */}
+            <CollapsibleSection 
+              id="qr-name-section" 
+              title="Name of the QR Code" 
+              subtitle="Give a name to your QR code." 
+              icon={QrCode} 
+              isExpanded={expandedSections['qr-name-section'] !== false} 
+              onToggle={toggleSection}
+            >
+              <div className="space-y-2">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Name</p>
+                <input 
+                  type="text" 
+                  value={data.name || ''} 
+                  onChange={(e) => updateData({ name: e.target.value })}
+                  placeholder="e.g. My Website QR"
+                  className="w-full px-5 py-4 bg-blue-50/30 border-2 border-blue-100/50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-bold transition-all placeholder:text-gray-300"
+                />
+              </div>
+            </CollapsibleSection>
+
+            <div className="h-px bg-gray-100" />
+
             {data.type === 'url' && (
               <div className="space-y-6">
                 <div className="space-y-3">
@@ -234,24 +260,27 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                   </div>
                 </div>
 
-                <CollapsibleSection id="url-details" title="Preview Customization" icon={Palette} isExpanded={expandedSections['basic-info']} onToggle={toggleSection}>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Headline Title</p>
-                      <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Ready to Explore?" value={data.urlPreview?.title || ''} onChange={(e) => updateData({ urlPreview: { ...(data.urlPreview || {}), title: e.target.value } })} />
-                    </div>
-                    <div className="space-y-2">
-                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Description Text</p>
-                       <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. This QR code will securely take you..." rows={3} value={data.urlPreview?.description || ''} onChange={(e) => updateData({ urlPreview: { ...(data.urlPreview || {}), description: e.target.value } })} />
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Theme Accent Color</p>
-                      <div className="flex items-center gap-2">
-                        <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.urlPreview?.themeColor || '#3b82f6'} onChange={(e) => updateData({ urlPreview: { ...(data.urlPreview || {}), themeColor: e.target.value } })} />
-                        <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase" value={data.urlPreview?.themeColor || '#3b82f6'} onChange={(e) => updateData({ urlPreview: { ...(data.urlPreview || {}), themeColor: e.target.value } })} />
+
+                <CollapsibleSection id="url-theme" title="Mockup Appearance" icon={Palette} isExpanded={expandedSections['url-theme'] !== false} onToggle={toggleSection}>
+                   <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Header Background Color</p>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="color" 
+                            className="w-12 h-12 rounded-xl border-2 border-gray-100 cursor-pointer overflow-hidden" 
+                            value={data.urlPreview?.themeColor || '#00C9E0'} 
+                            onChange={(e) => updateData({ urlPreview: { ...(data.urlPreview || {}), themeColor: e.target.value } })} 
+                          />
+                          <input 
+                            type="text" 
+                            className="flex-1 px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-mono text-sm uppercase font-bold text-gray-600" 
+                            value={data.urlPreview?.themeColor || '#00C9E0'} 
+                            onChange={(e) => updateData({ urlPreview: { ...(data.urlPreview || {}), themeColor: e.target.value } })} 
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                   </div>
                 </CollapsibleSection>
               </div>
             )}
@@ -1834,17 +1863,85 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                   </CollapsibleSection>
 
                   <CollapsibleSection id="booking-cta" title="Booking Destination" icon={Link} isExpanded={expandedSections['booking-cta']} onToggle={toggleSection}>
-                     <div className="space-y-4">
+                     <div className="space-y-6">
+                        {/* Destination Mode Selector */}
                         <div className="space-y-2">
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Booking URL (Calendly, etc.)</p>
-                          <input 
-                            type="url" 
-                            className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
-                            placeholder="https://calendly.com/your-link" 
-                            value={data.booking?.bookingUrl || ''} 
-                            onChange={(e) => updateData({ booking: { ...(data.booking || {}), bookingUrl: e.target.value } })} 
-                          />
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Destination Type</p>
+                          <div className="grid grid-cols-3 gap-2 bg-gray-50 p-1.5 rounded-2xl">
+                            {([
+                              { id: 'url', label: 'External URL', icon: '🔗' },
+                              { id: 'calendar', label: 'Calendar', icon: '📅' },
+                              { id: 'qr_link', label: 'Link to QR', icon: '⚡' },
+                            ] as const).map(mode => (
+                              <button
+                                key={mode.id}
+                                onClick={() => updateData({ booking: { ...(data.booking || {}), destinationMode: mode.id } })}
+                                className={cn(
+                                  "flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl text-center transition-all",
+                                  (data.booking?.destinationMode || 'url') === mode.id 
+                                    ? "bg-white shadow-lg shadow-blue-100/50 border border-blue-100 scale-[1.02]" 
+                                    : "hover:bg-white/50 border border-transparent"
+                                )}
+                              >
+                                <span className="text-base">{mode.icon}</span>
+                                <span className={cn(
+                                  "text-[8px] font-black uppercase tracking-widest",
+                                  (data.booking?.destinationMode || 'url') === mode.id ? "text-blue-600" : "text-gray-400"
+                                )}>{mode.label}</span>
+                              </button>
+                            ))}
+                          </div>
                         </div>
+
+                        {/* URL Mode */}
+                        {(data.booking?.destinationMode || 'url') === 'url' && (
+                          <div className="space-y-4 animate-in fade-in duration-300">
+                            <div className="space-y-2">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Booking URL (Calendly, etc.)</p>
+                              <input 
+                                type="url" 
+                                className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                                placeholder="https://calendly.com/your-link" 
+                                value={data.booking?.bookingUrl || ''} 
+                                onChange={(e) => updateData({ booking: { ...(data.booking || {}), bookingUrl: e.target.value } })} 
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Calendar Mode */}
+                        {data.booking?.destinationMode === 'calendar' && (
+                          <div className="space-y-4 animate-in fade-in duration-300">
+                            <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-2xl space-y-2">
+                              <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Native Calendar Enabled</p>
+                              <p className="text-[10px] font-medium text-blue-500 leading-relaxed">
+                                Customers will see an interactive calendar in the preview. When they select a date/time and click book, their request will appear in your Lead Capturing dashboard.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* QR Link Mode */}
+                        {data.booking?.destinationMode === 'qr_link' && (
+                          <div className="space-y-4 animate-in fade-in duration-300">
+                            <div className="space-y-2">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Connect to another QR Code</p>
+                              <select
+                                className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm appearance-none cursor-pointer"
+                                value={data.booking?.qrLinkId || ''}
+                                onChange={(e) => updateData({ booking: { ...(data.booking || {}), qrLinkId: e.target.value } })}
+                              >
+                                <option value="">Select a QR code...</option>
+                                <option value="qr-form-1">📝 Registration Form</option>
+                                <option value="qr-form-2">📋 Feedback Survey</option>
+                                <option value="qr-menu-1">🍽️ Summer Menu</option>
+                              </select>
+                              <p className="text-[9px] text-gray-400 font-medium">When the customer clicks the CTA, they will be directed to the linked QR experience.</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Button Text (shown for all modes) */}
                         <div className="space-y-2">
                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Text</p>
                           <input 
@@ -1858,8 +1955,113 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                      </div>
                   </CollapsibleSection>
 
+                  <CollapsibleSection id="booking-form" title="Lead Capture & Custom Form" icon={ClipboardList} isExpanded={expandedSections['booking-form']} onToggle={toggleSection}>
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+                        <div className="space-y-1">
+                          <p className="text-sm font-bold text-gray-900">Enable Custom Form</p>
+                          <p className="text-[10px] text-gray-500 font-medium">Capture specific details from customers before they book.</p>
+                        </div>
+                        <button 
+                          onClick={() => updateData({ booking: { ...(data.booking || {}), customFormEnabled: !data.booking?.customFormEnabled } })}
+                          className={cn(
+                            "relative w-12 h-6 rounded-full transition-all duration-300",
+                            data.booking?.customFormEnabled ? "bg-blue-600" : "bg-gray-200"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-all duration-300",
+                            data.booking?.customFormEnabled ? "translate-x-6" : "translate-x-0"
+                          )} />
+                        </button>
+                      </div>
+
+                      {data.booking?.customFormEnabled && (
+                        <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+                          <FormBuilder 
+                            fields={(data.booking?.customFormFields || []) as any} 
+                            onChange={(fields) => updateData({ booking: { ...(data.booking || {}), customFormFields: fields } })}
+                          />
+                        </div>
+                      )}
+
+                      <div className="pt-6 border-t border-gray-50 space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-emerald-50/30 rounded-2xl border border-emerald-50">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                              <MessageSquare className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-sm font-bold text-gray-900">WhatsApp Support</p>
+                              <p className="text-[10px] text-gray-500 font-medium">Add a "Chat on WhatsApp" button to the success screen.</p>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => updateData({ booking: { ...(data.booking || {}), whatsappEnabled: !data.booking?.whatsappEnabled } })}
+                            className={cn(
+                              "relative w-12 h-6 rounded-full transition-all duration-300",
+                              data.booking?.whatsappEnabled ? "bg-emerald-600" : "bg-gray-200"
+                            )}
+                          >
+                            <div className={cn(
+                              "absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-all duration-300",
+                              data.booking?.whatsappEnabled ? "translate-x-6" : "translate-x-0"
+                            )} />
+                          </button>
+                        </div>
+
+                        {data.booking?.whatsappEnabled && (
+                          <div className="space-y-2 animate-in fade-in duration-300">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none pl-1">WhatsApp Number</p>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <Smartphone className="w-4 h-4 text-gray-300" />
+                              </div>
+                              <input 
+                                type="text" 
+                                className="w-full px-4 py-3 pl-11 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                                placeholder="e.g. +1234567890" 
+                                value={data.booking?.whatsappNumber || ''} 
+                                onChange={(e) => updateData({ booking: { ...(data.booking || {}), whatsappNumber: e.target.value } })} 
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CollapsibleSection>
+
                   <CollapsibleSection id="booking-design" title="Design & Media" icon={Palette} isExpanded={expandedSections['booking-design']} onToggle={toggleSection}>
                     <div className="space-y-4">
+                      {/* Profile Image Upload */}
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Business Profile Image</p>
+                        <div className="flex items-center gap-4">
+                          <label className="w-16 h-16 rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all overflow-hidden group">
+                            {data.booking?.profileImageUrl ? (
+                              <img src={data.booking.profileImageUrl} className="w-full h-full object-cover" />
+                            ) : (
+                              <User className="w-6 h-6 text-gray-300 group-hover:text-blue-500" />
+                            )}
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => {
+                                  updateData({ booking: { ...(data.booking || {}), profileImageUrl: ev.target?.result as string } });
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }} />
+                          </label>
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-gray-600">Company Logo/Avatar</p>
+                            <p className="text-[9px] text-gray-400">Recommended 400x400px</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Cover Image Upload */}
                       <div className="space-y-2">
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Cover Image</p>
                         <label className="w-full h-32 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden group">
