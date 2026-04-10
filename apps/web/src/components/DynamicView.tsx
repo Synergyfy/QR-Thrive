@@ -4,20 +4,14 @@ import {
   Mail, 
   MessageSquare, 
   Phone, 
-  Wifi, 
   User, 
   Share2,
-  ExternalLink,
   ChevronRight,
   ShieldCheck,
   Smartphone,
   Type,
-  Music,
-  ShoppingBag,
-  Download,
   ClipboardList,
   CheckCircle2,
-  Play,
   Link2,
   Building2,
   Ticket,
@@ -41,7 +35,6 @@ import { useParams } from 'react-router-dom';
 import { useSubmitForm } from '../hooks/useForms';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { getDownloadUrl } from '../utils/upload';
 import { DEMO_DATA } from '../constants/demoData';
 
 const getSocialConfig = (platform: string) => {
@@ -131,7 +124,6 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
   const submitMutation = useSubmitForm(shortId || '');
   const [answers, setAnswers] = React.useState<Record<string, any>>({});
   const [submitted, setSubmitted] = React.useState(false);
-  const [playingAudio, setPlayingAudio] = React.useState(false);
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({});
 
 
