@@ -170,3 +170,11 @@ export const useCancelSubscription = () => {
     },
   });
 };
+export const useInitializePayment = () => {
+  return useMutation({
+    mutationFn: (data: { planId: string; interval: string }) => paymentsApi.initialize(data),
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to initialize payment');
+    },
+  });
+};

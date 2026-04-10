@@ -7,6 +7,7 @@ export interface User {
   lastName: string;
   role: 'USER' | 'ADMIN';
   planId?: string;
+  plan?: Plan;
   subscriptionStatus?: 'active' | 'canceled' | 'past_due' | 'trialing' | 'non-renewing' | null;
   billingCycle?: 'monthly' | 'quarterly' | 'yearly' | null;
   trialStartedAt?: string | null;
@@ -14,6 +15,7 @@ export interface User {
   hasUsedTrial?: boolean;
   isBanned?: boolean;
 }
+
 
 export interface AuthResponse {
   user: User;

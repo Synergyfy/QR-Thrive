@@ -2,16 +2,29 @@ import { useState, useMemo } from 'react';
 import { Check, ArrowRight, Plus, Minus, Zap, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { useNavigate } from 'react-router-dom';
 import PublicNav from '../components/PublicNav';
 import PublicFooter from '../components/PublicFooter';
+import AuthModal from '../components/AuthModal';
 import { usePublicPlans, usePublicConfig } from '../hooks/usePricing';
+import { useCurrentUser, useInitializePayment } from '../hooks/useApi';
+import { getDashboardPath } from '../utils/auth';
 import type { PublicPlan } from '../types/api';
+import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function PricingPage() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PublicPlan | null>(null);
   
+  const { data: userData } = useCurrentUser();
+  const user = userData?.user;
   const { data: plans, isLoading: plansLoading, error: plansError } = usePublicPlans();
   const { data: config, isLoading: configLoading } = usePublicConfig();
+  const initializePayment = useInitializePayment();
 
   const isLoading = plansLoading || configLoading;
 
@@ -37,6 +50,62 @@ export default function PricingPage() {
       ]
     }));
   }, [plans, config]);
+
+  const handleJoinPlan = async (plan: PublicPlan) => {
+    if (!user) {
+      setSelectedPlan(plan);
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    if (plan.isFree) {
+      navigate(getDashboardPath(user.role));
+      return;
+    }
+
+    // Initialize payment for paid plans
+    try {
+      const data = await initializePayment.mutateAsync({
+        planId: plan.id,
+        interval: 'monthly'
+      });
+
+      if (data && (data as any).access_code) {
+        const handler = (window as any).PaystackPop.setup({
+          key: (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_b8e2d78705a6e87f87053e87053e87053e8705', // Use env or fallback for safety
+          email: user.email,
+          amount: Math.round(plan.pricing.monthly * 100),
+          access_code: (data as any).access_code,
+          onClose: () => {
+            toast.error('Payment window closed');
+          },
+          callback: (_response: any) => {
+            toast.success('Payment successful! Upgrading your account...');
+            // Invalidate user query to reflect new plan
+            queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+            // Redirect to dashboard after a short delay
+            setTimeout(() => {
+              navigate('/dashboard');
+            }, 1500);
+          }
+
+        });
+        handler.openIframe();
+      } else if (data && (data as any).authorization_url) {
+        // Fallback to redirect if access_code is missing but url exists
+        window.location.href = (data as any).authorization_url;
+      }
+    } catch (err) {
+      // Error handled by hook
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    setIsAuthModalOpen(false);
+    if (selectedPlan) {
+      handleJoinPlan(selectedPlan);
+    }
+  };
 
   const displayFaqs = (config?.faqs as Array<{ question: string; answer: string }>) || [];
 
@@ -172,13 +241,23 @@ export default function PricingPage() {
                   </div>
 
                   <div className="space-y-3">
-                    <button className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
-                       plan.highlight 
-                        ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30' 
-                        : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
-                    }`}>
-                      {plan.cta}
-                      <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
+                    <button 
+                      onClick={() => handleJoinPlan(plans!.find(p => p.name === plan.name)!)}
+                      disabled={initializePayment.isPending}
+                      className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
+                        plan.highlight 
+                          ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30' 
+                          : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
+                      } ${initializePayment.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    >
+                      {initializePayment.isPending && selectedPlan?.name === plan.name ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          {plan.cta}
+                          <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
+                        </>
+                      )}
                     </button>
                   </div>
                 </motion.div>
@@ -292,6 +371,12 @@ export default function PricingPage() {
       </main>
 
       <PublicFooter />
+
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        onSuccess={handleAuthSuccess} 
+      />
     </div>
   );
 }

@@ -146,19 +146,21 @@ export default function UsersManagement() {
                         <div>
                           <p className="text-sm font-bold text-slate-800 leading-tight flex items-center gap-1.5">
                             {user.firstName} {user.lastName}
-                            {user.plan === 'PRO' && <Shield className="w-3 h-3 text-blue-500" />}
+                            {user.plan?.name === 'PRO' && <Shield className="w-3 h-3 text-blue-500" />}
                           </p>
                           <p className="text-[10px] text-slate-400 font-medium">{user.email}</p>
+
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
-                        user.plan === 'PRO' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-500'
+                        user.plan?.name === 'PRO' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-500'
                       }`}>
-                        {user.plan}
+                        {user.plan?.name || 'FREE'}
                       </span>
                     </td>
+
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-slate-700">{user.qrs}</span>
@@ -175,9 +177,10 @@ export default function UsersManagement() {
                         <div className={`w-1.5 h-1.5 rounded-full ${
                           user.isBanned ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]' :
                           user.subscriptionStatus === 'active' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 
-                          user.subscriptionStatus === 'cancelled' ? 'bg-slate-300' : 
+                          user.subscriptionStatus === 'canceled' ? 'bg-slate-300' : 
                           'bg-amber-500'
                         }`}></div>
+
                         <span className="text-xs font-bold text-slate-600 capitalize">
                           {user.isBanned ? 'Banned' : (user.subscriptionStatus || 'N/A')}
                         </span>

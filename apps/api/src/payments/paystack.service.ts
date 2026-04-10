@@ -49,7 +49,7 @@ export class PaystackService {
             amount: amount * 100, // Convert to kobo
             plan,
             metadata,
-            callback_url: `${this.configService.get('FRONTEND_URL')}/dashboard/billing`,
+            callback_url: `${this.configService.get('FRONTEND_URL') || 'http://localhost:3000'}/dashboard`,
           },
           { headers: this.headers },
         ),
