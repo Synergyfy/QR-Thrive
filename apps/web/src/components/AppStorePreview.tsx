@@ -16,7 +16,8 @@ const AppStorePreview: React.FC<AppStorePreviewProps> = ({
   icon,
   iosUrl = "#",
   androidUrl = "#",
-  themeColor = "#3b82f6"
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  themeColor: _themeColor = "#3b82f6"
 }) => {
   return (
     <div className="w-full h-full flex flex-col font-sans bg-gray-50/50 overflow-hidden">

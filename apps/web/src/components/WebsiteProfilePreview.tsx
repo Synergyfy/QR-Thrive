@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe, ExternalLink, ShieldCheck, ArrowRight, MousePointer2 } from 'lucide-react';
+import { Globe, ExternalLink, ShieldCheck, MousePointer2 } from 'lucide-react';
 
 interface WebsiteProfilePreviewProps {
   url?: string;
