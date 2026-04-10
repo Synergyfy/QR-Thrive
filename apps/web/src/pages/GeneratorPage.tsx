@@ -37,7 +37,8 @@ import {
   Link2,
   Users,
   Ticket,
-  Phone
+  Phone,
+  Calendar
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -141,6 +142,7 @@ const qrTypes: QRTypeOption[] = [
   { id: 'menu', icon: UtensilsCrossed, title: 'Menu', description: 'Create a restaurant menu', category: 'dynamic' },
   { id: 'app', icon: SmartphoneNfc, title: 'Apps', description: 'Redirect to an app store', category: 'dynamic' },
   { id: 'coupon', icon: Ticket, title: 'Coupon', description: 'Share a coupon', category: 'dynamic' },
+  { id: 'booking', icon: Calendar, title: 'Booking', description: 'Enable online bookings', category: 'dynamic' },
   { id: 'wifi', icon: Wifi, title: 'WiFi', description: 'Connect to a Wi-Fi network', category: 'static' },
 ];
 
@@ -165,7 +167,7 @@ function GeneratorPage() {
       const typeChanged = updates.type && updates.type !== prev.data.type;
       const newType = updates.type || prev.data.type;
       
-      const dynamicTypes: QRType[] = ['socials', 'event', 'image', 'pdf', 'vcard', 'business', 'video', 'facebook', 'instagram', 'whatsapp', 'mp3', 'menu', 'app', 'coupon'];
+      const dynamicTypes: QRType[] = ['socials', 'event', 'image', 'pdf', 'vcard', 'business', 'video', 'facebook', 'instagram', 'whatsapp', 'mp3', 'menu', 'app', 'coupon', 'booking'];
       const shouldBeDynamic = dynamicTypes.includes(newType);
 
       if (typeChanged) {

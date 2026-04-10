@@ -27,7 +27,8 @@ export type QRType =
   | 'form'
   | 'business'
   | 'menu'
-  | 'coupon';
+  | 'coupon'
+  | 'booking';
   
 export interface FileData {
   id?: string;
@@ -305,6 +306,18 @@ export interface QRData {
     banner?: string;
     companyName?: string;
     website?: string;
+  };
+  booking?: {
+    businessName?: string;
+    title?: string;
+    description?: string;
+    location?: string;
+    bookingUrl?: string;
+    imageUrl?: string;
+    themeColor?: string;
+    buttonText?: string;
+    price?: string;
+    duration?: string;
   };
 }
 

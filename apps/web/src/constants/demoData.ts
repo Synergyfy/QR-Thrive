@@ -199,5 +199,20 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
       ios: 'https://apps.apple.com',
       android: 'https://play.google.com'
     }
+  },
+  booking: {
+    type: 'booking',
+    booking: {
+      businessName: 'Luxe Wellness Spa',
+      title: 'Full Body Massage & Aromatherapy',
+      description: 'Experience deep relaxation with our signature 90-minute treatment. Our expert therapists use organic essential oils to rejuvenate your body and mind.',
+      location: 'Downtown Wellness Center, NY',
+      bookingUrl: 'https://calendly.com/demo-booking',
+      imageUrl: 'https://images.unsplash.com/photo-1544161515-4ae6b918af99?w=800&h=600&fit=crop',
+      price: '$120',
+      duration: '90 Min',
+      themeColor: '#4f46e5',
+      buttonText: 'Schedule Session'
+    }
   }
 };

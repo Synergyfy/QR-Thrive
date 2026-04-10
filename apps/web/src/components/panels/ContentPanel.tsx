@@ -1786,6 +1786,138 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                 </div>
               )}
 
+              {data.type === 'booking' && (
+                <div className="space-y-6">
+                  <CollapsibleSection id="booking-details" title="Booking Information" icon={Calendar} isExpanded={expandedSections['booking-details'] !== false} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Business Name</p>
+                        <input 
+                          type="text" 
+                          className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                          placeholder="e.g. Luxe Wellness Spa" 
+                          value={data.booking?.businessName || ''} 
+                          onChange={(e) => updateData({ booking: { ...(data.booking || {}), businessName: e.target.value } })} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Subject / Service Title</p>
+                        <input 
+                          type="text" 
+                          className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                          placeholder="e.g. Full Body Massage" 
+                          value={data.booking?.title || ''} 
+                          onChange={(e) => updateData({ booking: { ...(data.booking || {}), title: e.target.value } })} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Detail Description</p>
+                        <textarea 
+                          className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" 
+                          placeholder="Describe your service..." 
+                          rows={3} 
+                          value={data.booking?.description || ''} 
+                          onChange={(e) => updateData({ booking: { ...(data.booking || {}), description: e.target.value } })} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Location</p>
+                        <input 
+                          type="text" 
+                          className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                          placeholder="e.g. Downtown Center, NY" 
+                          value={data.booking?.location || ''} 
+                          onChange={(e) => updateData({ booking: { ...(data.booking || {}), location: e.target.value } })} 
+                        />
+                      </div>
+                    </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection id="booking-cta" title="Booking Destination" icon={Link} isExpanded={expandedSections['booking-cta']} onToggle={toggleSection}>
+                     <div className="space-y-4">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Booking URL (Calendly, etc.)</p>
+                          <input 
+                            type="url" 
+                            className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                            placeholder="https://calendly.com/your-link" 
+                            value={data.booking?.bookingUrl || ''} 
+                            onChange={(e) => updateData({ booking: { ...(data.booking || {}), bookingUrl: e.target.value } })} 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Text</p>
+                          <input 
+                            type="text" 
+                            className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                            placeholder="e.g. Schedule Now" 
+                            value={data.booking?.buttonText || ''} 
+                            onChange={(e) => updateData({ booking: { ...(data.booking || {}), buttonText: e.target.value } })} 
+                          />
+                        </div>
+                     </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection id="booking-design" title="Design & Media" icon={Palette} isExpanded={expandedSections['booking-design']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Cover Image</p>
+                        <label className="w-full h-32 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden group">
+                          {data.booking?.imageUrl ? (
+                            <img src={data.booking.imageUrl} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="flex flex-col items-center">
+                              <ImageIcon className="w-6 h-6 text-gray-300 group-hover:text-blue-500" />
+                              <span className="text-[10px] font-bold text-gray-400 uppercase mt-2">Upload Cover Image</span>
+                            </div>
+                          )}
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (ev) => {
+                                updateData({ booking: { ...(data.booking || {}), imageUrl: ev.target?.result as string } });
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }} />
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Price (Optional)</p>
+                          <input 
+                            type="text" 
+                            className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                            placeholder="e.g. $120" 
+                            value={data.booking?.price || ''} 
+                            onChange={(e) => updateData({ booking: { ...(data.booking || {}), price: e.target.value } })} 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Duration (Optional)</p>
+                          <input 
+                            type="text" 
+                            className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                            placeholder="e.g. 60 Min" 
+                            value={data.booking?.duration || ''} 
+                            onChange={(e) => updateData({ booking: { ...(data.booking || {}), duration: e.target.value } })} 
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Branding Color</p>
+                        <div className="flex items-center gap-2">
+                          <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.booking?.themeColor || '#3b82f6'} onChange={(e) => updateData({ booking: { ...(data.booking || {}), themeColor: e.target.value } })} />
+                          <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase" value={data.booking?.themeColor || '#3b82f6'} onChange={(e) => updateData({ booking: { ...(data.booking || {}), themeColor: e.target.value } })} />
+                        </div>
+                      </div>
+                    </div>
+                  </CollapsibleSection>
+                </div>
+              )}
+
+
               {data.type === 'links' && (
                 <div className="space-y-6">
                   <CollapsibleSection id="links-info" title="Profile & Appearance" icon={User} isExpanded={expandedSections['links-info'] !== false} onToggle={toggleSection}>

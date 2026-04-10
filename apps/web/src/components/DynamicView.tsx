@@ -30,6 +30,7 @@ import AudioProfilePreview from './AudioProfilePreview';
 import WebsiteProfilePreview from './WebsiteProfilePreview';
 import WifiProfilePreview from './WifiProfilePreview';
 import AppStorePreview from './AppStorePreview';
+import BookingProfilePreview from './BookingProfilePreview';
 import type { QRData } from '../types/qr';
 import { useParams } from 'react-router-dom';
 import { useSubmitForm } from '../hooks/useForms';
@@ -114,7 +115,12 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
         vcard: { ...(demo as any).vcard, ...initialData.vcard },
         business: { ...(demo as any).business, ...initialData.business },
         menu: { ...(demo as any).menu, ...initialData.menu },
-        coupon: { ...(demo as any).coupon, ...initialData.coupon }
+        coupon: { ...(demo as any).coupon, ...initialData.coupon },
+        booking: { 
+          ...(demo as any).booking, 
+          ...initialData.booking,
+          imageUrl: initialData.booking?.imageUrl || (demo as any).booking?.imageUrl
+        }
       } as QRData;
     }
     
@@ -1094,7 +1100,10 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
              </button>
           </div>
         );
-
+      case 'app':
+        return <AppStorePreview {...data.app} />;
+      case 'booking':
+        return <BookingProfilePreview {...data.booking} />;
       default:
         return (
           <div className="text-center space-y-6">
@@ -1114,7 +1123,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
   };
 
   if (isWizardPreview) {
-    if (data.type === 'whatsapp' || data.type === 'instagram' || data.type === 'facebook' || data.type === 'pdf' || data.type === 'video' || data.type === 'image' || data.type === 'mp3' || data.type === 'url' || data.type === 'wifi' || data.type === 'app') {
+    if (data.type === 'whatsapp' || data.type === 'instagram' || data.type === 'facebook' || data.type === 'pdf' || data.type === 'video' || data.type === 'image' || data.type === 'mp3' || data.type === 'url' || data.type === 'wifi' || data.type === 'app' || data.type === 'booking') {
       return (
         <div className="w-full h-full">
            {renderContent()}
