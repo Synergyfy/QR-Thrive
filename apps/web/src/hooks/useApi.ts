@@ -37,8 +37,9 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: authApi.logout,
     onSuccess: () => {
-      queryClient.setQueryData(['currentUser'], null);
       queryClient.clear();
+      queryClient.setQueryData(['currentUser'], null);
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
   });
 };

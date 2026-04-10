@@ -214,23 +214,45 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
         <div className="bg-white rounded-[24px] p-1 border border-gray-100 shadow-sm">
            <div className="p-6">
             {data.type === 'url' && (
-              <div className="space-y-3">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Website Address</p>
-                <div className="relative group">
-                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors">
-                      <Globe className="w-5 h-5" />
-                   </div>
-                   <input
-                    type="url"
-                    value={data.url || ''}
-                    onChange={(e) => updateData({ url: e.target.value })}
-                    placeholder="https://your-website.com"
-                    className={cn(
-                      "w-full pl-12 pr-4 py-4 border-2 rounded-2xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30",
-                      !data.url ? "border-amber-100/50" : "border-gray-50 focus:border-blue-600"
-                    )}
-                  />
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Website Address</p>
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                        <Globe className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="url"
+                      value={data.url || ''}
+                      onChange={(e) => updateData({ url: e.target.value })}
+                      placeholder="https://your-website.com"
+                      className={cn(
+                        "w-full pl-12 pr-4 py-4 border-2 rounded-2xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30",
+                        !data.url ? "border-amber-100/50" : "border-gray-50 focus:border-blue-600"
+                      )}
+                    />
+                  </div>
                 </div>
+
+                <CollapsibleSection id="url-details" title="Preview Customization" icon={Palette} isExpanded={expandedSections['basic-info']} onToggle={toggleSection}>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Headline Title</p>
+                      <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Ready to Explore?" value={data.urlPreview?.title || ''} onChange={(e) => updateData({ urlPreview: { ...(data.urlPreview || {}), title: e.target.value } })} />
+                    </div>
+                    <div className="space-y-2">
+                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Description Text</p>
+                       <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. This QR code will securely take you..." rows={3} value={data.urlPreview?.description || ''} onChange={(e) => updateData({ urlPreview: { ...(data.urlPreview || {}), description: e.target.value } })} />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Theme Accent Color</p>
+                      <div className="flex items-center gap-2">
+                        <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.urlPreview?.themeColor || '#3b82f6'} onChange={(e) => updateData({ urlPreview: { ...(data.urlPreview || {}), themeColor: e.target.value } })} />
+                        <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase" value={data.urlPreview?.themeColor || '#3b82f6'} onChange={(e) => updateData({ urlPreview: { ...(data.urlPreview || {}), themeColor: e.target.value } })} />
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleSection>
               </div>
             )}
 
@@ -1049,28 +1071,28 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                  </div>
               )}
 
-              {(data.type === 'pdf' || data.type === 'mp3') && (
+              {data.type === 'pdf' && (
                 <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[32px] p-12 flex flex-col items-center justify-center space-y-4 transition-all relative overflow-hidden group">
-                  {uploading === data.type ? (
+                  {uploading === 'pdf' ? (
                     <div className="flex items-center gap-2 text-blue-600">
                       <Loader2 className="w-6 h-6 animate-spin" />
                       <span className="text-sm font-bold">Uploading...</span>
                     </div>
-                  ) : (data.type === 'pdf' ? data.pdf?.pendingFile : data.mp3?.pendingFile) ? (
+                  ) : data.pdf?.pendingFile ? (
                      <div className="w-full flex items-center justify-between p-6 bg-white rounded-2xl shadow-sm border border-blue-100">
                         <div className="flex items-center gap-4">
                            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
-                              {data.type === 'pdf' ? <FileText className="w-6 h-6" /> : <Music className="w-6 h-6" />}
+                              <FileText className="w-6 h-6" />
                            </div>
                            <div className="text-left">
                               <p className="text-base font-bold text-gray-900 truncate max-w-[250px]">
-                                 {data.type === 'pdf' ? data.pdf?.pendingFile?.file.name : data.mp3?.pendingFile?.file.name}
+                                 {data.pdf.pendingFile.file.name}
                               </p>
                               <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">Ready to upload</p>
                            </div>
                         </div>
                         <button 
-                          onClick={() => updateData({ [data.type]: undefined })}
+                          onClick={() => updateData({ pdf: undefined })}
                           className="p-3 hover:bg-red-50 text-red-500 rounded-2xl transition-all"
                         >
                           <X className="w-6 h-6" />
@@ -1079,20 +1101,20 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                   ) : (
                     <>
                       <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-blue-600 mb-2">
-                          {data.type === 'pdf' ? <FileText className="w-8 h-8" /> : <Music className="w-8 h-8" />}
+                          <FileText className="w-8 h-8" />
                       </div>
                       <div className="text-center space-y-1">
-                         <h4 className="text-sm font-black text-gray-900 leading-none">Upload {data.type.toUpperCase()} File</h4>
+                         <h4 className="text-sm font-black text-gray-900 leading-none">Upload PDF File</h4>
                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Click to browse or drag and drop</p>
                       </div>
                       <input 
                         type="file" 
-                        accept={data.type === 'pdf' ? '.pdf' : 'audio/*'} 
+                        accept=".pdf" 
                         className="absolute inset-0 opacity-0 cursor-pointer"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            handleFileSelect(file, data.type as 'pdf' | 'mp3');
+                            handleFileSelect(file, 'pdf');
                           }
                         }}
                       />
@@ -1101,30 +1123,180 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                 </div>
               )}
 
-              {data.type === 'app' && (
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-3">
-                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Apple App Store URL</p>
-                       <input 
-                        type="url"
-                        value={data.app?.ios || ''}
-                        onChange={(e) => updateData({ app: { ...(data.app || {}), ios: e.target.value } })}
-                        placeholder="apps.apple.com/..."
-                        className="w-full px-6 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-bold transition-all bg-gray-50/30 shadow-inner"
-                       />
+              {data.type === 'mp3' && (
+                <div className="space-y-6">
+                  <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[32px] p-10 flex flex-col items-center justify-center space-y-4 transition-all relative overflow-hidden group">
+                    {uploading === 'mp3' ? (
+                      <div className="flex items-center gap-2 text-blue-600">
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                        <span className="text-sm font-bold">Uploading...</span>
+                      </div>
+                    ) : data.mp3?.pendingFile ? (
+                      <div className="w-full flex items-center justify-between p-6 bg-white rounded-2xl shadow-sm border border-blue-100">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                                <Music className="w-6 h-6" />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-base font-bold text-gray-900 truncate max-w-[250px]">
+                                  {data.mp3.pendingFile.file.name}
+                                </p>
+                                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">Ready to upload</p>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => updateData({ mp3: undefined })}
+                            className="p-3 hover:bg-red-50 text-red-500 rounded-2xl transition-all"
+                          >
+                            <X className="w-6 h-6" />
+                          </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-blue-600 mb-2">
+                            <Music className="w-8 h-8" />
+                        </div>
+                        <div className="text-center space-y-1">
+                          <h4 className="text-sm font-black text-gray-900 leading-none">Upload MP3 File</h4>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Click to browse or drag and drop</p>
+                        </div>
+                        <input 
+                          type="file" 
+                          accept="audio/*" 
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleFileSelect(file, 'mp3');
+                            }
+                          }}
+                        />
+                      </>
+                    )}
+                  </div>
+
+                  <CollapsibleSection id="mp3-info" title="Audio Player Details" subtitle="Track Information" icon={Music} isExpanded={expandedSections['basic-info']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Company / Show Name</p>
+                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. TechTalk Weekly" value={data.mp3?.companyName || ''} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), companyName: e.target.value } })} />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Track Title</p>
+                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. The Future of Web" value={data.mp3?.title || ''} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), title: e.target.value } })} />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Description</p>
+                        <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="Describe your audio content..." rows={3} value={data.mp3?.description || ''} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), description: e.target.value } })} />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">CTA Button Label</p>
+                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Learn More" value={data.mp3?.buttonText || ''} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), buttonText: e.target.value } })} />
+                      </div>
                     </div>
-                    <div className="space-y-3">
-                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Google Play Store URL</p>
-                       <input 
-                        type="url"
-                        value={data.app?.android || ''}
-                        onChange={(e) => updateData({ app: { ...(data.app || {}), android: e.target.value } })}
-                        placeholder="play.google.com/..."
-                        className="w-full px-6 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-bold transition-all bg-gray-50/30 shadow-inner"
-                       />
+                  </CollapsibleSection>
+
+                  <CollapsibleSection id="mp3-design" title="Colors & Style" icon={Palette} isExpanded={expandedSections['design']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Background Color</p>
+                          <div className="flex items-center gap-2">
+                            <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.mp3?.themeColor || '#3b82f6'} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), themeColor: e.target.value } })} />
+                            <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase" value={data.mp3?.themeColor || '#3b82f6'} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), themeColor: e.target.value } })} />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Text Color</p>
+                          <div className="flex items-center gap-2">
+                             <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.mp3?.textColor || '#ffffff'} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), textColor: e.target.value } })} />
+                             <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase" value={data.mp3?.textColor || '#ffffff'} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), textColor: e.target.value } })} />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Color</p>
+                          <div className="flex items-center gap-2">
+                            <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.mp3?.buttonColor || 'rgba(0,0,0,0.1)'} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), buttonColor: e.target.value } })} />
+                            <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase" value={data.mp3?.buttonColor || 'rgba(0,0,0,0.1)'} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), buttonColor: e.target.value } })} />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Text</p>
+                          <div className="flex items-center gap-2">
+                             <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.mp3?.buttonTextColor || '#ffffff'} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), buttonTextColor: e.target.value } })} />
+                             <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase" value={data.mp3?.buttonTextColor || '#ffffff'} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), buttonTextColor: e.target.value } })} />
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                 </div>
+                  </CollapsibleSection>
+                </div>
               )}
+
+              {data.type === 'app' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">App Store URL (iOS)</p>
+                    <input
+                      type="url"
+                      value={data.app?.ios || ''}
+                      onChange={(e) => updateData({ app: { ...(data.app || {}), ios: e.target.value } })}
+                      placeholder="https://apps.apple.com/..."
+                      className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-sm font-semibold bg-gray-50/30 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Google Play URL (Android)</p>
+                    <input
+                      type="url"
+                      value={data.app?.android || ''}
+                      onChange={(e) => updateData({ app: { ...(data.app || {}), android: e.target.value } })}
+                      placeholder="https://play.google.com/..."
+                      className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-sm font-semibold bg-gray-50/30 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <CollapsibleSection id="app-branding" title="App Branding" icon={Palette} isExpanded={expandedSections['basic-info']} onToggle={toggleSection}>
+                   <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">App Icon</p>
+                        <label className="w-24 h-24 border-2 border-dashed border-gray-200 rounded-[24px] flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden group">
+                           {data.app?.icon ? (
+                             <img src={data.app.icon} className="w-full h-full object-cover" />
+                           ) : (
+                             <div className="flex flex-col items-center">
+                               <Camera className="w-5 h-5 text-gray-300 group-hover:text-blue-400" />
+                               <span className="text-[8px] font-black text-gray-400 uppercase mt-1">Upload</span>
+                             </div>
+                           )}
+                           <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                             const file = e.target.files?.[0];
+                             if (file) {
+                               const reader = new FileReader();
+                               reader.onload = (ev) => {
+                                 updateData({ app: { ...(data.app || {}), icon: ev.target?.result as string } });
+                               };
+                               reader.readAsDataURL(file);
+                             }
+                           }} />
+                        </label>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">App Title</p>
+                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Download our Official App" value={data.app?.title || ''} onChange={(e) => updateData({ app: { ...(data.app || {}), title: e.target.value } })} />
+                      </div>
+                      <div className="space-y-2">
+                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Short Description</p>
+                         <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Get the best experience by downloading..." rows={3} value={data.app?.description || ''} onChange={(e) => updateData({ app: { ...(data.app || {}), description: e.target.value } })} />
+                      </div>
+                   </div>
+                </CollapsibleSection>
+              </div>
+            )}
                {data.type === 'form' && (
                  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="flex items-center justify-between">
