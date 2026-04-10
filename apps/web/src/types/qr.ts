@@ -1,4 +1,5 @@
 import type { DotType, CornerDotType, CornerSquareType, ErrorCorrectionLevel, Mode, TypeNumber, GradientType } from "qr-code-styling";
+import type { FormField } from "./form";
 
 export type QRType = 
   | 'url' 
@@ -235,17 +236,7 @@ export interface QRData {
   form?: {
     title: string;
     description?: string;
-    fields: {
-      id: string;
-      type: 'text' | 'number' | 'range' | 'checkbox' | 'select' | 'radio' | 'email' | 'phone';
-      label: string;
-      placeholder?: string;
-      helpText?: string;
-      required: boolean;
-      options?: { label: string; value: string }[];
-      validation?: { min?: number; max?: number; step?: number };
-      order: number;
-    }[];
+    fields: FormField[];
   };
   linksInfo?: {
     themeColor?: string;
@@ -324,12 +315,7 @@ export interface QRData {
     destinationMode?: 'url' | 'calendar' | 'qr_link';
     qrLinkId?: string;
     customFormEnabled?: boolean;
-    customFormFields?: Array<{
-      id: string;
-      type: 'text' | 'textarea' | 'number' | 'phone' | 'email' | 'date' | 'boolean';
-      label: string;
-      required: boolean;
-    }>;
+    customFormFields?: FormField[];
     whatsappEnabled?: boolean;
     whatsappNumber?: string;
   };

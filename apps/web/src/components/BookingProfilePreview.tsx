@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Calendar, Clock, MapPin, CreditCard, ArrowRight, ShieldCheck, Star, ChevronLeft, ChevronRight, Check, LinkIcon, MessageSquare, ArrowLeft } from 'lucide-react';
+import { Clock, MapPin, CreditCard, ArrowRight, ShieldCheck, Star, ChevronLeft, ChevronRight, Check, LinkIcon, MessageSquare, ArrowLeft } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import type { FormField } from '../types/form';
 
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
@@ -20,12 +21,7 @@ interface BookingProfilePreviewProps {
   destinationMode?: 'url' | 'calendar' | 'qr_link';
   qrLinkId?: string;
   customFormEnabled?: boolean;
-  customFormFields?: Array<{
-    id: string;
-    type: 'text' | 'textarea' | 'number' | 'phone' | 'email' | 'date' | 'boolean';
-    label: string;
-    required: boolean;
-  }>;
+  customFormFields?: FormField[];
   whatsappEnabled?: boolean;
   whatsappNumber?: string;
 }

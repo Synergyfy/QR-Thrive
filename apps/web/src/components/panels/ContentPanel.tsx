@@ -30,10 +30,8 @@ import {
   Users,
   CheckCircle,
   Clock,
-  ArrowRight,
   Image as ImageIcon,
-  QrCode,
-  LayoutGrid
+  QrCode
 } from 'lucide-react';
 import type { QRConfiguration, QRData, QRType } from '../../types/qr';
 import FormBuilder from '../FormBuilder';

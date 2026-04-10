@@ -13,8 +13,6 @@ import {
   ToggleLeft,
   CheckSquare, 
   List, 
-  CircleDot, 
-  SlidersHorizontal,
   X,
   ChevronUp
 } from 'lucide-react';
