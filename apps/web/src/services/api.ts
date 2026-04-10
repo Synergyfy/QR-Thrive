@@ -72,7 +72,10 @@ export const authApi = {
     localStorage.removeItem(SESSION_HINT_KEY);
     return (await apiClient.post('/auth/logout')).data;
   },
-  getMe: async () => (await apiClient.get<AuthResponse>('/auth/me')).data,
+  getMe: async () => {
+    if (!localStorage.getItem(SESSION_HINT_KEY)) return null;
+    return (await apiClient.get<AuthResponse>('/auth/me')).data;
+  },
 };
 
 export const foldersApi = {

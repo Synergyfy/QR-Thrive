@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
-import { useCurrentUser } from '../../hooks/useApi';
+import { useCurrentUser, useLogout } from '../../hooks/useApi';
+import toast from 'react-hot-toast';
 
 const sidebarLinks = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
@@ -28,6 +29,17 @@ export default function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { data: authData, isLoading } = useCurrentUser();
+  const logoutMutation = useLogout();
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync();
+      toast.success('Logged out successfully');
+      navigate('/');
+    } catch (e) {
+      toast.error('Logout failed');
+    }
+  };
 
   useEffect(() => {
     if (!isLoading && (!authData?.user || authData.user.role !== 'ADMIN')) {
@@ -94,11 +106,11 @@ export default function AdminLayout() {
 
         <div className="p-4 border-t border-slate-100">
           <button 
-            onClick={() => navigate('/')}
-            className="flex items-center gap-4 px-4 py-3.5 w-full rounded-2xl text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all group"
+            onClick={handleLogout}
+            className="flex items-center gap-4 px-4 py-3.5 w-full rounded-2xl text-slate-500 hover:bg-red-50 hover:text-red-700 transition-all group"
           >
-            <LogOut className="w-5 h-5 text-slate-400 group-hover:text-red-500" />
-            {isSidebarOpen && <span className="font-semibold text-sm tracking-wide">Back to Site</span>}
+            <LogOut className="w-5 h-5 text-slate-400 group-hover:text-red-600" />
+            {isSidebarOpen && <span className="font-semibold text-sm tracking-wide text-red-600/80 group-hover:text-red-600">Logout Session</span>}
           </button>
         </div>
       </aside>

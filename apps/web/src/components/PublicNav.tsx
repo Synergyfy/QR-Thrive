@@ -5,6 +5,7 @@ import { useCurrentUser, useLogout } from '../hooks/useApi';
 import { getDashboardPath } from '../utils/auth';
 import AuthModal from './AuthModal';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 export default function PublicNav() {
   const navigate = useNavigate();
@@ -20,8 +21,11 @@ export default function PublicNav() {
     try {
       await logoutMutation.mutateAsync();
       setIsMenuOpen(false);
+      toast.success('Logged out successfully');
+      navigate('/');
     } catch (e) {
       console.error('Logout failed', e);
+      toast.error('Logout failed. Please try again.');
     }
   };
 

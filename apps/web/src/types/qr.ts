@@ -71,6 +71,11 @@ export interface MenuData {
 export interface QRData {
   type: QRType;
   url?: string;
+  urlPreview?: {
+    title?: string;
+    description?: string;
+    themeColor?: string;
+  };
   text?: string;
   image?: {
     url: string;
@@ -137,6 +142,10 @@ export interface QRData {
   app?: {
     ios?: string;
     android?: string;
+    title?: string;
+    description?: string;
+    icon?: string;
+    themeColor?: string;
   };
   vcard?: {
     firstName: string;

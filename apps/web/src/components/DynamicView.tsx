@@ -32,6 +32,10 @@ import VideoProfilePreview from './VideoProfilePreview';
 import PhotoProfilePreview from './PhotoProfilePreview';
 import SocialsProfilePreview from './SocialsProfilePreview';
 import MenuPreview from './MenuPreview';
+import AudioProfilePreview from './AudioProfilePreview';
+import WebsiteProfilePreview from './WebsiteProfilePreview';
+import WifiProfilePreview from './WifiProfilePreview';
+import AppStorePreview from './AppStorePreview';
 import type { QRData } from '../types/qr';
 import { useParams } from 'react-router-dom';
 import { useSubmitForm } from '../hooks/useForms';
@@ -201,23 +205,13 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
     switch (data.type) {
       case 'url':
         return (
-          <div className="text-center space-y-6">
-            <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-blue-100">
-              <Globe className="w-10 h-10" />
-            </div>
-            <div>
-              <h1 className="text-xl font-medium text-gray-900 mb-1">Website Link</h1>
-              <p className="text-gray-500 font-normal text-sm break-all">{data.url}</p>
-            </div>
-            <a 
-              href={data.url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="w-full py-4 bg-blue-600 text-white rounded-2xl font-normal flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-200"
-            >
-              Visit Website
-              <ExternalLink className="w-4 h-4" />
-            </a>
+          <div className="w-full h-full rounded-none overflow-hidden">
+             <WebsiteProfilePreview 
+                url={data.url} 
+                title={data.urlPreview?.title}
+                description={data.urlPreview?.description}
+                themeColor={data.urlPreview?.themeColor}
+             />
           </div>
         );
 
@@ -249,26 +243,12 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
         );
        case 'wifi':
         return (
-          <div className="text-center space-y-8">
-            <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-xl shadow-emerald-100 animate-pulse">
-               <Wifi className="w-12 h-12" />
-            </div>
-            <div>
-               <h1 className="text-2xl font-normal text-gray-900 mb-4">Wi-Fi Connection</h1>
-               <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 space-y-4">
-                  <div className="flex justify-between items-center border-b border-gray-200 pb-4">
-                     <span className="text-xs font-normal text-gray-400 uppercase">Network</span>
-                     <span className="font-normal text-gray-900">{data.wifi?.ssid}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                     <span className="text-xs font-normal text-gray-400 uppercase">Security</span>
-                     <span className="font-normal text-gray-900">{data.wifi?.encryption}</span>
-                  </div>
-               </div>
-            </div>
-            <div className="p-4 bg-emerald-50 text-emerald-700 rounded-2xl text-xs font-normal leading-relaxed border border-emerald-100">
-               Scan successful! Your device should automatically prompt you to join the network.
-            </div>
+          <div className="w-full h-full rounded-none overflow-hidden">
+             <WifiProfilePreview 
+                ssid={data.wifi?.ssid} 
+                password={data.wifi?.password}
+                encryption={data.wifi?.encryption}
+             />
           </div>
         );
 
@@ -685,78 +665,34 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
 
       case 'mp3':
          return (
-           <div className="space-y-8">
-              <div className="text-center">
-                 <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-blue-100">
-                    <Music className="w-12 h-12" />
-                 </div>
-                 <h1 className="text-2xl font-normal text-gray-900 mb-2">Audio Player</h1>
-                 <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest">
-                   {data.mp3?.name || 'Audio File'}
-                 </p>
-              </div>
-              
-              <div className="bg-gray-900 rounded-[32px] p-6 shadow-2xl">
-                <audio 
-                  controls 
-                  autoPlay={playingAudio}
-                  className="w-full rounded-xl"
-                  src={data.mp3?.url}
-                  onPlay={() => setPlayingAudio(true)}
-                  onPause={() => setPlayingAudio(false)}
-                >
-                  Your browser does not support the audio element.
-                </audio>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <a 
-                  href={data.mp3?.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="py-4 bg-blue-600 text-white rounded-[32px] font-normal text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2 text-center"
-                >
-                  <Play className="w-5 h-5" />
-                  View
-                </a>
-                <a 
-                  href={data.mp3?.url ? getDownloadUrl(data.mp3.url) : '#'}
-                  download={data.mp3?.name || 'audio.mp3'}
-                  className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-normal text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2"
-                >
-                  <Download className="w-5 h-5" />
-                  Download
-                </a>
-              </div>
+           <div className="w-full h-full rounded-none overflow-hidden">
+             <AudioProfilePreview 
+                companyName={data.mp3?.companyName}
+                title={data.mp3?.title}
+                description={data.mp3?.description}
+                name={data.mp3?.name}
+                artist={data.mp3?.artist as any || 'Podcast Guest'}
+                audioUrl={data.mp3?.url}
+                themeColor={data.mp3?.themeColor}
+                textColor={data.mp3?.textColor}
+                buttonColor={data.mp3?.buttonColor}
+                buttonTextColor={data.mp3?.buttonTextColor}
+                buttonText={data.mp3?.buttonText}
+             />
            </div>
          );
 
       case 'app':
          return (
-           <div className="space-y-10">
-              <div className="text-center">
-                 <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-100">
-                    <ShoppingBag className="w-10 h-10" />
-                 </div>
-                 <h1 className="text-2xl font-normal text-gray-900 mb-2">Download App</h1>
-                 <p className="text-gray-400 text-sm">Available on all your devices</p>
-              </div>
-              <div className="space-y-4">
-                 <button className="w-full py-6 bg-black text-white rounded-[40px] font-normal flex items-center px-8 gap-4 shadow-xl">
-                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.96.95-2.22 1.48-3.48 1.48s-2.52-.53-3.48-1.48c-.96-1-1.39-2.31-1.28-3.64.11-1.33.74-2.52 1.77-3.35 1.03-.84 2.37-1.18 3.65-1.14 1.28.05 2.44.47 3.24 1.18-.8.15-1.93.91-1.93 2.1 0 1.19.78 2.36 2.36 2.36.19 0 .37-.02.55-.06-.11.85-.5 1.63-1.14 2.24l-3.26.31zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" /></svg>
-                    <div className="text-left">
-                       <p className="text-[10px] uppercase font-normal opacity-60">App Store</p>
-                       <p className="text-sm font-normal">Download for iOS</p>
-                    </div>
-                 </button>
-                 <button className="w-full py-6 bg-white border-2 border-gray-100 text-gray-900 rounded-[40px] font-normal flex items-center px-8 gap-4 shadow-sm">
-                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.609 22.186c-.18.18-.285.424-.285.679 0 .528.432.96 1.011.96.183 0 .354-.051.5-.141l14.945-8.407c.54-.303.896-.879.896-1.528 0-.649-.356-1.225-.896-1.528L4.835.132c-.146-.09-.32-.141-.498-.141C3.758 0 3.326.432 3.326.96c0 .255.105.499.283.679l.001-.001-.001.176v.001z" /></svg>
-                    <div className="text-left">
-                       <p className="text-[10px] uppercase font-normal opacity-60">Google Play</p>
-                       <p className="text-sm font-normal">Get it on Android</p>
-                    </div>
-                 </button>
-              </div>
+           <div className="w-full h-full rounded-none overflow-hidden">
+             <AppStorePreview 
+                title={data.app?.title}
+                description={data.app?.description}
+                icon={data.app?.icon}
+                iosUrl={data.app?.ios}
+                androidUrl={data.app?.android}
+                themeColor={data.app?.themeColor}
+             />
            </div>
          );
 
@@ -1186,7 +1122,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
   };
 
   if (isWizardPreview) {
-    if (data.type === 'whatsapp' || data.type === 'instagram' || data.type === 'facebook' || data.type === 'pdf' || data.type === 'video' || data.type === 'image') {
+    if (data.type === 'whatsapp' || data.type === 'instagram' || data.type === 'facebook' || data.type === 'pdf' || data.type === 'video' || data.type === 'image' || data.type === 'mp3' || data.type === 'url' || data.type === 'wifi' || data.type === 'app') {
       return (
         <div className="w-full h-full">
            {renderContent()}
