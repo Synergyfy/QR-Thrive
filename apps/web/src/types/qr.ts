@@ -128,6 +128,8 @@ export interface QRData {
     companyName?: string;
     title?: string;
     description?: string;
+    artist?: string;
+    buttonText?: string;
     themeColor?: string;
     textColor?: string;
     buttonColor?: string;

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Music, Download } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Download } from 'lucide-react';
 import { getDownloadUrl } from '../utils/upload';
 
 interface AudioProfilePreviewProps {
