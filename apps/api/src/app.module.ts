@@ -16,6 +16,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
 import { PricingModule } from './pricing/pricing.module';
+import { IntegrationModule } from './integration/integration.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { PricingModule } from './pricing/pricing.module';
     PaymentsModule,
     AdminModule,
     PricingModule,
+    IntegrationModule,
   ],
   controllers: [AppController],
   providers: [
