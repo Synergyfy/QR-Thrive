@@ -86,4 +86,21 @@ export class IntegrationController {
   async getSubmissions(@Param('userId') userId: string, @Param('id') id: string) {
     return this.formsService.getSubmissions(id, userId);
   }
+
+  @Get('plans')
+  @ApiOperation({ summary: 'Get all active plans' })
+  @ApiResponse({ status: 200, description: 'List of plans retrieved.' })
+  async getPlans() {
+    return this.integrationService.getPlans();
+  }
+
+  @Post('users/:userId/subscription')
+  @ApiOperation({ summary: 'Set a user\'s plan/subscription' })
+  @ApiResponse({ status: 200, description: 'User subscription updated.' })
+  async setUserSubscription(
+    @Param('userId') userId: string,
+    @Body('planId') planId: string,
+  ) {
+    return this.integrationService.setUserSubscription(userId, planId);
+  }
 }

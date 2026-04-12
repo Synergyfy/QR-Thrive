@@ -13,6 +13,7 @@ import {
 import { PaystackService } from './paystack.service';
 import { PricingService } from '../pricing/pricing.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { VemtapService } from '../integration/vemtap.service';
 import { Public } from '../auth/decorators/public.decorator';
 import {
   ApiTags,
@@ -32,6 +33,7 @@ export class PaymentsController {
     private paystackService: PaystackService,
     private prisma: PrismaService,
     private pricingService: PricingService,
+    private vemtapService: VemtapService,
   ) {}
 
   @Post('initialize')
@@ -210,7 +212,7 @@ export class PaymentsController {
 
     const { planId, interval } = data.metadata || {};
 
-    await this.prisma.user.update({
+    const updatedUser = await this.prisma.user.update({
       where: { id: user.id },
       data: {
         plan: planId ? { connect: { id: planId } } : undefined,
@@ -221,9 +223,23 @@ export class PaymentsController {
         hasUsedTrial: true, // Mark that they've now paid/used a trial
         trialEndsAt: null,   // Clear trial as they are now active
       },
+      include: { plan: true },
     });
 
     this.logger.log(`User ${email} upgraded to plan ${planId || 'PRO'}`);
+
+    // Vemtap Provisioning logic
+    if (updatedUser.plan?.vemtapPlanId) {
+      // Fire and forget provisioning to not block response
+      this.vemtapService.provisionUser(
+        updatedUser.email,
+        updatedUser.firstName,
+        updatedUser.lastName,
+        updatedUser.plan.vemtapPlanId,
+      ).catch(err => {
+        this.logger.error(`Deferred Vemtap provisioning failed for ${email}:`, err);
+      });
+    }
   }
 
   private async handleSubscriptionDisable(data: {

@@ -109,6 +109,11 @@ export class CreatePlanDto {
   @Min(0)
   @IsOptional()
   lowIncomeMonthlyUSD?: number;
+
+  @ApiPropertyOptional({ example: 'vemtap_plan_uuid', description: 'Attached Vemtap Plan ID' })
+  @IsString()
+  @IsOptional()
+  vemtapPlanId?: string;
 }
 
 export class UpdatePlanDto extends CreatePlanDto {

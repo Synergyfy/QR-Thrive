@@ -66,4 +66,50 @@ export class IntegrationService {
 
     return this.authService.generateMagicLink(userId);
   }
+
+  async getPlans() {
+    return this.prisma.plan.findMany({
+      where: { isActive: true, deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        isFree: true,
+      },
+    });
+  }
+
+  async setUserSubscription(userId: string, planId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const plan = await this.prisma.plan.findUnique({
+      where: { id: planId },
+    });
+
+    if (!plan) {
+      throw new NotFoundException('Plan not found');
+    }
+
+    const planData: any = {
+      planId: plan.id,
+      subscriptionStatus: 'active',
+    };
+
+    if (!plan.isFree) {
+      // For paid plans coming from integration, we assume payment is handled by the caller (VemTap)
+      // We set status to active and clear trial data
+      planData.trialStartedAt = null;
+      planData.trialEndsAt = null;
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: planData,
+    });
+  }
 }

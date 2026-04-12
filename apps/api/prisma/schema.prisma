@@ -136,6 +136,8 @@ model Plan {
   lowIncomeQuarterlyUSD  Float @default(0)
   lowIncomeYearlyUSD     Float @default(0)
   
+  vemtapPlanId          String? // Attached Vemtap Plan ID for bundling
+  
   users         User[]
   deletedAt     DateTime?
   createdAt     DateTime    @default(now())
