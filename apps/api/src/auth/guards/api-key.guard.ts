@@ -4,12 +4,11 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import * as crypto from 'crypto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
-  constructor(private prisma: PrismaService) {}
+  constructor(private configService: ConfigService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -19,14 +18,14 @@ export class ApiKeyGuard implements CanActivate {
       throw new UnauthorizedException('API key is missing');
     }
 
-    const hashedKey = crypto.createHash('sha256').update(apiKey).digest('hex');
+    const internalKey = this.configService.get<string>('INTERNAL_API_KEY');
 
-    const keyEntry = await this.prisma.apiKey.findUnique({
-      where: { key: hashedKey },
-    });
+    if (!internalKey) {
+      throw new UnauthorizedException('Internal API key not configured on server');
+    }
 
-    if (!keyEntry || !keyEntry.isActive) {
-      throw new UnauthorizedException('Invalid or inactive API key');
+    if (apiKey !== internalKey) {
+      throw new UnauthorizedException('Invalid API key');
     }
 
     return true;

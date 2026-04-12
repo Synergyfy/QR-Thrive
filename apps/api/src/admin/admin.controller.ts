@@ -18,7 +18,6 @@ import { Role } from '@prisma/client';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Public } from '../auth/decorators/public.decorator';
 import { UpdateSystemConfigDto } from './dto/update-system-config.dto';
-import { CreateApiKeyDto } from './dto/api-key.dto';
 import type { Response } from 'express';
 import {
   ApiTags,
@@ -119,35 +118,4 @@ export class AdminController {
     return res.send(csv);
   }
 
-  @Roles(Role.ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @Post('api-keys')
-  @ApiOperation({ summary: 'Create a new API key (Admin only)' })
-  async createApiKey(@Body() body: CreateApiKeyDto) {
-    return this.adminService.createApiKey(body);
-  }
-
-  @Roles(Role.ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @Get('api-keys')
-  @ApiOperation({ summary: 'List all API keys (Admin only)' })
-  async listApiKeys() {
-    return this.adminService.listApiKeys();
-  }
-
-  @Roles(Role.ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @Patch('api-keys/:id/toggle')
-  @ApiOperation({ summary: 'Toggle API key active status (Admin only)' })
-  async toggleApiKey(@Param('id') id: string) {
-    return this.adminService.toggleApiKey(id);
-  }
-
-  @Roles(Role.ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @Delete('api-keys/:id')
-  @ApiOperation({ summary: 'Delete an API key (Admin only)' })
-  async deleteApiKey(@Param('id') id: string) {
-    return this.adminService.deleteApiKey(id);
-  }
 }

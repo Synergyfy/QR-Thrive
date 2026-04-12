@@ -13,7 +13,9 @@ export class VemtapService {
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
   ) {
-    this.baseUrl = this.configService.get<string>('VEMTAP_API_URL') || '';
+    this.baseUrl =
+      this.configService.get<string>('VEMTAP_API_URL') ||
+      'http://localhost:3001/api/v1';
     this.apiKey = this.configService.get<string>('VEMTAP_API_KEY') || '';
 
     if (!this.baseUrl || !this.apiKey) {
@@ -25,7 +27,7 @@ export class VemtapService {
 
   private get headers() {
     return {
-      'X-API-KEY': this.apiKey,
+      'x-vemtap-api-key': this.apiKey,
       'Content-Type': 'application/json',
     };
   }

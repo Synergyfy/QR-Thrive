@@ -7,9 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { PaystackService } from '../payments/paystack.service';
 import { UpdateSystemConfigDto } from './dto/update-system-config.dto';
-import { CreateApiKeyDto } from './dto/api-key.dto';
 import { SystemConfig } from '@prisma/client';
-import * as crypto from 'crypto';
 
 @Injectable()
 export class AdminService {
@@ -19,51 +17,6 @@ export class AdminService {
     private prisma: PrismaService,
     private paystackService: PaystackService,
   ) {}
-
-  async createApiKey(dto: CreateApiKeyDto) {
-    const rawKey = `qr_${crypto.randomBytes(32).toString('hex')}`;
-    const hashedKey = crypto.createHash('sha256').update(rawKey).digest('hex');
-
-    const apiKey = await this.prisma.apiKey.create({
-      data: {
-        name: dto.name,
-        key: hashedKey,
-      },
-    });
-
-    return {
-      ...apiKey,
-      rawKey, // Return raw key once
-    };
-  }
-
-  async listApiKeys() {
-    return this.prisma.apiKey.findMany({
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        name: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-  }
-
-  async deleteApiKey(id: string) {
-    return this.prisma.apiKey.delete({
-      where: { id },
-    });
-  }
-
-  async toggleApiKey(id: string) {
-    const apiKey = await this.prisma.apiKey.findUnique({ where: { id } });
-    if (!apiKey) throw new NotFoundException('API Key not found');
-    return this.prisma.apiKey.update({
-      where: { id },
-      data: { isActive: !apiKey.isActive },
-    });
-  }
 
   async getStats(range = '7d') {
     const config = await this.prisma.systemConfig.findFirst();
