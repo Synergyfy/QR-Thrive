@@ -9,5 +9,6 @@ import { UploadModule } from '../upload/upload.module';
   imports: [PrismaModule, FormsModule, UploadModule],
   controllers: [QRCodesController],
   providers: [QRCodesService],
+  exports: [QRCodesService],
 })
 export class QRCodesModule {}

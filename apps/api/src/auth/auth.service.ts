@@ -12,7 +12,7 @@ import { SignupDto, LoginDto, AdminSignupDto, GoogleLoginDto } from './dto/auth.
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
-import { nanoid } from 'nanoid';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -296,7 +296,7 @@ export class AuthService {
   }
 
   async generateMagicLink(userId: string) {
-    const token = nanoid(32);
+    const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 15); // 15 minutes expiry
 
