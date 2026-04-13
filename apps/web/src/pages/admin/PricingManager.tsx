@@ -16,7 +16,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   useAdminPlans, 
   useUpsertPlan, 
-  useAdminTiers, 
   useAdminCountries, 
   useUpsertCountry, 
   useAdminPricingConfig, 
@@ -25,7 +24,7 @@ import {
   useUpdateSystemConfig,
   useDeletePlan
 } from '../../hooks/useAdmin';
-import type { Plan } from '../../types/api';
+import type { Plan, PricingTier } from '../../types/api';
 import type { QRType } from '../../types/qr';
 
 // Sub-components
@@ -35,34 +34,29 @@ import PlanEconomics from './pricing/PlanEconomics';
 import RegionalLogic from './pricing/RegionalLogic';
 import CMSEditor from './pricing/CMSEditor';
 
+const STATIC_TIERS: { id: PricingTier; name: string }[] = [
+  { id: 'HIGH', name: 'High Income' },
+  { id: 'MIDDLE', name: 'Middle Income' },
+  { id: 'LOW', name: 'Low Income' },
+];
+
 const QR_TYPES_LIST: { value: QRType; label: string }[] = [
-  { value: 'url', label: 'URL / Website' },
-  { value: 'text', label: 'Plain Text' },
-  { value: 'vcard', label: 'Digital Business Card' },
-  { value: 'wifi', label: 'Wi-Fi Access' },
-  { value: 'email', label: 'Email' },
-  { value: 'sms', label: 'SMS' },
-  { value: 'whatsapp', label: 'WhatsApp Message' },
-  { value: 'phone', label: 'Call Phone' },
-  { value: 'instagram', label: 'Instagram Profile' },
-  { value: 'facebook', label: 'Facebook Page' },
-  { value: 'linkedin', label: 'LinkedIn Profile' },
-  { value: 'twitter', label: 'Twitter / X' },
-  { value: 'youtube', label: 'YouTube Video' },
-  { value: 'tiktok', label: 'TikTok Profile' },
-  { value: 'crypto', label: 'Crypto Address' },
-  { value: 'socials', label: 'Social Media Links' },
-  { value: 'links', label: 'Link Tree / Bio' },
-  { value: 'image', label: 'Image Gallery' },
-  { value: 'event', label: 'Event / Calendar' },
-  { value: 'pdf', label: 'PDF Document' },
-  { value: 'video', label: 'Video Player' },
-  { value: 'mp3', label: 'Audio / Podcast' },
-  { value: 'app', label: 'App Store Links' },
-  { value: 'business', label: 'Business Profile' },
-  { value: 'menu', label: 'Digital Menu' },
-  { value: 'coupon', label: 'Coupon / Offer' },
-  { value: 'form', label: 'Custom Form' },
+  { value: 'url', label: 'Website' },
+  { value: 'pdf', label: 'PDF' },
+  { value: 'links', label: 'List of Links' },
+  { value: 'vcard', label: 'vCard' },
+  { value: 'business', label: 'Business' },
+  { value: 'video', label: 'Video' },
+  { value: 'image', label: 'Images' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'socials', label: 'Social Media' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'mp3', label: 'MP3' },
+  { value: 'menu', label: 'Menu' },
+  { value: 'app', label: 'Apps' },
+  { value: 'coupon', label: 'Coupon' },
+  { value: 'wifi', label: 'WiFi' },
 ];
 
 export default function PricingManager() {
@@ -76,7 +70,6 @@ export default function PricingManager() {
 
   // Data Hooks
   const { data: plans, isLoading: plansLoading } = useAdminPlans();
-  const { data: tiers, isLoading: tiersLoading } = useAdminTiers();
   const { data: countries, isLoading: countriesLoading } = useAdminCountries();
   const { data: pricingConfig } = useAdminPricingConfig();
   const { data: cmsConfig } = useSystemConfig();
@@ -136,7 +129,7 @@ export default function PricingManager() {
     }
   };
 
-  const isLoading = plansLoading || tiersLoading || countriesLoading;
+  const isLoading = plansLoading || countriesLoading;
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-40 px-4 sm:px-6 lg:px-8">
@@ -173,7 +166,7 @@ export default function PricingManager() {
                  <div className="w-full lg:w-auto">
                     <PricingSummary 
                        plansCount={plans?.length || 0}
-                       tiersCount={tiers?.length || 0}
+                       tiersCount={STATIC_TIERS.length}
                        countriesCount={countries?.length || 0}
                     />
                  </div>
@@ -231,7 +224,7 @@ export default function PricingManager() {
                     {activeTab === 'Economics' && (
                        <PlanEconomics 
                            plans={plans || []}
-                          tiers={tiers || []}
+                          tiers={STATIC_TIERS}
                           pricingConfig={pricingConfig || { quarterlyDiscount: 10, yearlyDiscount: 20 }}
                           onEditPlan={(plan) => {
                              setEditingPlan(JSON.parse(JSON.stringify({
@@ -284,9 +277,9 @@ export default function PricingManager() {
                    {activeTab === 'Regional' && (
                       <RegionalLogic 
                          countries={countries || []}
-                         tiers={tiers || []}
-                         onUpdateCountryTier={(code, tierId) => upsertCountry.mutate({ code, tierId })}
-                         onBulkMove={(codes, tierId) => codes.forEach(code => upsertCountry.mutate({ code, tierId }))}
+                         tiers={STATIC_TIERS}
+                         onUpdateCountryTier={(code, tier) => upsertCountry.mutate({ code, tier })}
+                         onBulkMove={(codes, tier) => codes.forEach(code => upsertCountry.mutate({ code, tier }))}
                       />
                    )}
 
@@ -334,7 +327,7 @@ export default function PricingManager() {
                 </button>
               </div>
 
-              <form onSubmit={handleSavePlan} className="flex-grow overflow-y-auto p-10 space-y-10 scrollbar-thin">
+              <form id="plan-form" onSubmit={handleSavePlan} className="flex-grow overflow-y-auto p-10 space-y-10 scrollbar-thin">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="space-y-6">
                     <div>

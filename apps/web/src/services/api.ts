@@ -11,7 +11,6 @@ import type {
   AdminUsersResponse,
   SystemConfig,
   Plan,
-  Tier,
   Country,
   PricingConfig,
 } from '../types/api';
@@ -204,7 +203,6 @@ export const adminApi = {
   deletePlan: async (id: string) => (await apiClient.delete(`/plans/${id}`)).data,
 
   // Pricing & Geography
-  getTiers: async () => (await apiClient.get<Tier[]>('/pricing/tiers')).data,
   getCountries: async () => (await apiClient.get<Country[]>('/pricing/countries')).data,
   upsertCountry: async (data: Partial<Country>) => (await apiClient.post<Country>('/pricing/countries', data)).data,
   getPricingConfig: async () => (await apiClient.get<PricingConfig>('/pricing/config')).data,

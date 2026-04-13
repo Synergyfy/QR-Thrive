@@ -94,7 +94,7 @@ export class PaymentsController {
         userId, 
         planId, 
         interval,
-        tierName: countryInfo?.tier?.name || 'Unknown'
+        tierName: countryInfo?.tier || 'Unknown'
       },
     );
   }
