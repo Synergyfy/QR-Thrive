@@ -11,6 +11,7 @@ import helmet from 'helmet';
 // Explicitly export the bootstrap function
 export async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.set('trust proxy', true);
   app.useLogger(app.get(PinoLogger));
 
   app.use(

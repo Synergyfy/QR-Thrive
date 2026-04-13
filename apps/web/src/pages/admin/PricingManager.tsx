@@ -16,7 +16,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   useAdminPlans, 
   useUpsertPlan, 
-  useAdminTiers, 
   useAdminCountries, 
   useUpsertCountry, 
   useAdminPricingConfig, 
@@ -25,7 +24,7 @@ import {
   useUpdateSystemConfig,
   useDeletePlan
 } from '../../hooks/useAdmin';
-import type { Plan } from '../../types/api';
+import type { Plan, PricingTier } from '../../types/api';
 import type { QRType } from '../../types/qr';
 
 // Sub-components
@@ -34,6 +33,12 @@ import PricingSummary from './pricing/PricingSummary';
 import PlanEconomics from './pricing/PlanEconomics';
 import RegionalLogic from './pricing/RegionalLogic';
 import CMSEditor from './pricing/CMSEditor';
+
+const STATIC_TIERS: { id: PricingTier; name: string }[] = [
+  { id: 'HIGH', name: 'High Income' },
+  { id: 'MIDDLE', name: 'Middle Income' },
+  { id: 'LOW', name: 'Low Income' },
+];
 
 const QR_TYPES_LIST: { value: QRType; label: string }[] = [
   { value: 'url', label: 'URL / Website' },
@@ -76,7 +81,6 @@ export default function PricingManager() {
 
   // Data Hooks
   const { data: plans, isLoading: plansLoading } = useAdminPlans();
-  const { data: tiers, isLoading: tiersLoading } = useAdminTiers();
   const { data: countries, isLoading: countriesLoading } = useAdminCountries();
   const { data: pricingConfig } = useAdminPricingConfig();
   const { data: cmsConfig } = useSystemConfig();
@@ -136,7 +140,7 @@ export default function PricingManager() {
     }
   };
 
-  const isLoading = plansLoading || tiersLoading || countriesLoading;
+  const isLoading = plansLoading || countriesLoading;
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-40 px-4 sm:px-6 lg:px-8">
@@ -173,7 +177,7 @@ export default function PricingManager() {
                  <div className="w-full lg:w-auto">
                     <PricingSummary 
                        plansCount={plans?.length || 0}
-                       tiersCount={tiers?.length || 0}
+                       tiersCount={STATIC_TIERS.length}
                        countriesCount={countries?.length || 0}
                     />
                  </div>
@@ -231,7 +235,7 @@ export default function PricingManager() {
                     {activeTab === 'Economics' && (
                        <PlanEconomics 
                            plans={plans || []}
-                          tiers={tiers || []}
+                          tiers={STATIC_TIERS}
                           pricingConfig={pricingConfig || { quarterlyDiscount: 10, yearlyDiscount: 20 }}
                           onEditPlan={(plan) => {
                              setEditingPlan(JSON.parse(JSON.stringify({
@@ -284,9 +288,9 @@ export default function PricingManager() {
                    {activeTab === 'Regional' && (
                       <RegionalLogic 
                          countries={countries || []}
-                         tiers={tiers || []}
-                         onUpdateCountryTier={(code, tierId) => upsertCountry.mutate({ code, tierId })}
-                         onBulkMove={(codes, tierId) => codes.forEach(code => upsertCountry.mutate({ code, tierId }))}
+                         tiers={STATIC_TIERS}
+                         onUpdateCountryTier={(code, tier) => upsertCountry.mutate({ code, tier })}
+                         onBulkMove={(codes, tier) => codes.forEach(code => upsertCountry.mutate({ code, tier }))}
                       />
                    )}
 
@@ -334,7 +338,7 @@ export default function PricingManager() {
                 </button>
               </div>
 
-              <form onSubmit={handleSavePlan} className="flex-grow overflow-y-auto p-10 space-y-10 scrollbar-thin">
+              <form id="plan-form" onSubmit={handleSavePlan} className="flex-grow overflow-y-auto p-10 space-y-10 scrollbar-thin">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="space-y-6">
                     <div>
