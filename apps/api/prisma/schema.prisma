@@ -40,6 +40,7 @@ model User {
   refreshTokens RefreshToken[]
   folders       Folder[]
   qrCodes       QRCode[]
+  magicLinks    MagicLink[]    // Added for SSO
   deletedAt     DateTime?      // Added for Soft-Delete
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -48,6 +49,19 @@ model User {
 enum Role {
   USER
   ADMIN
+}
+
+model MagicLink {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
 }
 
 model SystemConfig {
@@ -112,6 +126,8 @@ model Plan {
   lowIncomeMonthlyUSD    Float @default(0)
   lowIncomeQuarterlyUSD  Float @default(0)
   lowIncomeYearlyUSD     Float @default(0)
+  
+  vemtapPlanId          String? // Attached Vemtap Plan ID for bundling
   
   users         User[]
   deletedAt     DateTime?

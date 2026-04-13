@@ -43,11 +43,11 @@ apiClient.interceptors.response.use(
         return Promise.reject(err);
       }
     }
-    
+
     if (error.response?.status === 401) {
-       localStorage.removeItem(SESSION_HINT_KEY);
+      localStorage.removeItem(SESSION_HINT_KEY);
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -178,7 +178,7 @@ export const mediaApi = {
     formData.append('timestamp', credentials.timestamp.toString());
     formData.append('api_key', credentials.apiKey);
     formData.append('folder', credentials.folder);
-    
+
     // Unauthenticated POST directly to Cloudinary
     // Note: Use /auto/ upload for dynamic handling of videos, PDFs, images, etc.
     const res = await axios.post(
@@ -192,11 +192,11 @@ export const mediaApi = {
 
 export const adminApi = {
   getStats: async (range = '7d') => (await apiClient.get<AdminStats>('/admin/stats', { params: { range } })).data,
-  getUsers: async (params?: { page?: number; limit?: number; search?: string; status?: string }) => 
+  getUsers: async (params?: { page?: number; limit?: number; search?: string; status?: string }) =>
     (await apiClient.get<AdminUsersResponse>('/admin/users', { params })).data,
   getConfig: async () => (await apiClient.get<SystemConfig>('/admin/config')).data,
   updateConfig: async (data: Partial<SystemConfig>) => (await apiClient.patch<SystemConfig>('/admin/config', data)).data,
-  
+
   // Plans Management
   getPlans: async () => (await apiClient.get<Plan[]>('/plans/all')).data,
   createPlan: async (data: Partial<Plan>) => (await apiClient.post<Plan>('/plans', data)).data,
@@ -223,7 +223,7 @@ export const adminApi = {
     link.remove();
   },
 };
-  export const paymentsApi = {
+export const paymentsApi = {
   initialize: async (data: { planId: string; interval: string }) => (await apiClient.post<{ authorization_url: string }>('/payments/initialize', data)).data,
   cancelSubscription: async () => (await apiClient.post<{ message: string }>('/payments/cancel')).data,
 };

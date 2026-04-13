@@ -10,8 +10,9 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignupDto, LoginDto, AdminSignupDto, GoogleLoginDto } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
-import type { Response } from 'express';
+import { Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -292,6 +293,49 @@ export class AuthService {
       },
     });
     return { user };
+  }
+
+  async generateMagicLink(userId: string) {
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15); // 15 minutes expiry
+
+    await this.prisma.magicLink.create({
+      data: {
+        token,
+        userId,
+        expiresAt,
+      },
+    });
+
+    const baseUrl = this.configService.get<string>('API_BASE_URL') || 'http://localhost:3000';
+    return `${baseUrl}/v1/auth/magic-login?token=${token}`;
+  }
+
+  async validateMagicLink(token: string, res: Response) {
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+
+    try {
+      // Find and update in one go to ensure atomicity
+      const magicLink = await this.prisma.magicLink.update({
+        where: { 
+          token,
+          used: false,
+          expiresAt: { gt: new Date() }
+        },
+        data: { used: true },
+        include: { user: true }
+      });
+
+      // Generate tokens and set cookies
+      await this.generateAndSetTokens(magicLink.userId, res, true);
+
+      // Redirect to dashboard with hint for frontend
+      return res.redirect(`${frontendUrl}/dashboard?auth_success=true`);
+    } catch (error) {
+      this.logger.warn(`Failed magic link login attempt with token: ${token}`);
+      return res.redirect(`${frontendUrl}/login?error=invalid_link`);
+    }
   }
 
   private async generateAndSetTokens(

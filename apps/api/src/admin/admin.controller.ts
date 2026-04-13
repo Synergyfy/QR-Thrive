@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Body,
   Query,
@@ -11,6 +12,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
+import { VemtapService } from '../integration/vemtap.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -29,7 +31,18 @@ import {
 @Controller('admin')
 @UseGuards(RolesGuard)
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly vemtapService: VemtapService,
+  ) {}
+
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @Get('vemtap/plans')
+  @ApiOperation({ summary: 'Get active plans from Vemtap (Admin only)' })
+  async getVemtapPlans() {
+    return this.vemtapService.fetchActivePlans();
+  }
 
   @Roles(Role.ADMIN)
   @ApiBearerAuth('JWT-auth')
@@ -104,4 +117,5 @@ export class AdminController {
     res.attachment('users-export.csv');
     return res.send(csv);
   }
+
 }
