@@ -85,7 +85,7 @@ export class PricingService {
           name: 'Nigeria',
           currencyCode: 'NGN',
           currencySymbol: '₦',
-          tier: { name: 'High Income' } // Defaulting to High Income as standard baseline
+          tier: { name: 'Low Income' } // Defaulting to Low Income as standard baseline
         };
       }
       return {
