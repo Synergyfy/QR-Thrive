@@ -21,8 +21,6 @@ import {
 } from '@nestjs/swagger';
 import {
   UpdatePricingDiscountsDto,
-  CreateTierDto,
-  UpdateTierDto,
   CreateCountryDto,
   UpdateCountryDto,
 } from './pricing.dto';
@@ -49,32 +47,6 @@ export class PricingController {
       body.quarterlyDiscount,
       body.yearlyDiscount,
     );
-  }
-
-  @Get('tiers')
-  @ApiOperation({ summary: 'List all economic tiers (Admin only)' })
-  async getTiers() {
-    return this.pricingService.getAllTiers();
-  }
-
-  @Post('tiers')
-  @ApiOperation({ summary: 'Create a new tier (Admin only)' })
-  @ApiBody({ type: CreateTierDto })
-  async createTier(@Body() body: CreateTierDto) {
-    return this.pricingService.createTier(body.name);
-  }
-
-  @Patch('tiers/:id')
-  @ApiOperation({ summary: 'Update a tier name (Admin only)' })
-  @ApiBody({ type: UpdateTierDto })
-  async updateTier(@Param('id') id: string, @Body() body: UpdateTierDto) {
-    return this.pricingService.updateTier(id, body.name);
-  }
-
-  @Delete('tiers/:id')
-  @ApiOperation({ summary: 'Delete a tier (Admin only)' })
-  async deleteTier(@Param('id') id: string) {
-    return this.pricingService.deleteTier(id);
   }
 
   @Get('countries')

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../services/api';
-import type { AdminStats, AdminUsersResponse, SystemConfig, Plan, Tier, Country, PricingConfig } from '../types/api';
+import type { AdminStats, AdminUsersResponse, SystemConfig, Plan, Country, PricingConfig } from '../types/api';
 
 export const useAdminStats = (range = '7d') => {
   return useQuery<AdminStats>({
@@ -95,13 +95,6 @@ export const useDeletePlan = () => {
 };
 
 // Pricing & Geography Hooks
-export const useAdminTiers = () => {
-  return useQuery<Tier[]>({
-    queryKey: ['adminTiers'],
-    queryFn: adminApi.getTiers,
-  });
-};
-
 export const useAdminCountries = () => {
   return useQuery<Country[]>({
     queryKey: ['adminCountries'],

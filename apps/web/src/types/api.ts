@@ -21,22 +21,14 @@ export interface AuthResponse {
   user: User;
 }
 
-export interface Tier {
-  id: string;
-  name: string;
-  description: string | null;
-  _count?: {
-    countries: number;
-  };
-}
+export type PricingTier = 'HIGH' | 'MIDDLE' | 'LOW';
 
 export interface Country {
   code: string;
   name: string;
-  tierId: string;
+  tier: PricingTier;
   currencyCode: string;
   currencySymbol: string;
-  tier?: Tier;
 }
 
 export interface Plan {

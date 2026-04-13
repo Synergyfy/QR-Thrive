@@ -12,13 +12,13 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
-import type { Country, Tier } from '../../../types/api';
+import type { Country, PricingTier } from '../../../types/api';
 
 interface RegionalLogicProps {
   countries: Country[];
-  tiers: Tier[];
-  onUpdateCountryTier: (code: string, tierId: string) => void;
-  onBulkMove: (codes: string[], tierId: string) => void;
+  tiers: { id: PricingTier; name: string }[];
+  onUpdateCountryTier: (code: string, tier: PricingTier) => void;
+  onBulkMove: (codes: string[], tier: PricingTier) => void;
 }
 
 export default function RegionalLogic({
@@ -41,7 +41,7 @@ export default function RegionalLogic({
     const grouped: Record<string, Country[]> = {};
     tiers.forEach(t => grouped[t.id] = []);
     filteredCountries.forEach(c => {
-      if (grouped[c.tierId]) grouped[c.tierId].push(c);
+      if (grouped[c.tier]) grouped[c.tier].push(c);
     });
     return grouped;
   }, [filteredCountries, tiers]);
@@ -50,7 +50,7 @@ export default function RegionalLogic({
     if (!result.destination) return;
     const { draggableId: code, source, destination } = result;
     if (source.droppableId !== destination.droppableId) {
-      onUpdateCountryTier(code, destination.droppableId);
+      onUpdateCountryTier(code, destination.droppableId as PricingTier);
     }
   };
 
@@ -61,8 +61,8 @@ export default function RegionalLogic({
     setSelectedCodes(next);
   };
 
-  const handleBulkMoveAction = (tierId: string) => {
-    onBulkMove(Array.from(selectedCodes), tierId);
+  const handleBulkMoveAction = (tier: PricingTier) => {
+    onBulkMove(Array.from(selectedCodes), tier);
     setSelectedCodes(new Set());
   };
 
@@ -224,7 +224,7 @@ export default function RegionalLogic({
                      <select 
                         className="w-full bg-slate-800 border-none rounded-xl py-3 pl-4 pr-10 text-xs font-black text-white appearance-none cursor-pointer focus:ring-4 focus:ring-blue-500/20"
                         onChange={(e) => {
-                          if (e.target.value) handleBulkMoveAction(e.target.value);
+                          if (e.target.value) handleBulkMoveAction(e.target.value as PricingTier);
                         }}
                         value=""
                      >

@@ -15,15 +15,15 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tooltip } from '../../../components/ui/Tooltip';
-import type { Plan, Tier, PricingConfig } from '../../../types/api';
+import type { Plan, PricingTier, PricingConfig } from '../../../types/api';
 
 interface PlanEconomicsProps {
   plans: Plan[];
-  tiers: Tier[];
+  tiers: { id: PricingTier; name: string }[];
   pricingConfig: PricingConfig;
   onEditPlan: (plan: Plan) => void;
   onDeletePlan: (plan: Plan) => void;
-  onUpdatePrice?: (planId: string, tierId: string, data: { 
+  onUpdatePrice?: (planId: string, tier: PricingTier, data: { 
     monthlyPriceUSD: number;
   }) => void;
   onUpdateConfig: (config: Partial<PricingConfig>) => void;
@@ -68,6 +68,15 @@ export default function PlanEconomics({
   const handleCardClick = (planId: string) => {
     setSelectedPlanId(planId);
     setIsDetailOpen(true);
+  };
+
+  const getTierPrefix = (tierId: PricingTier) => {
+    switch (tierId) {
+      case 'HIGH': return 'highIncome';
+      case 'MIDDLE': return 'middleIncome';
+      case 'LOW': return 'lowIncome';
+      default: return 'highIncome';
+    }
   };
 
   return (
@@ -206,15 +215,12 @@ export default function PlanEconomics({
 
             {/* In-Card Pricing Matrix */}
             <div className="grid grid-cols-3 gap-3 mb-10">
-               {[
-                 { label: 'High', key: 'highIncome' },
-                 { label: 'Mid', key: 'middleIncome' },
-                 { label: 'Low', key: 'lowIncome' }
-               ].map((tier) => {
-                 const price = (plan as any)[`${tier.key}MonthlyUSD`] ?? 0;
+               {tiers.map((tier) => {
+                 const prefix = getTierPrefix(tier.id);
+                 const price = (plan as any)[`${prefix}MonthlyUSD`] ?? 0;
                  return (
-                   <div key={tier.key} className="bg-slate-50 group-hover:bg-white border border-transparent group-hover:border-slate-100 p-4 rounded-3xl transition-all">
-                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-2">{tier.label}</span>
+                   <div key={tier.id} className="bg-slate-50 group-hover:bg-white border border-transparent group-hover:border-slate-100 p-4 rounded-3xl transition-all">
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-2">{tier.name.split(' ')[0]}</span>
                       <div className="flex items-baseline gap-0.5">
                          <span className="text-sm font-black text-slate-900">${price.toFixed(0)}</span>
                          <span className="text-[7px] font-black text-slate-400">/mo</span>
@@ -319,18 +325,8 @@ export default function PlanEconomics({
               <div className="flex-grow overflow-y-auto p-10 space-y-10 scrollbar-thin">
                 {/* Pricing Matrix */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {tiers.map((tier, index) => {
-                    let tierPrefix: string;
-                    if (tier.name.includes('High')) {
-                      tierPrefix = 'highIncome';
-                    } else if (tier.name.includes('Middle')) {
-                      tierPrefix = 'middleIncome';
-                    } else if (tier.name.includes('Low')) {
-                      tierPrefix = 'lowIncome';
-                    } else {
-                      tierPrefix = index === 0 ? 'highIncome' : index === 1 ? 'middleIncome' : 'lowIncome';
-                    }
-                    
+                  {tiers.map((tier) => {
+                    const tierPrefix = getTierPrefix(tier.id);
                     const monthlyUSD = (selectedPlan as any)[`${tierPrefix}MonthlyUSD`] ?? 0;
                     const quarterlyUSD = (selectedPlan as any)[`${tierPrefix}QuarterlyUSD`] ?? 0;
                     const yearlyUSD = (selectedPlan as any)[`${tierPrefix}YearlyUSD`] ?? 0;
