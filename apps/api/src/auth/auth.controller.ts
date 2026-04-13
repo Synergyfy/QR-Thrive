@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Res, Req, Get } from '@nestjs/common';
+import { Controller, Post, Body, Res, Req, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   SignupDto,
@@ -123,5 +123,13 @@ export class AuthController {
   async me(@Req() req: RequestWithUser) {
     const userId = req.user.userId;
     return this.authService.getUserById(userId);
+  }
+
+  @Public()
+  @Get('magic-login')
+  @ApiOperation({ summary: 'Validate magic link and log user in' })
+  @ApiResponse({ status: 302, description: 'Redirect to dashboard or login on error' })
+  async magicLogin(@Query('token') token: string, @Res() res: Response) {
+    return this.authService.validateMagicLink(token, res);
   }
 }
