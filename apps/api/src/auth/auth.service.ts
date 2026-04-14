@@ -13,6 +13,7 @@ import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import * as crypto from 'crypto';
+import { VemtapService } from '../integration/vemtap.service';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +25,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private vemtapService: VemtapService,
   ) {
     this.googleClient = new OAuth2Client(
       this.configService.get<string>('GOOGLE_CLIENT_ID'),
@@ -31,11 +33,28 @@ export class AuthService {
   }
 
   private async getDefaultPlanData() {
-    const defaultPlan = await this.prisma.plan.findFirst({
+    let defaultPlan = await this.prisma.plan.findFirst({
       where: { isDefault: true, isActive: true, deletedAt: null },
     });
 
-    if (!defaultPlan) return {};
+    // Fallback if no explicit default plan exists
+    if (!defaultPlan) {
+      defaultPlan = await this.prisma.plan.findFirst({
+        where: { name: 'Free', isActive: true, deletedAt: null },
+      });
+    }
+
+    // Ultimate fallback to first available plan
+    if (!defaultPlan) {
+      defaultPlan = await this.prisma.plan.findFirst({
+        where: { isActive: true, deletedAt: null },
+      });
+    }
+
+    if (!defaultPlan) {
+      this.logger.error('CRITICAL: No plans found in database during signup provisioning.');
+      return {};
+    }
 
     const planData: any = { planId: defaultPlan.id };
 
@@ -85,6 +104,17 @@ export class AuthService {
       });
 
       this.logger.log(`User created: ${email} with role: USER`);
+
+      // Provision on Vemtap if a vemtapPlanId exists for the default plan
+      if (defaultPlanData.planId) {
+        const plan = await this.prisma.plan.findUnique({ where: { id: defaultPlanData.planId } });
+        if (plan?.vemtapPlanId) {
+          this.vemtapService.provisionUser(email, firstName, lastName, plan.vemtapPlanId).catch(err => {
+            this.logger.error(`Vemtap provisioning failed for ${email} during signup:`, err);
+          });
+        }
+      }
+
       return this.generateAndSetTokens(user.id, res, true);
     } catch (error) {
       if (error instanceof ConflictException) throw error;
@@ -223,6 +253,16 @@ export class AuthService {
           },
         });
         this.logger.log(`New user created via Google: ${email}`);
+
+        // Provision on Vemtap for new Google users
+        if (defaultPlanData.planId) {
+            const plan = await this.prisma.plan.findUnique({ where: { id: defaultPlanData.planId } });
+            if (plan?.vemtapPlanId) {
+              this.vemtapService.provisionUser(email, firstName || 'User', lastName || '', plan.vemtapPlanId).catch(err => {
+                this.logger.error(`Vemtap provisioning failed for ${email} during Google signup:`, err);
+              });
+            }
+        }
       }
 
       return this.generateAndSetTokens(user.id, res, true);

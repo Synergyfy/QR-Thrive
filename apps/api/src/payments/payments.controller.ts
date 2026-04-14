@@ -103,6 +103,63 @@ export class PaymentsController {
       },
     );
   }
+  
+  @Post('subscribe-free')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Subscribe to a free plan directly' })
+  @ApiBody({
+      schema: {
+          type: 'object',
+          properties: {
+              planId: { type: 'string' }
+          },
+          required: ['planId']
+      }
+  })
+  @ApiResponse({ status: 200, description: 'Subscribed to free plan successfully.' })
+  async subscribeFree(
+    @Req() req: Request & { user: { userId: string } },
+    @Body() body: { planId: string },
+  ) {
+    const userId = req.user.userId;
+    const { planId } = body;
+
+    const user = await this.prisma.user.findUnique({ 
+        where: { id: userId },
+        include: { plan: true }
+    });
+    if (!user) throw new BadRequestException('User not found');
+
+    const plan = await this.prisma.plan.findUnique({ where: { id: planId } });
+    if (!plan) throw new BadRequestException('Plan not found');
+    if (!plan.isFree) throw new BadRequestException('This endpoint is only for free plans');
+    if (!plan.isActive) throw new BadRequestException('Plan is inactive');
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        plan: { connect: { id: planId } },
+        subscriptionStatus: 'active',
+        billingCycle: null,
+        paystackSubscriptionCode: null, // Clear subscription as they moved to free
+      },
+      include: { plan: true }
+    });
+
+    // Sync with Vemtap
+    if (updatedUser.plan?.vemtapPlanId) {
+      this.vemtapService.provisionUser(
+        updatedUser.email,
+        updatedUser.firstName,
+        updatedUser.lastName,
+        updatedUser.plan.vemtapPlanId,
+      ).catch(err => {
+        this.logger.error(`Vemtap provisioning failed during free subscription for ${user.email}:`, err);
+      });
+    }
+
+    return { message: 'Successfully subscribed to the free plan.', planName: plan.name };
+  }
 
   @Post('cancel')
   @ApiBearerAuth('JWT-auth')
@@ -215,7 +272,17 @@ export class PaymentsController {
       return;
     }
 
-    const { planId, interval } = data.metadata || {};
+    let metadata = data.metadata;
+    if (typeof metadata === 'string') {
+      try {
+        metadata = JSON.parse(metadata);
+      } catch (e) {
+        this.logger.error('Failed to parse Paystack metadata JSON string:', metadata);
+        metadata = {};
+      }
+    }
+
+    const { planId, interval } = metadata || {};
 
     const updatedUser = await this.prisma.user.update({
       where: { id: user.id },
