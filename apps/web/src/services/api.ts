@@ -213,8 +213,8 @@ export const adminApi = {
   getPricingConfig: async () => (await apiClient.get<PricingConfig>('/pricing/config')).data,
   updatePricingConfig: async (data: Partial<PricingConfig>) => (await apiClient.patch<PricingConfig>('/pricing/config', data)).data,
 
-  suggestPrice: async (basePriceUSD: number, targetCurrencyCode: string) => 
-    (await apiClient.get('/pricing/suggest', { params: { basePriceUSD, targetCurrencyCode } })).data,
+  suggestPrice: async (basePriceUSD: number, targetCurrencyCode: string, tier?: string) => 
+    (await apiClient.get('/pricing/suggest', { params: { basePriceUSD, targetCurrencyCode, tier } })).data,
 
   banUser: async (id: string) => (await apiClient.patch(`/admin/users/${id}/ban`)).data,
   deleteUser: async (id: string) => (await apiClient.delete(`/admin/users/${id}`)).data,

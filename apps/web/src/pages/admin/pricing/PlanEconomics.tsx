@@ -575,7 +575,8 @@ export default function PlanEconomics({
                                   onClick={async () => {
                                     const result = await suggestPrice.mutateAsync({ 
                                       basePriceUSD: 20, 
-                                      targetCurrencyCode: editingPrice.currencyCode || '' 
+                                      targetCurrencyCode: editingPrice.currencyCode || '',
+                                      tier: editingPrice.tier
                                     });
                                     if (result.suggestedAmount) {
                                       const amountStr = String(result.suggestedAmount);
