@@ -8,6 +8,7 @@ import PublicFooter from '../components/PublicFooter';
 import AuthModal from '../components/AuthModal';
 import { usePublicPlans, usePublicConfig } from '../hooks/usePricing';
 import { useCurrentUser, useInitializePayment } from '../hooks/useApi';
+import { useSubscribeFree } from '../hooks/useSubscribeFree';
 import { getDashboardPath } from '../utils/auth';
 import type { PublicPlan } from '../types/api';
 import toast from 'react-hot-toast';
@@ -26,6 +27,7 @@ export default function PricingPage() {
   const { data: plans, isLoading: plansLoading, error: plansError } = usePublicPlans();
   const { data: config, isLoading: configLoading } = usePublicConfig();
   const initializePayment = useInitializePayment();
+  const subscribeFree = useSubscribeFree();
 
   const isLoading = plansLoading || configLoading;
 
@@ -51,6 +53,7 @@ export default function PricingPage() {
         highlight: plan.isPopular,
         popular: plan.isPopular,
         isFree: plan.isFree,
+        isCurrent: user?.planId === plan.id,
         trialDays: plan.trialDays,
         trial: plan.trialDays > 0,
         cta: plan.isFree ? "Start Now" : (plan.trialDays > 0 ? `Start ${plan.trialDays}-Day Free Trial` : "Get Started"),
@@ -63,14 +66,20 @@ export default function PricingPage() {
   }, [plans, config, selectedCycle]);
 
   const handleJoinPlan = async (plan: PublicPlan) => {
+    setSelectedPlan(plan);
+    
     if (!user) {
-      setSelectedPlan(plan);
       setIsAuthModalOpen(true);
       return;
     }
 
     if (plan.isFree) {
-      navigate(getDashboardPath(user.role));
+      try {
+        await subscribeFree.mutateAsync({ planId: plan.id });
+        navigate(getDashboardPath(user.role));
+      } catch (err) {
+        // Error handled in hook
+      }
       return;
     }
 
@@ -228,13 +237,25 @@ export default function PricingPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + (idx * 0.1) }}
                   className={`flex flex-col relative rounded-[3rem] p-10 transition-all duration-500 overflow-hidden group ${
-                    plan.highlight 
-                      ? 'bg-slate-900 text-white shadow-[0_40px_100px_-20px_rgba(37,99,235,0.2)] scale-105 z-20 md:-translate-y-4 border border-blue-500/30' 
-                      : 'bg-white border border-slate-100 shadow-xl shadow-blue-900/5 z-10'
+                    plan.isCurrent
+                      ? 'ring-4 ring-blue-500 ring-offset-4 bg-white border-transparent shadow-2xl z-30'
+                      : plan.highlight 
+                        ? 'bg-slate-900 text-white shadow-[0_40px_100px_-20px_rgba(37,99,235,0.2)] scale-105 z-20 md:-translate-y-4 border border-blue-500/30' 
+                        : 'bg-white border border-slate-100 shadow-xl shadow-blue-900/5 z-10'
                   }`}
                 >
+                  {/* Current Plan Badge */}
+                  {plan.isCurrent && (
+                    <div className="absolute top-8 left-10">
+                      <div className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg animate-pulse">
+                        <Zap className="w-3 h-3 fill-white" />
+                        Current Plan
+                      </div>
+                    </div>
+                  )}
+
                   {/* Most Popular/Trial Badge */}
-                  {(plan.popular || plan.trial) && (
+                  {(plan.popular || plan.trial) && !plan.isCurrent && (
                     <div className="absolute top-8 right-10">
                         <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-5 py-2.5 rounded-full shadow-lg transition-transform group-hover:scale-110 ${
                           plan.highlight ? 'bg-blue-600 text-white shadow-blue-500/40' : 'bg-slate-900 text-white'
@@ -282,19 +303,21 @@ export default function PricingPage() {
                   <div className="space-y-3">
                     <button 
                       onClick={() => handleJoinPlan(plans!.find(p => p.name === plan.name)!)}
-                      disabled={initializePayment.isPending}
+                      disabled={initializePayment.isPending || plan.isCurrent}
                       className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
-                        plan.highlight 
-                          ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30' 
-                          : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
+                        plan.isCurrent
+                          ? 'bg-slate-100 text-slate-400 cursor-default'
+                          : plan.highlight 
+                            ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30' 
+                            : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
                       } ${initializePayment.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
-                      {initializePayment.isPending && selectedPlan?.name === plan.name ? (
+                      {((initializePayment.isPending || subscribeFree.isPending) && selectedPlan?.name === plan.name) ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <>
-                          {plan.cta}
-                          <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
+                          {plan.isCurrent ? "Active Plan" : plan.cta}
+                          {!plan.isCurrent && <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />}
                         </>
                       )}
                     </button>
