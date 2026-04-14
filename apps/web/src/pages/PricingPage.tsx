@@ -34,7 +34,13 @@ export default function PricingPage() {
     if (!plans) return [];
     
     return plans.map((plan: PublicPlan) => {
-      const pricePoint = plan.pricing[selectedCycle] || plan.pricing.monthly;
+      const pricePoint = plan.pricing[selectedCycle] || plan.pricing.monthly || {
+        amount: 0,
+        currency: 'USD',
+        currencySymbol: '$',
+        priceBookId: '',
+        gatewayIds: {}
+      };
 
       return {
         name: plan.name,
@@ -75,7 +81,13 @@ export default function PricingPage() {
         interval: selectedCycle
       });
 
-      const pricePoint = plan.pricing[selectedCycle] || plan.pricing.monthly;
+      const pricePoint = plan.pricing[selectedCycle] || plan.pricing.monthly || {
+        amount: 0,
+        currency: 'USD',
+        currencySymbol: '$',
+        priceBookId: '',
+        gatewayIds: {}
+      };
 
       if (data && (data as any).access_code) {
         const handler = (window as any).PaystackPop.setup({
