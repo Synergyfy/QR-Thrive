@@ -231,5 +231,6 @@ export const adminApi = {
 };
 export const paymentsApi = {
   initialize: async (data: { planId: string; interval: string }) => (await apiClient.post<{ authorization_url: string }>('/payments/initialize', data)).data,
+  subscribeFree: async (data: { planId: string }) => (await apiClient.post<{ message: string; planName: string }>('/payments/subscribe-free', data)).data,
   cancelSubscription: async () => (await apiClient.post<{ message: string }>('/payments/cancel')).data,
 };

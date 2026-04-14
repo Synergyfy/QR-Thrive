@@ -212,6 +212,8 @@ export class PricingService {
       trialDays: plan.trialDays,
       vemtapPlanId: plan.vemtapPlanId,
       pricing: { monthly, quarterly, yearly },
+      isActive: plan.isActive,
+      deletedAt: plan.deletedAt,
     } as any;
   }
 

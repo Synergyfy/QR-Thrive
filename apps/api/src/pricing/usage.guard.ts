@@ -21,7 +21,7 @@ export class UsageGuard implements CanActivate {
 
     // Fetch user with their plan
     const userWithPlan = await this.prisma.user.findUnique({
-      where: { id: user.id },
+      where: { id: user.userId },
       include: {
         plan: true,
       },
@@ -43,7 +43,7 @@ export class UsageGuard implements CanActivate {
     // 2. Check Usage Limit
     const activeQRsCount = await this.prisma.qRCode.count({
       where: {
-        userId: user.id,
+        userId: user.userId,
         deletedAt: null, // Only count non-deleted QRs
       },
     });
