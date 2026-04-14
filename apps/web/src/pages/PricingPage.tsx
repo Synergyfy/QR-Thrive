@@ -19,6 +19,7 @@ export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PublicPlan | null>(null);
+  const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
   
   const { data: userData } = useCurrentUser();
   const user = userData?.user;
@@ -32,24 +33,28 @@ export default function PricingPage() {
   const currentPlans = useMemo(() => {
     if (!plans) return [];
     
-    return plans.map((plan: PublicPlan) => ({
-      name: plan.name,
-      description: plan.description || '',
-      price: plan.pricing.monthly,
-      currency: plan.currencySymbol,
-      currencyCode: plan.currency,
-      highlight: plan.isPopular,
-      popular: plan.isPopular,
-      isFree: plan.isFree,
-      trialDays: plan.trialDays,
-      trial: plan.trialDays > 0,
-      cta: plan.isFree ? "Start Now" : (plan.trialDays > 0 ? `Start ${plan.trialDays}-Day Free Trial` : "Get Started"),
-      features: [
-        `${plan.qrCodeLimit === -1 ? 'Unlimited' : plan.qrCodeLimit} Dynamic QR Codes`,
-        ...((config?.features as string[]) || [])
-      ]
-    }));
-  }, [plans, config]);
+    return plans.map((plan: PublicPlan) => {
+      const pricePoint = plan.pricing[selectedCycle] || plan.pricing.monthly;
+
+      return {
+        name: plan.name,
+        description: plan.description || '',
+        price: pricePoint.amount,
+        currency: pricePoint.currencySymbol,
+        currencyCode: pricePoint.currency,
+        highlight: plan.isPopular,
+        popular: plan.isPopular,
+        isFree: plan.isFree,
+        trialDays: plan.trialDays,
+        trial: plan.trialDays > 0,
+        cta: plan.isFree ? "Start Now" : (plan.trialDays > 0 ? `Start ${plan.trialDays}-Day Free Trial` : "Get Started"),
+        features: [
+          `${plan.qrCodeLimit === -1 ? 'Unlimited' : plan.qrCodeLimit} Dynamic QR Codes`,
+          ...((config?.features as string[]) || [])
+        ]
+      };
+    });
+  }, [plans, config, selectedCycle]);
 
   const handleJoinPlan = async (plan: PublicPlan) => {
     if (!user) {
@@ -67,14 +72,16 @@ export default function PricingPage() {
     try {
       const data = await initializePayment.mutateAsync({
         planId: plan.id,
-        interval: 'monthly'
+        interval: selectedCycle
       });
+
+      const pricePoint = plan.pricing[selectedCycle] || plan.pricing.monthly;
 
       if (data && (data as any).access_code) {
         const handler = (window as any).PaystackPop.setup({
-          key: (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_b8e2d78705a6e87f87053e87053e87053e8705', // Use env or fallback for safety
+          key: (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_b8e2d78705a6e87f87053e87053e87053e8705', 
           email: user.email,
-          amount: Math.round(plan.pricing.monthly * 100),
+          amount: Math.round(pricePoint.amount * 100),
           access_code: (data as any).access_code,
           onClose: () => {
             toast.error('Payment window closed');
@@ -140,7 +147,7 @@ export default function PricingPage() {
             animate={{ opacity: 1, scale: 1 }}
             className="inline-block px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-blue-100 mb-6"
           >
-             {configLoading ? "..." : (plans?.[0]?.currency === 'NGN' ? "For Nigerian Businesses" : "Global Pricing")}
+             {configLoading ? "..." : (plans?.[0]?.pricing?.monthly?.currency === 'NGN' ? "Custom Pricing Detected" : "Global Pricing")}
           </motion.div>
 
           <motion.h1 
@@ -181,7 +188,27 @@ export default function PricingPage() {
                <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Locating best prices for you...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+            <>
+              {/* Billing Switcher */}
+              <div className="flex justify-center mb-16">
+                <div className="bg-white p-2 rounded-[2rem] shadow-xl shadow-blue-900/5 border border-slate-100 flex gap-2">
+                  {(['monthly', 'quarterly', 'yearly'] as const).map((cycle) => (
+                    <button
+                      key={cycle}
+                      onClick={() => setSelectedCycle(cycle)}
+                      className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                        selectedCycle === cycle
+                          ? 'bg-slate-900 text-white shadow-lg'
+                          : 'text-slate-400 hover:text-slate-600'
+                      }`}
+                    >
+                      {cycle}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
               {currentPlans.map((plan, idx) => (
                 <motion.div 
                   key={plan.name}
@@ -220,7 +247,7 @@ export default function PricingPage() {
                          {plan.price === 0 ? '0' : plan.price.toLocaleString()}
                       </span>
                       <span className={`text-sm font-bold opacity-60 ml-2 ${plan.highlight ? 'text-white' : 'text-slate-500'}`}>
-                        / month
+                        / {selectedCycle === 'yearly' ? 'year' : (selectedCycle === 'quarterly' ? 'quarter' : 'month')}
                       </span>
                     </div>
                   </div>
@@ -263,6 +290,7 @@ export default function PricingPage() {
                 </motion.div>
               ))}
             </div>
+          </>
           )}
         </section>
 

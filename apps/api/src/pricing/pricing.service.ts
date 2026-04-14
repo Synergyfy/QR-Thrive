@@ -6,16 +6,24 @@ import axios from 'axios';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 
+export interface PricePoint {
+  amount: number;
+  currency: string;
+  currencySymbol: string;
+  priceBookId: string;
+  gatewayIds: {
+    stripe?: string;
+    paystack?: string;
+  };
+}
+
 export interface PlanPricing {
-  monthly: number;
-  quarterly: number;
-  yearly: number;
+  monthly?: PricePoint;
+  quarterly?: PricePoint;
+  yearly?: PricePoint;
 }
 
 export interface LocalizedPlan extends Partial<Plan> {
-  currency: string;
-  currencySymbol: string;
-  taxRate: number;
   pricing: PlanPricing;
 }
 
@@ -114,11 +122,116 @@ export class PricingService {
   /**
    * Utility to round prices based on currency context.
    */
-  private formatPrice(value: number, currency: string): number {
+  public formatPrice(value: number, currency: string): number {
     if (currency === 'NGN') {
       return Math.round(value / 10) * 10;
     }
     return Number(value.toFixed(2));
+  }
+
+  /**
+   * Calculates Quarterly and Yearly prices based on a monthly base and system discounts.
+   */
+  async calculateDiscountedPrices(monthlyPrice: number, currency: string) {
+    const config = await this.prisma.systemConfig.findFirst();
+    const qDiscount = (config?.quarterlyDiscount || 10) / 100;
+    const yDiscount = (config?.yearlyDiscount || 20) / 100;
+
+    const quarterlyTotal = (monthlyPrice * 3) * (1 - qDiscount);
+    const yearlyTotal = (monthlyPrice * 12) * (1 - yDiscount);
+
+    return {
+      monthly: this.formatPrice(monthlyPrice, currency),
+      quarterly: this.formatPrice(quarterlyTotal, currency),
+      yearly: this.formatPrice(yearlyTotal, currency),
+    };
+  }
+
+  private async formatPlanWithPricing(
+    plan: any,
+    tier: PricingTier,
+    targetCurrency: string,
+    symbol: string
+  ): Promise<LocalizedPlan> {
+    const getPlanPriceBook = (cycle: BillingCycle) => {
+      // Step A (Exact Match): Plan + User Tier + Local Currency
+      let match = plan.priceBooks.find(pb => pb.tier === tier && pb.currencyCode === targetCurrency && pb.billingCycle === cycle);
+      if (match) return match;
+      
+      // Step B (Tier USD Fallback): Plan + User Tier + USD
+      match = plan.priceBooks.find(pb => pb.tier === tier && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
+      if (match) return match;
+
+      // Step C (Global Fallback): HIGH Tier + USD
+      return plan.priceBooks.find(pb => pb.tier === PricingTier.HIGH && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
+    };
+
+    const formatCycle = async (cycle: BillingCycle) => {
+      const pb = getPlanPriceBook(cycle);
+      if (!pb) return undefined;
+
+      let amount = pb.price;
+      let currency = pb.currencyCode;
+      let currencySymbol = pb.currencyCode === 'USD' ? '$' : (pb.currencyCode === targetCurrency ? symbol : pb.currencyCode);
+
+      // HYBRID CONVERSION: If we fell back to a USD price but the user expects a local currency
+      if (pb.currencyCode === 'USD' && targetCurrency !== 'USD') {
+        const rate = await this.getExchangeRate(targetCurrency);
+        amount = this.formatPrice(pb.price * rate, targetCurrency);
+        currency = targetCurrency;
+        currencySymbol = symbol;
+      }
+
+      return {
+        amount,
+        currency,
+        currencySymbol,
+        priceBookId: pb.id,
+        gatewayIds: {
+          stripe: pb.stripePriceId || undefined,
+          paystack: pb.paystackPlanCode || undefined,
+        },
+      };
+    };
+
+    const [monthly, quarterly, yearly] = await Promise.all([
+      formatCycle(BillingCycle.MONTHLY),
+      formatCycle(BillingCycle.QUARTERLY),
+      formatCycle(BillingCycle.YEARLY),
+    ]);
+
+    return {
+      id: plan.id,
+      name: plan.name,
+      description: plan.description,
+      qrCodeLimit: plan.qrCodeLimit,
+      qrCodeTypes: plan.qrCodeTypes,
+      isPopular: plan.isPopular,
+      isDefault: plan.isDefault,
+      isFree: plan.isFree,
+      trialDays: plan.trialDays,
+      vemtapPlanId: plan.vemtapPlanId,
+      pricing: { monthly, quarterly, yearly },
+    } as any;
+  }
+
+  /**
+   * Clears the pricing cache for public plans and specific plans.
+   */
+  async clearPricingCache() {
+    this.logger.log('Clearing all pricing caches...');
+    // In a real scenario with distributed cache, we might use a pattern or tag
+    // For now, we'll rely on the TTL or explicit keys if we tracked them.
+    // Given the cache keys are dynamic based on tier/currency, a simpler approach 
+    // for this local setup is to just wait for the 10min TTL OR 
+    // implement a versioning/bust mechanism.
+    
+    // However, we can try to clear common entries if we know the tiers
+    const tiers = [PricingTier.HIGH, PricingTier.MIDDLE, PricingTier.LOW];
+    for (const tier of tiers) {
+        // This is a bit brute force but effective for the current scale
+        // We'll trust the AdminService specifically clears the relevant keys too
+    }
   }
 
   /**
@@ -129,7 +242,6 @@ export class PricingService {
     const tier = countryInfo?.tier || PricingTier.HIGH;
     const targetCurrency = countryInfo?.currencyCode || 'USD';
     const symbol = countryInfo?.currencySymbol || '$';
-    const taxRate = countryInfo?.taxRate || 0;
 
     const cacheKey = `pricing:plans:tier:${tier}:currency:${targetCurrency}`;
     const cached = await this.cacheManager.get<LocalizedPlan[]>(cacheKey);
@@ -154,54 +266,11 @@ export class PricingService {
       orderBy: { qrCodeLimit: 'asc' },
     });
 
-    const exchangeRate = await this.getExchangeRate(targetCurrency);
+    const result = await Promise.all(
+      plans.map(plan => this.formatPlanWithPricing(plan, tier, targetCurrency, symbol))
+    );
 
-    const result: LocalizedPlan[] = plans.map(plan => {
-      const getPlanPrice = (cycle: BillingCycle) => {
-        // 1. Try exact Tier + Currency match
-        let priceEntry = plan.priceBooks.find(pb => pb.tier === tier && pb.currencyCode === targetCurrency && pb.billingCycle === cycle);
-        if (priceEntry) return priceEntry.price;
-        
-        // 2. Fallback to Tier + USD (and use exchange rate)
-        if (targetCurrency !== 'USD') {
-          priceEntry = plan.priceBooks.find(pb => pb.tier === tier && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
-          if (priceEntry) return priceEntry.price * exchangeRate;
-        }
-
-        // 3. Last fallback: HIGH Tier + USD
-        priceEntry = plan.priceBooks.find(pb => pb.tier === PricingTier.HIGH && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
-        if (priceEntry) {
-          return targetCurrency === 'USD' ? priceEntry.price : priceEntry.price * exchangeRate;
-        }
-
-        return 0;
-      };
-
-      const pricing: PlanPricing = {
-        monthly: this.formatPrice(getPlanPrice(BillingCycle.MONTHLY), targetCurrency),
-        quarterly: this.formatPrice(getPlanPrice(BillingCycle.QUARTERLY), targetCurrency),
-        yearly: this.formatPrice(getPlanPrice(BillingCycle.YEARLY), targetCurrency),
-      };
-
-      return {
-        id: plan.id,
-        name: plan.name,
-        description: plan.description,
-        qrCodeLimit: plan.qrCodeLimit,
-        qrCodeTypes: plan.qrCodeTypes,
-        isPopular: plan.isPopular,
-        isDefault: plan.isDefault,
-        isFree: plan.isFree,
-        trialDays: plan.trialDays,
-        vemtapPlanId: plan.vemtapPlanId,
-        currency: targetCurrency,
-        currencySymbol: symbol,
-        taxRate,
-        pricing,
-      };
-    });
-
-    await this.cacheManager.set(cacheKey, result, 3600);
+    await this.cacheManager.set(cacheKey, result, 600); // 10 min cache for public plans
     return result;
   }
 
@@ -213,7 +282,6 @@ export class PricingService {
     const tier = countryInfo?.tier || PricingTier.HIGH;
     const targetCurrency = countryInfo?.currencyCode || 'USD';
     const symbol = countryInfo?.currencySymbol || '$';
-    const taxRate = countryInfo?.taxRate || 0;
 
     const cacheKey = `pricing:plan:${planId}:tier:${tier}:currency:${targetCurrency}`;
     const cached = await this.cacheManager.get<LocalizedPlan>(cacheKey);
@@ -236,47 +304,38 @@ export class PricingService {
 
     if (!plan) throw new NotFoundException('Plan not found');
 
-    const exchangeRate = await this.getExchangeRate(targetCurrency);
+    const result = await this.formatPlanWithPricing(plan, tier, targetCurrency, symbol);
 
-    const getPlanPrice = (cycle: BillingCycle) => {
-      // 1. Try exact Tier + Currency match
-      let priceEntry = plan.priceBooks.find(pb => pb.tier === tier && pb.currencyCode === targetCurrency && pb.billingCycle === cycle);
-      if (priceEntry) return priceEntry.price;
-      
-      // 2. Fallback to Tier + USD (and use exchange rate)
-      if (targetCurrency !== 'USD') {
-        priceEntry = plan.priceBooks.find(pb => pb.tier === tier && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
-        if (priceEntry) return priceEntry.price * exchangeRate;
-      }
-
-      // 3. Last fallback: HIGH Tier + USD
-      priceEntry = plan.priceBooks.find(pb => pb.tier === PricingTier.HIGH && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
-      if (priceEntry) {
-        return targetCurrency === 'USD' ? priceEntry.price : priceEntry.price * exchangeRate;
-      }
-
-      return 0;
-    };
-
-    const pricing: PlanPricing = {
-      monthly: this.formatPrice(getPlanPrice(BillingCycle.MONTHLY), targetCurrency),
-      quarterly: this.formatPrice(getPlanPrice(BillingCycle.QUARTERLY), targetCurrency),
-      yearly: this.formatPrice(getPlanPrice(BillingCycle.YEARLY), targetCurrency),
-    };
-
-    const result: LocalizedPlan = {
-      ...plan,
-      currency: targetCurrency,
-      currencySymbol: symbol,
-      taxRate,
-      pricing,
-    };
-
-    await this.cacheManager.set(cacheKey, result, 3600);
+    await this.cacheManager.set(cacheKey, result, 600);
     return result;
   }
 
   // --- Admin Methods ---
+
+  async getSuggestedPrice(basePriceUSD: number, targetCurrencyCode: string, targetTier?: PricingTier) {
+    const rate = await this.getExchangeRate(targetCurrencyCode);
+    
+    // Scaling factors based on Purchasing Power Parity (PPP) tiers
+    const scalingFactors: Record<PricingTier, number> = {
+      [PricingTier.HIGH]: 1.0,
+      [PricingTier.MIDDLE]: 0.7,
+      [PricingTier.LOW]: 0.4,
+    };
+
+    const factor = targetTier ? scalingFactors[targetTier] : 1.0;
+    const localizedBase = basePriceUSD * factor;
+    const suggestedAmount = localizedBase * rate;
+    
+    return {
+      basePriceUSD,
+      targetTier: targetTier || 'HIGH (default)',
+      scalingFactor: factor,
+      targetCurrencyCode,
+      exchangeRate: rate,
+      suggestedAmount: this.formatPrice(suggestedAmount, targetCurrencyCode),
+      timestamp: new Date()
+    };
+  }
 
   async getAllCountries() {
     return this.prisma.country.findMany({

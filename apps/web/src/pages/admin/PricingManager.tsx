@@ -492,7 +492,7 @@ export default function PricingManager() {
                           </div>
                        </div>
                        <p className="text-[9px] font-medium text-blue-400 mt-4 pl-2 leading-relaxed">
-                         Enter the monthly price for each tier. The system will automatically calculate local equivalents (like Naira or Euro) based on current exchange rates.
+                         Set starting monthly prices for each tier. The system uses these as static base prices. You can configure precise regional equivalents (like Naira or Euro) manually after creation to ensure stable recurring billing.
                        </p>
                     </div>
                   </div>

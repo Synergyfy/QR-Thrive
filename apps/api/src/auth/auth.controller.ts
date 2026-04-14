@@ -1,5 +1,6 @@
 import { Controller, Post, Body, Res, Req, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { PricingService } from '../pricing/pricing.service';
 import {
   SignupDto,
   LoginDto,
@@ -24,7 +25,10 @@ interface RequestWithUser extends Request {
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly pricingService: PricingService,
+  ) {}
 
   @Public()
   @Post('signup')
@@ -37,8 +41,10 @@ export class AuthController {
   async signup(
     @Body() signupDto: SignupDto,
     @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
   ) {
-    return this.authService.signup(signupDto, res);
+    const country = (req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || this.pricingService.getCountryCodeByIp(req.ip || '')) as string;
+    return this.authService.signup(signupDto, res, country);
   }
 
   @Public()
@@ -86,8 +92,10 @@ export class AuthController {
   async googleLogin(
     @Body() googleLoginDto: GoogleLoginDto,
     @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
   ) {
-    return this.authService.googleLogin(googleLoginDto, res);
+    const country = (req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || this.pricingService.getCountryCodeByIp(req.ip || '')) as string;
+    return this.authService.googleLogin(googleLoginDto, res, country);
   }
 
   @Public()

@@ -26,6 +26,16 @@ export class CreatePriceBookDto {
   status?: PriceStatus;
 
   @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  stripePriceId?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  paystackPlanCode?: string;
+
+  @ApiProperty({ required: false })
   @IsDateString()
   @IsOptional()
   activeFrom?: string;

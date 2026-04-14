@@ -160,3 +160,10 @@ export const useUpdatePricingConfig = () => {
     },
   });
 };
+
+export const useSuggestPrice = () => {
+  return useMutation({
+    mutationFn: (params: { basePriceUSD: number; targetCurrencyCode: string }) => 
+      adminApi.suggestPrice(params.basePriceUSD, params.targetCurrencyCode),
+  });
+};

@@ -18,7 +18,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tooltip } from '../../../components/ui/Tooltip';
 import type { Plan, PricingTier, PricingConfig, PriceBook, BillingCycle, PriceStatus } from '../../../types/api';
-import { usePlanPrices, useCreatePriceBook, useUpdatePriceBook } from '../../../hooks/useAdmin';
+import { usePlanPrices, useCreatePriceBook, useUpdatePriceBook, useSuggestPrice } from '../../../hooks/useAdmin';
 import toast from 'react-hot-toast';
 
 interface PlanEconomicsProps {
@@ -58,6 +58,7 @@ export default function PlanEconomics({
   const { data: prices, isLoading: pricesLoading } = usePlanPrices(selectedPlanId);
   const createPrice = useCreatePriceBook();
   const updatePrice = useUpdatePriceBook();
+  const suggestPrice = useSuggestPrice();
 
   useEffect(() => {
     setLocalQuarterly(pricingConfig.quarterlyDiscount);
@@ -83,9 +84,16 @@ export default function PlanEconomics({
     e.preventDefault();
     if (!editingPrice || !selectedPlanId) return;
 
+    // Ensure dates are valid ISO strings for Prisma
+    const dataToSave = {
+      ...editingPrice,
+      activeFrom: editingPrice.activeFrom ? new Date(editingPrice.activeFrom).toISOString() : null,
+      activeTo: editingPrice.activeTo ? new Date(editingPrice.activeTo).toISOString() : null,
+    };
+
     const promise = editingPrice.id 
-      ? updatePrice.mutateAsync({ id: editingPrice.id, planId: selectedPlanId, data: editingPrice })
-      : createPrice.mutateAsync({ planId: selectedPlanId, data: editingPrice });
+      ? updatePrice.mutateAsync({ id: editingPrice.id, planId: selectedPlanId, data: dataToSave as any })
+      : createPrice.mutateAsync({ planId: selectedPlanId, data: dataToSave as any });
 
     toast.promise(promise, {
       loading: 'Updating price matrix...',
@@ -366,7 +374,9 @@ export default function PlanEconomics({
                             currencyCode: 'USD', 
                             billingCycle: 'MONTHLY', 
                             price: 0, 
-                            status: 'DRAFT' 
+                            status: 'DRAFT',
+                            stripePriceId: '',
+                            paystackPlanCode: ''
                           });
                           setIsPriceModalOpen(true);
                         }}
@@ -499,7 +509,9 @@ export default function PlanEconomics({
                <form onSubmit={handleSavePrice} className="space-y-8">
                   <div className="grid grid-cols-2 gap-6">
                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Target Tier</label>
+                        <Tooltip content="Which economic grouping should this price apply to?">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 cursor-help">Target Tier</label>
+                        </Tooltip>
                         <select 
                           value={editingPrice.tier}
                           onChange={(e) => setEditingPrice({ ...editingPrice, tier: e.target.value as PricingTier })}
@@ -509,7 +521,9 @@ export default function PlanEconomics({
                         </select>
                      </div>
                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Billing Cycle</label>
+                        <Tooltip content="How often should the user be billed?">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 cursor-help">Billing Cycle</label>
+                        </Tooltip>
                         <select 
                           value={editingPrice.billingCycle}
                           onChange={(e) => setEditingPrice({ ...editingPrice, billingCycle: e.target.value as BillingCycle })}
@@ -525,7 +539,9 @@ export default function PlanEconomics({
 
                   <div className="grid grid-cols-2 gap-6">
                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Currency Code</label>
+                        <Tooltip content="The 3-letter currency code (e.g. USD, EUR, NGN).">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 cursor-help">Currency Code</label>
+                        </Tooltip>
                         <input 
                           type="text"
                           value={editingPrice.currencyCode}
@@ -535,7 +551,9 @@ export default function PlanEconomics({
                         />
                      </div>
                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Price Amount</label>
+                        <Tooltip content="The base price in the target currency. Use the helper for regional suggestions.">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 cursor-help">Price Amount</label>
+                        </Tooltip>
                         <div className="relative">
                            <input 
                              type="number"
@@ -544,13 +562,69 @@ export default function PlanEconomics({
                              onChange={(e) => setEditingPrice({ ...editingPrice, price: Number(e.target.value) })}
                              className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-black text-slate-900 outline-none"
                            />
+                           
+                           {editingPrice.currencyCode && editingPrice.currencyCode !== 'USD' && (
+                             <div className="mt-3 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-center justify-between">
+                                <div className="flex flex-col">
+                                   <span className="text-[8px] font-black text-blue-600 uppercase tracking-widest">PPP Helper (Live Rate)</span>
+                                   <span className="text-[10px] text-blue-400 font-medium">Use 20.00 USD baseline</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  disabled={suggestPrice.isPending}
+                                  onClick={async () => {
+                                    const result = await suggestPrice.mutateAsync({ 
+                                      basePriceUSD: 20, 
+                                      targetCurrencyCode: editingPrice.currencyCode || '' 
+                                    });
+                                    if (result.suggestedAmount) {
+                                      const amountStr = String(result.suggestedAmount);
+                                      setEditingPrice({ ...editingPrice, price: parseFloat(amountStr.replace(/[^0-9.]/g, '')) });
+                                      toast.success(`Suggested: ${result.suggestedAmount}`);
+                                    }
+                                  }}
+                                  className="px-4 py-2 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20"
+                                >
+                                  {suggestPrice.isPending ? 'Calculating...' : 'Get Suggestion'}
+                                </button>
+                             </div>
+                           )}
                         </div>
                      </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-6">
                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Starts At (Optional)</label>
+                        <Tooltip content="The 'price_...' ID from your Stripe dashboard for this exact amount.">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 cursor-help">Stripe Price ID (Optional)</label>
+                        </Tooltip>
+                        <input 
+                          type="text"
+                          value={editingPrice.stripePriceId || ''}
+                          onChange={(e) => setEditingPrice({ ...editingPrice, stripePriceId: e.target.value })}
+                          placeholder="price_..."
+                          className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-black text-slate-900 outline-none"
+                        />
+                     </div>
+                     <div className="space-y-2">
+                        <Tooltip content="The 'PLN_...' code from your Paystack dashboard for this exact amount.">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 cursor-help">Paystack Plan Code (Optional)</label>
+                        </Tooltip>
+                        <input 
+                          type="text"
+                          value={editingPrice.paystackPlanCode || ''}
+                          onChange={(e) => setEditingPrice({ ...editingPrice, paystackPlanCode: e.target.value })}
+                          placeholder="PLN_..."
+                          className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-black text-slate-900 outline-none"
+                        />
+                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                     <div className="space-y-2">
+                        <Tooltip content="Optional: When should this price become effective?">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 cursor-help">Starts At (Optional)</label>
+                        </Tooltip>
                         <input 
                           type="datetime-local"
                           value={editingPrice.activeFrom ? new Date(editingPrice.activeFrom).toISOString().slice(0, 16) : ''}
@@ -559,7 +633,9 @@ export default function PlanEconomics({
                         />
                      </div>
                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Status</label>
+                        <Tooltip content="Control visibility. DRAFT is hidden, ACTIVE is live, ARCHIVED is for history.">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 cursor-help">Status</label>
+                        </Tooltip>
                         <select 
                           value={editingPrice.status}
                           onChange={(e) => setEditingPrice({ ...editingPrice, status: e.target.value as PriceStatus })}

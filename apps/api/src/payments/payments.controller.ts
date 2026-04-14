@@ -60,8 +60,12 @@ export class PaymentsController {
     const userId = req.user.userId;
     const { planId, interval } = body;
 
-    // Resolve country from headers or IP
-    const country = (req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || this.pricingService.getCountryCodeByIp(ip)) as string;
+    // 5. Initialize transaction
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new BadRequestException('User not found');
+
+    // Resolve country - Prioritize locked account country over current IP
+    const country = (user.countryCode || req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || this.pricingService.getCountryCodeByIp(ip)) as string;
 
     // 1. Fetch Plan with localized pricing
     const plan = await this.pricingService.getPlanWithPricing(planId, country);
@@ -75,15 +79,14 @@ export class PaymentsController {
       throw new BadRequestException('Cannot pay for a free/default plan.');
     }
 
-    // 3. Get the correct price for the interval
-    const amount = (plan.pricing as any)[interval];
-    if (!amount || amount <= 0) {
+    // 3. Get the correct price and plan code for the interval
+    const pricing = (plan.pricing as any)[interval];
+    const amount = pricing?.amount;
+    const paystackPlanCode = pricing?.gatewayIds?.paystack;
+
+    if (amount === undefined || amount < 0) {
       throw new BadRequestException('Invalid price for the selected interval.');
     }
-
-    // 5. Initialize transaction
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new BadRequestException('User not found');
 
     // Get tier name for metadata
     const countryInfo = await this.pricingService.getCountryInfo(country);
@@ -91,7 +94,7 @@ export class PaymentsController {
     return this.paystackService.initializeTransaction(
       user.email,
       amount,
-      undefined, // Paystack plan code - can be added later if needed
+      paystackPlanCode, 
       { 
         userId, 
         planId, 

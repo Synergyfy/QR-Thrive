@@ -9,8 +9,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { PricingService } from './pricing.service';
+import { Query } from '@nestjs/common';
+
 import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '@prisma/client';
+import { Role, PricingTier } from '@prisma/client';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import {
   ApiTags,
@@ -32,6 +34,17 @@ import {
 @ApiBearerAuth('JWT-auth')
 export class PricingController {
   constructor(private readonly pricingService: PricingService) {}
+  
+  @Get('suggest')
+  @ApiOperation({ summary: 'Suggest a localized price based on economic tier and live FX rates (Admin only)' })
+  async suggestPrice(
+    @Query('basePriceUSD') basePriceUSD: string,
+    @Query('targetCurrencyCode') targetCurrencyCode: string,
+    @Query('tier') tier?: PricingTier
+  ) {
+    return this.pricingService.getSuggestedPrice(Number(basePriceUSD), targetCurrencyCode, tier);
+  }
+
 
   @Get('config')
   @ApiOperation({ summary: 'Get pricing discounts (quarterly, yearly) (Admin only)' })

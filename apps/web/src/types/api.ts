@@ -35,6 +35,8 @@ export interface PriceBook {
   status: PriceStatus;
   activeFrom?: string;
   activeTo?: string;
+  stripePriceId?: string;
+  paystackPlanCode?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -62,6 +64,23 @@ export interface Plan {
   priceBooks: PriceBook[];
 }
 
+export interface PricePoint {
+  amount: number;
+  currency: string;
+  currencySymbol: string;
+  priceBookId: string;
+  gatewayIds: {
+    stripe?: string;
+    paystack?: string;
+  };
+}
+
+export interface PlanPricing {
+  monthly?: PricePoint;
+  quarterly?: PricePoint;
+  yearly?: PricePoint;
+}
+
 export interface PublicPlan {
   id: string;
   name: string;
@@ -72,13 +91,7 @@ export interface PublicPlan {
   isDefault: boolean;
   isFree: boolean;
   trialDays: number;
-  currency: string;
-  currencySymbol: string;
-  pricing: {
-    monthly: number;
-    quarterly: number;
-    yearly: number;
-  };
+  pricing: PlanPricing;
 }
 
 export interface PricingConfig {

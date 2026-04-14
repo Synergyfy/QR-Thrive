@@ -1,10 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePlanDto, UpdatePlanDto } from '../pricing/pricing.dto';
+import { PricingTier, BillingCycle, PriceStatus } from '@prisma/client';
+import { PricingService } from './pricing.service';
+
 
 @Injectable()
 export class PlansService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private pricingService: PricingService
+  ) {}
 
   private async ensureSingleDefault(isDefault: boolean) {
     if (isDefault) {
@@ -41,18 +47,41 @@ export class PlansService {
     
     const { highTierPrice, middleTierPrice, lowTierPrice, ...planData } = data;
 
-    const priceBooksToCreate = [];
-    if (highTierPrice !== undefined) {
-      priceBooksToCreate.push({ tier: 'HIGH' as const, currencyCode: 'USD', billingCycle: 'MONTHLY' as const, price: highTierPrice, status: 'ACTIVE' as const });
-    }
-    if (middleTierPrice !== undefined) {
-      priceBooksToCreate.push({ tier: 'MIDDLE' as const, currencyCode: 'USD', billingCycle: 'MONTHLY' as const, price: middleTierPrice, status: 'ACTIVE' as const });
-    }
-    if (lowTierPrice !== undefined) {
-      priceBooksToCreate.push({ tier: 'LOW' as const, currencyCode: 'USD', billingCycle: 'MONTHLY' as const, price: lowTierPrice, status: 'ACTIVE' as const });
-    }
+    const priceBooksToCreate: any[] = [];
 
-    return this.prisma.plan.create({
+    const addTierPrices = async (tier: PricingTier, monthlyPrice: number) => {
+      const prices = await this.pricingService.calculateDiscountedPrices(monthlyPrice, 'USD');
+      
+      priceBooksToCreate.push({ 
+        tier, 
+        currencyCode: 'USD', 
+        billingCycle: BillingCycle.MONTHLY, 
+        price: prices.monthly, 
+        status: PriceStatus.ACTIVE 
+      });
+      
+      priceBooksToCreate.push({ 
+        tier, 
+        currencyCode: 'USD', 
+        billingCycle: BillingCycle.QUARTERLY, 
+        price: prices.quarterly, 
+        status: PriceStatus.ACTIVE 
+      });
+      
+      priceBooksToCreate.push({ 
+        tier, 
+        currencyCode: 'USD', 
+        billingCycle: BillingCycle.YEARLY, 
+        price: prices.yearly, 
+        status: PriceStatus.ACTIVE 
+      });
+    };
+
+    if (highTierPrice !== undefined) await addTierPrices(PricingTier.HIGH, highTierPrice);
+    if (middleTierPrice !== undefined) await addTierPrices(PricingTier.MIDDLE, middleTierPrice);
+    if (lowTierPrice !== undefined) await addTierPrices(PricingTier.LOW, lowTierPrice);
+
+    const plan = await this.prisma.plan.create({
       data: {
         ...planData,
         isActive: true,
@@ -64,6 +93,9 @@ export class PlansService {
         priceBooks: true
       }
     });
+
+    // Invalidate initial cache if any (though usually not needed for brand new plan)
+    return plan;
   }
 
   async update(id: string, data: UpdatePlanDto) {
@@ -73,13 +105,17 @@ export class PlansService {
     // (though usually handled via PriceBook endpoints now)
     const { highTierPrice, middleTierPrice, lowTierPrice, ...planData } = data as any;
     
-    return this.prisma.plan.update({
+    const updated = await this.prisma.plan.update({
       where: { id },
       data: planData,
       include: {
         priceBooks: true
       }
     });
+
+    await this.pricingService.clearPricingCache();
+    
+    return updated;
   }
 
   async delete(id: string) {
