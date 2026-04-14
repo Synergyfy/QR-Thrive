@@ -154,22 +154,27 @@ export class PricingService {
       orderBy: { qrCodeLimit: 'asc' },
     });
 
+    const exchangeRate = await this.getExchangeRate(targetCurrency);
+
     const result: LocalizedPlan[] = plans.map(plan => {
       const getPlanPrice = (cycle: BillingCycle) => {
         // 1. Try exact Tier + Currency match
         let priceEntry = plan.priceBooks.find(pb => pb.tier === tier && pb.currencyCode === targetCurrency && pb.billingCycle === cycle);
+        if (priceEntry) return priceEntry.price;
         
         // 2. Fallback to Tier + USD (and use exchange rate)
-        if (!priceEntry && targetCurrency !== 'USD') {
+        if (targetCurrency !== 'USD') {
           priceEntry = plan.priceBooks.find(pb => pb.tier === tier && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
+          if (priceEntry) return priceEntry.price * exchangeRate;
         }
 
         // 3. Last fallback: HIGH Tier + USD
-        if (!priceEntry) {
-          priceEntry = plan.priceBooks.find(pb => pb.tier === PricingTier.HIGH && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
+        priceEntry = plan.priceBooks.find(pb => pb.tier === PricingTier.HIGH && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
+        if (priceEntry) {
+          return targetCurrency === 'USD' ? priceEntry.price : priceEntry.price * exchangeRate;
         }
 
-        return priceEntry ? priceEntry.price : 0;
+        return 0;
       };
 
       const pricing: PlanPricing = {
@@ -231,15 +236,26 @@ export class PricingService {
 
     if (!plan) throw new NotFoundException('Plan not found');
 
+    const exchangeRate = await this.getExchangeRate(targetCurrency);
+
     const getPlanPrice = (cycle: BillingCycle) => {
+      // 1. Try exact Tier + Currency match
       let priceEntry = plan.priceBooks.find(pb => pb.tier === tier && pb.currencyCode === targetCurrency && pb.billingCycle === cycle);
-      if (!priceEntry && targetCurrency !== 'USD') {
+      if (priceEntry) return priceEntry.price;
+      
+      // 2. Fallback to Tier + USD (and use exchange rate)
+      if (targetCurrency !== 'USD') {
         priceEntry = plan.priceBooks.find(pb => pb.tier === tier && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
+        if (priceEntry) return priceEntry.price * exchangeRate;
       }
-      if (!priceEntry) {
-        priceEntry = plan.priceBooks.find(pb => pb.tier === PricingTier.HIGH && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
+
+      // 3. Last fallback: HIGH Tier + USD
+      priceEntry = plan.priceBooks.find(pb => pb.tier === PricingTier.HIGH && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
+      if (priceEntry) {
+        return targetCurrency === 'USD' ? priceEntry.price : priceEntry.price * exchangeRate;
       }
-      return priceEntry ? priceEntry.price : 0;
+
+      return 0;
     };
 
     const pricing: PlanPricing = {

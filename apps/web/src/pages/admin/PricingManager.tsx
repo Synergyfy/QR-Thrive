@@ -427,6 +427,77 @@ export default function PricingManager() {
                   </div>
                 </div>
 
+                {!editingPlan.isFree && !editingPlan.id && (
+                  <div>
+                    <Tooltip content="Set starting prices for the three economic groups. You can add more regional prices after creation.">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pl-2 cursor-help">Quick Setup: Tier Pricing (USD)</label>
+                    </Tooltip>
+                    <div className="bg-blue-50/50 p-6 rounded-[3rem] border border-blue-100/50">
+                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="bg-white rounded-2xl p-4 shadow-sm border border-blue-100/50">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                              <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">High Income</span>
+                            </div>
+                            <div className="relative">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-black text-[10px]">$</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={(editingPlan as any).highTierPrice || ''}
+                                onChange={(e) => setEditingPlan({ ...editingPlan, highTierPrice: Number(e.target.value) } as any)}
+                                className="w-full bg-slate-50 border-none rounded-xl py-2.5 pl-5 pr-2 text-xs font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="bg-white rounded-2xl p-4 shadow-sm border border-blue-100/50">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-2 h-2 rounded-full bg-amber-500" />
+                              <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Middle Income</span>
+                            </div>
+                            <div className="relative">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-black text-[10px]">$</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={(editingPlan as any).middleTierPrice || ''}
+                                onChange={(e) => setEditingPlan({ ...editingPlan, middleTierPrice: Number(e.target.value) } as any)}
+                                className="w-full bg-slate-50 border-none rounded-xl py-2.5 pl-5 pr-2 text-xs font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="bg-white rounded-2xl p-4 shadow-sm border border-blue-100/50">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-2 h-2 rounded-full bg-rose-500" />
+                              <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Low Income</span>
+                            </div>
+                            <div className="relative">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-black text-[10px]">$</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={(editingPlan as any).lowTierPrice || ''}
+                                onChange={(e) => setEditingPlan({ ...editingPlan, lowTierPrice: Number(e.target.value) } as any)}
+                                className="w-full bg-slate-50 border-none rounded-2xl py-2.5 pl-5 pr-2 text-xs font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+                       </div>
+                       <p className="text-[9px] font-medium text-blue-400 mt-4 pl-2 leading-relaxed">
+                         Enter the monthly price for each tier. The system will automatically calculate local equivalents (like Naira or Euro) based on current exchange rates.
+                       </p>
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <Tooltip content="Toggle specific QR features available for this tier.">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pl-2 cursor-help">Capability Matrix</label>

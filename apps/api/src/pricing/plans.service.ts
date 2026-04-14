@@ -6,12 +6,6 @@ import { CreatePlanDto, UpdatePlanDto } from '../pricing/pricing.dto';
 export class PlansService {
   constructor(private prisma: PrismaService) {}
 
-  private calculatePrices(monthlyPrice: number, quarterlyDiscount: number, yearlyDiscount: number) {
-    const quarterly = Number(((monthlyPrice * 3) * (1 - quarterlyDiscount / 100)).toFixed(2));
-    const yearly = Number(((monthlyPrice * 12) * (1 - yearlyDiscount / 100)).toFixed(2));
-    return { quarterly, yearly };
-  }
-
   private async ensureSingleDefault(isDefault: boolean) {
     if (isDefault) {
       await this.prisma.plan.updateMany({
@@ -21,40 +15,12 @@ export class PlansService {
     }
   }
 
-  private async processPlanPrices(data: any) {
-    const config = await this.prisma.systemConfig.findFirst();
-    const quarterlyDiscount = config?.quarterlyDiscount || 0;
-    const yearlyDiscount = config?.yearlyDiscount || 0;
-
-    const result = { ...data };
-
-    // If it's a free plan, ensure all monthly prices are 0
-    if (data.isFree) {
-      result.highIncomeMonthlyUSD = 0;
-      result.middleIncomeMonthlyUSD = 0;
-      result.lowIncomeMonthlyUSD = 0;
-      result.trialDays = 0; // Free plans don't need trials
-    }
-
-    const tiers = [
-      { prefix: 'highIncome', field: 'highIncomeMonthlyUSD' },
-      { prefix: 'middleIncome', field: 'middleIncomeMonthlyUSD' },
-      { prefix: 'lowIncome', field: 'lowIncomeMonthlyUSD' },
-    ];
-
-    for (const tier of tiers) {
-      const monthly = result[tier.field] || 0;
-      const { quarterly, yearly } = this.calculatePrices(monthly, quarterlyDiscount, yearlyDiscount);
-      result[`${tier.prefix}QuarterlyUSD`] = quarterly;
-      result[`${tier.prefix}YearlyUSD`] = yearly;
-    }
-
-    return result;
-  }
-
   async findAll() {
     return this.prisma.plan.findMany({
       where: { deletedAt: null },
+      include: {
+        priceBooks: true
+      },
       orderBy: { qrCodeLimit: 'asc' },
     });
   }
@@ -62,6 +28,9 @@ export class PlansService {
   async findOne(id: string) {
     const plan = await this.prisma.plan.findUnique({
       where: { id },
+      include: {
+        priceBooks: true
+      }
     });
     if (!plan || plan.deletedAt) throw new NotFoundException('Plan not found');
     return plan;
@@ -69,21 +38,47 @@ export class PlansService {
 
   async create(data: CreatePlanDto) {
     if (data.isDefault) await this.ensureSingleDefault(true);
-    const processedData = await this.processPlanPrices(data);
+    
+    const { highTierPrice, middleTierPrice, lowTierPrice, ...planData } = data;
+
+    const priceBooksToCreate = [];
+    if (highTierPrice !== undefined) {
+      priceBooksToCreate.push({ tier: 'HIGH' as const, currencyCode: 'USD', billingCycle: 'MONTHLY' as const, price: highTierPrice, status: 'ACTIVE' as const });
+    }
+    if (middleTierPrice !== undefined) {
+      priceBooksToCreate.push({ tier: 'MIDDLE' as const, currencyCode: 'USD', billingCycle: 'MONTHLY' as const, price: middleTierPrice, status: 'ACTIVE' as const });
+    }
+    if (lowTierPrice !== undefined) {
+      priceBooksToCreate.push({ tier: 'LOW' as const, currencyCode: 'USD', billingCycle: 'MONTHLY' as const, price: lowTierPrice, status: 'ACTIVE' as const });
+    }
+
     return this.prisma.plan.create({
       data: {
-        ...processedData,
+        ...planData,
         isActive: true,
+        priceBooks: priceBooksToCreate.length > 0 ? {
+          create: priceBooksToCreate
+        } : undefined,
       },
+      include: {
+        priceBooks: true
+      }
     });
   }
 
   async update(id: string, data: UpdatePlanDto) {
     if (data.isDefault) await this.ensureSingleDefault(true);
-    const processedData = await this.processPlanPrices(data);
+    
+    // Destructure out tier prices just in case they are sent during an update 
+    // (though usually handled via PriceBook endpoints now)
+    const { highTierPrice, middleTierPrice, lowTierPrice, ...planData } = data as any;
+    
     return this.prisma.plan.update({
       where: { id },
-      data: processedData,
+      data: planData,
+      include: {
+        priceBooks: true
+      }
     });
   }
 
