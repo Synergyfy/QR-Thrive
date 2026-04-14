@@ -17,7 +17,7 @@ import {
   useAdminPlans, 
   useUpsertPlan, 
   useAdminCountries, 
-  useUpsertCountry, 
+  useUpdateCountry, 
   useAdminPricingConfig, 
   useUpdatePricingConfig,
   useSystemConfig,
@@ -64,9 +64,6 @@ export default function PricingManager() {
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<Partial<Plan> | null>(null);
   const [planToDelete, setPlanToDelete] = useState<Plan | null>(null);
-  const [highIncomePrice, setHighIncomePrice] = useState(0);
-  const [middleIncomePrice, setMiddleIncomePrice] = useState(0);
-  const [lowIncomePrice, setLowIncomePrice] = useState(0);
 
   // Data Hooks
   const { data: plans, isLoading: plansLoading } = useAdminPlans();
@@ -77,14 +74,14 @@ export default function PricingManager() {
   // Mutation Hooks
   const upsertPlan = useUpsertPlan();
   const deletePlan = useDeletePlan();
-  const upsertCountry = useUpsertCountry();
+  const upsertCountry = useUpdateCountry();
   const updatePricingConfig = useUpdatePricingConfig();
   const updateCMSConfig = useUpdateSystemConfig();
 
   const tabs = [
-    { id: 'Economics', icon: CreditCard, label: 'Plans & Economics' },
-    { id: 'Regional', icon: Globe2, label: 'Geography' },
-    { id: 'CMS', icon: Layout, label: 'Content' },
+    { id: 'Economics', icon: CreditCard, label: 'Plans & Prices' },
+    { id: 'Regional', icon: Globe2, label: 'Geo-Logic' },
+    { id: 'CMS', icon: Layout, label: 'Marketing' },
   ];
 
   const handleSavePlan = async (e: React.FormEvent) => {
@@ -103,9 +100,9 @@ export default function PricingManager() {
     });
 
     toast.promise(promise, {
-      loading: 'Saving plan asset...',
-      success: 'Plan configuration updated successfully!',
-      error: 'Failed to save plan. Please try again.'
+      loading: 'Updating registry...',
+      success: 'Plan configuration saved!',
+      error: 'Failed to save plan.'
     });
   };
 
@@ -232,9 +229,6 @@ export default function PricingManager() {
                                isFree: plan.isFree || false,
                                trialDays: plan.trialDays || 0
                              })));
-                             setHighIncomePrice(plan.highIncomeMonthlyUSD || 0);
-                             setMiddleIncomePrice(plan.middleIncomeMonthlyUSD || 0);
-                             setLowIncomePrice(plan.lowIncomeMonthlyUSD || 0);
                              setIsPlanModalOpen(true);
                           }}
                           onDeletePlan={setPlanToDelete}
@@ -247,7 +241,7 @@ export default function PricingManager() {
                             });
                             toast.promise(promise, {
                               loading: 'Propagating logic updates...',
-                              success: 'Global economics updated!',
+                              success: 'Global rules updated!',
                               error: 'Failed to update protocols.'
                             });
                           }}
@@ -260,17 +254,10 @@ export default function PricingManager() {
                                isActive: true,
                                isFree: false,
                                isDefault: false,
-                               trialDays: 0,
-                               highIncomeMonthlyUSD: 0,
-                               middleIncomeMonthlyUSD: 0,
-                               lowIncomeMonthlyUSD: 0
+                               trialDays: 0
                              });
-                             setHighIncomePrice(0);
-                             setMiddleIncomePrice(0);
-                             setLowIncomePrice(0);
                              setIsPlanModalOpen(true);
                           }}
-                          onUpdatePrice={() => {}}
                        />
                    )}
 
@@ -420,7 +407,7 @@ export default function PricingManager() {
                               <Tooltip content="Mark this plan as completely free (no pricing).">
                                  <p className="text-[10px] font-black uppercase text-slate-900 cursor-help">Is Free Plan</p>
                               </Tooltip>
-                              <p className="text-[9px] text-slate-400 font-medium tracking-tight">Overrides all pricing</p>
+                              <p className="text-[9px] text-slate-400 font-medium tracking-tight">Overrides all price books</p>
                            </div>
                            <input 
                              type="checkbox" 
@@ -430,16 +417,8 @@ export default function PricingManager() {
                                 setEditingPlan({ 
                                     ...editingPlan, 
                                     isFree,
-                                    trialDays: isFree ? 0 : editingPlan.trialDays,
-                                    highIncomeMonthlyUSD: isFree ? 0 : editingPlan.highIncomeMonthlyUSD,
-                                    middleIncomeMonthlyUSD: isFree ? 0 : editingPlan.middleIncomeMonthlyUSD,
-                                    lowIncomeMonthlyUSD: isFree ? 0 : editingPlan.lowIncomeMonthlyUSD,
+                                    trialDays: isFree ? 0 : editingPlan.trialDays
                                 });
-                                if (isFree) {
-                                    setHighIncomePrice(0);
-                                    setMiddleIncomePrice(0);
-                                    setLowIncomePrice(0);
-                                }
                              }}
                              className="w-5 h-5 rounded-lg text-blue-600 focus:ring-blue-500" 
                            />
@@ -448,96 +427,80 @@ export default function PricingManager() {
                   </div>
                 </div>
 
-                <div>
-                  <Tooltip content="Monthly rates per economic tier. Quarterly and Yearly are auto-calculated.">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pl-2 cursor-help">Tier Pricing (Monthly)</label>
-                  </Tooltip>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-6 rounded-[2.5rem]">
-                    <div className="bg-white rounded-2xl p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">High Income</span>
-                      </div>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xs">$</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          disabled={editingPlan.isFree}
-                          value={highIncomePrice}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            setHighIncomePrice(val);
-                            setEditingPlan(prev => prev ? { ...prev, highIncomeMonthlyUSD: val } : prev);
-                          }}
-                          className={`w-full border-none rounded-xl py-3 pl-7 pr-12 text-sm font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all ${
-                            editingPlan.isFree ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-slate-50 text-slate-900'
-                          }`}
-                          placeholder="0.00"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] font-black uppercase">/ Monthly</span>
-                      </div>
-                    </div>
-                    <div className="bg-white rounded-2xl p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-3 h-3 rounded-full bg-amber-500" />
-                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Middle Income</span>
-                      </div>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xs">$</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          disabled={editingPlan.isFree}
-                          value={middleIncomePrice}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            setMiddleIncomePrice(val);
-                            setEditingPlan(prev => prev ? { ...prev, middleIncomeMonthlyUSD: val } : prev);
-                          }}
-                          className={`w-full border-none rounded-xl py-3 pl-7 pr-12 text-sm font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all ${
-                            editingPlan.isFree ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-slate-50 text-slate-900'
-                          }`}
-                          placeholder="0.00"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] font-black uppercase">/ Monthly</span>
-                      </div>
-                    </div>
-                    <div className="bg-white rounded-2xl p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-3 h-3 rounded-full bg-rose-500" />
-                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Low Income</span>
-                      </div>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xs">$</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          disabled={editingPlan.isFree}
-                          value={lowIncomePrice}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            setLowIncomePrice(val);
-                            setEditingPlan(prev => prev ? { ...prev, lowIncomeMonthlyUSD: val } : prev);
-                          }}
-                          className={`w-full border-none rounded-xl py-3 pl-7 pr-12 text-sm font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all ${
-                            editingPlan.isFree ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-slate-50 text-slate-900'
-                          }`}
-                          placeholder="0.00"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] font-black uppercase">/ Monthly</span>
-                      </div>
+                {!editingPlan.isFree && !editingPlan.id && (
+                  <div>
+                    <Tooltip content="Set starting prices for the three economic groups. You can add more regional prices after creation.">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pl-2 cursor-help">Quick Setup: Tier Pricing (USD)</label>
+                    </Tooltip>
+                    <div className="bg-blue-50/50 p-6 rounded-[3rem] border border-blue-100/50">
+                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="bg-white rounded-2xl p-4 shadow-sm border border-blue-100/50">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                              <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">High Income</span>
+                            </div>
+                            <div className="relative">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-black text-[10px]">$</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={(editingPlan as any).highTierPrice || ''}
+                                onChange={(e) => setEditingPlan({ ...editingPlan, highTierPrice: Number(e.target.value) } as any)}
+                                className="w-full bg-slate-50 border-none rounded-xl py-2.5 pl-5 pr-2 text-xs font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="bg-white rounded-2xl p-4 shadow-sm border border-blue-100/50">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-2 h-2 rounded-full bg-amber-500" />
+                              <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Middle Income</span>
+                            </div>
+                            <div className="relative">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-black text-[10px]">$</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={(editingPlan as any).middleTierPrice || ''}
+                                onChange={(e) => setEditingPlan({ ...editingPlan, middleTierPrice: Number(e.target.value) } as any)}
+                                className="w-full bg-slate-50 border-none rounded-xl py-2.5 pl-5 pr-2 text-xs font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="bg-white rounded-2xl p-4 shadow-sm border border-blue-100/50">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-2 h-2 rounded-full bg-rose-500" />
+                              <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Low Income</span>
+                            </div>
+                            <div className="relative">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-black text-[10px]">$</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={(editingPlan as any).lowTierPrice || ''}
+                                onChange={(e) => setEditingPlan({ ...editingPlan, lowTierPrice: Number(e.target.value) } as any)}
+                                className="w-full bg-slate-50 border-none rounded-2xl py-2.5 pl-5 pr-2 text-xs font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+                       </div>
+                       <p className="text-[9px] font-medium text-blue-400 mt-4 pl-2 leading-relaxed">
+                         Set starting monthly prices for each tier. The system uses these as static base prices. You can configure precise regional equivalents (like Naira or Euro) manually after creation to ensure stable recurring billing.
+                       </p>
                     </div>
                   </div>
-                  <p className="text-[9px] font-medium text-slate-400 mt-2 pl-2">Set monthly price per tier. Quarterly and yearly are auto-calculated.</p>
-                </div>
+                )}
 
                 <div>
                   <Tooltip content="Toggle specific QR features available for this tier.">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pl-2 cursor-help">Capabilities Protocol</label>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pl-2 cursor-help">Capability Matrix</label>
                   </Tooltip>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 bg-slate-50 p-6 rounded-[2.5rem]">
                     {QR_TYPES_LIST.map((type) => (

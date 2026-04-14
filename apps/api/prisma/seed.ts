@@ -42,8 +42,8 @@ async function main() {
     });
   }
 
-  console.log('Seeding plans...');
-  await prisma.plan.upsert({
+  console.log('Seeding plans and prices...');
+  const freePlan = await prisma.plan.upsert({
     where: { name: 'Free' },
     update: {
       qrCodeLimit: 5,
@@ -51,9 +51,6 @@ async function main() {
       isDefault: true,
       isActive: true,
       isFree: true,
-      highIncomeMonthlyUSD: 0,
-      middleIncomeMonthlyUSD: 0,
-      lowIncomeMonthlyUSD: 0,
     },
     create: {
       name: 'Free',
@@ -63,28 +60,16 @@ async function main() {
       isDefault: true,
       isActive: true,
       isFree: true,
-      highIncomeMonthlyUSD: 0,
-      middleIncomeMonthlyUSD: 0,
-      lowIncomeMonthlyUSD: 0,
     },
   });
-  
-  await prisma.plan.upsert({
+
+  const proPlan = await prisma.plan.upsert({
     where: { name: 'Pro' },
     update: {
       qrCodeLimit: 100,
       qrCodeTypes: Object.values(QRType),
       isPopular: true,
       isActive: true,
-      highIncomeMonthlyUSD: 20,
-      highIncomeQuarterlyUSD: 54, // 20 * 3 * 0.9
-      highIncomeYearlyUSD: 192,   // 20 * 12 * 0.8
-      middleIncomeMonthlyUSD: 10,
-      middleIncomeQuarterlyUSD: 27,
-      middleIncomeYearlyUSD: 96,
-      lowIncomeMonthlyUSD: 5,
-      lowIncomeQuarterlyUSD: 13.5,
-      lowIncomeYearlyUSD: 48,
     },
     create: {
       name: 'Pro',
@@ -93,17 +78,61 @@ async function main() {
       qrCodeTypes: Object.values(QRType),
       isPopular: true,
       isActive: true,
-      highIncomeMonthlyUSD: 20,
-      highIncomeQuarterlyUSD: 54,
-      highIncomeYearlyUSD: 192,
-      middleIncomeMonthlyUSD: 10,
-      middleIncomeQuarterlyUSD: 27,
-      middleIncomeYearlyUSD: 96,
-      lowIncomeMonthlyUSD: 5,
-      lowIncomeQuarterlyUSD: 13.5,
-      lowIncomeYearlyUSD: 48,
     },
   });
+
+  const billingCycles = ['MONTHLY', 'QUARTERLY', 'YEARLY'] as const;
+  const tiers = [PricingTier.HIGH, PricingTier.MIDDLE, PricingTier.LOW];
+
+  const proPrices = {
+    [PricingTier.HIGH]: { MONTHLY: 20, QUARTERLY: 54, YEARLY: 192 },
+    [PricingTier.MIDDLE]: { MONTHLY: 10, QUARTERLY: 27, YEARLY: 96 },
+    [PricingTier.LOW]: { MONTHLY: 5, QUARTERLY: 13.5, YEARLY: 48 },
+  };
+
+  for (const tier of tiers) {
+    for (const cycle of billingCycles) {
+      // Free Plan Prices
+      await prisma.priceBook.upsert({
+        where: {
+          id: `free-${tier}-${cycle}`.toLowerCase(), // Not a real cuid but for seeding consistency if we used cuid() we'd need another unique way
+        },
+        create: {
+          id: `free-${tier}-${cycle}`.toLowerCase(),
+          planId: freePlan.id,
+          tier,
+          currencyCode: 'USD',
+          billingCycle: cycle as any,
+          price: 0,
+          status: 'ACTIVE',
+        },
+        update: {
+          price: 0,
+          status: 'ACTIVE',
+        },
+      });
+
+      // Pro Plan Prices
+      await prisma.priceBook.upsert({
+        where: {
+          id: `pro-${tier}-${cycle}`.toLowerCase(),
+        },
+        create: {
+          id: `pro-${tier}-${cycle}`.toLowerCase(),
+          planId: proPlan.id,
+          tier,
+          currencyCode: 'USD',
+          billingCycle: cycle as any,
+          price: proPrices[tier][cycle],
+          status: 'ACTIVE',
+        },
+        update: {
+          price: proPrices[tier][cycle],
+          status: 'ACTIVE',
+        },
+      });
+    }
+  }
 
   console.log('Seeding system config...');
   await prisma.systemConfig.upsert({

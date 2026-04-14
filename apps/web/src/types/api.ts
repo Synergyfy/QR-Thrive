@@ -22,6 +22,24 @@ export interface AuthResponse {
 }
 
 export type PricingTier = 'HIGH' | 'MIDDLE' | 'LOW';
+export type BillingCycle = 'MONTHLY' | 'QUARTERLY' | 'YEARLY' | 'LIFETIME';
+export type PriceStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+
+export interface PriceBook {
+  id: string;
+  planId: string;
+  tier: PricingTier;
+  currencyCode: string;
+  billingCycle: BillingCycle;
+  price: number;
+  status: PriceStatus;
+  activeFrom?: string;
+  activeTo?: string;
+  stripePriceId?: string;
+  paystackPlanCode?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface Country {
   code: string;
@@ -29,6 +47,7 @@ export interface Country {
   tier: PricingTier;
   currencyCode: string;
   currencySymbol: string;
+  taxRate: number;
 }
 
 export interface Plan {
@@ -42,21 +61,24 @@ export interface Plan {
   isFree: boolean;
   trialDays: number;
   isActive: boolean;
-  
-  // High Income Tier Prices
-  highIncomeMonthlyUSD: number;
-  highIncomeQuarterlyUSD: number;
-  highIncomeYearlyUSD: number;
-  
-  // Middle Income Tier Prices
-  middleIncomeMonthlyUSD: number;
-  middleIncomeQuarterlyUSD: number;
-  middleIncomeYearlyUSD: number;
-  
-  // Low Income Tier Prices
-  lowIncomeMonthlyUSD: number;
-  lowIncomeQuarterlyUSD: number;
-  lowIncomeYearlyUSD: number;
+  priceBooks: PriceBook[];
+}
+
+export interface PricePoint {
+  amount: number;
+  currency: string;
+  currencySymbol: string;
+  priceBookId: string;
+  gatewayIds: {
+    stripe?: string;
+    paystack?: string;
+  };
+}
+
+export interface PlanPricing {
+  monthly?: PricePoint;
+  quarterly?: PricePoint;
+  yearly?: PricePoint;
 }
 
 export interface PublicPlan {
@@ -69,13 +91,7 @@ export interface PublicPlan {
   isDefault: boolean;
   isFree: boolean;
   trialDays: number;
-  currency: string;
-  currencySymbol: string;
-  pricing: {
-    monthly: number;
-    quarterly: number;
-    yearly: number;
-  };
+  pricing: PlanPricing;
 }
 
 export interface PricingConfig {

@@ -17,4 +17,12 @@ export const pricingApi = {
     const res = await apiClient.get<SystemConfig>('/admin/config');
     return res.data;
   },
+
+  /**
+   * Admin only: Suggest a localized price based on live FX rates.
+   */
+  suggestPrice: async (basePriceUSD: number, targetCurrencyCode: string) => {
+    const res = await apiClient.get('/pricing/suggest', { params: { basePriceUSD, targetCurrencyCode } });
+    return res.data;
+  },
 };

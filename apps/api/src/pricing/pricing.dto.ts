@@ -81,31 +81,28 @@ export class CreatePlanDto {
   @IsOptional()
   trialDays?: number;
 
-  // High Income Tier - Monthly Price (quarterly/yearly auto-calculated)
-  @ApiPropertyOptional({ example: 20.0 })
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  highIncomeMonthlyUSD?: number;
-
-  // Middle Income Tier - Monthly Price
-  @ApiPropertyOptional({ example: 10.0 })
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  middleIncomeMonthlyUSD?: number;
-
-  // Low Income Tier - Monthly Price
-  @ApiPropertyOptional({ example: 5.0 })
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  lowIncomeMonthlyUSD?: number;
-
   @ApiPropertyOptional({ example: 'vemtap_plan_uuid', description: 'Attached Vemtap Plan ID' })
   @IsString()
   @IsOptional()
   vemtapPlanId?: string;
+
+  @ApiPropertyOptional({ example: 20.0 })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  highTierPrice?: number;
+
+  @ApiPropertyOptional({ example: 10.0 })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  middleTierPrice?: number;
+
+  @ApiPropertyOptional({ example: 5.0 })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  lowTierPrice?: number;
 }
 
 export class UpdatePlanDto extends CreatePlanDto {
