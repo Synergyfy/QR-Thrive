@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../services/api';
-import type { AdminStats, AdminUsersResponse, SystemConfig, Plan, Country, PricingConfig } from '../types/api';
+import type { AdminStats, AdminUsersResponse, SystemConfig, Plan, Country, PricingConfig, PriceBook } from '../types/api';
 
 export const useAdminStats = (range = '7d') => {
   return useQuery<AdminStats>({
@@ -102,12 +102,44 @@ export const useAdminCountries = () => {
   });
 };
 
-export const useUpsertCountry = () => {
+export const useUpdateCountry = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<Country>) => adminApi.upsertCountry(data),
+    mutationFn: (data: Partial<Country> & { code: string }) => adminApi.updateCountry(data.code, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
+    },
+  });
+};
+
+export const usePlanPrices = (planId: string | null) => {
+  return useQuery<PriceBook[]>({
+    queryKey: ['planPrices', planId],
+    queryFn: () => planId ? adminApi.getPlanPrices(planId) : Promise.resolve([]),
+    enabled: !!planId,
+  });
+};
+
+export const useCreatePriceBook = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { planId: string; data: Partial<PriceBook> }) => 
+      adminApi.createPriceBook(params.planId, params.data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['planPrices', variables.planId] });
+      queryClient.invalidateQueries({ queryKey: ['adminPlans'] });
+    },
+  });
+};
+
+export const useUpdatePriceBook = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { id: string; planId: string; data: Partial<PriceBook> }) => 
+      adminApi.updatePriceBook(params.id, params.data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['planPrices', variables.planId] });
+      queryClient.invalidateQueries({ queryKey: ['adminPlans'] });
     },
   });
 };

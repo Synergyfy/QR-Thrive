@@ -1,8 +1,23 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as geoip from 'geoip-lite';
-import { QRType, PricingTier } from '@prisma/client';
+import { PricingTier, BillingCycle, PriceStatus, Plan } from '@prisma/client';
 import axios from 'axios';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
+
+export interface PlanPricing {
+  monthly: number;
+  quarterly: number;
+  yearly: number;
+}
+
+export interface LocalizedPlan extends Partial<Plan> {
+  currency: string;
+  currencySymbol: string;
+  taxRate: number;
+  pricing: PlanPricing;
+}
 
 @Injectable()
 export class PricingService {
@@ -12,7 +27,10 @@ export class PricingService {
   private exchangeRateCache: Record<string, { rate: number; timestamp: number }> = {};
   private readonly CACHE_TTL = 3600000; // 1 hour
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   /**
    * Fetches the exchange rate for a given currency vs USD.
@@ -77,7 +95,8 @@ export class PricingService {
           name: 'Nigeria',
           currencyCode: 'NGN',
           currencySymbol: '₦',
-          tier: PricingTier.LOW
+          tier: PricingTier.LOW,
+          taxRate: 0,
         };
       }
       return {
@@ -85,7 +104,8 @@ export class PricingService {
         name: 'Global',
         currencyCode: 'USD',
         currencySymbol: '$',
-        tier: PricingTier.HIGH
+        tier: PricingTier.HIGH,
+        taxRate: 0,
       };
     }
     return country;
@@ -102,43 +122,60 @@ export class PricingService {
   }
 
   /**
-   * Gets all available plans with localized pricing based on the user's IP.
+   * Gets all available plans with localized pricing based on the country code.
    */
-  async getLocalizedPlans(ip: string) {
-    const countryCode = this.getCountryCodeByIp(ip);
+  async getLocalizedPlans(countryCode: string): Promise<LocalizedPlan[]> {
     const countryInfo = await this.getCountryInfo(countryCode);
     const tier = countryInfo?.tier || PricingTier.HIGH;
-    const currency = countryInfo?.currencyCode || 'USD';
+    const targetCurrency = countryInfo?.currencyCode || 'USD';
     const symbol = countryInfo?.currencySymbol || '$';
+    const taxRate = countryInfo?.taxRate || 0;
 
-    const exchangeRate = await this.getExchangeRate(currency);
+    const cacheKey = `pricing:plans:tier:${tier}:currency:${targetCurrency}`;
+    const cached = await this.cacheManager.get<LocalizedPlan[]>(cacheKey);
+    if (cached) return cached;
 
     const plans = await this.prisma.plan.findMany({
       where: { 
         isActive: true,
         deletedAt: null
       },
+      include: {
+        priceBooks: {
+          where: {
+            status: PriceStatus.ACTIVE,
+            OR: [
+              { activeFrom: null },
+              { activeFrom: { lte: new Date() } }
+            ],
+          }
+        }
+      },
       orderBy: { qrCodeLimit: 'asc' },
     });
 
-    return plans.map(plan => {
-      // Tier selection with fallback to high income if tier-specific price is missing
-      const selectPrice = (t: PricingTier) => {
-        if (t === PricingTier.LOW && plan.lowIncomeMonthlyUSD) {
-          return { m: plan.lowIncomeMonthlyUSD, q: plan.lowIncomeQuarterlyUSD, y: plan.lowIncomeYearlyUSD };
+    const result: LocalizedPlan[] = plans.map(plan => {
+      const getPlanPrice = (cycle: BillingCycle) => {
+        // 1. Try exact Tier + Currency match
+        let priceEntry = plan.priceBooks.find(pb => pb.tier === tier && pb.currencyCode === targetCurrency && pb.billingCycle === cycle);
+        
+        // 2. Fallback to Tier + USD (and use exchange rate)
+        if (!priceEntry && targetCurrency !== 'USD') {
+          priceEntry = plan.priceBooks.find(pb => pb.tier === tier && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
         }
-        if (t === PricingTier.MIDDLE && plan.middleIncomeMonthlyUSD) {
-          return { m: plan.middleIncomeMonthlyUSD, q: plan.middleIncomeQuarterlyUSD, y: plan.middleIncomeYearlyUSD };
+
+        // 3. Last fallback: HIGH Tier + USD
+        if (!priceEntry) {
+          priceEntry = plan.priceBooks.find(pb => pb.tier === PricingTier.HIGH && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
         }
-        return { m: plan.highIncomeMonthlyUSD, q: plan.highIncomeQuarterlyUSD, y: plan.highIncomeYearlyUSD };
+
+        return priceEntry ? priceEntry.price : 0;
       };
 
-      const selected = selectPrice(tier);
-
-      const pricing = {
-        monthly: this.formatPrice(selected.m * exchangeRate, currency),
-        quarterly: this.formatPrice(selected.q * exchangeRate, currency),
-        yearly: this.formatPrice(selected.y * exchangeRate, currency),
+      const pricing: PlanPricing = {
+        monthly: this.formatPrice(getPlanPrice(BillingCycle.MONTHLY), targetCurrency),
+        quarterly: this.formatPrice(getPlanPrice(BillingCycle.QUARTERLY), targetCurrency),
+        yearly: this.formatPrice(getPlanPrice(BillingCycle.YEARLY), targetCurrency),
       };
 
       return {
@@ -151,55 +188,76 @@ export class PricingService {
         isDefault: plan.isDefault,
         isFree: plan.isFree,
         trialDays: plan.trialDays,
-        currency,
+        vemtapPlanId: plan.vemtapPlanId,
+        currency: targetCurrency,
         currencySymbol: symbol,
+        taxRate,
         pricing,
       };
     });
+
+    await this.cacheManager.set(cacheKey, result, 3600);
+    return result;
   }
 
   /**
-   * Fetches a specific plan with localized prices for a given IP.
+   * Fetches a specific plan with localized prices for a given country code.
    */
-  async getPlanWithPricing(planId: string, ip: string) {
-    const countryCode = this.getCountryCodeByIp(ip);
+  async getPlanWithPricing(planId: string, countryCode: string): Promise<LocalizedPlan> {
     const countryInfo = await this.getCountryInfo(countryCode);
     const tier = countryInfo?.tier || PricingTier.HIGH;
-    const currency = countryInfo?.currencyCode || 'USD';
+    const targetCurrency = countryInfo?.currencyCode || 'USD';
     const symbol = countryInfo?.currencySymbol || '$';
+    const taxRate = countryInfo?.taxRate || 0;
 
-    const exchangeRate = await this.getExchangeRate(currency);
+    const cacheKey = `pricing:plan:${planId}:tier:${tier}:currency:${targetCurrency}`;
+    const cached = await this.cacheManager.get<LocalizedPlan>(cacheKey);
+    if (cached) return cached;
 
     const plan = await this.prisma.plan.findUnique({
       where: { id: planId },
+      include: {
+        priceBooks: {
+          where: {
+            status: PriceStatus.ACTIVE,
+            OR: [
+              { activeFrom: null },
+              { activeFrom: { lte: new Date() } }
+            ]
+          }
+        }
+      }
     });
 
     if (!plan) throw new NotFoundException('Plan not found');
 
-    const selectPrice = (t: PricingTier) => {
-      if (t === PricingTier.LOW && plan.lowIncomeMonthlyUSD) {
-        return { m: plan.lowIncomeMonthlyUSD, q: plan.lowIncomeQuarterlyUSD, y: plan.lowIncomeYearlyUSD };
+    const getPlanPrice = (cycle: BillingCycle) => {
+      let priceEntry = plan.priceBooks.find(pb => pb.tier === tier && pb.currencyCode === targetCurrency && pb.billingCycle === cycle);
+      if (!priceEntry && targetCurrency !== 'USD') {
+        priceEntry = plan.priceBooks.find(pb => pb.tier === tier && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
       }
-      if (t === PricingTier.MIDDLE && plan.middleIncomeMonthlyUSD) {
-        return { m: plan.middleIncomeMonthlyUSD, q: plan.middleIncomeQuarterlyUSD, y: plan.middleIncomeYearlyUSD };
+      if (!priceEntry) {
+        priceEntry = plan.priceBooks.find(pb => pb.tier === PricingTier.HIGH && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
       }
-      return { m: plan.highIncomeMonthlyUSD, q: plan.highIncomeQuarterlyUSD, y: plan.highIncomeYearlyUSD };
+      return priceEntry ? priceEntry.price : 0;
     };
 
-    const selected = selectPrice(tier);
-
-    const pricing = {
-      monthly: this.formatPrice(selected.m * exchangeRate, currency),
-      quarterly: this.formatPrice(selected.q * exchangeRate, currency),
-      yearly: this.formatPrice(selected.y * exchangeRate, currency),
+    const pricing: PlanPricing = {
+      monthly: this.formatPrice(getPlanPrice(BillingCycle.MONTHLY), targetCurrency),
+      quarterly: this.formatPrice(getPlanPrice(BillingCycle.QUARTERLY), targetCurrency),
+      yearly: this.formatPrice(getPlanPrice(BillingCycle.YEARLY), targetCurrency),
     };
 
-    return {
+    const result: LocalizedPlan = {
       ...plan,
-      currency,
+      currency: targetCurrency,
       currencySymbol: symbol,
+      taxRate,
       pricing,
     };
+
+    await this.cacheManager.set(cacheKey, result, 3600);
+    return result;
   }
 
   // --- Admin Methods ---

@@ -8,7 +8,9 @@ import {
   Param,
   UseGuards,
   Ip,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { PlansService } from './plans.service';
 import { PricingService } from './pricing.service';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -40,8 +42,9 @@ export class PlansController {
   @Get()
   @ApiOperation({ summary: 'Fetch all active plans with localized pricing' })
   @ApiResponse({ status: 200, description: 'List of plans retrieved.' })
-  async getPublicPlans(@Ip() ip: string) {
-    return this.pricingService.getLocalizedPlans(ip);
+  async getPublicPlans(@Req() req: Request, @Ip() ip: string) {
+    const country = req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || this.pricingService.getCountryCodeByIp(ip);
+    return this.pricingService.getLocalizedPlans(country as string);
   }
 
   @Roles(Role.ADMIN)

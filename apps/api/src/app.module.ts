@@ -17,9 +17,16 @@ import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
 import { PricingModule } from './pricing/pricing.module';
 import { IntegrationModule } from './integration/integration.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 3600, // 1 hour default
+    }),
+    ScheduleModule.forRoot(),
     LoggerModule.forRoot({
       pinoHttp: {
         // transport: process.env.NODE_ENV !== 'production'

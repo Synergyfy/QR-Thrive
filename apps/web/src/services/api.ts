@@ -13,6 +13,7 @@ import type {
   Plan,
   Country,
   PricingConfig,
+  PriceBook,
 } from '../types/api';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:3005/api/v1');
@@ -203,8 +204,12 @@ export const adminApi = {
   deletePlan: async (id: string) => (await apiClient.delete(`/plans/${id}`)).data,
 
   // Pricing & Geography
-  getCountries: async () => (await apiClient.get<Country[]>('/pricing/countries')).data,
-  upsertCountry: async (data: Partial<Country>) => (await apiClient.post<Country>('/pricing/countries', data)).data,
+  getCountries: async () => (await apiClient.get<Country[]>('/admin/countries')).data,
+  updateCountry: async (code: string, data: Partial<Country>) => (await apiClient.patch<Country>(`/admin/countries/${code}`, data)).data,
+  getPlanPrices: async (planId: string) => (await apiClient.get<PriceBook[]>(`/admin/plans/${planId}/prices`)).data,
+  createPriceBook: async (planId: string, data: Partial<PriceBook>) => (await apiClient.post<PriceBook>(`/admin/plans/${planId}/prices`, data)).data,
+  updatePriceBook: async (id: string, data: Partial<PriceBook>) => (await apiClient.patch<PriceBook>(`/admin/price-books/${id}`, data)).data,
+  
   getPricingConfig: async () => (await apiClient.get<PricingConfig>('/pricing/config')).data,
   updatePricingConfig: async (data: Partial<PricingConfig>) => (await apiClient.patch<PricingConfig>('/pricing/config', data)).data,
 

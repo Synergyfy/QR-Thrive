@@ -10,6 +10,7 @@ import {
   Body,
   Ip,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { PaystackService } from './paystack.service';
 import { PricingService } from '../pricing/pricing.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -52,16 +53,18 @@ export class PaymentsController {
   @ApiResponse({ status: 200, description: 'Transaction initialized successfully.' })
   @ApiResponse({ status: 400, description: 'Plan not found, inactive, or invalid interval.' })
   async initialize(
-    @Req() req: { user: { userId: string } },
+    @Req() req: Request & { user: { userId: string } },
     @Ip() ip: string,
     @Body() body: { planId: string; interval: 'monthly' | 'quarterly' | 'yearly' },
   ) {
     const userId = req.user.userId;
     const { planId, interval } = body;
 
+    // Resolve country from headers or IP
+    const country = (req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || this.pricingService.getCountryCodeByIp(ip)) as string;
+
     // 1. Fetch Plan with localized pricing
-    // We reuse pricingService to get the correct price for the user's IP/Tier
-    const plan = await this.pricingService.getPlanWithPricing(planId, ip);
+    const plan = await this.pricingService.getPlanWithPricing(planId, country);
 
     // 2. Validate Plan status
     if (!plan.isActive) {
@@ -83,8 +86,7 @@ export class PaymentsController {
     if (!user) throw new BadRequestException('User not found');
 
     // Get tier name for metadata
-    const countryCode = this.pricingService.getCountryCodeByIp(ip);
-    const countryInfo = await this.pricingService.getCountryInfo(countryCode);
+    const countryInfo = await this.pricingService.getCountryInfo(country);
 
     return this.paystackService.initializeTransaction(
       user.email,
