@@ -41,6 +41,7 @@ model User {
   folders       Folder[]
   qrCodes       QRCode[]
   magicLinks    MagicLink[]    // Added for SSO
+  countryCode   String?        // ISO-2 country code for account locking
   deletedAt     DateTime?      // Added for Soft-Delete
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -87,12 +88,26 @@ enum PricingTier {
   LOW
 }
 
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  LIFETIME
+}
+
+enum PriceStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
 model Country {
   code           String      @id // ISO 3166-1 alpha-2 (e.g., "US", "NG")
   name           String
   currencyCode   String      @default("USD")
   currencySymbol String      @default("$")
   tier           PricingTier @default(HIGH)
+  taxRate        Float       @default(0.0)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 }
@@ -109,27 +124,42 @@ model Plan {
   trialDays     Int         @default(0)
   isActive      Boolean     @default(true)
   
-  // High Income Tier Prices
-  highIncomeMonthlyUSD    Float @default(0)
-  highIncomeQuarterlyUSD  Float @default(0)
-  highIncomeYearlyUSD     Float @default(0)
-  
-  // Middle Income Tier Prices
-  middleIncomeMonthlyUSD    Float @default(0)
-  middleIncomeQuarterlyUSD  Float @default(0)
-  middleIncomeYearlyUSD     Float @default(0)
-  
-  // Low Income Tier Prices
-  lowIncomeMonthlyUSD    Float @default(0)
-  lowIncomeQuarterlyUSD  Float @default(0)
-  lowIncomeYearlyUSD     Float @default(0)
-  
   vemtapPlanId          String? // Attached Vemtap Plan ID for bundling
   
+  priceBooks    PriceBook[]
   users         User[]
   deletedAt     DateTime?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+}
+
+model PriceBook {
+  id            String       @id @default(cuid())
+  
+  planId        String
+  plan          Plan         @relation(fields: [planId], references: [id], onDelete: Cascade)
+  
+  tier          PricingTier
+  currencyCode  String       // e.g., "NGN", "USD", "EUR"
+  
+  billingCycle  BillingCycle @default(MONTHLY)
+  price         Float        // Numerical amount
+  
+  status        PriceStatus  @default(DRAFT)
+  
+  // Gateway Mapping
+  stripePriceId    String?   // Stripe API Price ID
+  paystackPlanCode String?   // Paystack API Plan Code (for recurring)
+
+  activeFrom    DateTime?    
+
+  activeTo      DateTime?    
+  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([planId, tier, currencyCode, status])
+  @@map("price_books")
 }
 
 model Folder {
@@ -313,4 +343,13 @@ model FormSubmission {
 
   @@index([formId])
   @@index([createdAt])
+}
+
+model ApiKey {
+  id        String   @id @default(cuid())
+  name      String
+  key       String   @unique // Hashed key
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

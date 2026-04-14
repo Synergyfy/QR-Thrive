@@ -6,9 +6,10 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { PricingModule } from '../pricing/pricing.module';
 
 @Module({
-  imports: [PrismaModule, ConfigModule, PassportModule, JwtModule.register({})],
+  imports: [PrismaModule, ConfigModule, PassportModule, JwtModule.register({}), PricingModule],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
   exports: [AuthService],

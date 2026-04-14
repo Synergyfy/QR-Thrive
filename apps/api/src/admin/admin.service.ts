@@ -3,11 +3,18 @@ import {
   Logger,
   InternalServerErrorException,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaystackService } from '../payments/paystack.service';
 import { UpdateSystemConfigDto } from './dto/update-system-config.dto';
-import { SystemConfig } from '@prisma/client';
+import { UpdateCountryDto } from './dto/update-country.dto';
+import { CreatePriceBookDto } from './dto/create-price-book.dto';
+import { UpdatePriceBookDto } from './dto/update-price-book.dto';
+import { SystemConfig, PricingTier, PriceStatus } from '@prisma/client';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class AdminService {
@@ -16,6 +23,7 @@ export class AdminService {
   constructor(
     private prisma: PrismaService,
     private paystackService: PaystackService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async getStats(range = '7d') {
@@ -273,6 +281,106 @@ export class AdminService {
     ).join('\n');
 
     return header + rows;
+  }
+
+  // Country Management
+  async getCountries(tier?: PricingTier) {
+    return this.prisma.country.findMany({
+      where: tier ? { tier } : {},
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async updateCountry(code: string, data: UpdateCountryDto) {
+    const country = await this.prisma.country.findUnique({ where: { code } });
+    if (!country) throw new NotFoundException('Country not found');
+
+    const updated = await this.prisma.country.update({
+      where: { code },
+      data,
+    });
+
+    // Invalidate cache for the affected tier and currency
+    await this.cacheManager.del(`pricing:plans:tier:${updated.tier}:currency:${updated.currencyCode}`);
+    
+    return updated;
+  }
+
+  // PriceBook Management
+  async getPlanPrices(planId: string) {
+    const plan = await this.prisma.plan.findUnique({ where: { id: planId } });
+    if (!plan) throw new NotFoundException('Plan not found');
+
+    return this.prisma.priceBook.findMany({
+      where: { planId },
+      orderBy: [
+        { tier: 'asc' },
+        { billingCycle: 'asc' },
+        { createdAt: 'desc' },
+      ],
+    });
+  }
+
+  async createPriceBook(planId: string, data: CreatePriceBookDto) {
+    const plan = await this.prisma.plan.findUnique({ where: { id: planId } });
+    if (!plan) throw new NotFoundException('Plan not found');
+
+    const priceBook = await this.prisma.priceBook.create({
+      data: {
+        ...data,
+        planId,
+      },
+    });
+
+    // Invalidate cache
+    await this.cacheManager.del(`pricing:plans:tier:${priceBook.tier}:currency:${priceBook.currencyCode}`);
+    await this.cacheManager.del(`pricing:plan:${planId}:tier:${priceBook.tier}:currency:${priceBook.currencyCode}`);
+
+    return priceBook;
+  }
+
+  async updatePriceBook(id: string, data: UpdatePriceBookDto) {
+    const priceBook = await this.prisma.priceBook.findUnique({ where: { id } });
+    if (!priceBook) throw new NotFoundException('Price book entry not found');
+
+    const updated = await this.prisma.priceBook.update({
+      where: { id },
+      data,
+    });
+
+    // Invalidate cache
+    await this.cacheManager.del(`pricing:plans:tier:${updated.tier}:currency:${updated.currencyCode}`);
+    await this.cacheManager.del(`pricing:plan:${updated.planId}:tier:${updated.tier}:currency:${updated.currencyCode}`);
+
+    return updated;
+  }
+
+  /**
+   * Cron job that runs every minute to invalidate cache for prices that just became active.
+   */
+  @Cron(CronExpression.EVERY_MINUTE)
+  async handleScheduledPriceInvalidation() {
+    const now = new Date();
+    const oneMinuteAgo = new Date(now.getTime() - 60000);
+
+    // Find PriceBooks that became active in the last minute
+    const newlyActivePrices = await this.prisma.priceBook.findMany({
+      where: {
+        status: PriceStatus.ACTIVE,
+        activeFrom: {
+          gte: oneMinuteAgo,
+          lte: now,
+        },
+      },
+    });
+
+    if (newlyActivePrices.length > 0) {
+      this.logger.log(`Invalidating cache for ${newlyActivePrices.length} newly active prices.`);
+      for (const price of newlyActivePrices) {
+        await this.cacheManager.del(`pricing:plans:tier:${price.tier}:currency:${price.currencyCode}`);
+        await this.cacheManager.del(`pricing:plan:${price.planId}:tier:${price.tier}:currency:${price.currencyCode}`);
+      }
+    }
   }
 
   private async syncPlansWithPaystack(

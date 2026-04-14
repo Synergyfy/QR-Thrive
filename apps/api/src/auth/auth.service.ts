@@ -54,7 +54,7 @@ export class AuthService {
     return planData;
   }
 
-  async signup(signupDto: SignupDto, res: Response) {
+  async signup(signupDto: SignupDto, res: Response, countryCode?: string) {
     const { email, password, confirmPassword, firstName, lastName } = signupDto;
 
     if (password !== confirmPassword) {
@@ -79,6 +79,7 @@ export class AuthService {
           firstName,
           lastName,
           role: 'USER',
+          countryCode,
           ...defaultPlanData,
         },
       });
@@ -156,7 +157,7 @@ export class AuthService {
     return this.generateAndSetTokens(user.id, res, rememberMe);
   }
 
-  async googleLogin(googleLoginDto: GoogleLoginDto, res: Response) {
+  async googleLogin(googleLoginDto: GoogleLoginDto, res: Response, countryCode?: string) {
     const { token } = googleLoginDto;
 
     this.logger.log('Attempting Google login...');
@@ -217,6 +218,7 @@ export class AuthService {
             lastName: lastName || '',
             avatar,
             role: 'USER',
+            countryCode,
             ...defaultPlanData,
           },
         });
