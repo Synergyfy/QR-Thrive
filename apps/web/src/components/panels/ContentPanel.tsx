@@ -358,7 +358,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
               </div>
             </CollapsibleSection>
 
-            <div className="h-px bg-gray-100" />
+
 
             {data.type === 'url' && (
               <div className="space-y-6">
@@ -1643,6 +1643,22 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                           </div>
                         </div>
                       </div>
+                    </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection id="business-cta" title="Call to Action" icon={Zap} isExpanded={expandedSections['business-cta']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Text</p>
+                        <input 
+                          type="text" 
+                          className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                          placeholder="e.g. Visit our Shop" 
+                          value={data.business?.buttonText || ''} 
+                          onChange={(e) => updateData({ business: { ...(data.business || {}), buttonText: e.target.value } })} 
+                        />
+                      </div>
+                      <CTADestinationPicker data={data} updateData={updateData} typeKey="business" urlKey="buttonUrl" showLabelInput={false} />
                     </div>
                   </CollapsibleSection>
                 </div>

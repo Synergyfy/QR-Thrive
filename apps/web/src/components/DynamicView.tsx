@@ -16,7 +16,8 @@ import {
   Building2,
   Ticket,
   MapPin,
-  Clock
+  Clock,
+  Copy
 } from 'lucide-react';
 import WhatsAppChatPreview from './WhatsAppChatPreview';
 import InstagramProfilePreview from './InstagramProfilePreview';
@@ -32,7 +33,7 @@ import WifiProfilePreview from './WifiProfilePreview';
 import AppStorePreview from './AppStorePreview';
 import BookingProfilePreview from './BookingProfilePreview';
 import type { QRData } from '../types/qr';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useSubmitForm } from '../hooks/useForms';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -74,10 +75,33 @@ function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 interface DynamicViewProps {
   data: QRData;
   isWizardPreview?: boolean;
+  linkedQRCode?: {
+    id: string;
+    shortId: string;
+    name: string;
+    type: string;
+    logo?: string;
+  };
 }
 
-const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPreview }) => {
+const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPreview, linkedQRCode }) => {
   const { id: shortId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  // Handle CTA actions (Redirect to URL or Chained QR)
+  const handleAction = React.useCallback((options: { mode?: string, url?: string, qrLinkId?: string }) => {
+    if (isWizardPreview) {
+      console.log('Action triggered (Wizard Preview):', options);
+      return;
+    }
+
+    if (options.mode === 'qr_link' && options.qrLinkId) {
+      navigate(`/s/${options.qrLinkId}`);
+    } else if (options.url) {
+      const url = options.url.startsWith('http') ? options.url : `https://${options.url}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  }, [isWizardPreview, navigate]);
 
   // Merge with demo data if in wizard preview
   const data = React.useMemo(() => {
@@ -631,7 +655,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                textColor={data.pdf?.textColor}
                buttonColor={data.pdf?.buttonColor}
                buttonTextColor={data.pdf?.buttonTextColor}
-               onView={() => {}}
+               onView={() => handleAction({ mode: data.pdf?.destinationMode, url: data.pdf?.buttonUrl, qrLinkId: data.pdf?.qrLinkId })}
              />
           </div>
         );
@@ -646,6 +670,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                 buttonText={data.imageGalleryInfo?.buttonText}
                 themeColor={data.imageGalleryInfo?.themeColor}
                 images={(data.images || []).map(img => ({ url: img.url }))}
+                onButtonClick={() => handleAction({ mode: data.imageGalleryInfo?.destinationMode, url: data.imageGalleryInfo?.buttonUrl, qrLinkId: data.imageGalleryInfo?.qrLinkId })}
              />
           </div>
         );
@@ -664,6 +689,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                 buttonColor={data.video?.buttonColor}
                 buttonTextColor={data.video?.buttonTextColor}
                 onPlay={() => {}}
+                onButtonClick={() => handleAction({ mode: data.video?.destinationMode, url: data.video?.buttonUrl, qrLinkId: data.video?.qrLinkId })}
              />
           </div>
         );
@@ -683,6 +709,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                 buttonColor={data.mp3?.buttonColor}
                 buttonTextColor={data.mp3?.buttonTextColor}
                 buttonText={data.mp3?.buttonText}
+                onButtonClick={() => handleAction({ mode: data.mp3?.destinationMode, url: data.mp3?.buttonUrl, qrLinkId: data.mp3?.qrLinkId })}
              />
            </div>
          );
@@ -979,7 +1006,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                     )}
                  </div>
 
-                 <div className="space-y-6">
+                  <div className="space-y-6">
                     {data.business?.about && (
                        <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100">
                           <p className="text-[10px] font-normal text-gray-400 uppercase tracking-widest mb-2">About Us</p>
@@ -1036,15 +1063,29 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                           </div>
                        </div>
                     )}
+
+                    {data.business?.buttonUrl && (
+                      <button 
+                        onClick={() => handleAction(data.business!.buttonUrl!)}
+                        className="w-full py-5 text-white rounded-[32px] font-normal text-lg shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
+                        style={{ backgroundColor: data.business.accentColor || '#2563eb' }}
+                      >
+                        {data.business.buttonText || 'Discover More'}
+                        <ChevronRight className="w-6 h-6" />
+                      </button>
+                    )}
                  </div>
                  <div className="h-8"></div>
-             </div>
-          </div>
+              </div>
+           </div>
         );
 
       case 'menu':
         return (
-          <MenuPreview data={data.menu} />
+          <MenuPreview 
+            data={data.menu} 
+            onButtonClick={(targetQrId) => handleAction(`qr:${targetQrId}`)} 
+          />
         );
 
       case 'coupon':
@@ -1094,23 +1135,41 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                 </div>
              )}
 
-             <button 
-               onClick={() => {
-                 if (data.coupon?.promoCode) {
-                   navigator.clipboard.writeText(data.coupon.promoCode);
-                   alert('Promo code copied!');
-                 }
-               }}
-               className="w-full py-5 bg-gray-900 text-white rounded-[32px] font-normal text-lg shadow-2xl shadow-gray-200 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
-             >
-               Copy Code
-             </button>
+             <div className="flex flex-col gap-4">
+               <button 
+                 onClick={() => {
+                   if (data.coupon?.promoCode) {
+                     navigator.clipboard.writeText(data.coupon.promoCode);
+                     alert('Promo code copied!');
+                   }
+                 }}
+                 className="w-full py-5 bg-orange-600 text-white rounded-[32px] font-normal text-lg shadow-2xl shadow-orange-100 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
+               >
+                 <Copy className="w-5 h-5" />
+                 Copy Code
+               </button>
+
+               {data.coupon?.website && (
+                  <button 
+                    onClick={() => handleAction(data.coupon!.website!)}
+                    className="w-full py-5 bg-gray-900 text-white rounded-[32px] font-normal text-lg shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
+                  >
+                    Redeem Offer
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+               )}
+             </div>
           </div>
         );
       case 'app':
         return <AppStorePreview {...data.app} />;
       case 'booking':
-        return <BookingProfilePreview {...data.booking} />;
+        return (
+          <BookingProfilePreview 
+            {...data.booking} 
+            onButtonClick={handleAction}
+          />
+        );
       default:
         return (
           <div className="text-center space-y-6">
@@ -1156,6 +1215,36 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
         </div>
 
         {renderContent()}
+        
+        {/* Linked QR Teaser - "Next Experience" */}
+        {linkedQRCode && !isWizardPreview && (
+          <div className="mt-12 pt-8 border-t border-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <p className="text-[10px] font-normal text-gray-400 uppercase tracking-widest mb-4">Discover More</p>
+            <button 
+              onClick={() => handleAction({ mode: 'qr_link', qrLinkId: linkedQRCode.shortId })}
+              className="w-full bg-gray-50 hover:bg-gray-100 p-4 rounded-3xl border border-gray-100 flex items-center gap-4 transition-all group"
+            >
+              <div className="w-12 h-12 bg-white rounded-2xl border border-gray-100 flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
+                {linkedQRCode.logo ? (
+                  <img src={linkedQRCode.logo} alt={linkedQRCode.name} className="w-full h-full object-cover" />
+                ) : (
+                  <ShieldCheck className="w-6 h-6 text-gray-400" />
+                )}
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-xs font-normal text-gray-900 leading-tight mb-0.5 group-hover:text-blue-600 transition-colors">
+                  {linkedQRCode.name}
+                </p>
+                <p className="text-[10px] font-normal text-gray-400 capitalize">
+                  {linkedQRCode.type} Experience
+                </p>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-gray-100 group-hover:border-blue-100 group-hover:bg-blue-50 transition-all">
+                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-600" />
+              </div>
+            </button>
+          </div>
+        )}
 
         {/* Footer info */}
         <div className="mt-16 text-center">

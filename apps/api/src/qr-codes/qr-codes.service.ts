@@ -294,7 +294,7 @@ export class QRCodesService {
       }
     } else {
       for (const key of Object.keys(data)) {
-        if (key === 'qrLinkId' && typeof data[key] === 'string') {
+        if ((key === 'qrLinkId' || key === 'connectedQrId' || key === 'linkedQRCodeId') && typeof data[key] === 'string') {
           return data[key];
         }
         // Recursively check nested objects/arrays
@@ -378,6 +378,7 @@ export class QRCodesService {
         form: {
           include: { fields: { orderBy: { order: 'asc' } } },
         },
+        linkedQRCode: true,
       },
     });
 
@@ -415,7 +416,10 @@ export class QRCodesService {
   async recordScan(shortId: string, ip: string, userAgent: string) {
     const qrCode = await this.prisma.qRCode.findUnique({
       where: { shortId },
-      include: { user: { include: { plan: true } } },
+      include: { 
+        user: { include: { plan: true } },
+        linkedQRCode: true,
+      },
     });
 
     if (!qrCode) {

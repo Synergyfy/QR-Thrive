@@ -334,7 +334,7 @@ export interface QRData {
   };
 
   // Universal QR Connector — works across all QR types
-  connectedQrId?: string;
+  linkedQRCodeId?: string;
 }
 
 export interface Gradient {
