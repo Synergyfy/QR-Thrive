@@ -38,6 +38,8 @@ import FormBuilder from '../FormBuilder';
 import { countries } from '../../constants/countries';
 import ImageEditor from '../ImageEditor';
 
+import { useQRCodes, useCurrentUser } from '../../hooks/useApi';
+
 interface ContentPanelProps {
   config: QRConfiguration;
   updateData: (updates: Partial<QRData>) => void;
@@ -70,6 +72,114 @@ const CollapsibleSection = ({ id, title, subtitle, icon: Icon, children, classNa
           {children}
         </div>
       </div>
+    </div>
+  );
+};
+
+const QRPickerDropdown = ({ currentData, updateData, typeKey }: any) => {
+  const { data: qrCodes = [] } = useQRCodes();
+  return (
+    <div className="space-y-2 animate-in fade-in duration-300">
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Connect to another QR Code</p>
+      <select
+        className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm appearance-none cursor-pointer"
+        value={currentData.qrLinkId || ''}
+        onChange={(e) => updateData({ [typeKey]: { ...currentData, qrLinkId: e.target.value } })}
+      >
+        <option value="">Select a QR code...</option>
+        {qrCodes.map((qr: any) => (
+           <option key={qr.id} value={qr.id}>{qr.name || qr.type} {qr.shortId ? `(${qr.shortId})` : ''}</option>
+        ))}
+      </select>
+      <p className="text-[9px] text-gray-400 font-medium">When the customer clicks the CTA, they will be directed to the linked QR experience.</p>
+    </div>
+  );
+};
+
+const CTADestinationPicker = ({
+  data,
+  updateData,
+  typeKey, // e.g., 'pdf', 'mp3', 'video', 'imageGalleryInfo', 'booking', 'coupon'
+  urlKey = 'buttonUrl',
+  buttonLabelKey = 'buttonText',
+  showLabelInput = true
+}: any) => {
+  const currentData = data[typeKey] || {};
+  const destinationMode = currentData.destinationMode || 'url';
+  const isDashboard = window.location.pathname.includes('/dashboard');
+
+  return (
+    <div className="space-y-6">
+      {showLabelInput && (
+        <div className="space-y-2">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Text</p>
+          <input 
+            type="text" 
+            className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+            placeholder="e.g. Learn More" 
+            value={currentData[buttonLabelKey] || ''} 
+            onChange={(e) => updateData({ [typeKey]: { ...currentData, [buttonLabelKey]: e.target.value } })} 
+          />
+        </div>
+      )}
+
+      {isDashboard ? (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Destination Mode</p>
+            <div className="grid grid-cols-2 gap-2 bg-gray-50 p-1.5 rounded-2xl">
+              <button
+                onClick={() => updateData({ [typeKey]: { ...currentData, destinationMode: 'url' } })}
+                className={cn(
+                  "flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl text-center transition-all",
+                  destinationMode === 'url' ? "bg-white shadow-lg shadow-blue-100/50 border border-blue-100 scale-[1.02]" : "hover:bg-white/50 border border-transparent"
+                )}
+              >
+                <span className="text-base">🔗</span>
+                <span className={cn("text-[8px] font-black uppercase tracking-widest", destinationMode === 'url' ? "text-blue-600" : "text-gray-400")}>External URL</span>
+              </button>
+              <button
+                onClick={() => updateData({ [typeKey]: { ...currentData, destinationMode: 'qr_link' } })}
+                className={cn(
+                  "flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl text-center transition-all",
+                  destinationMode === 'qr_link' ? "bg-white shadow-lg shadow-blue-100/50 border border-blue-100 scale-[1.02]" : "hover:bg-white/50 border border-transparent"
+                )}
+              >
+                <span className="text-base">⚡</span>
+                <span className={cn("text-[8px] font-black uppercase tracking-widest", destinationMode === 'qr_link' ? "text-blue-600" : "text-gray-400")}>Connect QR</span>
+              </button>
+            </div>
+          </div>
+
+          {destinationMode === 'url' && (
+            <div className="space-y-2 animate-in fade-in duration-300">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Link URL</p>
+              <input 
+                type="url" 
+                className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                placeholder="https://..." 
+                value={currentData[urlKey] || ''} 
+                onChange={(e) => updateData({ [typeKey]: { ...currentData, [urlKey]: e.target.value } })} 
+              />
+            </div>
+          )}
+
+          {destinationMode === 'qr_link' && (
+            <QRPickerDropdown currentData={currentData} updateData={updateData} typeKey={typeKey} />
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Link URL</p>
+          <input 
+            type="url" 
+            className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+            placeholder="https://..." 
+            value={currentData[urlKey] || ''} 
+            onChange={(e) => updateData({ [typeKey]: { ...currentData, [urlKey]: e.target.value } })} 
+          />
+        </div>
+      )}
     </div>
   );
 };
@@ -1019,6 +1129,10 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none">Upload at least one image to your gallery</p>
                     </div>
                   )}
+                  
+                  <CollapsibleSection id="image-cta" title="Call to Action (Optional)" icon={Link} isExpanded={expandedSections['image-cta']} onToggle={toggleSection}>
+                    <CTADestinationPicker data={data} updateData={updateData} typeKey="imageGalleryInfo" />
+                  </CollapsibleSection>
                 </div>
               )}
 
@@ -1096,6 +1210,11 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                       )}
                     </div>
                  </div>
+                 
+                 <CollapsibleSection id="video-cta" title="Call to Action (Optional)" icon={Link} isExpanded={expandedSections['video-cta']} onToggle={toggleSection}>
+                   <CTADestinationPicker data={data} updateData={updateData} typeKey="video" />
+                 </CollapsibleSection>
+              </div>
               )}
 
               {data.type === 'pdf' && (
@@ -1148,6 +1267,11 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                     </>
                   )}
                 </div>
+
+                <CollapsibleSection id="pdf-cta" title="Call to Action (Optional)" icon={Link} isExpanded={expandedSections['pdf-cta']} onToggle={toggleSection}>
+                  <CTADestinationPicker data={data} updateData={updateData} typeKey="pdf" />
+                </CollapsibleSection>
+              </div>
               )}
 
               {data.type === 'mp3' && (
@@ -1216,10 +1340,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Description</p>
                         <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="Describe your audio content..." rows={3} value={data.mp3?.description || ''} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), description: e.target.value } })} />
                       </div>
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">CTA Button Label</p>
-                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Learn More" value={data.mp3?.buttonText || ''} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), buttonText: e.target.value } })} />
-                      </div>
+                      <CTADestinationPicker data={data} updateData={updateData} typeKey="mp3" />
                     </div>
                   </CollapsibleSection>
 
@@ -1782,10 +1903,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Terms & Conditions</p>
                         <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Valid for in-store purchases only..." rows={2} value={data.coupon?.terms || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), terms: e.target.value } })} />
                       </div>
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Website</p>
-                        <input type="url" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="https://company.com" value={data.coupon?.website || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), website: e.target.value } })} />
-                      </div>
+                        <CTADestinationPicker data={data} updateData={updateData} typeKey="coupon" urlKey="website" showLabelInput={false} />
                     </div>
                   </CollapsibleSection>
 
@@ -1923,19 +2041,9 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                         {data.booking?.destinationMode === 'qr_link' && (
                           <div className="space-y-4 animate-in fade-in duration-300">
                             <div className="space-y-2">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Connect to another QR Code</p>
-                              <select
-                                className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm appearance-none cursor-pointer"
-                                value={data.booking?.qrLinkId || ''}
-                                onChange={(e) => updateData({ booking: { ...(data.booking || {}), qrLinkId: e.target.value } })}
-                              >
-                                <option value="">Select a QR code...</option>
-                                <option value="qr-form-1">📝 Registration Form</option>
-                                <option value="qr-form-2">📋 Feedback Survey</option>
-                                <option value="qr-menu-1">🍽️ Summer Menu</option>
-                              </select>
-                              <p className="text-[9px] text-gray-400 font-medium">When the customer clicks the CTA, they will be directed to the linked QR experience.</p>
-                            </div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Connect to another QR Code</p>
+                                <QRPickerDropdown currentData={data.booking || {}} updateData={updateData} typeKey="booking" />
+                              </div>
                           </div>
                         )}
 
