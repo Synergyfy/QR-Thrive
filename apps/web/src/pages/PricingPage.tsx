@@ -247,11 +247,13 @@ export default function PricingPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + (idx * 0.1) }}
                   className={`flex flex-col relative rounded-[3rem] p-10 transition-all duration-500 overflow-hidden group ${
+                    plan.highlight 
+                      ? 'bg-slate-900 text-white shadow-[0_40px_100px_-20px_rgba(37,99,235,0.2)] md:-translate-y-4 border border-blue-500/30' 
+                      : 'bg-white border border-slate-100 shadow-xl shadow-blue-900/5'
+                  } ${
                     plan.isCurrent
-                      ? 'ring-4 ring-blue-500 ring-offset-4 bg-white border-transparent shadow-2xl z-30'
-                      : plan.highlight 
-                        ? 'bg-slate-900 text-white shadow-[0_40px_100px_-20px_rgba(37,99,235,0.2)] scale-105 z-20 md:-translate-y-4 border border-blue-500/30' 
-                        : 'bg-white border border-slate-100 shadow-xl shadow-blue-900/5 z-10'
+                      ? 'ring-4 ring-blue-500 ring-offset-4 ring-offset-slate-50 z-30'
+                      : plan.highlight ? 'scale-105 z-20' : 'z-10'
                   }`}
                 >
                   {/* Current Plan Badge */}
@@ -333,9 +335,9 @@ export default function PricingPage() {
                       disabled={initializePayment.isPending || plan.isCurrent}
                       className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
                         plan.isCurrent
-                          ? 'bg-slate-100 text-slate-400 cursor-default'
+                          ? (plan.highlight ? 'bg-slate-800 text-slate-400 cursor-default shadow-inner' : 'bg-slate-100 text-slate-400 cursor-default shadow-inner')
                           : plan.trial && !user?.hasUsedTrial
-                            ? 'bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-50'
+                            ? (plan.highlight ? 'bg-slate-800 border-2 border-slate-700 text-white hover:bg-slate-700' : 'bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-50')
                             : plan.highlight 
                               ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30' 
                               : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
