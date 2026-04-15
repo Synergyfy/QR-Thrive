@@ -17,6 +17,7 @@ import QRCodeStyling from 'qr-code-styling';
 import { LogOut } from 'lucide-react';
 import ScansModal from '../components/ScansModal';
 import LeadsPanel from '../components/LeadsPanel';
+import PricingPanel from '../components/panels/PricingPanel';
 
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
@@ -131,7 +132,12 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState(
+    user?.role !== 'ADMIN' && 
+    user?.subscriptionStatus !== 'active' && 
+    user?.subscriptionStatus !== 'non-renewing' && 
+    user?.subscriptionStatus !== 'trialing' ? 'pricing' : 'all'
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [folderMenuOpen, setFolderMenuOpen] = useState<string | null>(null);
@@ -415,6 +421,7 @@ const DashboardPage: React.FC = () => {
     if (activeTab === 'all') return 'All QR Codes';
     if (activeTab === 'active') return 'Active QR Codes';
     if (activeTab === 'archived') return 'Archived QR Codes';
+    if (activeTab === 'pricing') return 'Subscription Plans';
     if (activeTab.startsWith('folder:')) {
       const f = folders.find(fld => fld.id === activeTab.replace('folder:', ''));
       return f ? f.name : 'Folder';
@@ -435,18 +442,22 @@ const DashboardPage: React.FC = () => {
     <div className="min-h-screen bg-[#F8FAFC] flex font-sans selection:bg-blue-100 selection:text-blue-900">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-slate-100 flex flex-col h-screen sticky top-0 shrink-0">
-        <div className="p-6">
+        {/* Fixed Top Navbar */}
+        <div className="p-6 pb-2 shrink-0">
           <div className="flex items-center cursor-pointer mb-8" onClick={() => navigate('/')}>
              <img src="/QRThrive_Logo_Full-BG.png" alt="QR Thrive" className="h-[96px] w-auto" style={{ filter: 'brightness(0) saturate(100%) invert(32%) sepia(95%) saturate(3033%) hue-rotate(211deg) brightness(96%) contrast(92%)' }} />
           </div>
 
           <button 
             onClick={() => navigate('/dashboard/create')}
-            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-95 mb-10"
+            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-95"
           >
             <Plus className="w-5 h-5 stroke-[3]" /> Create QR Code
           </button>
+        </div>
 
+        {/* Scrollable Navigation */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pt-4 space-y-8">
           <nav className="space-y-1.5">
             {[
               { id: 'all', icon: QrCode, label: 'QR Codes', count: qrCodes.length },
@@ -454,6 +465,7 @@ const DashboardPage: React.FC = () => {
               { id: 'archived', icon: Archive, label: 'Archived', count: archivedQRs.length },
               { id: 'stats', icon: BarChart3, label: 'Stats' },
               { id: 'leads', icon: Users, label: 'Lead Capturing' },
+              { id: 'pricing', icon: Crown, label: 'Subscription' },
             ].map((item) => (
               <button
                 key={item.id}
@@ -480,7 +492,7 @@ const DashboardPage: React.FC = () => {
           </nav>
 
           {/* Folders */}
-          <div className="mt-10 pt-10 border-t border-slate-50">
+          <div className="pt-8 border-t border-slate-50">
              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 mb-4">Folders</p>
              <div className="space-y-1">
                 {folders.map(folder => (
@@ -534,77 +546,82 @@ const DashboardPage: React.FC = () => {
                 )}
              </div>
           </div>
-        </div>
 
-        <div className="mt-auto p-6 space-y-3">
-           {user?.subscriptionStatus === 'trialing' ? (
-              <div className="w-full p-6 bg-blue-600 rounded-3xl space-y-4 shadow-xl shadow-blue-100">
-                 <div className="flex items-center justify-between text-white">
-                    <div className="flex items-center gap-2">
-                       <Crown className="w-5 h-5 fill-white" />
-                       <span className="text-[10px] font-black uppercase tracking-widest">Free Trial</span>
-                    </div>
-                    <span className="text-xs font-black">
-                       {user.trialEndsAt ? Math.max(0, Math.ceil((new Date(user.trialEndsAt).getTime() - new Date().getTime()) / (1000 * 3600 * 24))) : 0} days left
-                    </span>
-                 </div>
-                 <p className="text-sm font-bold text-white/90">You are currently exploring QR Thrive Pro.</p>
-                 <button 
-                   onClick={() => navigate('/pricing')}
-                   className="w-full py-3 bg-white text-blue-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-50 transition-all shadow-lg"
-                 >
-                    Secure Pro Access
-                 </button>
-                 <button 
-                   onClick={() => { if(window.confirm('Are you sure you want to cancel your trial?')) cancelSubscriptionMutation.mutate(); }}
-                   className="w-full text-[10px] font-bold text-white/60 hover:text-white transition-all text-center pt-1"
-                 >
-                    Cancel Trial
-                 </button>
-              </div>
-           ) : user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'non-renewing' ? (
-              <div className="w-full p-4 bg-slate-900 rounded-2xl flex items-center justify-between group overflow-hidden relative">
-                 <div className="relative z-10">
-                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-0.5">
-                      {user?.subscriptionStatus === 'non-renewing' ? 'Ending Soon' : 'Active Plan'}
-                    </p>
-                    <p className="text-sm font-bold text-white">Pro Subscriber</p>
-                 </div>
-                 {user?.subscriptionStatus !== 'non-renewing' && (
-                    <button 
-                      onClick={() => { if(window.confirm('Cancel subscription?')) cancelSubscriptionMutation.mutate(); }}
-                      className="relative z-20 p-2 text-slate-500 hover:text-red-400 transition-all rounded-lg hover:bg-white/10"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                 )}
-                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/0 via-blue-600/0 to-blue-600/10" />
-              </div>
-           ) : (
-              <button 
-                onClick={() => navigate('/pricing')}
-                className="w-full p-4 bg-slate-900 rounded-2xl flex items-center justify-between group overflow-hidden relative"
-              >
-                 <div className="relative z-10">
-                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-0.5">Professional Plan</p>
-                    <p className="text-sm font-bold text-white">Upgrade Now</p>
-                 </div>
-                 <Crown className="w-8 h-8 text-white/10 group-hover:text-blue-500 transition-colors transform rotate-12" />
-                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/0 via-blue-600/0 to-blue-600/20 group-hover:to-blue-600/40 transition-all" />
-              </button>
-           )}
-           <div className="flex items-center gap-3 p-3 text-slate-500 hover:text-slate-900 cursor-pointer transition-all hover:bg-slate-50 rounded-xl">
-              <User className="w-5 h-5" /><span className="text-sm font-bold">Account</span>
-           </div>
-           <div className="flex items-center gap-3 p-3 text-slate-500 hover:text-slate-900 cursor-pointer transition-all hover:bg-slate-50 rounded-xl">
-              <Settings className="w-5 h-5" /><span className="text-sm font-bold">Settings</span>
-           </div>
-           <div 
-             onClick={handleLogout}
-             className="flex items-center gap-3 p-3 text-red-500 hover:bg-red-50 cursor-pointer transition-all rounded-xl"
-           >
-              <LogOut className="w-5 h-5" /><span className="text-sm font-bold">Log Out</span>
-           </div>
+          {/* Account Controls */}
+          <div className="pt-8 border-t border-slate-50 space-y-1.5">
+            <div className="flex items-center gap-3 p-3 text-slate-500 hover:text-slate-900 cursor-pointer transition-all hover:bg-slate-50 rounded-xl">
+               <User className="w-5 h-5" /><span className="text-sm font-bold">Account</span>
+            </div>
+            <div className="flex items-center gap-3 p-3 text-slate-500 hover:text-slate-900 cursor-pointer transition-all hover:bg-slate-50 rounded-xl">
+               <Settings className="w-5 h-5" /><span className="text-sm font-bold">Settings</span>
+            </div>
+            <div 
+              onClick={handleLogout}
+              className="flex items-center gap-3 p-3 text-red-500 hover:bg-red-50 cursor-pointer transition-all rounded-xl"
+            >
+               <LogOut className="w-5 h-5" /><span className="text-sm font-bold">Log Out</span>
+            </div>
+          </div>
+
+          {/* Plan Banner (Bottom) */}
+          <div className="mt-8">
+            {user?.subscriptionStatus === 'trialing' ? (
+               <div className="w-full p-6 bg-blue-600 rounded-3xl space-y-4 shadow-xl shadow-blue-100">
+                  <div className="flex items-center justify-between text-white">
+                     <div className="flex items-center gap-2">
+                        <Crown className="w-5 h-5 fill-white" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Free Trial</span>
+                     </div>
+                     <span className="text-xs font-black">
+                        {user.trialEndsAt ? Math.max(0, Math.ceil((new Date(user.trialEndsAt).getTime() - new Date().getTime()) / (1000 * 3600 * 24))) : 0} days left
+                     </span>
+                  </div>
+                  <p className="text-sm font-bold text-white/90">You are currently exploring QR Thrive Pro.</p>
+                  <button 
+                    onClick={() => setActiveTab('pricing')}
+                    className="w-full py-3 bg-white text-blue-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-50 transition-all shadow-lg"
+                  >
+                     Secure Pro Access
+                  </button>
+                  <button 
+                    onClick={() => { if(window.confirm('Are you sure you want to cancel your trial?')) cancelSubscriptionMutation.mutate(); }}
+                    className="w-full text-[10px] font-bold text-white/60 hover:text-white transition-all text-center pt-1"
+                  >
+                     Cancel Trial
+                  </button>
+               </div>
+            ) : user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'non-renewing' ? (
+               <div className="w-full p-4 bg-slate-900 rounded-2xl flex items-center justify-between group overflow-hidden relative">
+                  <div className="relative z-10">
+                     <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-0.5">
+                       {user?.subscriptionStatus === 'non-renewing' ? 'Ending Soon' : 'Active Plan'}
+                     </p>
+                     <p className="text-sm font-bold text-white">Pro Subscriber</p>
+                  </div>
+                  {user?.subscriptionStatus !== 'non-renewing' && (
+                     <button 
+                       onClick={() => { if(window.confirm('Cancel subscription?')) cancelSubscriptionMutation.mutate(); }}
+                       className="relative z-20 p-2 text-slate-500 hover:text-red-400 transition-all rounded-lg hover:bg-white/10"
+                     >
+                       <Trash2 className="w-4 h-4" />
+                     </button>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/0 via-blue-600/0 to-blue-600/10" />
+               </div>
+            ) : (
+               <button 
+                 onClick={() => setActiveTab('pricing')}
+                 className="w-full p-4 bg-slate-900 rounded-2xl flex items-center justify-between group overflow-hidden relative"
+               >
+                  <div className="relative z-10">
+                     <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-0.5">Professional Plan</p>
+                     <p className="text-sm font-bold text-white">Upgrade Now</p>
+                  </div>
+                  <Crown className="w-8 h-8 text-white/10 group-hover:text-blue-500 transition-colors transform rotate-12" />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/0 via-blue-600/0 to-blue-600/20 group-hover:to-blue-600/40 transition-all" />
+               </button>
+            )}
+          </div>
         </div>
       </aside>
 
@@ -644,7 +661,7 @@ const DashboardPage: React.FC = () => {
         {/* Scrollable Area */}
         <div className="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar">
            {/* Promo Banner */}
-           {activeTab !== 'archived' && activeTab !== 'stats' && (
+           {activeTab !== 'archived' && activeTab !== 'stats' && activeTab !== 'pricing' && user?.subscriptionStatus !== 'active' && user?.subscriptionStatus !== 'non-renewing' && user?.subscriptionStatus !== 'trialing' && (
              <div className="bg-slate-900 rounded-[32px] p-8 relative overflow-hidden group">
                 <div className="relative z-10 flex items-center justify-between">
                    <div className="space-y-2">
@@ -655,7 +672,10 @@ const DashboardPage: React.FC = () => {
                       <h2 className="text-2xl font-bold text-white">Unlock Full Customization & Real-time Stats</h2>
                       <p className="text-slate-400 font-medium max-w-xl">Upgrade to a Professional Plan today and get unlimited Dynamic QRs, advanced analytics, and custom domains.</p>
                    </div>
-                   <button className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-50 active:scale-95 transition-all shadow-xl">
+                   <button 
+                     onClick={() => setActiveTab('pricing')}
+                     className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-50 active:scale-95 transition-all shadow-xl"
+                   >
                       View Pricing
                    </button>
                 </div>
@@ -680,7 +700,9 @@ const DashboardPage: React.FC = () => {
               </div>
            </div>
 
-           {activeTab === 'stats' ? (
+           {activeTab === 'pricing' ? (
+             <PricingPanel />
+           ) : activeTab === 'stats' ? (
              <StatsPanel codes={qrCodes} />
            ) : activeTab === 'leads' ? (
              <LeadsPanel codes={qrCodes} />
