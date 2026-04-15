@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Zap, Globe, MessageSquare, Camera, Briefcase, type LucideIcon } from 'lucide-react';
+import { Globe, MessageSquare, Camera, Briefcase, type LucideIcon } from 'lucide-react';
 
 function SocialIcon({ icon: Icon }: { icon: LucideIcon }) {
   return (
@@ -16,10 +16,7 @@ export default function PublicFooter() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-16 mb-24">
           <div className="col-span-2">
             <div className="flex items-center gap-2 mb-8">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                <Zap className="text-white w-6 h-6 fill-yellow-300" />
-              </div>
-              <span className="text-2xl font-bold tracking-tighter">QR Thrive</span>
+              <img src="/QRThrive_Logo_Full-BG.png" alt="QR Thrive" className="h-[120px] md:h-[140px] w-auto brightness-0 invert opacity-100" />
             </div>
             <p className="text-blue-100 max-w-xs mb-10 font-medium leading-relaxed">Modernize your business interactions with the world's most intuitive QR management engine.</p>
             <div className="flex gap-5">

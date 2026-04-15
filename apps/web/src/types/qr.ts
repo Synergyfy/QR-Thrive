@@ -332,6 +332,9 @@ export interface QRData {
     whatsappEnabled?: boolean;
     whatsappNumber?: string;
   };
+
+  // Universal QR Connector — works across all QR types
+  connectedQrId?: string;
 }
 
 export interface Gradient {

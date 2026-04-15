@@ -160,6 +160,7 @@ function GeneratorPage() {
 
   const [designTab, setDesignTab] = useState<'shape' | 'frame' | 'logo' | 'colors'>('shape');
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [previewMode, setPreviewMode] = useState<'preview' | 'qr'>('preview');
 
   const updateConfig = (updates: Partial<QRConfiguration>) => {
     setConfig(prev => ({ ...prev, ...updates }));
@@ -394,7 +395,34 @@ function GeneratorPage() {
                   </button>
                 )}
                 
-                {step === 'design' ? (
+                {config.data.type && step !== 'type' && (
+                  <div className="mb-8 w-full max-w-[240px] p-1.5 bg-blue-50/50 rounded-full border border-blue-100 flex items-center relative group/switcher shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+                     <div className={cn(
+                       "absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-blue-600 rounded-full shadow-lg shadow-blue-200 transition-all duration-300 ease-out z-10",
+                       previewMode === 'qr' ? "left-[calc(50%+3px)]" : "left-1.5"
+                     )} />
+                     <button 
+                       onClick={() => setPreviewMode('preview')}
+                       className={cn(
+                         "flex-1 py-3 text-[10px] font-black uppercase tracking-widest relative z-20 transition-colors duration-300",
+                         previewMode === 'preview' ? "text-white" : "text-blue-400 hover:text-blue-600"
+                       )}
+                     >
+                        Preview
+                     </button>
+                     <button 
+                       onClick={() => setPreviewMode('qr')}
+                       className={cn(
+                         "flex-1 py-3 text-[10px] font-black uppercase tracking-widest relative z-20 transition-colors duration-300",
+                         previewMode === 'qr' ? "text-white" : "text-blue-400 hover:text-blue-600"
+                       )}
+                     >
+                        QR Code
+                     </button>
+                  </div>
+                )}
+
+                {(step === 'design' || (step !== 'type' && previewMode === 'qr')) ? (
                   <div className="w-full flex flex-col items-center animate-in zoom-in-95 duration-500">
                     <div className="flex items-center justify-center gap-3 mb-8">
                       <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-sm font-bold shadow-lg shadow-blue-200">3</div>
@@ -422,12 +450,21 @@ function GeneratorPage() {
                     </div>
 
                     <div className="w-full space-y-4 max-w-[280px]">
-                      <ExportPanel 
-                        config={config} 
-                        hasUser={!!user} 
-                        isValid={true}
-                        onAuthRequired={() => setIsAuthModalOpen(true)} 
-                      />
+                      {step === 'design' ? (
+                        <ExportPanel 
+                          config={config} 
+                          hasUser={!!user} 
+                          isValid={true}
+                          onAuthRequired={() => setIsAuthModalOpen(true)} 
+                        />
+                      ) : (
+                         <div className="text-center space-y-4">
+                           <div className="px-4 py-2 bg-blue-50 text-blue-600 text-[9px] font-bold uppercase tracking-[0.2em] rounded-full flex items-center justify-center gap-2 shadow-sm border border-blue-100/50">
+                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+                              Dynamic preview mode active
+                           </div>
+                         </div>
+                      )}
                     </div>
                   </div>
                 ) : (
