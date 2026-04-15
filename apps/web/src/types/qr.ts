@@ -97,6 +97,8 @@ export interface QRData {
     description?: string;
     buttonText?: string;
     buttonUrl?: string;
+    destinationMode?: 'url' | 'qr_link';
+    qrLinkId?: string;
     themeColor?: string;
   };
   pdf?: FileData & { 
@@ -109,6 +111,10 @@ export interface QRData {
     textColor?: string;
     buttonColor?: string;
     buttonTextColor?: string;
+    buttonText?: string;
+    buttonUrl?: string;
+    destinationMode?: 'url' | 'qr_link';
+    qrLinkId?: string;
   };
   video?: {
     id?: string;
@@ -126,6 +132,10 @@ export interface QRData {
     textColor?: string;
     buttonColor?: string;
     buttonTextColor?: string;
+    buttonText?: string;
+    buttonUrl?: string;
+    destinationMode?: 'url' | 'qr_link';
+    qrLinkId?: string;
   };
   mp3?: FileData & { 
     pendingFile?: PendingFile;
@@ -134,6 +144,9 @@ export interface QRData {
     description?: string;
     artist?: string;
     buttonText?: string;
+    buttonUrl?: string;
+    destinationMode?: 'url' | 'qr_link';
+    qrLinkId?: string;
     themeColor?: string;
     textColor?: string;
     buttonColor?: string;
@@ -319,6 +332,9 @@ export interface QRData {
     whatsappEnabled?: boolean;
     whatsappNumber?: string;
   };
+
+  // Universal QR Connector — works across all QR types
+  connectedQrId?: string;
 }
 
 export interface Gradient {

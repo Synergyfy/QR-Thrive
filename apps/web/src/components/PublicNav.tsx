@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Zap, LayoutGrid, LogOut, Menu, X, ChevronRight } from 'lucide-react';
+import { LayoutGrid, LogOut, Menu, X, ChevronRight } from 'lucide-react';
 import { useCurrentUser, useLogout } from '../hooks/useApi';
 import { getDashboardPath } from '../utils/auth';
 import AuthModal from './AuthModal';
@@ -42,14 +42,8 @@ export default function PublicNav() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2.5 group cursor-pointer shrink-0">
-              <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center transform group-hover:rotate-12 transition-all duration-300 shadow-lg shadow-blue-500/20">
-                <Zap className="text-white w-6 h-6 fill-yellow-300" />
-              </div>
-              <div className="flex flex-col -space-y-1">
-                <span className="text-xl font-black tracking-tighter text-gray-900">QR Thrive</span>
-                <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest px-0.5">Marketing</span>
-              </div>
+            <Link to="/" className="flex items-center group cursor-pointer shrink-0">
+              <img src="/QRThrive_Logo_Full-BG.png" alt="QR Thrive" className="h-[80px] md:h-[100px] w-auto transform transition-all duration-300" style={{ filter: 'brightness(0) saturate(100%) invert(32%) sepia(95%) saturate(3033%) hue-rotate(211deg) brightness(96%) contrast(92%)' }} />
             </Link>
             
             {/* Desktop Navigation Links */}

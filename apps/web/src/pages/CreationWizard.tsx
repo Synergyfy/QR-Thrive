@@ -10,7 +10,6 @@ import {
   Music,
   Building2,
   UtensilsCrossed,
-  CheckCircle2,
   Phone,
   Link2,
   Users,
@@ -307,11 +306,8 @@ const CreationWizard: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
       {/* Navbar */}
       <nav className="h-16 bg-white border-b border-slate-100 px-8 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => navigate(getDashboardPath(user?.role))}>
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-100">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-            <span className="text-lg font-bold text-slate-900 tracking-tighter">QR Thrive</span>
+        <div className="flex items-center cursor-pointer shrink-0" onClick={() => navigate(getDashboardPath(user?.role))}>
+            <img src="/QRThrive_Logo_Full-BG.png" alt="QR Thrive" className="h-14 w-auto" style={{ filter: 'brightness(0) saturate(100%) invert(32%) sepia(95%) saturate(3033%) hue-rotate(211deg) brightness(96%) contrast(92%)' }} />
         </div>
 
         {/* Stepper (Centered) */}
