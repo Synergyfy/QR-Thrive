@@ -199,7 +199,11 @@ export default function PublicNav() {
       <AuthModal 
         isOpen={isAuthModalOpen} 
         onClose={() => setIsAuthModalOpen(false)} 
-        onSuccess={() => {}} 
+        onSuccess={(u) => {
+          setIsAuthModalOpen(false);
+          const path = getDashboardPath(u.role);
+          navigate(path);
+        }} 
       />
     </>
   );

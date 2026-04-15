@@ -64,6 +64,11 @@ export class PaymentsController {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new BadRequestException('User not found');
 
+    const isActive = user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing' || user.subscriptionStatus === 'non-renewing';
+    if (user.planId === planId && user.billingCycle === interval && isActive) {
+      throw new BadRequestException('You already have an active subscription for this plan and interval.');
+    }
+
     // Resolve country - Prioritize locked account country over current IP
     const country = (user.countryCode || req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || this.pricingService.getCountryCodeByIp(ip)) as string;
 
@@ -102,6 +107,65 @@ export class PaymentsController {
         tierName: countryInfo?.tier || 'Unknown'
       },
     );
+  }
+
+  @Post('start-trial')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Start a free trial for a plan (soft trial, no card required)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        planId: { type: 'string' },
+      },
+      required: ['planId'],
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Trial started successfully.' })
+  async startTrial(
+    @Req() req: Request & { user: { userId: string } },
+    @Body() body: { planId: string },
+  ) {
+    const userId = req.user.userId;
+    const { planId } = body;
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new BadRequestException('User not found');
+    if (user.hasUsedTrial) throw new BadRequestException('You have already used a free trial.');
+
+    const plan = await this.prisma.plan.findUnique({ where: { id: planId } });
+    if (!plan) throw new BadRequestException('Plan not found');
+    if (plan.trialDays <= 0) throw new BadRequestException('This plan does not have a trial period.');
+
+    const now = new Date();
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(now.getDate() + plan.trialDays);
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        plan: { connect: { id: planId } },
+        subscriptionStatus: 'trialing',
+        trialStartedAt: now,
+        trialEndsAt: trialEndsAt,
+        hasUsedTrial: true,
+      },
+      include: { plan: true },
+    });
+
+    // Provision on Vemtap
+    if (updatedUser.plan?.vemtapPlanId) {
+      this.vemtapService.provisionUser(
+        updatedUser.email,
+        updatedUser.firstName,
+        updatedUser.lastName,
+        updatedUser.plan.vemtapPlanId,
+      ).catch(err => {
+        this.logger.error(`Vemtap provisioning failed during trial start for ${user.email}:`, err);
+      });
+    }
+
+    return { message: `Trial for ${plan.name} started successfully.`, trialEndsAt, planName: plan.name };
   }
   
   @Post('subscribe-free')
@@ -261,19 +325,10 @@ export class PaymentsController {
     const { customer, plan, subscription } = data;
     const email = customer.email;
 
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      this.logger.error(
-        `User with email ${email} not found for charge.success`,
-      );
-      return;
-    }
+    this.logger.log(`Processing charge.success for ${email}`);
 
     let metadata = data.metadata;
-    if (typeof metadata === 'string') {
+    if (typeof metadata === 'string' && metadata.length > 0) {
       try {
         metadata = JSON.parse(metadata);
       } catch (e) {
@@ -282,7 +337,20 @@ export class PaymentsController {
       }
     }
 
-    const { planId, interval } = metadata || {};
+    const { userId, planId, interval } = metadata || {};
+    this.logger.log(`Transaction metadata: userId=${userId}, planId=${planId}, interval=${interval}`);
+
+    // Prioritize userId from metadata, fall back to email
+    const user = userId 
+      ? await this.prisma.user.findUnique({ where: { id: userId } })
+      : await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      this.logger.error(
+        `User not found for charge.success. email=${email}, userId=${userId}`,
+      );
+      return;
+    }
 
     const updatedUser = await this.prisma.user.update({
       where: { id: user.id },
@@ -292,13 +360,13 @@ export class PaymentsController {
         paystackSubscriptionCode: subscription?.subscription_code || null,
         subscriptionStatus: 'active',
         billingCycle: interval || plan?.interval || null,
-        hasUsedTrial: true, // Mark that they've now paid/used a trial
-        trialEndsAt: null,   // Clear trial as they are now active
+        hasUsedTrial: true, 
+        trialEndsAt: null,   
       },
       include: { plan: true },
     });
 
-    this.logger.log(`User ${email} upgraded to plan ${planId || 'PRO'}`);
+    this.logger.log(`Successfully updated plan for user ${user.email} to ${updatedUser.plan?.name || 'Unknown'}`);
 
     // Vemtap Provisioning logic
     if (updatedUser.plan?.vemtapPlanId) {

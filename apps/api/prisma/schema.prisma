@@ -267,6 +267,10 @@ model QRCode {
   scans        Scan[]
   form         Form?
 
+  linkedQRCodeId String?
+  linkedQRCode   QRCode?   @relation("QRLinks", fields: [linkedQRCodeId], references: [id], onDelete: SetNull)
+  linkingQRCodes QRCode[]  @relation("QRLinks")
+
   @@index([userId])
 }
 

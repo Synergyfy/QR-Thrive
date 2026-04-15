@@ -7,7 +7,7 @@ import PublicNav from '../components/PublicNav';
 import PublicFooter from '../components/PublicFooter';
 import AuthModal from '../components/AuthModal';
 import { usePublicPlans, usePublicConfig } from '../hooks/usePricing';
-import { useCurrentUser, useInitializePayment } from '../hooks/useApi';
+import { useCurrentUser, useInitializePayment, useStartTrial } from '../hooks/useApi';
 import { useSubscribeFree } from '../hooks/useSubscribeFree';
 import { getDashboardPath } from '../utils/auth';
 import type { PublicPlan } from '../types/api';
@@ -28,6 +28,7 @@ export default function PricingPage() {
   const { data: config, isLoading: configLoading } = usePublicConfig();
   const initializePayment = useInitializePayment();
   const subscribeFree = useSubscribeFree();
+  const startTrial = useStartTrial();
 
   const isLoading = plansLoading || configLoading;
 
@@ -44,6 +45,11 @@ export default function PricingPage() {
         gatewayIds: {}
       };
 
+      const isCurrentPlan = user?.planId === plan.id;
+      const isSameCycle = plan.isFree || user?.billingCycle === selectedCycle;
+      const isActive = user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trialing' || user?.subscriptionStatus === 'non-renewing';
+      const isCurrent = isCurrentPlan && isSameCycle && isActive;
+
       return {
         name: plan.name,
         description: plan.description || '',
@@ -53,7 +59,7 @@ export default function PricingPage() {
         highlight: plan.isPopular,
         popular: plan.isPopular,
         isFree: plan.isFree,
-        isCurrent: user?.planId === plan.id,
+        isCurrent,
         trialDays: plan.trialDays,
         trial: plan.trialDays > 0,
         cta: plan.isFree ? "Start Now" : (plan.trialDays > 0 ? `Start ${plan.trialDays}-Day Free Trial` : "Get Started"),
@@ -108,13 +114,17 @@ export default function PricingPage() {
             toast.error('Payment window closed');
           },
           callback: (_response: any) => {
-            toast.success('Payment successful! Upgrading your account...');
+            const verifyingToast = toast.loading('Payment successful! Verifying your premium access...');
+            
             // Invalidate user query to reflect new plan
             queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-            // Redirect to dashboard after a short delay
+            
+            // Redirect to dashboard after a longer delay to allow webhook to process
             setTimeout(() => {
+              toast.dismiss(verifyingToast);
+              toast.success('Account upgraded successfully!');
               navigate('/dashboard');
-            }, 1500);
+            }, 3000);
           }
 
         });
@@ -125,6 +135,21 @@ export default function PricingPage() {
       }
     } catch (err) {
       // Error handled by hook
+    }
+  };
+
+  const handleStartTrial = async (plan: PublicPlan) => {
+    if (!user) {
+      setSelectedPlan(plan);
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    try {
+      await startTrial.mutateAsync({ planId: plan.id });
+      navigate(getDashboardPath(user.role));
+    } catch (err) {
+      // Error handled in hook
     }
   };
 
@@ -301,22 +326,41 @@ export default function PricingPage() {
                   </div>
 
                   <div className="space-y-3">
+                    {plan.trial && !plan.isCurrent && !user?.hasUsedTrial && (
+                      <button 
+                        onClick={() => handleStartTrial(plans!.find(p => p.name === plan.name)!)}
+                        disabled={startTrial.isPending || plan.isCurrent}
+                        className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30 ${startTrial.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
+                      >
+                        {startTrial.isPending && selectedPlan?.name === plan.name ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            {`Start ${plan.trialDays}-Day Free Trial`}
+                            <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
+                          </>
+                        )}
+                      </button>
+                    )}
+
                     <button 
                       onClick={() => handleJoinPlan(plans!.find(p => p.name === plan.name)!)}
                       disabled={initializePayment.isPending || plan.isCurrent}
                       className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
                         plan.isCurrent
                           ? 'bg-slate-100 text-slate-400 cursor-default'
-                          : plan.highlight 
-                            ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30' 
-                            : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
+                          : plan.trial && !user?.hasUsedTrial
+                            ? 'bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-50'
+                            : plan.highlight 
+                              ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30' 
+                              : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
                       } ${initializePayment.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
                       {((initializePayment.isPending || subscribeFree.isPending) && selectedPlan?.name === plan.name) ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <>
-                          {plan.isCurrent ? "Active Plan" : plan.cta}
+                          {plan.isCurrent ? "Active Plan" : (plan.trial && !user?.hasUsedTrial ? "Subscribe Now" : plan.cta)}
                           {!plan.isCurrent && <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />}
                         </>
                       )}

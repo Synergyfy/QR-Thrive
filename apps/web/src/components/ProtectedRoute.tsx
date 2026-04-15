@@ -18,13 +18,19 @@ const ProtectedRoute: React.FC = () => {
     );
   }
 
+  console.log('ProtectedRoute state:', { isLoading, fetchStatus, userExists: !!user, userObjectExists: !!user?.user, isError });
+
   // Only redirect once the query has definitively settled with no user
-  if (isError || !user) {
+  // We also wait if a fetch is in progress (fetchStatus !== 'idle') to avoid premature redirects
+  if (isError || (!user && fetchStatus === 'idle') || (user && !user.user && fetchStatus === 'idle')) {
+    console.log('ProtectedRoute: Redirecting to homepage due to missing auth state');
     return <Navigate to="/" replace />;
   }
 
   const u = user.user;
-  const isSubscriber = u.subscriptionStatus === 'active' || u.subscriptionStatus === 'trialing' || u.subscriptionStatus === 'non-renewing';
+  const isTrialValid = u.subscriptionStatus === 'trialing' && u.trialEndsAt && new Date(u.trialEndsAt) > new Date();
+  // Allow active, non-renewing, valid trials, or any user with a plan and no explicit status (fallback)
+  const isSubscriber = u.subscriptionStatus === 'active' || u.subscriptionStatus === 'non-renewing' || isTrialValid || (!!u.planId && !u.subscriptionStatus);
   
   // Allow admins and active subscribers
   if (u.role !== 'ADMIN' && !isSubscriber) {

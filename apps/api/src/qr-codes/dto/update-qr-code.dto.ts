@@ -128,4 +128,13 @@ export class UpdateQRCodeDto {
   @IsInt()
   @IsOptional()
   margin?: number;
+
+  @ApiProperty({
+    description: 'ID of an existing QR code to link to',
+    example: 'uuid-qr-123',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  linkedQRCodeId?: string;
 }
