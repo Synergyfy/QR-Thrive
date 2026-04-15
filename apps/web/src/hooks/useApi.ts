@@ -183,9 +183,19 @@ export const useCancelSubscription = () => {
 };
 export const useInitializePayment = () => {
   return useMutation({
-    mutationFn: (data: { planId: string; interval: string }) => paymentsApi.initialize(data),
+    mutationFn: (data: { planId: string; interval: string; isTrial?: boolean }) => paymentsApi.initialize(data),
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to initialize payment');
+    },
+  });
+};
+
+export const useVerifyPayment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reference: string) => paymentsApi.verifyPayment(reference),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
   });
 };

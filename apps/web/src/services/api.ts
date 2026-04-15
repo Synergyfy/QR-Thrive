@@ -239,7 +239,12 @@ export const adminApi = {
   },
 };
 export const paymentsApi = {
-  initialize: async (data: { planId: string; interval: string }) => (await apiClient.post<{ authorization_url: string }>('/payments/initialize', data)).data,
+  initialize: async (data: { planId: string; interval: string; isTrial?: boolean }) => {
+    return (await apiClient.post('/payments/initialize', data)).data;
+  },
+  verifyPayment: async (reference: string) => {
+    return (await apiClient.post('/payments/verify', { reference })).data;
+  },
   startTrial: async (data: { planId: string }) => (await apiClient.post<{ message: string; trialEndsAt: string }>('/payments/start-trial', data)).data,
   subscribeFree: async (data: { planId: string }) => (await apiClient.post<{ message: string; planName: string }>('/payments/subscribe-free', data)).data,
   cancelSubscription: async () => (await apiClient.post<{ message: string }>('/payments/cancel')).data,

@@ -7,7 +7,7 @@ import PublicNav from '../components/PublicNav';
 import PublicFooter from '../components/PublicFooter';
 import AuthModal from '../components/AuthModal';
 import { usePublicPlans, usePublicConfig } from '../hooks/usePricing';
-import { useCurrentUser, useInitializePayment, useStartTrial } from '../hooks/useApi';
+import { useCurrentUser, useInitializePayment, useStartTrial, useVerifyPayment } from '../hooks/useApi';
 import { useSubscribeFree } from '../hooks/useSubscribeFree';
 import { getDashboardPath } from '../utils/auth';
 import type { PublicPlan } from '../types/api';
@@ -29,6 +29,7 @@ export default function PricingPage() {
   const initializePayment = useInitializePayment();
   const subscribeFree = useSubscribeFree();
   const startTrial = useStartTrial();
+  const verifyPayment = useVerifyPayment();
 
   const isLoading = plansLoading || configLoading;
 
@@ -46,9 +47,8 @@ export default function PricingPage() {
       };
 
       const isCurrentPlan = user?.planId === plan.id;
-      const isSameCycle = plan.isFree || user?.billingCycle === selectedCycle;
       const isActive = user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trialing' || user?.subscriptionStatus === 'non-renewing';
-      const isCurrent = isCurrentPlan && isSameCycle && isActive;
+      const isCurrent = isCurrentPlan && isActive;
 
       return {
         name: plan.name,
@@ -71,7 +71,7 @@ export default function PricingPage() {
     });
   }, [plans, config, selectedCycle]);
 
-  const handleJoinPlan = async (plan: PublicPlan) => {
+  const handleJoinPlan = async (plan: PublicPlan, isTrial = false) => {
     setSelectedPlan(plan);
     
     if (!user) {
@@ -93,63 +93,48 @@ export default function PricingPage() {
     try {
       const data = await initializePayment.mutateAsync({
         planId: plan.id,
-        interval: selectedCycle
+        interval: selectedCycle,
+        isTrial
       });
 
-      const pricePoint = plan.pricing[selectedCycle] || plan.pricing.monthly || {
-        amount: 0,
-        currency: 'USD',
-        currencySymbol: '$',
-        priceBookId: '',
-        gatewayIds: {}
-      };
-
       if (data && (data as any).access_code) {
+        console.log('Opening Paystack with access_code:', (data as any).access_code);
+        toast.success(isTrial ? 'Wait, securely setting up your free trial...' : 'Wait, reaching Paystack...');
+        
         const handler = (window as any).PaystackPop.setup({
           key: (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_b8e2d78705a6e87f87053e87053e87053e8705', 
           email: user.email,
-          amount: Math.round(pricePoint.amount * 100),
           access_code: (data as any).access_code,
           onClose: () => {
             toast.error('Payment window closed');
           },
-          callback: (_response: any) => {
-            const verifyingToast = toast.loading('Payment successful! Verifying your premium access...');
+          callback: async (response: any) => {
+            const verifyingToast = toast.loading('Payment successful! Verifying your access...');
             
-            // Invalidate user query to reflect new plan
-            queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-            
-            // Redirect to dashboard after a longer delay to allow webhook to process
-            setTimeout(() => {
+            try {
+              // Proactively verify the transaction on the backend
+              await verifyPayment.mutateAsync(response.reference);
+              
               toast.dismiss(verifyingToast);
-              toast.success('Account upgraded successfully!');
+              toast.success(isTrial ? 'Trial activated successfully!' : 'Account upgraded successfully!');
               navigate('/dashboard');
-            }, 3000);
+            } catch (err) {
+              toast.dismiss(verifyingToast);
+              toast.error('Verification failed. Please check your dashboard in a moment.');
+              setTimeout(() => navigate('/dashboard'), 2000);
+            }
           }
 
         });
         handler.openIframe();
       } else if (data && (data as any).authorization_url) {
+        console.log('Redirecting to authorization_url:', (data as any).authorization_url);
         // Fallback to redirect if access_code is missing but url exists
         window.location.href = (data as any).authorization_url;
       }
     } catch (err) {
+      console.error('Payment initialization error:', err);
       // Error handled by hook
-    }
-  };
-
-  const handleStartTrial = async (plan: PublicPlan) => {
-    if (!user) {
-      setSelectedPlan(plan);
-      setIsAuthModalOpen(true);
-      return;
-    }
-
-    try {
-      await startTrial.mutateAsync({ planId: plan.id });
-      navigate(getDashboardPath(user.role));
-    } catch (err) {
-      // Error handled in hook
     }
   };
 
@@ -328,11 +313,11 @@ export default function PricingPage() {
                   <div className="space-y-3">
                     {plan.trial && !plan.isCurrent && !user?.hasUsedTrial && (
                       <button 
-                        onClick={() => handleStartTrial(plans!.find(p => p.name === plan.name)!)}
-                        disabled={startTrial.isPending || plan.isCurrent}
-                        className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30 ${startTrial.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        onClick={() => handleJoinPlan(plans!.find(p => p.name === plan.name)!, true)}
+                        disabled={initializePayment.isPending || plan.isCurrent}
+                        className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30 ${initializePayment.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
                       >
-                        {startTrial.isPending && selectedPlan?.name === plan.name ? (
+                        {initializePayment.isPending && selectedPlan?.name === plan.name ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <>
