@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNumber, IsBoolean, IsArray, IsOptional, IsEnum, Min, Max } from 'class-validator';
-import { QRType } from '@prisma/client';
+import { QRType, PricingTier } from '@prisma/client';
 
 export class UpdatePricingDiscountsDto {
   @ApiProperty({ example: 10, description: 'Percentage discount for quarterly plans' })
@@ -15,14 +15,6 @@ export class UpdatePricingDiscountsDto {
   @Max(100)
   yearlyDiscount: number;
 }
-
-export class CreateTierDto {
-  @ApiProperty({ example: 'Tier 1', description: 'Name of the economic tier' })
-  @IsString()
-  name: string;
-}
-
-export class UpdateTierDto extends CreateTierDto {}
 
 export class CreateCountryDto {
   @ApiProperty({ example: 'US', description: 'ISO 3166-1 alpha-2 country code' })
@@ -41,9 +33,9 @@ export class CreateCountryDto {
   @IsString()
   currencySymbol: string;
 
-  @ApiProperty({ example: 'tier_id_here', description: 'ID of the assigned tier' })
-  @IsString()
-  tierId: string;
+  @ApiProperty({ enum: PricingTier, example: PricingTier.HIGH, description: 'The assigned economic tier' })
+  @IsEnum(PricingTier)
+  tier: PricingTier;
 }
 
 export class UpdateCountryDto extends CreateCountryDto {}
@@ -89,31 +81,28 @@ export class CreatePlanDto {
   @IsOptional()
   trialDays?: number;
 
-  // High Income Tier - Monthly Price (quarterly/yearly auto-calculated)
-  @ApiPropertyOptional({ example: 20.0 })
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  highIncomeMonthlyUSD?: number;
-
-  // Middle Income Tier - Monthly Price
-  @ApiPropertyOptional({ example: 10.0 })
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  middleIncomeMonthlyUSD?: number;
-
-  // Low Income Tier - Monthly Price
-  @ApiPropertyOptional({ example: 5.0 })
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  lowIncomeMonthlyUSD?: number;
-
   @ApiPropertyOptional({ example: 'vemtap_plan_uuid', description: 'Attached Vemtap Plan ID' })
   @IsString()
   @IsOptional()
   vemtapPlanId?: string;
+
+  @ApiPropertyOptional({ example: 20.0 })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  highTierPrice?: number;
+
+  @ApiPropertyOptional({ example: 10.0 })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  middleTierPrice?: number;
+
+  @ApiPropertyOptional({ example: 5.0 })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  lowTierPrice?: number;
 }
 
 export class UpdatePlanDto extends CreatePlanDto {

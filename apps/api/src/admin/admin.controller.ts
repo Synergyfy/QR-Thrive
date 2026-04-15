@@ -18,6 +18,10 @@ import { Role } from '@prisma/client';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Public } from '../auth/decorators/public.decorator';
 import { UpdateSystemConfigDto } from './dto/update-system-config.dto';
+import { UpdateCountryDto } from './dto/update-country.dto';
+import { CreatePriceBookDto } from './dto/create-price-book.dto';
+import { UpdatePriceBookDto } from './dto/update-price-book.dto';
+import { PricingTier } from '@prisma/client';
 import type { Response } from 'express';
 import {
   ApiTags,
@@ -118,4 +122,54 @@ export class AdminController {
     return res.send(csv);
   }
 
+  // Country Management
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @Get('countries')
+  @ApiOperation({ summary: 'List all countries with optional tier filter (Admin only)' })
+  async getCountries(@Query('tier') tier?: PricingTier) {
+    return this.adminService.getCountries(tier);
+  }
+
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('countries/:code')
+  @ApiOperation({ summary: 'Update a country tier or tax rate (Admin only)' })
+  async updateCountry(
+    @Param('code') code: string,
+    @Body() body: UpdateCountryDto,
+  ) {
+    return this.adminService.updateCountry(code, body);
+  }
+
+  // PriceBook Management
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @Get('plans/:planId/prices')
+  @ApiOperation({ summary: 'Get all prices for a specific plan (Admin only)' })
+  async getPlanPrices(@Param('planId') planId: string) {
+    return this.adminService.getPlanPrices(planId);
+  }
+
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @Post('plans/:planId/prices')
+  @ApiOperation({ summary: 'Create a new price entry for a plan (Admin only)' })
+  async createPriceBook(
+    @Param('planId') planId: string,
+    @Body() body: CreatePriceBookDto,
+  ) {
+    return this.adminService.createPriceBook(planId, body);
+  }
+
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('price-books/:id')
+  @ApiOperation({ summary: 'Update a price book entry status or value (Admin only)' })
+  async updatePriceBook(
+    @Param('id') id: string,
+    @Body() body: UpdatePriceBookDto,
+  ) {
+    return this.adminService.updatePriceBook(id, body);
+  }
 }

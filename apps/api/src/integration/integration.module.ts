@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { IntegrationController } from './integration.controller';
 import { IntegrationService } from './integration.service';
@@ -9,7 +9,7 @@ import { FormsModule } from '../forms/forms.module';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [PrismaModule, QRCodesModule, AuthModule, FormsModule, HttpModule],
+  imports: [PrismaModule, QRCodesModule, forwardRef(() => AuthModule), FormsModule, HttpModule],
   controllers: [IntegrationController],
   providers: [IntegrationService, VemtapService],
   exports: [VemtapService],

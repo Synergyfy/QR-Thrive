@@ -10,6 +10,7 @@ import {
   Body,
   Ip,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { PaystackService } from './paystack.service';
 import { PricingService } from '../pricing/pricing.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -52,16 +53,22 @@ export class PaymentsController {
   @ApiResponse({ status: 200, description: 'Transaction initialized successfully.' })
   @ApiResponse({ status: 400, description: 'Plan not found, inactive, or invalid interval.' })
   async initialize(
-    @Req() req: { user: { userId: string } },
+    @Req() req: Request & { user: { userId: string } },
     @Ip() ip: string,
     @Body() body: { planId: string; interval: 'monthly' | 'quarterly' | 'yearly' },
   ) {
     const userId = req.user.userId;
     const { planId, interval } = body;
 
+    // 5. Initialize transaction
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new BadRequestException('User not found');
+
+    // Resolve country - Prioritize locked account country over current IP
+    const country = (user.countryCode || req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || this.pricingService.getCountryCodeByIp(ip)) as string;
+
     // 1. Fetch Plan with localized pricing
-    // We reuse pricingService to get the correct price for the user's IP/Tier
-    const plan = await this.pricingService.getPlanWithPricing(planId, ip);
+    const plan = await this.pricingService.getPlanWithPricing(planId, country);
 
     // 2. Validate Plan status
     if (!plan.isActive) {
@@ -72,31 +79,86 @@ export class PaymentsController {
       throw new BadRequestException('Cannot pay for a free/default plan.');
     }
 
-    // 3. Get the correct price for the interval
-    const amount = (plan.pricing as any)[interval];
-    if (!amount || amount <= 0) {
+    // 3. Get the correct price and plan code for the interval
+    const pricing = (plan.pricing as any)[interval];
+    const amount = pricing?.amount;
+    const paystackPlanCode = pricing?.gatewayIds?.paystack;
+
+    if (amount === undefined || amount < 0) {
       throw new BadRequestException('Invalid price for the selected interval.');
     }
 
-    // 5. Initialize transaction
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new BadRequestException('User not found');
-
     // Get tier name for metadata
-    const countryCode = this.pricingService.getCountryCodeByIp(ip);
-    const countryInfo = await this.pricingService.getCountryInfo(countryCode);
+    const countryInfo = await this.pricingService.getCountryInfo(country);
 
     return this.paystackService.initializeTransaction(
       user.email,
       amount,
-      undefined, // Paystack plan code - can be added later if needed
+      paystackPlanCode, 
       { 
         userId, 
         planId, 
         interval,
-        tierName: countryInfo?.tier?.name || 'Unknown'
+        tierName: countryInfo?.tier || 'Unknown'
       },
     );
+  }
+  
+  @Post('subscribe-free')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Subscribe to a free plan directly' })
+  @ApiBody({
+      schema: {
+          type: 'object',
+          properties: {
+              planId: { type: 'string' }
+          },
+          required: ['planId']
+      }
+  })
+  @ApiResponse({ status: 200, description: 'Subscribed to free plan successfully.' })
+  async subscribeFree(
+    @Req() req: Request & { user: { userId: string } },
+    @Body() body: { planId: string },
+  ) {
+    const userId = req.user.userId;
+    const { planId } = body;
+
+    const user = await this.prisma.user.findUnique({ 
+        where: { id: userId },
+        include: { plan: true }
+    });
+    if (!user) throw new BadRequestException('User not found');
+
+    const plan = await this.prisma.plan.findUnique({ where: { id: planId } });
+    if (!plan) throw new BadRequestException('Plan not found');
+    if (!plan.isFree) throw new BadRequestException('This endpoint is only for free plans');
+    if (!plan.isActive) throw new BadRequestException('Plan is inactive');
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        plan: { connect: { id: planId } },
+        subscriptionStatus: 'active',
+        billingCycle: null,
+        paystackSubscriptionCode: null, // Clear subscription as they moved to free
+      },
+      include: { plan: true }
+    });
+
+    // Sync with Vemtap
+    if (updatedUser.plan?.vemtapPlanId) {
+      this.vemtapService.provisionUser(
+        updatedUser.email,
+        updatedUser.firstName,
+        updatedUser.lastName,
+        updatedUser.plan.vemtapPlanId,
+      ).catch(err => {
+        this.logger.error(`Vemtap provisioning failed during free subscription for ${user.email}:`, err);
+      });
+    }
+
+    return { message: 'Successfully subscribed to the free plan.', planName: plan.name };
   }
 
   @Post('cancel')
@@ -210,7 +272,17 @@ export class PaymentsController {
       return;
     }
 
-    const { planId, interval } = data.metadata || {};
+    let metadata = data.metadata;
+    if (typeof metadata === 'string') {
+      try {
+        metadata = JSON.parse(metadata);
+      } catch (e) {
+        this.logger.error('Failed to parse Paystack metadata JSON string:', metadata);
+        metadata = {};
+      }
+    }
+
+    const { planId, interval } = metadata || {};
 
     const updatedUser = await this.prisma.user.update({
       where: { id: user.id },

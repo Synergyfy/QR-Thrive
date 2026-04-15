@@ -4,8 +4,8 @@ const prisma = new PrismaClient();
 
 async function main() {
   console.log('Testing connectivity...');
-  const tiers = await prisma.tier.findMany();
-  console.log('Tiers in DB:', tiers.length);
+  const countries = await prisma.country.findMany();
+  console.log('Countries in DB:', countries.length);
   console.log('Success!');
 }
 

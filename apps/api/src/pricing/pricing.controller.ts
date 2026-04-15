@@ -9,8 +9,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { PricingService } from './pricing.service';
+import { Query } from '@nestjs/common';
+
 import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '@prisma/client';
+import { Role, PricingTier } from '@prisma/client';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import {
   ApiTags,
@@ -21,8 +23,6 @@ import {
 } from '@nestjs/swagger';
 import {
   UpdatePricingDiscountsDto,
-  CreateTierDto,
-  UpdateTierDto,
   CreateCountryDto,
   UpdateCountryDto,
 } from './pricing.dto';
@@ -34,6 +34,17 @@ import {
 @ApiBearerAuth('JWT-auth')
 export class PricingController {
   constructor(private readonly pricingService: PricingService) {}
+  
+  @Get('suggest')
+  @ApiOperation({ summary: 'Suggest a localized price based on economic tier and live FX rates (Admin only)' })
+  async suggestPrice(
+    @Query('basePriceUSD') basePriceUSD: string,
+    @Query('targetCurrencyCode') targetCurrencyCode: string,
+    @Query('tier') tier?: PricingTier
+  ) {
+    return this.pricingService.getSuggestedPrice(Number(basePriceUSD), targetCurrencyCode, tier);
+  }
+
 
   @Get('config')
   @ApiOperation({ summary: 'Get pricing discounts (quarterly, yearly) (Admin only)' })
@@ -49,32 +60,6 @@ export class PricingController {
       body.quarterlyDiscount,
       body.yearlyDiscount,
     );
-  }
-
-  @Get('tiers')
-  @ApiOperation({ summary: 'List all economic tiers (Admin only)' })
-  async getTiers() {
-    return this.pricingService.getAllTiers();
-  }
-
-  @Post('tiers')
-  @ApiOperation({ summary: 'Create a new tier (Admin only)' })
-  @ApiBody({ type: CreateTierDto })
-  async createTier(@Body() body: CreateTierDto) {
-    return this.pricingService.createTier(body.name);
-  }
-
-  @Patch('tiers/:id')
-  @ApiOperation({ summary: 'Update a tier name (Admin only)' })
-  @ApiBody({ type: UpdateTierDto })
-  async updateTier(@Param('id') id: string, @Body() body: UpdateTierDto) {
-    return this.pricingService.updateTier(id, body.name);
-  }
-
-  @Delete('tiers/:id')
-  @ApiOperation({ summary: 'Delete a tier (Admin only)' })
-  async deleteTier(@Param('id') id: string) {
-    return this.pricingService.deleteTier(id);
   }
 
   @Get('countries')

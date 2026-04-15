@@ -8,6 +8,7 @@ import PublicFooter from '../components/PublicFooter';
 import AuthModal from '../components/AuthModal';
 import { usePublicPlans, usePublicConfig } from '../hooks/usePricing';
 import { useCurrentUser, useInitializePayment } from '../hooks/useApi';
+import { useSubscribeFree } from '../hooks/useSubscribeFree';
 import { getDashboardPath } from '../utils/auth';
 import type { PublicPlan } from '../types/api';
 import toast from 'react-hot-toast';
@@ -19,12 +20,14 @@ export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PublicPlan | null>(null);
+  const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
   
   const { data: userData } = useCurrentUser();
   const user = userData?.user;
   const { data: plans, isLoading: plansLoading, error: plansError } = usePublicPlans();
   const { data: config, isLoading: configLoading } = usePublicConfig();
   const initializePayment = useInitializePayment();
+  const subscribeFree = useSubscribeFree();
 
   const isLoading = plansLoading || configLoading;
 
@@ -32,34 +35,51 @@ export default function PricingPage() {
   const currentPlans = useMemo(() => {
     if (!plans) return [];
     
-    return plans.map((plan: PublicPlan) => ({
-      name: plan.name,
-      description: plan.description || '',
-      price: plan.pricing.monthly,
-      currency: plan.currencySymbol,
-      currencyCode: plan.currency,
-      highlight: plan.isPopular,
-      popular: plan.isPopular,
-      isFree: plan.isFree,
-      trialDays: plan.trialDays,
-      trial: plan.trialDays > 0,
-      cta: plan.isFree ? "Start Now" : (plan.trialDays > 0 ? `Start ${plan.trialDays}-Day Free Trial` : "Get Started"),
-      features: [
-        `${plan.qrCodeLimit === -1 ? 'Unlimited' : plan.qrCodeLimit} Dynamic QR Codes`,
-        ...((config?.features as string[]) || [])
-      ]
-    }));
-  }, [plans, config]);
+    return plans.map((plan: PublicPlan) => {
+      const pricePoint = plan.pricing[selectedCycle] || plan.pricing.monthly || {
+        amount: 0,
+        currency: 'USD',
+        currencySymbol: '$',
+        priceBookId: '',
+        gatewayIds: {}
+      };
+
+      return {
+        name: plan.name,
+        description: plan.description || '',
+        price: pricePoint.amount,
+        currency: pricePoint.currencySymbol,
+        currencyCode: pricePoint.currency,
+        highlight: plan.isPopular,
+        popular: plan.isPopular,
+        isFree: plan.isFree,
+        isCurrent: user?.planId === plan.id,
+        trialDays: plan.trialDays,
+        trial: plan.trialDays > 0,
+        cta: plan.isFree ? "Start Now" : (plan.trialDays > 0 ? `Start ${plan.trialDays}-Day Free Trial` : "Get Started"),
+        features: [
+          `${plan.qrCodeLimit === -1 ? 'Unlimited' : plan.qrCodeLimit} Dynamic QR Codes`,
+          ...((config?.features as string[]) || [])
+        ]
+      };
+    });
+  }, [plans, config, selectedCycle]);
 
   const handleJoinPlan = async (plan: PublicPlan) => {
+    setSelectedPlan(plan);
+    
     if (!user) {
-      setSelectedPlan(plan);
       setIsAuthModalOpen(true);
       return;
     }
 
     if (plan.isFree) {
-      navigate(getDashboardPath(user.role));
+      try {
+        await subscribeFree.mutateAsync({ planId: plan.id });
+        navigate(getDashboardPath(user.role));
+      } catch (err) {
+        // Error handled in hook
+      }
       return;
     }
 
@@ -67,14 +87,22 @@ export default function PricingPage() {
     try {
       const data = await initializePayment.mutateAsync({
         planId: plan.id,
-        interval: 'monthly'
+        interval: selectedCycle
       });
+
+      const pricePoint = plan.pricing[selectedCycle] || plan.pricing.monthly || {
+        amount: 0,
+        currency: 'USD',
+        currencySymbol: '$',
+        priceBookId: '',
+        gatewayIds: {}
+      };
 
       if (data && (data as any).access_code) {
         const handler = (window as any).PaystackPop.setup({
-          key: (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_b8e2d78705a6e87f87053e87053e87053e8705', // Use env or fallback for safety
+          key: (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_b8e2d78705a6e87f87053e87053e87053e8705', 
           email: user.email,
-          amount: Math.round(plan.pricing.monthly * 100),
+          amount: Math.round(pricePoint.amount * 100),
           access_code: (data as any).access_code,
           onClose: () => {
             toast.error('Payment window closed');
@@ -140,7 +168,7 @@ export default function PricingPage() {
             animate={{ opacity: 1, scale: 1 }}
             className="inline-block px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-blue-100 mb-6"
           >
-             {configLoading ? "..." : (plans?.[0]?.currency === 'NGN' ? "For Nigerian Businesses" : "Global Pricing")}
+             {configLoading ? "..." : (plans?.[0]?.pricing?.monthly?.currency === 'NGN' ? "Custom Pricing Detected" : "Global Pricing")}
           </motion.div>
 
           <motion.h1 
@@ -181,7 +209,27 @@ export default function PricingPage() {
                <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Locating best prices for you...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+            <>
+              {/* Billing Switcher */}
+              <div className="flex justify-center mb-16">
+                <div className="bg-white p-2 rounded-[2rem] shadow-xl shadow-blue-900/5 border border-slate-100 flex gap-2">
+                  {(['monthly', 'quarterly', 'yearly'] as const).map((cycle) => (
+                    <button
+                      key={cycle}
+                      onClick={() => setSelectedCycle(cycle)}
+                      className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                        selectedCycle === cycle
+                          ? 'bg-slate-900 text-white shadow-lg'
+                          : 'text-slate-400 hover:text-slate-600'
+                      }`}
+                    >
+                      {cycle}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
               {currentPlans.map((plan, idx) => (
                 <motion.div 
                   key={plan.name}
@@ -189,13 +237,25 @@ export default function PricingPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + (idx * 0.1) }}
                   className={`flex flex-col relative rounded-[3rem] p-10 transition-all duration-500 overflow-hidden group ${
-                    plan.highlight 
-                      ? 'bg-slate-900 text-white shadow-[0_40px_100px_-20px_rgba(37,99,235,0.2)] scale-105 z-20 md:-translate-y-4 border border-blue-500/30' 
-                      : 'bg-white border border-slate-100 shadow-xl shadow-blue-900/5 z-10'
+                    plan.isCurrent
+                      ? 'ring-4 ring-blue-500 ring-offset-4 bg-white border-transparent shadow-2xl z-30'
+                      : plan.highlight 
+                        ? 'bg-slate-900 text-white shadow-[0_40px_100px_-20px_rgba(37,99,235,0.2)] scale-105 z-20 md:-translate-y-4 border border-blue-500/30' 
+                        : 'bg-white border border-slate-100 shadow-xl shadow-blue-900/5 z-10'
                   }`}
                 >
+                  {/* Current Plan Badge */}
+                  {plan.isCurrent && (
+                    <div className="absolute top-8 left-10">
+                      <div className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg animate-pulse">
+                        <Zap className="w-3 h-3 fill-white" />
+                        Current Plan
+                      </div>
+                    </div>
+                  )}
+
                   {/* Most Popular/Trial Badge */}
-                  {(plan.popular || plan.trial) && (
+                  {(plan.popular || plan.trial) && !plan.isCurrent && (
                     <div className="absolute top-8 right-10">
                         <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-5 py-2.5 rounded-full shadow-lg transition-transform group-hover:scale-110 ${
                           plan.highlight ? 'bg-blue-600 text-white shadow-blue-500/40' : 'bg-slate-900 text-white'
@@ -220,7 +280,7 @@ export default function PricingPage() {
                          {plan.price === 0 ? '0' : plan.price.toLocaleString()}
                       </span>
                       <span className={`text-sm font-bold opacity-60 ml-2 ${plan.highlight ? 'text-white' : 'text-slate-500'}`}>
-                        / month
+                        / {selectedCycle === 'yearly' ? 'year' : (selectedCycle === 'quarterly' ? 'quarter' : 'month')}
                       </span>
                     </div>
                   </div>
@@ -243,19 +303,21 @@ export default function PricingPage() {
                   <div className="space-y-3">
                     <button 
                       onClick={() => handleJoinPlan(plans!.find(p => p.name === plan.name)!)}
-                      disabled={initializePayment.isPending}
+                      disabled={initializePayment.isPending || plan.isCurrent}
                       className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
-                        plan.highlight 
-                          ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30' 
-                          : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
+                        plan.isCurrent
+                          ? 'bg-slate-100 text-slate-400 cursor-default'
+                          : plan.highlight 
+                            ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30' 
+                            : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
                       } ${initializePayment.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
-                      {initializePayment.isPending && selectedPlan?.name === plan.name ? (
+                      {((initializePayment.isPending || subscribeFree.isPending) && selectedPlan?.name === plan.name) ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <>
-                          {plan.cta}
-                          <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
+                          {plan.isCurrent ? "Active Plan" : plan.cta}
+                          {!plan.isCurrent && <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />}
                         </>
                       )}
                     </button>
@@ -263,6 +325,7 @@ export default function PricingPage() {
                 </motion.div>
               ))}
             </div>
+          </>
           )}
         </section>
 
