@@ -20,6 +20,14 @@ const ProtectedRoute: React.FC = () => {
     return <Navigate to="/" replace />;
   }
 
+  const u = user.user;
+  const isSubscriber = u.subscriptionStatus === 'active' || u.subscriptionStatus === 'trialing' || u.subscriptionStatus === 'non-renewing';
+  
+  // Allow admins and active subscribers
+  if (u.role !== 'ADMIN' && !isSubscriber) {
+    return <Navigate to="/pricing" replace />;
+  }
+
   return <Outlet />;
 };
 
