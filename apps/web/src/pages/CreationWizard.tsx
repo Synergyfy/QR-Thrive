@@ -22,7 +22,8 @@ import {
   Loader2,
   LayoutGrid,
   FileEdit,
-  X
+  X,
+  Lock
 } from 'lucide-react';
 
 const FacebookIcon = (props: any) => (
@@ -159,6 +160,12 @@ const CreationWizard: React.FC = () => {
 
   const { data: userData } = useCurrentUser();
   const user = userData?.user;
+
+  const isLocked = (typeId: string) => {
+    if (user?.role === 'ADMIN') return false;
+    const allowedTypes = user?.plan?.qrCodeTypes || [];
+    return !allowedTypes.includes(typeId as any);
+  };
 
   // Sync types for new QRs
   useEffect(() => {
@@ -377,27 +384,40 @@ const CreationWizard: React.FC = () => {
                             key={type.id}
                             onMouseEnter={() => setHoveredType(type.id)}
                             onMouseLeave={() => setHoveredType(null)}
-                            onClick={() => setSelectedType(type.id)}
+                            onClick={() => !isLocked(type.id) && setSelectedType(type.id)}
                             className={cn(
-                              "flex flex-col items-center text-center p-6 rounded-[2rem] border-2 transition-all hover:scale-[1.02] active:scale-[0.98] group relative overflow-hidden",
-                              selectedType === type.id 
-                                ? "border-blue-600 bg-blue-50/10 ring-4 ring-blue-50/30" 
-                                : "border-white bg-white hover:border-slate-100 shadow-sm shadow-slate-200/50"
+                              "flex flex-col items-center text-center p-6 rounded-[2rem] border-2 transition-all group relative overflow-hidden",
+                              isLocked(type.id)
+                                ? "border-slate-100 bg-slate-50/30 opacity-80 cursor-not-allowed"
+                                : selectedType === type.id
+                                  ? "border-blue-600 bg-blue-50/10 ring-4 ring-blue-50/30 hover:scale-[1.02] active:scale-[0.98]"
+                                  : "border-white bg-white hover:border-slate-100 shadow-sm shadow-slate-200/50 hover:scale-[1.02] active:scale-[0.98]"
                             )}
                           >
+                             {/* Padlock for restricted types */}
+                             {isLocked(type.id) && (
+                               <div className="absolute top-4 right-4 text-slate-300">
+                                 <Lock className="w-4 h-4" />
+                               </div>
+                             )}
+
                              <div className={cn(
                                "w-16 h-16 rounded-full flex items-center justify-center transition-all mb-4 border-2",
-                               selectedType === type.id 
-                                 ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200" 
-                                 : "bg-white text-slate-400 border-slate-100 group-hover:border-blue-100 group-hover:text-blue-600"
+                               isLocked(type.id)
+                                 ? "bg-slate-100 text-slate-300 border-slate-200"
+                                 : selectedType === type.id
+                                   ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200"
+                                   : "bg-white text-slate-400 border-slate-100 group-hover:border-blue-100 group-hover:text-blue-600"
                              )}>
                                 <type.icon className="w-7 h-7" />
                              </div>
                              <div className="space-y-1">
                                 <h3 className="font-bold text-slate-900 text-sm tracking-tight">{type.title}</h3>
-                                <p className="text-xs font-medium text-slate-400 leading-tight px-2">{type.description}</p>
+                                <p className="text-xs font-medium text-slate-400 leading-tight px-2">
+                                  {isLocked(type.id) ? 'Upgrade to unlock' : type.description}
+                                </p>
                              </div>
-                             {type.category === 'dynamic' && (
+                             {type.category === 'dynamic' && !isLocked(type.id) && (
                                 <div className="absolute top-3 right-3 w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
                              )}
                           </button>
