@@ -23,6 +23,8 @@ const ProtectedRoute: React.FC = () => {
     return <Navigate to="/" replace />;
   }
 
+
+
   return <Outlet />;
 };
 
