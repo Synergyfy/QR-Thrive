@@ -436,11 +436,8 @@ const DashboardPage: React.FC = () => {
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-slate-100 flex flex-col h-screen sticky top-0 shrink-0">
         <div className="p-6">
-          <div className="flex items-center gap-3 mb-10 group cursor-pointer" onClick={() => navigate('/')}>
-             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100 group-hover:scale-105 transition-transform">
-               <QrCode className="w-6 h-6" />
-             </div>
-             <span className="text-xl font-black text-slate-900 tracking-tight">QR Thrive</span>
+          <div className="flex items-center cursor-pointer mb-8" onClick={() => navigate('/')}>
+             <img src="/QRThrive_Logo_Full-BG.png" alt="QR Thrive" className="h-[96px] w-auto" style={{ filter: 'brightness(0) saturate(100%) invert(32%) sepia(95%) saturate(3033%) hue-rotate(211deg) brightness(96%) contrast(92%)' }} />
           </div>
 
           <button 
