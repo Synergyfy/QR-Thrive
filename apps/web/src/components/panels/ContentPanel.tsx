@@ -38,6 +38,8 @@ import FormBuilder from '../FormBuilder';
 import { countries } from '../../constants/countries';
 import ImageEditor from '../ImageEditor';
 
+import { useQRCodes, useCurrentUser } from '../../hooks/useApi';
+
 interface ContentPanelProps {
   config: QRConfiguration;
   updateData: (updates: Partial<QRData>) => void;
@@ -74,8 +76,129 @@ const CollapsibleSection = ({ id, title, subtitle, icon: Icon, children, classNa
   );
 };
 
+const QRPickerDropdown = ({ currentData, updateData, typeKey }: any) => {
+  const { data: qrCodes = [] } = useQRCodes();
+  return (
+    <div className="space-y-2 animate-in fade-in duration-300">
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Connect to another QR Code</p>
+      <select
+        className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm appearance-none cursor-pointer"
+        value={currentData.qrLinkId || ''}
+        onChange={(e) => updateData({ [typeKey]: { ...currentData, qrLinkId: e.target.value } })}
+      >
+        <option value="">Select a QR code...</option>
+        {qrCodes.map((qr: any) => (
+           <option key={qr.id} value={qr.id}>{qr.name || qr.type} {qr.shortId ? `(${qr.shortId})` : ''}</option>
+        ))}
+      </select>
+      <p className="text-[9px] text-gray-400 font-medium">When the customer clicks the CTA, they will be directed to the linked QR experience.</p>
+    </div>
+  );
+};
+
+const QROptionsList = () => {
+  const { data: qrCodes = [] } = useQRCodes();
+  return (
+    <>
+      {qrCodes.map((qr: any) => (
+        <option key={qr.id} value={qr.id}>{qr.name || qr.type} {qr.shortId ? `(${qr.shortId})` : ''}</option>
+      ))}
+    </>
+  );
+}
+
+const CTADestinationPicker = ({
+  data,
+  updateData,
+  typeKey, // e.g., 'pdf', 'mp3', 'video', 'imageGalleryInfo', 'booking', 'coupon'
+  urlKey = 'buttonUrl',
+  buttonLabelKey = 'buttonText',
+  showLabelInput = true
+}: any) => {
+  const currentData = data[typeKey] || {};
+  const destinationMode = currentData.destinationMode || 'url';
+  const isDashboard = window.location.pathname.includes('/dashboard');
+
+  return (
+    <div className="space-y-6">
+      {showLabelInput && (
+        <div className="space-y-2">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Text</p>
+          <input 
+            type="text" 
+            className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+            placeholder="e.g. Learn More" 
+            value={currentData[buttonLabelKey] || ''} 
+            onChange={(e) => updateData({ [typeKey]: { ...currentData, [buttonLabelKey]: e.target.value } })} 
+          />
+        </div>
+      )}
+
+      {isDashboard ? (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Destination Mode</p>
+            <div className="grid grid-cols-2 gap-2 bg-gray-50 p-1.5 rounded-2xl">
+              <button
+                onClick={() => updateData({ [typeKey]: { ...currentData, destinationMode: 'url' } })}
+                className={cn(
+                  "flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl text-center transition-all",
+                  destinationMode === 'url' ? "bg-white shadow-lg shadow-blue-100/50 border border-blue-100 scale-[1.02]" : "hover:bg-white/50 border border-transparent"
+                )}
+              >
+                <span className="text-base">🔗</span>
+                <span className={cn("text-[8px] font-black uppercase tracking-widest", destinationMode === 'url' ? "text-blue-600" : "text-gray-400")}>External URL</span>
+              </button>
+              <button
+                onClick={() => updateData({ [typeKey]: { ...currentData, destinationMode: 'qr_link' } })}
+                className={cn(
+                  "flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl text-center transition-all",
+                  destinationMode === 'qr_link' ? "bg-white shadow-lg shadow-blue-100/50 border border-blue-100 scale-[1.02]" : "hover:bg-white/50 border border-transparent"
+                )}
+              >
+                <span className="text-base">⚡</span>
+                <span className={cn("text-[8px] font-black uppercase tracking-widest", destinationMode === 'qr_link' ? "text-blue-600" : "text-gray-400")}>Connect QR</span>
+              </button>
+            </div>
+          </div>
+
+          {destinationMode === 'url' && (
+            <div className="space-y-2 animate-in fade-in duration-300">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Link URL</p>
+              <input 
+                type="url" 
+                className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                placeholder="https://..." 
+                value={currentData[urlKey] || ''} 
+                onChange={(e) => updateData({ [typeKey]: { ...currentData, [urlKey]: e.target.value } })} 
+              />
+            </div>
+          )}
+
+          {destinationMode === 'qr_link' && (
+            <QRPickerDropdown currentData={currentData} updateData={updateData} typeKey={typeKey} />
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Link URL</p>
+          <input 
+            type="url" 
+            className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+            placeholder="https://..." 
+            value={currentData[urlKey] || ''} 
+            onChange={(e) => updateData({ [typeKey]: { ...currentData, [urlKey]: e.target.value } })} 
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTypeSelector }) => {
   const data = config.data;
+  const { data: userData } = useCurrentUser();
+  const user = userData?.user;
   const [uploading, setUploading] = useState<string | null>(null);
   const [editingImage, setEditingImage] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -965,9 +1088,9 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                       className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30"
                     />
                   </div>
-                  </div>
                 </div>
-              )}
+              </div>
+            )}
 
               {data.type === 'image' && (
                 <div className="space-y-6 animate-in zoom-in-95 duration-300">
@@ -1019,24 +1142,29 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none">Upload at least one image to your gallery</p>
                     </div>
                   )}
+                  
+                  <CollapsibleSection id="image-cta" title="Call to Action (Optional)" icon={Link} isExpanded={expandedSections['image-cta']} onToggle={toggleSection}>
+                    <CTADestinationPicker data={data} updateData={updateData} typeKey="imageGalleryInfo" />
+                  </CollapsibleSection>
                 </div>
               )}
 
               {data.type === 'video' && (
-                 <div className="space-y-4">
+                <div className="space-y-4">
+                  <div className="space-y-4">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Paste Video URL</p>
                     <div className="relative">
-                       <Video className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                       <input 
+                      <Video className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
                         type="url"
                         value={data.video?.url || ''}
                         onChange={(e) => updateData({ video: { url: e.target.value } })}
                         placeholder="https://youtube.com/watch?v=..."
                         className="w-full pl-11 pr-4 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-bold transition-all bg-gray-50/30"
-                       />
+                      />
                     </div>
                     <p className="text-[11px] text-gray-400 font-bold italic translate-x-2">Supports YouTube, Vimeo, and direct links.</p>
-                    
+
                     <div className="relative mt-4">
                       <div className="absolute inset-0 flex items-center">
                         <span className="w-full border-t border-gray-100"></span>
@@ -1054,23 +1182,23 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                         </div>
                       ) : data.video?.pendingFile ? (
                         <div className="w-full flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-blue-100">
-                           <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                                 <Video className="w-5 h-5" />
-                              </div>
-                              <div className="text-left">
-                                 <p className="text-sm font-bold text-gray-900 truncate max-w-[200px]">
-                                    {data.video.pendingFile.file.name}
-                                 </p>
-                                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ready to upload</p>
-                              </div>
-                           </div>
-                           <button 
-                             onClick={() => updateData({ video: undefined })}
-                             className="p-2 hover:bg-red-50 text-red-500 rounded-xl transition-all"
-                           >
-                             <X className="w-5 h-5" />
-                           </button>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                              <Video className="w-5 h-5" />
+                            </div>
+                            <div className="text-left">
+                              <p className="text-sm font-bold text-gray-900 truncate max-w-[200px]">
+                                {data.video.pendingFile.file.name}
+                              </p>
+                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ready to upload</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => updateData({ video: undefined })}
+                            className="p-2 hover:bg-red-50 text-red-500 rounded-xl transition-all"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
                         </div>
                       ) : (
                         <>
@@ -1078,11 +1206,11 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                             <Upload className="w-7 h-7" />
                           </div>
                           <div className="text-center">
-                             <p className="text-sm font-bold text-gray-900">Upload Video File</p>
-                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">MP4, MOV, WebM up to 50MB</p>
+                            <p className="text-sm font-bold text-gray-900">Upload Video File</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">MP4, MOV, WebM up to 50MB</p>
                           </div>
-                          <input 
-                            type="file" 
+                          <input
+                            type="file"
                             accept="video/*"
                             className="absolute inset-0 opacity-0 cursor-pointer"
                             onChange={(e) => {
@@ -1095,58 +1223,69 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                         </>
                       )}
                     </div>
-                 </div>
+                  </div>
+
+                  <CollapsibleSection id="video-cta" title="Call to Action (Optional)" icon={Link} isExpanded={expandedSections['video-cta']} onToggle={toggleSection}>
+                    <CTADestinationPicker data={data} updateData={updateData} typeKey="video" />
+                  </CollapsibleSection>
+                </div>
               )}
 
               {data.type === 'pdf' && (
-                <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[32px] p-12 flex flex-col items-center justify-center space-y-4 transition-all relative overflow-hidden group">
-                  {uploading === 'pdf' ? (
-                    <div className="flex items-center gap-2 text-blue-600">
-                      <Loader2 className="w-6 h-6 animate-spin" />
-                      <span className="text-sm font-bold">Uploading...</span>
-                    </div>
-                  ) : data.pdf?.pendingFile ? (
-                     <div className="w-full flex items-center justify-between p-6 bg-white rounded-2xl shadow-sm border border-blue-100">
+                <div className="space-y-4">
+                  <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[32px] p-12 flex flex-col items-center justify-center space-y-4 transition-all relative overflow-hidden group">
+                    {uploading === 'pdf' ? (
+                      <div className="flex items-center gap-2 text-blue-600">
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                        <span className="text-sm font-bold">Uploading...</span>
+                      </div>
+                    ) : data.pdf?.pendingFile ? (
+                      <div className="w-full flex items-center justify-between p-6 bg-white rounded-2xl shadow-sm border border-blue-100">
                         <div className="flex items-center gap-4">
-                           <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
-                              <FileText className="w-6 h-6" />
-                           </div>
-                           <div className="text-left">
-                              <p className="text-base font-bold text-gray-900 truncate max-w-[250px]">
-                                 {data.pdf.pendingFile.file.name}
-                              </p>
-                              <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">Ready to upload</p>
-                           </div>
+                          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                            <FileText className="w-6 h-6" />
+                          </div>
+                          <div className="text-left">
+                            <p className="text-base font-bold text-gray-900 truncate max-w-[250px]">
+                              {data.pdf.pendingFile.file.name}
+                            </p>
+                            <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">Ready to upload</p>
+                          </div>
                         </div>
-                        <button 
+                        <button
                           onClick={() => updateData({ pdf: undefined })}
                           className="p-3 hover:bg-red-50 text-red-500 rounded-2xl transition-all"
                         >
                           <X className="w-6 h-6" />
                         </button>
-                     </div>
-                  ) : (
-                    <>
-                      <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-blue-600 mb-2">
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-blue-600 mb-2">
                           <FileText className="w-8 h-8" />
-                      </div>
-                      <div className="text-center space-y-1">
-                         <h4 className="text-sm font-black text-gray-900 leading-none">Upload PDF File</h4>
-                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Click to browse or drag and drop</p>
-                      </div>
-                      <input 
-                        type="file" 
-                        accept=".pdf" 
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            handleFileSelect(file, 'pdf');
-                          }
-                        }}
-                      />
-                    </>
-                  )}
+                        </div>
+                        <div className="text-center space-y-1">
+                          <h4 className="text-sm font-black text-gray-900 leading-none">Upload PDF File</h4>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Click to browse or drag and drop</p>
+                        </div>
+                        <input
+                          type="file"
+                          accept=".pdf"
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleFileSelect(file, 'pdf');
+                            }
+                          }}
+                        />
+                      </>
+                    )}
+                  </div>
+
+                  <CollapsibleSection id="pdf-cta" title="Call to Action (Optional)" icon={Link} isExpanded={expandedSections['pdf-cta']} onToggle={toggleSection}>
+                    <CTADestinationPicker data={data} updateData={updateData} typeKey="pdf" />
+                  </CollapsibleSection>
                 </div>
               )}
 
@@ -1216,10 +1355,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Description</p>
                         <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="Describe your audio content..." rows={3} value={data.mp3?.description || ''} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), description: e.target.value } })} />
                       </div>
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">CTA Button Label</p>
-                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Learn More" value={data.mp3?.buttonText || ''} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), buttonText: e.target.value } })} />
-                      </div>
+                      <CTADestinationPicker data={data} updateData={updateData} typeKey="mp3" />
                     </div>
                   </CollapsibleSection>
 
@@ -1782,10 +1918,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Terms & Conditions</p>
                         <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Valid for in-store purchases only..." rows={2} value={data.coupon?.terms || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), terms: e.target.value } })} />
                       </div>
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Website</p>
-                        <input type="url" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="https://company.com" value={data.coupon?.website || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), website: e.target.value } })} />
-                      </div>
+                        <CTADestinationPicker data={data} updateData={updateData} typeKey="coupon" urlKey="website" showLabelInput={false} />
                     </div>
                   </CollapsibleSection>
 
@@ -1923,19 +2056,9 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                         {data.booking?.destinationMode === 'qr_link' && (
                           <div className="space-y-4 animate-in fade-in duration-300">
                             <div className="space-y-2">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Connect to another QR Code</p>
-                              <select
-                                className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm appearance-none cursor-pointer"
-                                value={data.booking?.qrLinkId || ''}
-                                onChange={(e) => updateData({ booking: { ...(data.booking || {}), qrLinkId: e.target.value } })}
-                              >
-                                <option value="">Select a QR code...</option>
-                                <option value="qr-form-1">📝 Registration Form</option>
-                                <option value="qr-form-2">📋 Feedback Survey</option>
-                                <option value="qr-menu-1">🍽️ Summer Menu</option>
-                              </select>
-                              <p className="text-[9px] text-gray-400 font-medium">When the customer clicks the CTA, they will be directed to the linked QR experience.</p>
-                            </div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Connect to another QR Code</p>
+                                <QRPickerDropdown currentData={data.booking || {}} updateData={updateData} typeKey="booking" />
+                              </div>
                           </div>
                         )}
 
@@ -2198,6 +2321,58 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                 </div>
               )}
             </div>
+         </div>
+
+         {/* Universal QR Connector - Available on all types */}
+         <div className="mt-8">
+           <CollapsibleSection 
+              id="universal-connector" 
+              title="QR Connector (Chaining)" 
+              subtitle="Redirect users to another QR experience" 
+              icon={Link} 
+              isExpanded={expandedSections['universal-connector']} 
+              onToggle={toggleSection}
+           >
+              <div className="space-y-4 animate-in fade-in duration-300">
+                 {!user ? (
+                   <div className="bg-blue-50/50 rounded-2xl p-6 border-2 border-dashed border-blue-100 flex flex-col items-center justify-center text-center">
+                      <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600 mb-3">
+                         <Zap className="w-6 h-6 fill-yellow-400 text-yellow-400" />
+                      </div>
+                      <h4 className="text-sm font-bold text-gray-900 mb-1">Unlock QR Chaining</h4>
+                      <p className="text-[10px] text-gray-500 font-medium mb-4 leading-relaxed max-w-[250px]">
+                         Sign in or register to chain multiple QR codes together. Automatically redirect users after they interact with this code.
+                      </p>
+                      <button 
+                        onClick={() => {
+                          const authModalBtn = document.querySelector('[data-auth-trigger]') as HTMLElement;
+                          if (authModalBtn) authModalBtn.click();
+                        }}
+                        className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-200/50 hover:bg-blue-700 transition-all active:scale-95"
+                      >
+                        Sign in to connect
+                      </button>
+                   </div>
+                 ) : (
+                   <>
+                     <div className="space-y-2">
+                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Connect to another QR Code</p>
+                       <select
+                         className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm appearance-none cursor-pointer"
+                         value={data.connectedQrId || ''}
+                         onChange={(e) => updateData({ connectedQrId: e.target.value })}
+                       >
+                         <option value="">None (Don't connect)</option>
+                         <QROptionsList />
+                       </select>
+                     </div>
+                     <p className="text-[9px] text-gray-400 font-medium leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        When visitors complete the interaction for this QR code (like submitting a form or clicking a CTA button), they will be automatically redirected to the connected experience you select here.
+                     </p>
+                   </>
+                 )}
+              </div>
+           </CollapsibleSection>
          </div>
 
          <div className="flex items-start gap-5 p-7 bg-blue-50 rounded-[32px] border border-blue-100/50">

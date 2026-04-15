@@ -3,9 +3,11 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useCurrentUser } from '../hooks/useApi';
 
 const ProtectedRoute: React.FC = () => {
-  const { data: user, isLoading, isError } = useCurrentUser();
+  const { data: user, isLoading, isError, fetchStatus } = useCurrentUser();
 
-  if (isLoading) {
+  // Show loading spinner while the auth check is in-flight
+  // Also wait if the query is pending but hasn't started fetching yet (fetchStatus === 'idle')
+  if (isLoading || fetchStatus === 'fetching') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
         <div className="flex flex-col items-center gap-6">
@@ -16,7 +18,8 @@ const ProtectedRoute: React.FC = () => {
     );
   }
 
-  if (!user || isError) {
+  // Only redirect once the query has definitively settled with no user
+  if (isError || !user) {
     return <Navigate to="/" replace />;
   }
 
