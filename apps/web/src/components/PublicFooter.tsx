@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Globe, MessageSquare, Camera, Briefcase, type LucideIcon } from 'lucide-react';
+import { useCurrentUser } from '../hooks/useApi';
 
 function SocialIcon({ icon: Icon }: { icon: LucideIcon }) {
   return (
@@ -10,6 +11,9 @@ function SocialIcon({ icon: Icon }: { icon: LucideIcon }) {
 }
 
 export default function PublicFooter() {
+  const { data: userData } = useCurrentUser();
+  const user = userData?.user;
+
   return (
     <footer className="bg-blue-600 py-24 px-4 text-white font-sans mt-auto border-t border-blue-500">
       <div className="max-w-7xl mx-auto">
@@ -33,7 +37,7 @@ export default function PublicFooter() {
               <li><Link to="/" className="hover:text-white transition-colors">QR Generator</Link></li>
               <li><a href="#" className="hover:text-white transition-colors">Dynamic Links</a></li>
               <li><a href="#" className="hover:text-white transition-colors">Analytics Pro</a></li>
-              <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing Plans</Link></li>
+              <li><Link to={user ? "/dashboard?tab=pricing" : "/pricing"} className="hover:text-white transition-colors">Pricing Plans</Link></li>
             </ul>
           </div>
 

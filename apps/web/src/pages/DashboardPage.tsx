@@ -5,7 +5,7 @@ import {
   ChevronDown, ChevronRight, Bell, FolderOpen, Trash2, Copy, Printer,
   RefreshCw, X, FolderPlus, ArrowRight, Edit3, ClipboardList, Users
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import toast from 'react-hot-toast';
@@ -132,12 +132,16 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const [activeTab, setActiveTab] = useState(
-    user?.role !== 'ADMIN' && 
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+
+  const [activeTab, setActiveTab] = useState(() => {
+    if (tabParam) return tabParam;
+    return user?.role !== 'ADMIN' && 
     user?.subscriptionStatus !== 'active' && 
     user?.subscriptionStatus !== 'non-renewing' && 
-    user?.subscriptionStatus !== 'trialing' ? 'pricing' : 'all'
-  );
+    user?.subscriptionStatus !== 'trialing' ? 'pricing' : 'all';
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [folderMenuOpen, setFolderMenuOpen] = useState<string | null>(null);
