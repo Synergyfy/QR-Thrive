@@ -11,6 +11,7 @@ interface PhotoProfilePreviewProps {
   textColor?: string;
   buttonColor?: string;
   buttonTextColor?: string;
+  onButtonClick?: () => void;
 }
 
 const PhotoProfilePreview: React.FC<PhotoProfilePreviewProps> = ({ 
@@ -22,7 +23,8 @@ const PhotoProfilePreview: React.FC<PhotoProfilePreviewProps> = ({
   themeColor = "#5c7cfa",
   textColor = "#ffffff",
   buttonColor = "transparent",
-  buttonTextColor = "#ffffff"
+  buttonTextColor = "#ffffff",
+  onButtonClick
 }) => {
   const [viewingIndex, setViewingIndex] = useState<number | null>(null);
 
@@ -47,6 +49,7 @@ const PhotoProfilePreview: React.FC<PhotoProfilePreviewProps> = ({
           <p className="text-[12px] opacity-80 leading-snug max-w-[280px] mx-auto mb-6">{description}</p>
 
           <button 
+            onClick={onButtonClick}
             className="px-12 py-3 rounded-lg font-semibold text-md border-2 border-white transition-colors"
             style={{ backgroundColor: buttonColor, color: buttonTextColor, borderColor: buttonTextColor }}
           >

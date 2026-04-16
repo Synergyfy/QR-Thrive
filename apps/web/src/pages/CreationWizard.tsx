@@ -254,7 +254,8 @@ const CreationWizard: React.FC = () => {
             logo: config.logo, 
             width: config.width, 
             height: config.height, 
-            margin: config.margin 
+            margin: config.margin,
+            linkedQRCodeId: dataToSave.linkedQRCodeId || dataToSave.connectedQrId || config.linkedQRCodeId
           } 
         });
         toast.success('QR Code updated successfully!');
@@ -268,7 +269,8 @@ const CreationWizard: React.FC = () => {
           logo: config.logo, 
           width: config.width, 
           height: config.height, 
-          margin: config.margin 
+          margin: config.margin,
+          linkedQRCodeId: dataToSave.linkedQRCodeId || dataToSave.connectedQrId || config.linkedQRCodeId
         });
         toast.success('QR Code created successfully!');
       }

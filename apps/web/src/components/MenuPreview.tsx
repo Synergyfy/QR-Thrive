@@ -4,9 +4,10 @@ import type { MenuData } from '../types/qr';
 
 interface MenuPreviewProps {
   data?: MenuData;
+  onButtonClick?: (targetQrId: string) => void;
 }
 
-const MenuPreview: React.FC<MenuPreviewProps> = ({ data }) => {
+const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
   const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
   const [cart, setCart] = useState<Record<string, { item: any, quantity: number }>>({});
   const [view, setView] = useState<'menu' | 'checkout' | 'details' | 'success'>('menu');
@@ -207,6 +208,16 @@ const MenuPreview: React.FC<MenuPreviewProps> = ({ data }) => {
             <ChevronRight className="w-6 h-6 text-gray-400" />
           </button>
         ))}
+
+        {onButtonClick && (data as any)?.buttonUrl?.startsWith('qr:') && (
+          <button 
+            onClick={() => onButtonClick((data as any).buttonUrl.replace('qr:', ''))}
+            className="w-full mt-8 py-4 px-6 bg-blue-600 text-white font-bold rounded-2xl shadow-xl shadow-blue-100 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
+          >
+            {(data as any).buttonText || 'Discover More'}
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        )}
       </div>
     </div>
   );

@@ -7,16 +7,14 @@ import PublicNav from '../components/PublicNav';
 import PublicFooter from '../components/PublicFooter';
 import AuthModal from '../components/AuthModal';
 import { usePublicPlans, usePublicConfig } from '../hooks/usePricing';
-import { useCurrentUser, useInitializePayment } from '../hooks/useApi';
+import { useCurrentUser, useInitializePayment, useVerifyPayment } from '../hooks/useApi';
 import { useSubscribeFree } from '../hooks/useSubscribeFree';
 import { getDashboardPath } from '../utils/auth';
 import type { PublicPlan } from '../types/api';
 import toast from 'react-hot-toast';
-import { useQueryClient } from '@tanstack/react-query';
 
 export default function PricingPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PublicPlan | null>(null);
@@ -28,6 +26,7 @@ export default function PricingPage() {
   const { data: config, isLoading: configLoading } = usePublicConfig();
   const initializePayment = useInitializePayment();
   const subscribeFree = useSubscribeFree();
+  const verifyPayment = useVerifyPayment();
 
   const isLoading = plansLoading || configLoading;
 
@@ -44,6 +43,10 @@ export default function PricingPage() {
         gatewayIds: {}
       };
 
+      const isCurrentPlan = user?.planId === plan.id;
+      const isActive = user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trialing' || user?.subscriptionStatus === 'non-renewing';
+      const isCurrent = isCurrentPlan && isActive;
+
       return {
         name: plan.name,
         description: plan.description || '',
@@ -53,7 +56,7 @@ export default function PricingPage() {
         highlight: plan.isPopular,
         popular: plan.isPopular,
         isFree: plan.isFree,
-        isCurrent: user?.planId === plan.id,
+        isCurrent,
         trialDays: plan.trialDays,
         trial: plan.trialDays > 0,
         cta: plan.isFree ? "Start Now" : (plan.trialDays > 0 ? `Start ${plan.trialDays}-Day Free Trial` : "Get Started"),
@@ -65,7 +68,7 @@ export default function PricingPage() {
     });
   }, [plans, config, selectedCycle]);
 
-  const handleJoinPlan = async (plan: PublicPlan) => {
+  const handleJoinPlan = async (plan: PublicPlan, isTrial = false) => {
     setSelectedPlan(plan);
     
     if (!user) {
@@ -87,43 +90,47 @@ export default function PricingPage() {
     try {
       const data = await initializePayment.mutateAsync({
         planId: plan.id,
-        interval: selectedCycle
+        interval: selectedCycle,
+        isTrial
       });
 
-      const pricePoint = plan.pricing[selectedCycle] || plan.pricing.monthly || {
-        amount: 0,
-        currency: 'USD',
-        currencySymbol: '$',
-        priceBookId: '',
-        gatewayIds: {}
-      };
-
       if (data && (data as any).access_code) {
+        console.log('Opening Paystack with access_code:', (data as any).access_code);
+        toast.success(isTrial ? 'Wait, securely setting up your free trial...' : 'Wait, reaching Paystack...');
+        
         const handler = (window as any).PaystackPop.setup({
           key: (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_b8e2d78705a6e87f87053e87053e87053e8705', 
           email: user.email,
-          amount: Math.round(pricePoint.amount * 100),
           access_code: (data as any).access_code,
           onClose: () => {
             toast.error('Payment window closed');
           },
-          callback: (_response: any) => {
-            toast.success('Payment successful! Upgrading your account...');
-            // Invalidate user query to reflect new plan
-            queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-            // Redirect to dashboard after a short delay
-            setTimeout(() => {
+          callback: async (response: any) => {
+            const verifyingToast = toast.loading('Payment successful! Verifying your access...');
+            
+            try {
+              // Proactively verify the transaction on the backend
+              await verifyPayment.mutateAsync(response.reference);
+              
+              toast.dismiss(verifyingToast);
+              toast.success(isTrial ? 'Trial activated successfully!' : 'Account upgraded successfully!');
               navigate('/dashboard');
-            }, 1500);
+            } catch (err) {
+              toast.dismiss(verifyingToast);
+              toast.error('Verification failed. Please check your dashboard in a moment.');
+              setTimeout(() => navigate('/dashboard'), 2000);
+            }
           }
 
         });
         handler.openIframe();
       } else if (data && (data as any).authorization_url) {
+        console.log('Redirecting to authorization_url:', (data as any).authorization_url);
         // Fallback to redirect if access_code is missing but url exists
         window.location.href = (data as any).authorization_url;
       }
     } catch (err) {
+      console.error('Payment initialization error:', err);
       // Error handled by hook
     }
   };
@@ -237,11 +244,13 @@ export default function PricingPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + (idx * 0.1) }}
                   className={`flex flex-col relative rounded-[3rem] p-10 transition-all duration-500 overflow-hidden group ${
+                    plan.highlight 
+                      ? 'bg-slate-900 text-white shadow-[0_40px_100px_-20px_rgba(37,99,235,0.2)] md:-translate-y-4 border border-blue-500/30' 
+                      : 'bg-white border border-slate-100 shadow-xl shadow-blue-900/5'
+                  } ${
                     plan.isCurrent
-                      ? 'ring-4 ring-blue-500 ring-offset-4 bg-white border-transparent shadow-2xl z-30'
-                      : plan.highlight 
-                        ? 'bg-slate-900 text-white shadow-[0_40px_100px_-20px_rgba(37,99,235,0.2)] scale-105 z-20 md:-translate-y-4 border border-blue-500/30' 
-                        : 'bg-white border border-slate-100 shadow-xl shadow-blue-900/5 z-10'
+                      ? 'ring-4 ring-blue-500 ring-offset-4 ring-offset-slate-50 z-30'
+                      : plan.highlight ? 'scale-105 z-20' : 'z-10'
                   }`}
                 >
                   {/* Current Plan Badge */}
@@ -301,22 +310,41 @@ export default function PricingPage() {
                   </div>
 
                   <div className="space-y-3">
+                    {plan.trial && !plan.isCurrent && !user?.hasUsedTrial && (
+                      <button 
+                        onClick={() => handleJoinPlan(plans!.find(p => p.name === plan.name)!, true)}
+                        disabled={initializePayment.isPending || plan.isCurrent}
+                        className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30 ${initializePayment.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
+                      >
+                        {initializePayment.isPending && selectedPlan?.name === plan.name ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            {`Start ${plan.trialDays}-Day Free Trial`}
+                            <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
+                          </>
+                        )}
+                      </button>
+                    )}
+
                     <button 
                       onClick={() => handleJoinPlan(plans!.find(p => p.name === plan.name)!)}
                       disabled={initializePayment.isPending || plan.isCurrent}
                       className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
                         plan.isCurrent
-                          ? 'bg-slate-100 text-slate-400 cursor-default'
-                          : plan.highlight 
-                            ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30' 
-                            : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
+                          ? (plan.highlight ? 'bg-slate-800 text-slate-400 cursor-default shadow-inner' : 'bg-slate-100 text-slate-400 cursor-default shadow-inner')
+                          : plan.trial && !user?.hasUsedTrial
+                            ? (plan.highlight ? 'bg-slate-800 border-2 border-slate-700 text-white hover:bg-slate-700' : 'bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-50')
+                            : plan.highlight 
+                              ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30' 
+                              : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
                       } ${initializePayment.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
                       {((initializePayment.isPending || subscribeFree.isPending) && selectedPlan?.name === plan.name) ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <>
-                          {plan.isCurrent ? "Active Plan" : plan.cta}
+                          {plan.isCurrent ? "Active Plan" : (plan.trial && !user?.hasUsedTrial ? "Subscribe Now" : plan.cta)}
                           {!plan.isCurrent && <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />}
                         </>
                       )}

@@ -37,6 +37,40 @@ export class PaymentsController {
     private vemtapService: VemtapService,
   ) {}
 
+  @Post('verify')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Verify a Paystack transaction directly' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        reference: { type: 'string' },
+      },
+      required: ['reference'],
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Transaction verified and plan updated.' })
+  async verify(
+    @Req() req: Request & { user: { userId: string } },
+    @Body() body: { reference: string },
+  ) {
+    const userId = req.user.userId;
+    const { reference } = body;
+
+    this.logger.log(`Direct verification requested for reference: ${reference} by user ${userId}`);
+
+    const transactionData = await this.paystackService.verifyTransaction(reference);
+    
+    if (transactionData.status !== 'success') {
+      throw new BadRequestException('Transaction not successful on Paystack.');
+    }
+
+    // Process the data using the common success handler
+    await this.handleChargeSuccess(transactionData);
+
+    return { status: 'success', message: 'Payment verified and account upgraded.' };
+  }
+
   @Post('initialize')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Initialize a Paystack transaction for a tiered plan' })
@@ -55,20 +89,29 @@ export class PaymentsController {
   async initialize(
     @Req() req: Request & { user: { userId: string } },
     @Ip() ip: string,
-    @Body() body: { planId: string; interval: 'monthly' | 'quarterly' | 'yearly' },
+    @Body() body: { planId: string; interval: 'monthly' | 'quarterly' | 'yearly'; isTrial?: boolean },
   ) {
     const userId = req.user.userId;
     const { planId, interval } = body;
+
+    this.logger.log(`Initializing payment for user ${userId}, plan ${planId}, interval ${interval}`);
 
     // 5. Initialize transaction
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new BadRequestException('User not found');
 
+    const isActive = user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing' || user.subscriptionStatus === 'non-renewing';
+    if (user.planId === planId && isActive) {
+      throw new BadRequestException('You already have an active subscription for this plan.');
+    }
+
     // Resolve country - Prioritize locked account country over current IP
     const country = (user.countryCode || req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || this.pricingService.getCountryCodeByIp(ip)) as string;
+    this.logger.log(`Resolved country: ${country}`);
 
     // 1. Fetch Plan with localized pricing
     const plan = await this.pricingService.getPlanWithPricing(planId, country);
+    this.logger.log(`Fetched plan: ${plan.name}`);
 
     // 2. Validate Plan status
     if (!plan.isActive) {
@@ -81,8 +124,20 @@ export class PaymentsController {
 
     // 3. Get the correct price and plan code for the interval
     const pricing = (plan.pricing as any)[interval];
-    const amount = pricing?.amount;
-    const paystackPlanCode = pricing?.gatewayIds?.paystack;
+    let amount = pricing?.amount;
+    let paystackPlanCode = pricing?.gatewayIds?.paystack;
+
+    // Trial Tokenization Bypass
+    if (body.isTrial) {
+      if (user.hasUsedTrial) throw new BadRequestException('You have already used a free trial.');
+      if (!plan.trialDays || plan.trialDays <= 0) throw new BadRequestException('This plan does not have a trial period.');
+      
+      const currency = pricing?.currency || 'USD';
+      amount = currency === 'NGN' ? 50 : 1; 
+      paystackPlanCode = undefined; // Don't attach plan immediately to tokenize
+    }
+
+    this.logger.log(`Amount: ${amount}, PlanCode: ${paystackPlanCode}, isTrial: ${!!body.isTrial}`);
 
     if (amount === undefined || amount < 0) {
       throw new BadRequestException('Invalid price for the selected interval.');
@@ -99,9 +154,71 @@ export class PaymentsController {
         userId, 
         planId, 
         interval,
+        isTrial: body.isTrial ? 'true' : 'false',
+        paystackPlanCode: body.isTrial ? pricing?.gatewayIds?.paystack : undefined,
+        trialDays: body.isTrial ? plan.trialDays : undefined,
         tierName: countryInfo?.tier || 'Unknown'
       },
     );
+  }
+
+  @Post('start-trial')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Start a free trial for a plan (soft trial, no card required)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        planId: { type: 'string' },
+      },
+      required: ['planId'],
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Trial started successfully.' })
+  async startTrial(
+    @Req() req: Request & { user: { userId: string } },
+    @Body() body: { planId: string },
+  ) {
+    const userId = req.user.userId;
+    const { planId } = body;
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new BadRequestException('User not found');
+    if (user.hasUsedTrial) throw new BadRequestException('You have already used a free trial.');
+
+    const plan = await this.prisma.plan.findUnique({ where: { id: planId } });
+    if (!plan) throw new BadRequestException('Plan not found');
+    if (plan.trialDays <= 0) throw new BadRequestException('This plan does not have a trial period.');
+
+    const now = new Date();
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(now.getDate() + plan.trialDays);
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        plan: { connect: { id: planId } },
+        subscriptionStatus: 'trialing',
+        trialStartedAt: now,
+        trialEndsAt: trialEndsAt,
+        hasUsedTrial: true,
+      },
+      include: { plan: true },
+    });
+
+    // Provision on Vemtap
+    if (updatedUser.plan?.vemtapPlanId) {
+      this.vemtapService.provisionUser(
+        updatedUser.email,
+        updatedUser.firstName,
+        updatedUser.lastName,
+        updatedUser.plan.vemtapPlanId,
+      ).catch(err => {
+        this.logger.error(`Vemtap provisioning failed during trial start for ${user.email}:`, err);
+      });
+    }
+
+    return { message: `Trial for ${plan.name} started successfully.`, trialEndsAt, planName: plan.name };
   }
   
   @Post('subscribe-free')
@@ -257,23 +374,15 @@ export class PaymentsController {
     plan?: { interval: string };
     subscription?: { subscription_code: string };
     metadata?: any;
+    authorization?: { authorization_code: string };
   }) {
     const { customer, plan, subscription } = data;
     const email = customer.email;
 
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      this.logger.error(
-        `User with email ${email} not found for charge.success`,
-      );
-      return;
-    }
+    this.logger.log(`Processing charge.success for ${email}`);
 
     let metadata = data.metadata;
-    if (typeof metadata === 'string') {
+    if (typeof metadata === 'string' && metadata.length > 0) {
       try {
         metadata = JSON.parse(metadata);
       } catch (e) {
@@ -282,7 +391,26 @@ export class PaymentsController {
       }
     }
 
-    const { planId, interval } = metadata || {};
+    const { userId, planId, interval } = metadata || {};
+    const isTrial = metadata?.isTrial === 'true';
+    const trialDays = metadata?.trialDays ? parseInt(metadata.trialDays) : 14;
+    const futurePlanCode = metadata?.paystackPlanCode;
+    
+    this.logger.log(`Transaction metadata: userId=${userId}, planId=${planId}, interval=${interval}, isTrial=${isTrial}`);
+
+    // Prioritize userId from metadata, fall back to email
+    const user = userId 
+      ? await this.prisma.user.findUnique({ where: { id: userId } })
+      : await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      this.logger.error(
+        `User not found for charge.success. email=${email}, userId=${userId}`,
+      );
+      return;
+    }
+
+    const trialEndsAt = isTrial ? new Date(Date.now() + trialDays * 86400000) : null;
 
     const updatedUser = await this.prisma.user.update({
       where: { id: user.id },
@@ -290,15 +418,36 @@ export class PaymentsController {
         plan: planId ? { connect: { id: planId } } : undefined,
         paystackCustomerCode: customer.customer_code,
         paystackSubscriptionCode: subscription?.subscription_code || null,
-        subscriptionStatus: 'active',
+        subscriptionStatus: isTrial ? 'trialing' : 'active',
         billingCycle: interval || plan?.interval || null,
-        hasUsedTrial: true, // Mark that they've now paid/used a trial
-        trialEndsAt: null,   // Clear trial as they are now active
+        hasUsedTrial: true, 
+        trialEndsAt: trialEndsAt,   
       },
       include: { plan: true },
     });
 
-    this.logger.log(`User ${email} upgraded to plan ${planId || 'PRO'}`);
+    this.logger.log(`Successfully updated plan for user ${user.email} to ${updatedUser.plan?.name || 'Unknown'} (isTrial: ${isTrial})`);
+
+    // If Trial tokenization succeeded, set up the real subscription for the future
+    if (isTrial && futurePlanCode && data.authorization?.authorization_code && trialEndsAt) {
+      try {
+        const sub = await this.paystackService.createSubscription(
+          customer.customer_code,
+          futurePlanCode,
+          data.authorization.authorization_code,
+          trialEndsAt.toISOString()
+        );
+        
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { paystackSubscriptionCode: sub.subscription_code }
+        });
+        
+        this.logger.log(`Created future trial subscription: ${sub.subscription_code} starting ${trialEndsAt.toISOString()}`);
+      } catch (err) {
+        this.logger.error(`Failed to create future trial subscription for ${user.email}:`, err);
+      }
+    }
 
     // Vemtap Provisioning logic
     if (updatedUser.plan?.vemtapPlanId) {

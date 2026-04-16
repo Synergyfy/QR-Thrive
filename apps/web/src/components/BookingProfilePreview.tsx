@@ -24,6 +24,7 @@ interface BookingProfilePreviewProps {
   customFormFields?: FormField[];
   whatsappEnabled?: boolean;
   whatsappNumber?: string;
+  onButtonClick?: (target: string) => void;
 }
 
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1544161515-4ae6b918af99?w=800&h=600&fit=crop";
@@ -56,7 +57,8 @@ const BookingProfilePreview: React.FC<BookingProfilePreviewProps> = ({
   customFormEnabled = false,
   customFormFields = [],
   whatsappEnabled = false,
-  whatsappNumber = ""
+  whatsappNumber = "",
+  onButtonClick
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const today = useMemo(() => new Date(), []);
@@ -105,10 +107,12 @@ const BookingProfilePreview: React.FC<BookingProfilePreviewProps> = ({
   };
 
   const handleBook = () => {
-    if (destinationMode === 'url') {
+    if (destinationMode === 'qr_link' && qrLinkId) {
+      onButtonClick?.(`qr:${qrLinkId}`);
       return;
     }
-    if (destinationMode === 'qr_link') {
+    if (destinationMode === 'url' && bookingUrl) {
+      onButtonClick?.(bookingUrl);
       return;
     }
     if (destinationMode === 'calendar' && selectedDay && selectedTime) {

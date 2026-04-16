@@ -15,6 +15,7 @@ interface AudioProfilePreviewProps {
   buttonColor?: string;
   buttonTextColor?: string;
   buttonText?: string;
+  onButtonClick?: () => void;
 }
 
 const AudioProfilePreview: React.FC<AudioProfilePreviewProps> = ({ 
@@ -30,6 +31,7 @@ const AudioProfilePreview: React.FC<AudioProfilePreviewProps> = ({
   buttonColor = "rgba(255, 255, 255, 0.2)",
   buttonTextColor = "#ffffff",
   buttonText = "Learn More",
+  onButtonClick
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -74,6 +76,7 @@ const AudioProfilePreview: React.FC<AudioProfilePreviewProps> = ({
           
           <div className="flex gap-3">
             <button 
+              onClick={onButtonClick}
               className="flex-1 py-4 rounded-2xl font-bold text-sm backdrop-blur-md transition-all active:scale-95 border border-white/20"
               style={{ backgroundColor: buttonColor, color: buttonTextColor }}
             >

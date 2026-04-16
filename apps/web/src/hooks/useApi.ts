@@ -17,8 +17,8 @@ export const useLogin = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: authApi.login,
-    onSuccess: (data) => {
-      queryClient.setQueryData(['currentUser'], data);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
   });
 };
@@ -27,8 +27,18 @@ export const useSignup = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: authApi.signup,
-    onSuccess: (data) => {
-      queryClient.setQueryData(['currentUser'], data);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
+  });
+};
+
+export const useGoogleLogin = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: authApi.googleLogin,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
   });
 };
@@ -173,9 +183,33 @@ export const useCancelSubscription = () => {
 };
 export const useInitializePayment = () => {
   return useMutation({
-    mutationFn: (data: { planId: string; interval: string }) => paymentsApi.initialize(data),
+    mutationFn: (data: { planId: string; interval: string; isTrial?: boolean }) => paymentsApi.initialize(data),
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to initialize payment');
+    },
+  });
+};
+
+export const useVerifyPayment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reference: string) => paymentsApi.verifyPayment(reference),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
+  });
+};
+
+export const useStartTrial = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { planId: string }) => paymentsApi.startTrial(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      toast.success('Trial started successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to start trial');
     },
   });
 };

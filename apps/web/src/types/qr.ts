@@ -273,6 +273,8 @@ export interface QRData {
     accentColor?: string;
     companyName?: string;
     headline?: string;
+    buttonText?: string;
+    buttonUrl?: string;
     about?: string;
     logo?: string;
     banner?: string;
@@ -334,6 +336,7 @@ export interface QRData {
   };
 
   // Universal QR Connector — works across all QR types
+  linkedQRCodeId?: string;
   connectedQrId?: string;
 }
 
@@ -393,4 +396,5 @@ export interface QRConfiguration {
   margin: number;
   isDynamic: boolean;
   shortId?: string;
+  linkedQRCodeId?: string;
 }

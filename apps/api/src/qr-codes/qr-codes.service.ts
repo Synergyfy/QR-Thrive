@@ -60,7 +60,10 @@ export class QRCodesService {
 
     const shortId = crypto.randomBytes(4).toString('hex');
 
-    const { data, design, frame, ...rest } = createQRCodeDto;
+    const { data, design, frame, linkedQRCodeId, ...rest } = createQRCodeDto;
+    
+    // Auto-sync linkedQRCodeId from JSON if not explicitly provided
+    const syncedLinkedId = linkedQRCodeId || this.extractLinkedQRId(data);
 
     const qrCode = await this.prisma.qRCode.create({
       data: {
@@ -70,6 +73,7 @@ export class QRCodesService {
         data: data as Prisma.InputJsonValue,
         design: design as Prisma.InputJsonValue,
         frame: frame as Prisma.InputJsonValue,
+        linkedQRCodeId: syncedLinkedId,
       },
     });
 
@@ -174,7 +178,12 @@ export class QRCodesService {
 
     const qrCode = await this.findOne(id, userId);
 
-    const { data, design, frame, ...rest } = updateQRCodeDto;
+    const { data, design, frame, linkedQRCodeId, ...rest } = updateQRCodeDto;
+
+    // Auto-sync linkedQRCodeId from JSON if it was updated or if we are forced to re-extract
+    const syncedLinkedId = linkedQRCodeId !== undefined 
+      ? linkedQRCodeId 
+      : (data !== undefined ? this.extractLinkedQRId(data) : undefined);
 
     const updated = await this.prisma.qRCode.update({
       where: { id: qrCode.id },
@@ -185,6 +194,7 @@ export class QRCodesService {
           design === undefined ? undefined : (design as Prisma.InputJsonValue),
         frame:
           frame === undefined ? undefined : (frame as Prisma.InputJsonValue),
+        linkedQRCodeId: syncedLinkedId,
       },
     });
 
@@ -271,6 +281,58 @@ export class QRCodesService {
     }
   }
 
+  /**
+   * Recursively searches for 'qrLinkId' within the dynamic data JSON.
+   */
+  private extractLinkedQRId(data: any): string | null {
+    if (!data || typeof data !== 'object') return null;
+
+    if (Array.isArray(data)) {
+      for (const item of data) {
+        const found = this.extractLinkedQRId(item);
+        if (found) return found;
+      }
+    } else {
+      for (const key of Object.keys(data)) {
+        if ((key === 'qrLinkId' || key === 'connectedQrId' || key === 'linkedQRCodeId') && typeof data[key] === 'string') {
+          return data[key];
+        }
+        // Recursively check nested objects/arrays
+        const found = this.extractLinkedQRId(data[key]);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * One-time sync for legacy QR codes that have qrLinkId in JSON but not in DB field.
+   */
+  async syncLegacyQRLinks() {
+    const qrCodes = await this.prisma.qRCode.findMany({
+      where: {
+        linkedQRCodeId: null,
+      },
+    });
+
+    let syncCount = 0;
+    for (const qr of qrCodes) {
+      const extractedId = this.extractLinkedQRId(qr.data);
+      if (extractedId) {
+        // Verify the linked QR code exists to maintain integrity
+        const exists = await this.prisma.qRCode.findUnique({ where: { id: extractedId } });
+        if (exists) {
+          await this.prisma.qRCode.update({
+            where: { id: qr.id },
+            data: { linkedQRCodeId: extractedId },
+          });
+          syncCount++;
+        }
+      }
+    }
+    return { syncCount };
+  }
+
   async duplicate(id: string, userId: string) {
     const user = await this.prisma.user.findUnique({ 
       where: { id: userId },
@@ -316,6 +378,7 @@ export class QRCodesService {
         form: {
           include: { fields: { orderBy: { order: 'asc' } } },
         },
+        linkedQRCode: true,
       },
     });
 
@@ -353,7 +416,10 @@ export class QRCodesService {
   async recordScan(shortId: string, ip: string, userAgent: string) {
     const qrCode = await this.prisma.qRCode.findUnique({
       where: { shortId },
-      include: { user: { include: { plan: true } } },
+      include: { 
+        user: { include: { plan: true } },
+        linkedQRCode: true,
+      },
     });
 
     if (!qrCode) {
