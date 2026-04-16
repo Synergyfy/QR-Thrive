@@ -274,7 +274,7 @@ const CreationWizard: React.FC = () => {
         });
         toast.success('QR Code created successfully!');
       }
-      navigate(getDashboardPath(user?.role));
+      navigate(getDashboardPath(user));
     } catch (error: any) {
       await cleanupUploadedFiles();
       toast.error(error?.response?.data?.message || 'Failed to save QR Code');
@@ -288,9 +288,9 @@ const CreationWizard: React.FC = () => {
   const handleBack = () => {
     if (isEditing) {
       // In edit mode, back always goes to dashboard
-      navigate(getDashboardPath(user?.role));
+      navigate(getDashboardPath(user));
     } else if (step === 'type') {
-      navigate(getDashboardPath(user?.role));
+      navigate(getDashboardPath(user));
     } else {
       setStep(steps[steps.findIndex(s => s.id === step) - 1].id as Step);
     }
@@ -308,7 +308,7 @@ const CreationWizard: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
       {/* Navbar */}
       <nav className="h-16 bg-white border-b border-slate-100 px-8 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center cursor-pointer shrink-0" onClick={() => navigate(getDashboardPath(user?.role))}>
+        <div className="flex items-center cursor-pointer shrink-0" onClick={() => navigate(getDashboardPath(user))}>
             <img src="/QRThrive_Logo_Full-BG.png" alt="QR Thrive" className="h-14 w-auto" style={{ filter: 'brightness(0) saturate(100%) invert(32%) sepia(95%) saturate(3033%) hue-rotate(211deg) brightness(96%) contrast(92%)' }} />
         </div>
 

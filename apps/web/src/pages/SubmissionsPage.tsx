@@ -219,7 +219,7 @@ const SubmissionsPage: React.FC = () => {
         <header className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-10 relative z-20">
            <div className="flex items-center gap-6">
               <button 
-                onClick={() => navigate(getDashboardPath(user?.role))}
+                onClick={() => navigate(getDashboardPath(user))}
                 className="p-3 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-blue-600 hover:border-blue-600 transition-all shadow-sm active:scale-95"
               >
                 <ArrowLeft className="w-5 h-5" />

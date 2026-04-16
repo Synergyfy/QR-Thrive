@@ -79,7 +79,7 @@ export default function PricingPage() {
     if (plan.isFree) {
       try {
         await subscribeFree.mutateAsync({ planId: plan.id });
-        navigate(getDashboardPath(user.role));
+        navigate(getDashboardPath(user));
       } catch (err) {
         // Error handled in hook
       }

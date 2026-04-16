@@ -32,7 +32,7 @@ export default function PublicNav() {
   const navLinks = [
     { name: 'Why Us', path: '/why-us' },
     { name: 'Solutions', path: '/solutions' },
-    { name: 'Pricing', path: '/pricing' },
+    { name: 'Pricing', path: user ? '/dashboard?tab=pricing' : '/pricing' },
     { name: 'FAQ', path: '/faq' },
   ];
 
@@ -201,7 +201,7 @@ export default function PublicNav() {
         onClose={() => setIsAuthModalOpen(false)} 
         onSuccess={(u) => {
           setIsAuthModalOpen(false);
-          const path = getDashboardPath(u.role);
+          const path = getDashboardPath(u);
           navigate(path);
         }} 
       />
