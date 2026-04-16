@@ -17,7 +17,8 @@ export const useLogin = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: authApi.login,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(['currentUser'], data);
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
   });
@@ -27,7 +28,8 @@ export const useSignup = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: authApi.signup,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(['currentUser'], data);
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
   });
@@ -37,7 +39,8 @@ export const useGoogleLogin = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: authApi.googleLogin,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(['currentUser'], data);
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
   });
