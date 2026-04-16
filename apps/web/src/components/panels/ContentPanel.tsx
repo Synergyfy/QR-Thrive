@@ -2339,57 +2339,59 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
             </div>
          </div>
 
-         {/* Universal QR Connector - Available on all types */}
-         <div className="mt-8">
-           <CollapsibleSection 
-              id="universal-connector" 
-              title="QR Connector (Chaining)" 
-              subtitle="Redirect users to another QR experience" 
-              icon={Link} 
-              isExpanded={expandedSections['universal-connector']} 
-              onToggle={toggleSection}
-           >
-              <div className="space-y-4 animate-in fade-in duration-300">
-                 {!user ? (
-                   <div className="bg-blue-50/50 rounded-2xl p-6 border-2 border-dashed border-blue-100 flex flex-col items-center justify-center text-center">
-                      <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600 mb-3">
-                         <Zap className="w-6 h-6 fill-yellow-400 text-yellow-400" />
-                      </div>
-                      <h4 className="text-sm font-bold text-gray-900 mb-1">Unlock QR Chaining</h4>
-                      <p className="text-[10px] text-gray-500 font-medium mb-4 leading-relaxed max-w-[250px]">
-                         Sign in or register to chain multiple QR codes together. Automatically redirect users after they interact with this code.
-                      </p>
-                      <button 
-                        onClick={() => {
-                          const authModalBtn = document.querySelector('[data-auth-trigger]') as HTMLElement;
-                          if (authModalBtn) authModalBtn.click();
-                        }}
-                        className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-200/50 hover:bg-blue-700 transition-all active:scale-95"
-                      >
-                        Sign in to connect
-                      </button>
-                   </div>
-                 ) : (
-                   <>
-                     <div className="space-y-2">
-                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Connect to another QR Code</p>
-                       <select
-                         className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm appearance-none cursor-pointer"
-                         value={data.connectedQrId || ''}
-                         onChange={(e) => updateData({ connectedQrId: e.target.value })}
-                       >
-                         <option value="">None (Don't connect)</option>
-                         <QROptionsList />
-                       </select>
+         {/* Universal QR Connector - Hidden on redirect types */}
+         {!['url', 'instagram', 'facebook', 'whatsapp', 'twitter', 'youtube', 'tiktok', 'linkedin'].includes(data.type) && (
+           <div className="mt-8">
+             <CollapsibleSection 
+                id="universal-connector" 
+                title="QR Connector (Chaining)" 
+                subtitle="Redirect users to another QR experience" 
+                icon={Link} 
+                isExpanded={expandedSections['universal-connector']} 
+                onToggle={toggleSection}
+             >
+                <div className="space-y-4 animate-in fade-in duration-300">
+                   {!user ? (
+                     <div className="bg-blue-50/50 rounded-2xl p-6 border-2 border-dashed border-blue-100 flex flex-col items-center justify-center text-center">
+                        <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600 mb-3">
+                           <Zap className="w-6 h-6 fill-yellow-400 text-yellow-400" />
+                        </div>
+                        <h4 className="text-sm font-bold text-gray-900 mb-1">Unlock QR Chaining</h4>
+                        <p className="text-[10px] text-gray-500 font-medium mb-4 leading-relaxed max-w-[250px]">
+                           Sign in or register to chain multiple QR codes together. Automatically redirect users after they interact with this code.
+                        </p>
+                        <button 
+                          onClick={() => {
+                            const authModalBtn = document.querySelector('[data-auth-trigger]') as HTMLElement;
+                            if (authModalBtn) authModalBtn.click();
+                          }}
+                          className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-200/50 hover:bg-blue-700 transition-all active:scale-95"
+                        >
+                          Sign in to connect
+                        </button>
                      </div>
-                     <p className="text-[9px] text-gray-400 font-medium leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
-                        When visitors complete the interaction for this QR code (like submitting a form or clicking a CTA button), they will be automatically redirected to the connected experience you select here.
-                     </p>
-                   </>
-                 )}
-              </div>
-           </CollapsibleSection>
-         </div>
+                   ) : (
+                     <>
+                       <div className="space-y-2">
+                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Connect to another QR Code</p>
+                         <select
+                           className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm appearance-none cursor-pointer"
+                           value={data.connectedQrId || ''}
+                           onChange={(e) => updateData({ connectedQrId: e.target.value })}
+                         >
+                           <option value="">None (Don't connect)</option>
+                           <QROptionsList />
+                         </select>
+                       </div>
+                       <p className="text-[9px] text-gray-400 font-medium leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
+                          When visitors complete the interaction for this QR code (like submitting a form or clicking a CTA button), they will be automatically redirected to the connected experience you select here.
+                       </p>
+                     </>
+                   )}
+                </div>
+             </CollapsibleSection>
+           </div>
+         )}
 
          <div className="flex items-start gap-5 p-7 bg-blue-50 rounded-[32px] border border-blue-100/50">
           <div className="bg-blue-600 text-white p-2.5 rounded-2xl shadow-lg shadow-blue-100 shrink-0">
