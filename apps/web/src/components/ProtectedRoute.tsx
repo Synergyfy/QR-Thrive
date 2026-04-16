@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useCurrentUser } from '../hooks/useApi';
 
 const ProtectedRoute: React.FC = () => {
@@ -30,9 +30,16 @@ const ProtectedRoute: React.FC = () => {
   // Allow active, non-renewing, valid trials, or any user with a plan and no explicit status (fallback)
   const isSubscriber = u.subscriptionStatus === 'active' || u.subscriptionStatus === 'non-renewing' || isTrialValid || (!!u.planId && !u.subscriptionStatus);
   
+  const location = useLocation();
+
   // Allow admins and active subscribers
   if (u.role !== 'ADMIN' && !isSubscriber) {
-    return <Navigate to="/pricing" replace />;
+    // If they are on the dashboard, let them stay (DashboardPage handles the pricing view)
+    if (location.pathname === '/dashboard') {
+      return <Outlet />;
+    }
+    // Otherwise redirect to dashboard
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;

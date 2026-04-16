@@ -75,13 +75,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
         onSuccess(res.user);
         toast.success(`Welcome back, ${res.user.firstName}!`);
         onClose();
-        navigate(getDashboardPath(res.user.role));
+        navigate(getDashboardPath(res.user));
       } else {
         const res = await signupMutation.mutateAsync({ email, password, confirmPassword, firstName, lastName, phone });
         onSuccess(res.user);
         toast.success('Account created successfully!');
         onClose();
-        navigate(getDashboardPath(res.user.role));
+        navigate(getDashboardPath(res.user));
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Authentication failed');
