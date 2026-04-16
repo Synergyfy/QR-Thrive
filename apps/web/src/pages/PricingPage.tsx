@@ -7,16 +7,14 @@ import PublicNav from '../components/PublicNav';
 import PublicFooter from '../components/PublicFooter';
 import AuthModal from '../components/AuthModal';
 import { usePublicPlans, usePublicConfig } from '../hooks/usePricing';
-import { useCurrentUser, useInitializePayment, useStartTrial, useVerifyPayment } from '../hooks/useApi';
+import { useCurrentUser, useInitializePayment, useVerifyPayment } from '../hooks/useApi';
 import { useSubscribeFree } from '../hooks/useSubscribeFree';
 import { getDashboardPath } from '../utils/auth';
 import type { PublicPlan } from '../types/api';
 import toast from 'react-hot-toast';
-import { useQueryClient } from '@tanstack/react-query';
 
 export default function PricingPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PublicPlan | null>(null);
@@ -28,7 +26,6 @@ export default function PricingPage() {
   const { data: config, isLoading: configLoading } = usePublicConfig();
   const initializePayment = useInitializePayment();
   const subscribeFree = useSubscribeFree();
-  const startTrial = useStartTrial();
   const verifyPayment = useVerifyPayment();
 
   const isLoading = plansLoading || configLoading;

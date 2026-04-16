@@ -35,6 +35,7 @@ import BookingProfilePreview from './BookingProfilePreview';
 import type { QRData } from '../types/qr';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSubmitForm } from '../hooks/useForms';
+import toast from 'react-hot-toast';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { DEMO_DATA } from '../constants/demoData';
@@ -89,17 +90,39 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
   const navigate = useNavigate();
 
   // Handle CTA actions (Redirect to URL or Chained QR)
-  const handleAction = React.useCallback((options: { mode?: string, url?: string, qrLinkId?: string }) => {
-    if (isWizardPreview) {
-      console.log('Action triggered (Wizard Preview):', options);
+  const handleAction = React.useCallback((target: string | { mode?: string, url?: string, qrLinkId?: string }) => {
+    if (typeof target === 'string') {
+      if (target.startsWith('qr:')) {
+        const qrLinkId = target.replace('qr:', '');
+        if (isWizardPreview) {
+          toast.success(`In live, this would link to QR: ${qrLinkId}`);
+          return;
+        }
+        navigate(`/s/${qrLinkId}`);
+      } else {
+        if (isWizardPreview) {
+          toast.success(`In live, this would open: ${target}`);
+          return;
+        }
+        window.open(target.startsWith('http') ? target : `https://${target}`, '_blank');
+      }
       return;
     }
 
-    if (options.mode === 'qr_link' && options.qrLinkId) {
-      navigate(`/s/${options.qrLinkId}`);
-    } else if (options.url) {
-      const url = options.url.startsWith('http') ? options.url : `https://${options.url}`;
-      window.open(url, '_blank', 'noopener,noreferrer');
+    const { mode, url, qrLinkId } = target;
+
+    if (mode === 'url' && url) {
+      if (isWizardPreview) {
+        toast.success(`In live, this would open: ${url}`);
+        return;
+      }
+      window.open(url.startsWith('http') ? url : `https://${url}`, '_blank');
+    } else if (mode === 'qr_link' && qrLinkId) {
+      if (isWizardPreview) {
+        toast.success(`In live, this would link to QR: ${qrLinkId}`);
+        return;
+      }
+      navigate(`/s/${qrLinkId}`);
     }
   }, [isWizardPreview, navigate]);
 

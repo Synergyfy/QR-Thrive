@@ -2376,8 +2376,8 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Connect to another QR Code</p>
                          <select
                            className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm appearance-none cursor-pointer"
-                           value={data.connectedQrId || ''}
-                           onChange={(e) => updateData({ connectedQrId: e.target.value })}
+                           value={data.linkedQRCodeId || ''}
+                           onChange={(e) => updateData({ linkedQRCodeId: e.target.value })}
                          >
                            <option value="">None (Don't connect)</option>
                            <QROptionsList />

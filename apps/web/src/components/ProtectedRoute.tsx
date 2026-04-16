@@ -22,11 +22,9 @@ const ProtectedRoute: React.FC = () => {
 
   // Only redirect once the query has definitively settled with no user
   // We also wait if a fetch is in progress (fetchStatus !== 'idle') to avoid premature redirects
-  if (isError || (!user && fetchStatus === 'idle') || (user && !user.user && fetchStatus === 'idle')) {
-    console.log('ProtectedRoute: Redirecting to homepage due to missing auth state');
+  if (!user?.user) {
     return <Navigate to="/" replace />;
   }
-
   const u = user.user;
   const isTrialValid = u.subscriptionStatus === 'trialing' && u.trialEndsAt && new Date(u.trialEndsAt) > new Date();
   // Allow active, non-renewing, valid trials, or any user with a plan and no explicit status (fallback)
