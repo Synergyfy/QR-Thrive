@@ -9,8 +9,10 @@ const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api/v1
 
 const DynamicPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<QRData | null>(null);
+  const [qrCode, setQrCode] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  const data = qrCode?.data;
   
   const { data: currentUser, isLoading: loadingAuth } = useCurrentUser();
   const searchParams = new URLSearchParams(window.location.search);
@@ -31,7 +33,7 @@ const DynamicPage: React.FC = () => {
       // 1. Try localStorage first (fast preview)
       if (stored) {
         try {
-          setData(JSON.parse(stored) as QRData);
+          setQrCode({ data: JSON.parse(stored) as QRData });
           setLoading(false);
           return;
         } catch (e) {}
@@ -39,9 +41,9 @@ const DynamicPage: React.FC = () => {
 
       // 2. Fetch from backend
       try {
-        const qr = await qrCodesApi.getPublicQRCode(id);
-        if (qr && qr.data) {
-          setData(qr.data as QRData);
+        const fullQr = await qrCodesApi.getPublicQRCode(id);
+        if (fullQr) {
+          setQrCode(fullQr);
         }
       } catch (e) {
         console.error("Failed to fetch qr data", e);
@@ -110,7 +112,12 @@ const DynamicPage: React.FC = () => {
   ];
   
   if (showLandingPageTypes.includes(data?.type || '')) {
-    return <DynamicView data={data} />;
+    return (
+      <DynamicView 
+        data={data} 
+        linkedQRCode={qrCode?.linkedQRCode} 
+      />
+    );
   }
 
   return (

@@ -12,6 +12,7 @@ interface VideoProfilePreviewProps {
   buttonColor?: string;
   buttonTextColor?: string;
   onPlay: () => void;
+  onButtonClick?: () => void;
 }
 
 const VideoProfilePreview: React.FC<VideoProfilePreviewProps> = ({ 
@@ -24,7 +25,8 @@ const VideoProfilePreview: React.FC<VideoProfilePreviewProps> = ({
   textColor = "#ffffff",
   buttonColor = "transparent",
   buttonTextColor = "#ffffff",
-  onPlay
+  onPlay,
+  onButtonClick
 }) => {
   return (
     <div className="w-full h-full flex flex-col font-sans overflow-hidden" style={{ backgroundColor: themeColor }}>
@@ -37,6 +39,7 @@ const VideoProfilePreview: React.FC<VideoProfilePreviewProps> = ({
           <p className="text-[12px] opacity-80 leading-snug max-w-[280px] mx-auto mb-6">{description}</p>
           
           <button 
+            onClick={onButtonClick}
             className="w-full py-4 rounded-xl font-semibold text-md border border-white/40 transition-colors"
             style={{ backgroundColor: buttonColor, color: buttonTextColor }}
           >

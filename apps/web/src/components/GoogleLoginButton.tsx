@@ -1,6 +1,6 @@
 import React from 'react';
 import { GoogleLogin } from '@react-oauth/google';
-import { authApi } from '../services/api';
+import { useGoogleLogin } from '../hooks/useApi';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardPath } from '../utils/auth';
@@ -12,10 +12,11 @@ interface GoogleLoginButtonProps {
 
 const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess, onError }) => {
   const navigate = useNavigate();
+  const googleLoginMutation = useGoogleLogin();
 
   const handleSuccess = async (credentialResponse: any) => {
     try {
-      const res = await authApi.googleLogin(credentialResponse.credential);
+      const res = await googleLoginMutation.mutateAsync(credentialResponse.credential);
       onSuccess(res.user);
       toast.success(`Welcome, ${res.user.firstName}!`);
       navigate(getDashboardPath(res.user.role));

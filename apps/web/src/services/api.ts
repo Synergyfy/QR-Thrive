@@ -73,8 +73,17 @@ export const authApi = {
     return (await apiClient.post('/auth/logout')).data;
   },
   getMe: async () => {
-    if (!localStorage.getItem(SESSION_HINT_KEY)) return null;
-    return (await apiClient.get<AuthResponse>('/auth/me')).data;
+    const hint = localStorage.getItem(SESSION_HINT_KEY);
+    console.log('authApi.getMe: session hint check:', !!hint);
+    if (!hint) return null;
+    try {
+      const res = await apiClient.get<AuthResponse>('/auth/me');
+      console.log('authApi.getMe: Successfully fetched profile');
+      return res.data;
+    } catch (err) {
+      console.error('authApi.getMe: Failed to fetch profile', err);
+      throw err;
+    }
   },
 };
 
@@ -230,7 +239,13 @@ export const adminApi = {
   },
 };
 export const paymentsApi = {
-  initialize: async (data: { planId: string; interval: string }) => (await apiClient.post<{ authorization_url: string }>('/payments/initialize', data)).data,
+  initialize: async (data: { planId: string; interval: string; isTrial?: boolean }) => {
+    return (await apiClient.post('/payments/initialize', data)).data;
+  },
+  verifyPayment: async (reference: string) => {
+    return (await apiClient.post('/payments/verify', { reference })).data;
+  },
+  startTrial: async (data: { planId: string }) => (await apiClient.post<{ message: string; trialEndsAt: string }>('/payments/start-trial', data)).data,
   subscribeFree: async (data: { planId: string }) => (await apiClient.post<{ message: string; planName: string }>('/payments/subscribe-free', data)).data,
   cancelSubscription: async () => (await apiClient.post<{ message: string }>('/payments/cancel')).data,
 };

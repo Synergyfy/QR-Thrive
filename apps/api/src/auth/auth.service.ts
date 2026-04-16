@@ -332,8 +332,15 @@ export class AuthService {
         lastName: true,
         role: true,
         plan: true,
+        planId: true,
+        subscriptionStatus: true,
+        billingCycle: true,
+        trialStartedAt: true,
+        trialEndsAt: true,
+        hasUsedTrial: true,
       },
     });
+    this.logger.log(`Fetching user profile: ${user?.email} - Status: ${user?.subscriptionStatus} - Role: ${user?.role}`);
     return { user };
   }
 
@@ -394,6 +401,12 @@ export class AuthService {
         lastName: true,
         role: true,
         plan: true,
+        planId: true,
+        subscriptionStatus: true,
+        billingCycle: true,
+        trialStartedAt: true,
+        trialEndsAt: true,
+        hasUsedTrial: true,
       },
     });
 
@@ -427,6 +440,7 @@ export class AuthService {
     });
 
     const isProd = this.configService.get<string>('NODE_ENV') === 'production';
+    this.logger.log(`Setting tokens for user ${userId}. isProd=${isProd}, sameSite=${isProd ? 'none' : 'lax'}, secure=${isProd}`);
 
     res.cookie('accessToken', accessToken, {
       httpOnly: true,

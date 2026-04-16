@@ -124,6 +124,7 @@ export interface CreateQRCodeDto {
   width?: number;
   height?: number;
   margin?: number;
+  linkedQRCodeId?: string;
 }
 
 export interface BackendQRCode {
@@ -143,6 +144,13 @@ export interface BackendQRCode {
   width: number;
   height: number;
   margin: number;
+  linkedQRCodeId?: string;
+  linkedQRCode?: {
+    id: string;
+    shortId: string;
+    name: string;
+    type: string;
+  };
   createdAt: string;
   updatedAt: string;
   scans: number;
