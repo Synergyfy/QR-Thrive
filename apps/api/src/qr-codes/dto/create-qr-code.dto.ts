@@ -44,7 +44,8 @@ export class CreateQRCodeDto {
   type: QRType;
 
   @ApiProperty({
-    description: 'Whether the QR code is dynamic (allows changing the URL later)',
+    description:
+      'Whether the QR code is dynamic (allows changing the URL later)',
     example: true,
     required: false,
   })
@@ -53,7 +54,8 @@ export class CreateQRCodeDto {
   isDynamic?: boolean;
 
   @ApiProperty({
-    description: 'The data associated with the QR code (e.g., URL for Website type)',
+    description:
+      'The data associated with the QR code (e.g., URL for Website type)',
     example: { url: 'https://example.com' },
   })
   @IsObject()

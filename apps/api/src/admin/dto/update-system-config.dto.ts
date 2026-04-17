@@ -1,9 +1,4 @@
-import {
-  IsNumber,
-  IsString,
-  IsArray,
-  IsOptional,
-} from 'class-validator';
+import { IsNumber, IsString, IsArray, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateSystemConfigDto {
@@ -55,7 +50,12 @@ export class UpdateSystemConfigDto {
 
   @ApiProperty({
     description: 'Frequently Asked Questions list',
-    example: [{ question: 'What is QR Thrive?', answer: 'A QR code management platform.' }],
+    example: [
+      {
+        question: 'What is QR Thrive?',
+        answer: 'A QR code management platform.',
+      },
+    ],
     required: false,
   })
   @IsArray()

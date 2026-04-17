@@ -21,7 +21,9 @@ export class ApiKeyGuard implements CanActivate {
     const internalKey = this.configService.get<string>('INTERNAL_API_KEY');
 
     if (!internalKey) {
-      throw new UnauthorizedException('Internal API key not configured on server');
+      throw new UnauthorizedException(
+        'Internal API key not configured on server',
+      );
     }
 
     if (apiKey !== internalKey) {

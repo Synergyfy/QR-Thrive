@@ -9,7 +9,13 @@ import { FormsModule } from '../forms/forms.module';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [PrismaModule, QRCodesModule, forwardRef(() => AuthModule), FormsModule, HttpModule],
+  imports: [
+    PrismaModule,
+    QRCodesModule,
+    forwardRef(() => AuthModule),
+    FormsModule,
+    HttpModule,
+  ],
   controllers: [IntegrationController],
   providers: [IntegrationService, VemtapService],
   exports: [VemtapService],

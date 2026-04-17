@@ -146,9 +146,9 @@ describe('Subscriptions (e2e)', () => {
       .send(payload)
       .expect(200);
 
-    const updatedUser = await prisma.user.findUnique({ 
+    const updatedUser = await prisma.user.findUnique({
       where: { id: userId },
-      include: { plan: true }
+      include: { plan: true },
     });
     expect(updatedUser?.plan?.name).toBe('Pro');
   });

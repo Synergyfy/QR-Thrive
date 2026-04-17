@@ -10,7 +10,14 @@ import { PricingModule } from '../pricing/pricing.module';
 import { IntegrationModule } from '../integration/integration.module';
 
 @Module({
-  imports: [PrismaModule, ConfigModule, PassportModule, JwtModule.register({}), PricingModule, forwardRef(() => IntegrationModule)],
+  imports: [
+    PrismaModule,
+    ConfigModule,
+    PassportModule,
+    JwtModule.register({}),
+    PricingModule,
+    forwardRef(() => IntegrationModule),
+  ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
   exports: [AuthService],

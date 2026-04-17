@@ -1,15 +1,30 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNumber, IsBoolean, IsArray, IsOptional, IsEnum, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsBoolean,
+  IsArray,
+  IsOptional,
+  IsEnum,
+  Min,
+  Max,
+} from 'class-validator';
 import { QRType, PricingTier } from '@prisma/client';
 
 export class UpdatePricingDiscountsDto {
-  @ApiProperty({ example: 10, description: 'Percentage discount for quarterly plans' })
+  @ApiProperty({
+    example: 10,
+    description: 'Percentage discount for quarterly plans',
+  })
   @IsNumber()
   @Min(0)
   @Max(100)
   quarterlyDiscount: number;
 
-  @ApiProperty({ example: 20, description: 'Percentage discount for yearly plans' })
+  @ApiProperty({
+    example: 20,
+    description: 'Percentage discount for yearly plans',
+  })
   @IsNumber()
   @Min(0)
   @Max(100)
@@ -17,7 +32,10 @@ export class UpdatePricingDiscountsDto {
 }
 
 export class CreateCountryDto {
-  @ApiProperty({ example: 'US', description: 'ISO 3166-1 alpha-2 country code' })
+  @ApiProperty({
+    example: 'US',
+    description: 'ISO 3166-1 alpha-2 country code',
+  })
   @IsString()
   code: string;
 
@@ -33,7 +51,11 @@ export class CreateCountryDto {
   @IsString()
   currencySymbol: string;
 
-  @ApiProperty({ enum: PricingTier, example: PricingTier.HIGH, description: 'The assigned economic tier' })
+  @ApiProperty({
+    enum: PricingTier,
+    example: PricingTier.HIGH,
+    description: 'The assigned economic tier',
+  })
   @IsEnum(PricingTier)
   tier: PricingTier;
 }
@@ -45,17 +67,27 @@ export class CreatePlanDto {
   @IsString()
   name: string;
 
-  @ApiPropertyOptional({ example: 'Perfect for small businesses', description: 'Plan description' })
+  @ApiPropertyOptional({
+    example: 'Perfect for small businesses',
+    description: 'Plan description',
+  })
   @IsString()
   @IsOptional()
   description?: string;
 
-  @ApiProperty({ example: 100, description: 'Maximum number of QR codes allowed' })
+  @ApiProperty({
+    example: 100,
+    description: 'Maximum number of QR codes allowed',
+  })
   @IsNumber()
   @Min(0)
   qrCodeLimit: number;
 
-  @ApiProperty({ enum: QRType, isArray: true, example: [QRType.url, QRType.vcard] })
+  @ApiProperty({
+    enum: QRType,
+    isArray: true,
+    example: [QRType.url, QRType.vcard],
+  })
   @IsArray()
   @IsEnum(QRType, { each: true })
   qrCodeTypes: QRType[];
@@ -81,7 +113,10 @@ export class CreatePlanDto {
   @IsOptional()
   trialDays?: number;
 
-  @ApiPropertyOptional({ example: 'vemtap_plan_uuid', description: 'Attached Vemtap Plan ID' })
+  @ApiPropertyOptional({
+    example: 'vemtap_plan_uuid',
+    description: 'Attached Vemtap Plan ID',
+  })
   @IsString()
   @IsOptional()
   vemtapPlanId?: string;
