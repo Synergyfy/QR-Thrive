@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Req } from '@nestjs/common';
 import { FormsService } from './forms.service';
 import { CreateFormDto } from './dto/create-form.dto';
 import type { Request } from 'express';
@@ -31,7 +24,10 @@ export class FormsController {
 
   @Get(':qrCodeId')
   @ApiOperation({ summary: 'Get form details by QR code ID' })
-  @ApiParam({ name: 'qrCodeId', description: 'The unique identifier of the QR code' })
+  @ApiParam({
+    name: 'qrCodeId',
+    description: 'The unique identifier of the QR code',
+  })
   @ApiResponse({ status: 200, description: 'Form details retrieved.' })
   @ApiResponse({ status: 404, description: 'Form not found for this QR code.' })
   async getForm(
@@ -43,7 +39,10 @@ export class FormsController {
 
   @Post()
   @ApiOperation({ summary: 'Create or update a form for a specific QR code' })
-  @ApiResponse({ status: 200, description: 'Form created or updated successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Form created or updated successfully.',
+  })
   @ApiResponse({ status: 400, description: 'Invalid input.' })
   async createOrUpdateForm(
     @Req() req: RequestWithUser,
@@ -54,8 +53,14 @@ export class FormsController {
 
   @Get(':qrCodeId/submissions')
   @ApiOperation({ summary: 'Get all submissions for a specific form' })
-  @ApiParam({ name: 'qrCodeId', description: 'The unique identifier of the QR code linked to the form' })
-  @ApiResponse({ status: 200, description: 'List of form submissions retrieved.' })
+  @ApiParam({
+    name: 'qrCodeId',
+    description: 'The unique identifier of the QR code linked to the form',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of form submissions retrieved.',
+  })
   async getSubmissions(
     @Req() req: RequestWithUser,
     @Param('qrCodeId') qrCodeId: string,

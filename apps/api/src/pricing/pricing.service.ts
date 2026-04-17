@@ -30,9 +30,12 @@ export interface LocalizedPlan extends Partial<Plan> {
 @Injectable()
 export class PricingService {
   private readonly logger = new Logger(PricingService.name);
-  
+
   // Cache for exchange rates: { [currencyCode]: { rate: number, timestamp: number } }
-  private exchangeRateCache: Record<string, { rate: number; timestamp: number }> = {};
+  private exchangeRateCache: Record<
+    string,
+    { rate: number; timestamp: number }
+  > = {};
   private readonly CACHE_TTL = 3600000; // 1 hour
 
   constructor(
@@ -49,24 +52,31 @@ export class PricingService {
     const now = Date.now();
     const cached = this.exchangeRateCache[toCurrency];
 
-    if (cached && (now - cached.timestamp < this.CACHE_TTL)) {
+    if (cached && now - cached.timestamp < this.CACHE_TTL) {
       return cached.rate;
     }
 
     try {
-      const response = await axios.get(`https://api.exchangerate-api.com/v4/latest/USD`);
+      const response = await axios.get(
+        `https://api.exchangerate-api.com/v4/latest/USD`,
+      );
       const allRates = response.data.rates;
       const rate = allRates[toCurrency];
-      
+
       if (rate) {
-        Object.keys(allRates).forEach(code => {
-          this.exchangeRateCache[code] = { rate: allRates[code], timestamp: now };
+        Object.keys(allRates).forEach((code) => {
+          this.exchangeRateCache[code] = {
+            rate: allRates[code],
+            timestamp: now,
+          };
         });
         return rate;
       }
     } catch (error) {
-      this.logger.warn(`Failed to fetch live exchange rate for ${toCurrency}: ${error.message}. Using fallback.`);
-      if (toCurrency === 'NGN') return 1400; 
+      this.logger.warn(
+        `Failed to fetch live exchange rate for ${toCurrency}: ${error.message}. Using fallback.`,
+      );
+      if (toCurrency === 'NGN') return 1400;
       if (toCurrency === 'EUR') return 0.92;
       if (toCurrency === 'GBP') return 0.78;
     }
@@ -94,7 +104,7 @@ export class PricingService {
     const country = await this.prisma.country.findUnique({
       where: { code },
     });
-    
+
     // Fallback if country is not in database
     if (!country) {
       if (code === 'NG') {
@@ -137,8 +147,8 @@ export class PricingService {
     const qDiscount = (config?.quarterlyDiscount || 10) / 100;
     const yDiscount = (config?.yearlyDiscount || 20) / 100;
 
-    const quarterlyTotal = (monthlyPrice * 3) * (1 - qDiscount);
-    const yearlyTotal = (monthlyPrice * 12) * (1 - yDiscount);
+    const quarterlyTotal = monthlyPrice * 3 * (1 - qDiscount);
+    const yearlyTotal = monthlyPrice * 12 * (1 - yDiscount);
 
     return {
       monthly: this.formatPrice(monthlyPrice, currency),
@@ -151,19 +161,34 @@ export class PricingService {
     plan: any,
     tier: PricingTier,
     targetCurrency: string,
-    symbol: string
+    symbol: string,
   ): Promise<LocalizedPlan> {
     const getPlanPriceBook = (cycle: BillingCycle) => {
       // Step A (Exact Match): Plan + User Tier + Local Currency
-      let match = plan.priceBooks.find(pb => pb.tier === tier && pb.currencyCode === targetCurrency && pb.billingCycle === cycle);
+      let match = plan.priceBooks.find(
+        (pb) =>
+          pb.tier === tier &&
+          pb.currencyCode === targetCurrency &&
+          pb.billingCycle === cycle,
+      );
       if (match) return match;
-      
+
       // Step B (Tier USD Fallback): Plan + User Tier + USD
-      match = plan.priceBooks.find(pb => pb.tier === tier && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
+      match = plan.priceBooks.find(
+        (pb) =>
+          pb.tier === tier &&
+          pb.currencyCode === 'USD' &&
+          pb.billingCycle === cycle,
+      );
       if (match) return match;
 
       // Step C (Global Fallback): HIGH Tier + USD
-      return plan.priceBooks.find(pb => pb.tier === PricingTier.HIGH && pb.currencyCode === 'USD' && pb.billingCycle === cycle);
+      return plan.priceBooks.find(
+        (pb) =>
+          pb.tier === PricingTier.HIGH &&
+          pb.currencyCode === 'USD' &&
+          pb.billingCycle === cycle,
+      );
     };
 
     const formatCycle = async (cycle: BillingCycle) => {
@@ -172,7 +197,12 @@ export class PricingService {
 
       let amount = pb.price;
       let currency = pb.currencyCode;
-      let currencySymbol = pb.currencyCode === 'USD' ? '$' : (pb.currencyCode === targetCurrency ? symbol : pb.currencyCode);
+      let currencySymbol =
+        pb.currencyCode === 'USD'
+          ? '$'
+          : pb.currencyCode === targetCurrency
+            ? symbol
+            : pb.currencyCode;
 
       // HYBRID CONVERSION: If we fell back to a USD price but the user expects a local currency
       if (pb.currencyCode === 'USD' && targetCurrency !== 'USD') {
@@ -224,15 +254,15 @@ export class PricingService {
     this.logger.log('Clearing all pricing caches...');
     // In a real scenario with distributed cache, we might use a pattern or tag
     // For now, we'll rely on the TTL or explicit keys if we tracked them.
-    // Given the cache keys are dynamic based on tier/currency, a simpler approach 
-    // for this local setup is to just wait for the 10min TTL OR 
+    // Given the cache keys are dynamic based on tier/currency, a simpler approach
+    // for this local setup is to just wait for the 10min TTL OR
     // implement a versioning/bust mechanism.
-    
+
     // However, we can try to clear common entries if we know the tiers
     const tiers = [PricingTier.HIGH, PricingTier.MIDDLE, PricingTier.LOW];
     for (const tier of tiers) {
-        // This is a bit brute force but effective for the current scale
-        // We'll trust the AdminService specifically clears the relevant keys too
+      // This is a bit brute force but effective for the current scale
+      // We'll trust the AdminService specifically clears the relevant keys too
     }
   }
 
@@ -250,26 +280,25 @@ export class PricingService {
     if (cached) return cached;
 
     const plans = await this.prisma.plan.findMany({
-      where: { 
+      where: {
         isActive: true,
-        deletedAt: null
+        deletedAt: null,
       },
       include: {
         priceBooks: {
           where: {
             status: PriceStatus.ACTIVE,
-            OR: [
-              { activeFrom: null },
-              { activeFrom: { lte: new Date() } }
-            ],
-          }
-        }
+            OR: [{ activeFrom: null }, { activeFrom: { lte: new Date() } }],
+          },
+        },
       },
       orderBy: { qrCodeLimit: 'asc' },
     });
 
     const result = await Promise.all(
-      plans.map(plan => this.formatPlanWithPricing(plan, tier, targetCurrency, symbol))
+      plans.map((plan) =>
+        this.formatPlanWithPricing(plan, tier, targetCurrency, symbol),
+      ),
     );
 
     await this.cacheManager.set(cacheKey, result, 600); // 10 min cache for public plans
@@ -279,7 +308,10 @@ export class PricingService {
   /**
    * Fetches a specific plan with localized prices for a given country code.
    */
-  async getPlanWithPricing(planId: string, countryCode: string): Promise<LocalizedPlan> {
+  async getPlanWithPricing(
+    planId: string,
+    countryCode: string,
+  ): Promise<LocalizedPlan> {
     const countryInfo = await this.getCountryInfo(countryCode);
     const tier = countryInfo?.tier || PricingTier.HIGH;
     const targetCurrency = countryInfo?.currencyCode || 'USD';
@@ -295,18 +327,20 @@ export class PricingService {
         priceBooks: {
           where: {
             status: PriceStatus.ACTIVE,
-            OR: [
-              { activeFrom: null },
-              { activeFrom: { lte: new Date() } }
-            ]
-          }
-        }
-      }
+            OR: [{ activeFrom: null }, { activeFrom: { lte: new Date() } }],
+          },
+        },
+      },
     });
 
     if (!plan) throw new NotFoundException('Plan not found');
 
-    const result = await this.formatPlanWithPricing(plan, tier, targetCurrency, symbol);
+    const result = await this.formatPlanWithPricing(
+      plan,
+      tier,
+      targetCurrency,
+      symbol,
+    );
 
     await this.cacheManager.set(cacheKey, result, 600);
     return result;
@@ -314,9 +348,13 @@ export class PricingService {
 
   // --- Admin Methods ---
 
-  async getSuggestedPrice(basePriceUSD: number, targetCurrencyCode: string, targetTier?: PricingTier) {
+  async getSuggestedPrice(
+    basePriceUSD: number,
+    targetCurrencyCode: string,
+    targetTier?: PricingTier,
+  ) {
     const rate = await this.getExchangeRate(targetCurrencyCode);
-    
+
     // Scaling factors based on Purchasing Power Parity (PPP) tiers
     const scalingFactors: Record<PricingTier, number> = {
       [PricingTier.HIGH]: 1.0,
@@ -327,7 +365,7 @@ export class PricingService {
     const factor = targetTier ? scalingFactors[targetTier] : 1.0;
     const localizedBase = basePriceUSD * factor;
     const suggestedAmount = localizedBase * rate;
-    
+
     return {
       basePriceUSD,
       targetTier: targetTier || 'HIGH (default)',
@@ -335,7 +373,7 @@ export class PricingService {
       targetCurrencyCode,
       exchangeRate: rate,
       suggestedAmount: this.formatPrice(suggestedAmount, targetCurrencyCode),
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 
@@ -366,7 +404,7 @@ export class PricingService {
   async updatePricingConfig(quarterlyDiscount: number, yearlyDiscount: number) {
     const config = await this.prisma.systemConfig.findFirst();
     if (!config) throw new NotFoundException('System config not found');
-    
+
     return this.prisma.systemConfig.update({
       where: { id: config.id },
       data: { quarterlyDiscount, yearlyDiscount },

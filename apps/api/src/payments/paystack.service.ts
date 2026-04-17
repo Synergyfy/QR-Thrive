@@ -40,7 +40,9 @@ export class PaystackService {
     plan?: string,
     metadata?: any,
   ) {
-    this.logger.log(`Initializing Paystack transaction for email: ${email}, amount: ${amount}, plan: ${plan}`);
+    this.logger.log(
+      `Initializing Paystack transaction for email: ${email}, amount: ${amount}, plan: ${plan}`,
+    );
     try {
       const response = await firstValueFrom(
         this.httpService.post(
@@ -147,18 +149,30 @@ export class PaystackService {
     }
   }
 
-  async createSubscription(customer: string, plan: string, authorization: string, start_date?: string) {
+  async createSubscription(
+    customer: string,
+    plan: string,
+    authorization: string,
+    start_date?: string,
+  ) {
     try {
       const payload: any = { customer, plan, authorization };
       if (start_date) payload.start_date = start_date;
-      
+
       const response = await firstValueFrom(
-        this.httpService.post(`${this.baseUrl}/subscription`, payload, { headers: this.headers }),
+        this.httpService.post(`${this.baseUrl}/subscription`, payload, {
+          headers: this.headers,
+        }),
       );
       return response.data.data;
     } catch (error) {
-      this.logger.error('Paystack create subscription error:', error.response?.data || error.message);
-      throw new InternalServerErrorException('Error creating Paystack subscription');
+      this.logger.error(
+        'Paystack create subscription error:',
+        error.response?.data || error.message,
+      );
+      throw new InternalServerErrorException(
+        'Error creating Paystack subscription',
+      );
     }
   }
 
@@ -180,7 +194,9 @@ export class PaystackService {
         'Paystack subscription disable error:',
         error.response?.data || error.message,
       );
-      throw new InternalServerErrorException('Error disabling Paystack subscription');
+      throw new InternalServerErrorException(
+        'Error disabling Paystack subscription',
+      );
     }
   }
 }

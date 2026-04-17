@@ -43,7 +43,9 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request,
   ) {
-    const country = (req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || this.pricingService.getCountryCodeByIp(req.ip || '')) as string;
+    const country = (req.headers['cf-ipcountry'] ||
+      req.headers['x-vercel-ip-country'] ||
+      this.pricingService.getCountryCodeByIp(req.ip || '')) as string;
     return this.authService.signup(signupDto, res, country);
   }
 
@@ -94,7 +96,9 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request,
   ) {
-    const country = (req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || this.pricingService.getCountryCodeByIp(req.ip || '')) as string;
+    const country = (req.headers['cf-ipcountry'] ||
+      req.headers['x-vercel-ip-country'] ||
+      this.pricingService.getCountryCodeByIp(req.ip || '')) as string;
     return this.authService.googleLogin(googleLoginDto, res, country);
   }
 
@@ -136,7 +140,10 @@ export class AuthController {
   @Public()
   @Get('magic-login')
   @ApiOperation({ summary: 'Validate magic link and log user in' })
-  @ApiResponse({ status: 302, description: 'Redirect to dashboard or login on error' })
+  @ApiResponse({
+    status: 302,
+    description: 'Redirect to dashboard or login on error',
+  })
   async magicLogin(@Query('token') token: string, @Res() res: Response) {
     return this.authService.validateMagicLink(token, res);
   }

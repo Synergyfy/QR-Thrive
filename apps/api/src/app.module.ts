@@ -19,6 +19,7 @@ import { PricingModule } from './pricing/pricing.module';
 import { IntegrationModule } from './integration/integration.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ScheduleModule } from '@nestjs/schedule';
+import { LoggingInterceptor } from './common/logging.interceptor';
 
 @Module({
   imports: [
@@ -29,9 +30,10 @@ import { ScheduleModule } from '@nestjs/schedule';
     ScheduleModule.forRoot(),
     LoggerModule.forRoot({
       pinoHttp: {
-        // transport: process.env.NODE_ENV !== 'production'
-        //   ? { target: 'pino-pretty', options: { colorize: true } }
-        //   : undefined,
+        transport: {
+          target: 'pino-pretty',
+          options: { colorize: true },
+        },
       },
     }),
     ConfigModule.forRoot({
@@ -58,6 +60,7 @@ import { ScheduleModule } from '@nestjs/schedule';
   controllers: [AppController],
   providers: [
     AppService,
+    LoggingInterceptor,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

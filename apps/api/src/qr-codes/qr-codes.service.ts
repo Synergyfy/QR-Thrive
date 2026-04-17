@@ -26,7 +26,7 @@ export class QRCodesService {
 
   /**
    * Checks if the user's access is active.
-   * Logic: 
+   * Logic:
    * 1. If they have a plan that isn't the 'Free' plan (non-default), they are active.
    * 2. If they have the default 'Free' plan, we might have a trial logic or just allow it within limits.
    * Note: UsageGuard handles the actual limits (counts and types).
@@ -42,9 +42,9 @@ export class QRCodesService {
   }
 
   async create(userId: string, createQRCodeDto: CreateQRCodeDto) {
-    const user = await this.prisma.user.findUnique({ 
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { plan: true }
+      include: { plan: true },
     });
 
     if (!user) {
@@ -61,7 +61,7 @@ export class QRCodesService {
     const shortId = crypto.randomBytes(4).toString('hex');
 
     const { data, design, frame, linkedQRCodeId, ...rest } = createQRCodeDto;
-    
+
     // Auto-sync linkedQRCodeId from JSON if not explicitly provided
     const syncedLinkedId = linkedQRCodeId || this.extractLinkedQRId(data);
 
@@ -165,9 +165,9 @@ export class QRCodesService {
   }
 
   async update(id: string, userId: string, updateQRCodeDto: UpdateQRCodeDto) {
-    const user = await this.prisma.user.findUnique({ 
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { plan: true }
+      include: { plan: true },
     });
 
     if (!user || !this.isAccessActive(user)) {
@@ -181,9 +181,12 @@ export class QRCodesService {
     const { data, design, frame, linkedQRCodeId, ...rest } = updateQRCodeDto;
 
     // Auto-sync linkedQRCodeId from JSON if it was updated or if we are forced to re-extract
-    const syncedLinkedId = linkedQRCodeId !== undefined 
-      ? linkedQRCodeId 
-      : (data !== undefined ? this.extractLinkedQRId(data) : undefined);
+    const syncedLinkedId =
+      linkedQRCodeId !== undefined
+        ? linkedQRCodeId
+        : data !== undefined
+          ? this.extractLinkedQRId(data)
+          : undefined;
 
     const updated = await this.prisma.qRCode.update({
       where: { id: qrCode.id },
@@ -294,7 +297,12 @@ export class QRCodesService {
       }
     } else {
       for (const key of Object.keys(data)) {
-        if ((key === 'qrLinkId' || key === 'connectedQrId' || key === 'linkedQRCodeId') && typeof data[key] === 'string') {
+        if (
+          (key === 'qrLinkId' ||
+            key === 'connectedQrId' ||
+            key === 'linkedQRCodeId') &&
+          typeof data[key] === 'string'
+        ) {
           return data[key];
         }
         // Recursively check nested objects/arrays
@@ -320,7 +328,9 @@ export class QRCodesService {
       const extractedId = this.extractLinkedQRId(qr.data);
       if (extractedId) {
         // Verify the linked QR code exists to maintain integrity
-        const exists = await this.prisma.qRCode.findUnique({ where: { id: extractedId } });
+        const exists = await this.prisma.qRCode.findUnique({
+          where: { id: extractedId },
+        });
         if (exists) {
           await this.prisma.qRCode.update({
             where: { id: qr.id },
@@ -334,9 +344,9 @@ export class QRCodesService {
   }
 
   async duplicate(id: string, userId: string) {
-    const user = await this.prisma.user.findUnique({ 
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { plan: true }
+      include: { plan: true },
     });
     if (!user || !this.isAccessActive(user)) {
       throw new ForbiddenException(
@@ -416,7 +426,7 @@ export class QRCodesService {
   async recordScan(shortId: string, ip: string, userAgent: string) {
     const qrCode = await this.prisma.qRCode.findUnique({
       where: { shortId },
-      include: { 
+      include: {
         user: { include: { plan: true } },
         linkedQRCode: true,
       },
@@ -463,95 +473,77 @@ export class QRCodesService {
     return qrCode;
   }
 
-  async getStats(userId: string) {
+  async getStats(userId: string, startDate?: string, endDate?: string) {
     const qrCodes = await this.prisma.qRCode.findMany({
       where: { userId },
-      include: {
-        scans: true,
+      select: { id: true, name: true },
+    });
+
+    const qrCodeIds = qrCodes.map((qr) => qr.id);
+
+    const dateFilter: any = {};
+    if (startDate || endDate) {
+      dateFilter.createdAt = {};
+      if (startDate) dateFilter.createdAt.gte = new Date(startDate);
+      if (endDate) dateFilter.createdAt.lte = new Date(endDate);
+    }
+
+    const scans = await this.prisma.scan.findMany({
+      where: {
+        qrCodeId: { in: qrCodeIds },
+        ...dateFilter,
       },
     });
 
-    const totalQRs = qrCodes.length;
-    const totalScans = qrCodes.reduce((acc, qr) => acc + qr.clicks, 0);
+    const totalScans = scans.length;
+    const uniqueVisitors = new Set(
+      scans.map((s) => `${s.ip}-${s.userAgent}`).filter(Boolean),
+    ).size;
 
-    // Unique visitors based on IP + User Agent across all QRs
-    const uniqueVisitorsMap = new Set<string>();
-    qrCodes.forEach((qr) => {
-      qr.scans.forEach((scan) => {
-        uniqueVisitorsMap.add(`${scan.ip}-${scan.userAgent}`);
-      });
-    });
-    const uniqueVisitors = uniqueVisitorsMap.size;
+    const scansByDate: Record<string, number> = {};
+    const scansByCountry: Record<string, number> = {};
+    const scansByCity: Record<string, number> = {};
+    const qrCodeScanCounts: Record<string, number> = {};
 
-    // Device distribution
-    const deviceDist: Record<string, number> = {};
-    // OS distribution
-    const osDist: Record<string, number> = {};
-    // Browser distribution
-    const browserDist: Record<string, number> = {};
-    // Country distribution
-    const countryDist: Record<string, number> = {};
-    // Time distribution (0-23 hours)
-    const timeDist: Record<string, number> = {};
+    scans.forEach((scan) => {
+      const date = scan.createdAt.toISOString().split('T')[0];
+      scansByDate[date] = (scansByDate[date] || 0) + 1;
 
-    const oneHourAgo = new Date(Date.now() - 3600000);
-    let scansLastHour = 0;
+      if (scan.country) {
+        scansByCountry[scan.country] = (scansByCountry[scan.country] || 0) + 1;
+      }
 
-    qrCodes.forEach((qr) => {
-      qr.scans.forEach((scan) => {
-        const d = scan.device || 'desktop';
-        deviceDist[d] = (deviceDist[d] || 0) + 1;
+      if (scan.city) {
+        scansByCity[scan.city] = (scansByCity[scan.city] || 0) + 1;
+      }
 
-        const o = scan.os || 'unknown';
-        osDist[o] = (osDist[o] || 0) + 1;
-
-        const b = scan.browser || 'unknown';
-        browserDist[b] = (browserDist[b] || 0) + 1;
-
-        const c = scan.country || 'Unknown';
-        countryDist[c] = (countryDist[c] || 0) + 1;
-
-        const hour = scan.createdAt.getHours().toString();
-        timeDist[hour] = (timeDist[hour] || 0) + 1;
-
-        if (scan.createdAt >= oneHourAgo) {
-          scansLastHour++;
-        }
-      });
+      qrCodeScanCounts[scan.qrCodeId] = (qrCodeScanCounts[scan.qrCodeId] || 0) + 1;
     });
 
-    // Time-based data (last 7 days)
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      return d.toISOString().split('T')[0];
-    }).reverse();
-
-    const chartData = last7Days.map((date) => {
-      let scans = 0;
-      const unique = new Set<string>();
-      qrCodes.forEach((qr) => {
-        qr.scans.forEach((scan) => {
-          if (scan.createdAt.toISOString().split('T')[0] === date) {
-            scans++;
-            unique.add(`${scan.ip}-${scan.userAgent}`);
-          }
-        });
-      });
-      return { name: date, scans, unique: unique.size };
-    });
+    const topQrCodes = qrCodes
+      .map((qr) => ({
+        qrCodeId: qr.id,
+        name: qr.name,
+        scans: qrCodeScanCounts[qr.id] || 0,
+      }))
+      .filter((qr) => qr.scans > 0)
+      .sort((a, b) => b.scans - a.scans)
+      .slice(0, 10);
 
     return {
-      totalQRs,
       totalScans,
       uniqueVisitors,
-      scansLastHour,
-      deviceDist,
-      osDist,
-      browserDist,
-      countryDist,
-      timeDist,
-      chartData,
+      scansByDate: Object.entries(scansByDate)
+        .map(([date, count]) => ({ date, count }))
+        .sort((a, b) => a.date.localeCompare(b.date)),
+      scansByCountry: Object.entries(scansByCountry)
+        .map(([country, count]) => ({ country, count }))
+        .sort((a, b) => b.count - a.count),
+      scansByCity: Object.entries(scansByCity)
+        .map(([city, count]) => ({ city, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 20),
+      topQrCodes,
     };
   }
 }

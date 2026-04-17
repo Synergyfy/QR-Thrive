@@ -8,7 +8,12 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import { SignupDto, LoginDto, AdminSignupDto, GoogleLoginDto } from './dto/auth.dto';
+import {
+  SignupDto,
+  LoginDto,
+  AdminSignupDto,
+  GoogleLoginDto,
+} from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
@@ -52,7 +57,9 @@ export class AuthService {
     }
 
     if (!defaultPlan) {
-      this.logger.error('CRITICAL: No plans found in database during signup provisioning.');
+      this.logger.error(
+        'CRITICAL: No plans found in database during signup provisioning.',
+      );
       return {};
     }
 
@@ -90,7 +97,7 @@ export class AuthService {
 
       const hashedPassword = await bcrypt.hash(password, 10);
       const defaultPlanData = await this.getDefaultPlanData();
-      
+
       const user = await this.prisma.user.create({
         data: {
           email,
@@ -107,11 +114,18 @@ export class AuthService {
 
       // Provision on Vemtap if a vemtapPlanId exists for the default plan
       if (defaultPlanData.planId) {
-        const plan = await this.prisma.plan.findUnique({ where: { id: defaultPlanData.planId } });
+        const plan = await this.prisma.plan.findUnique({
+          where: { id: defaultPlanData.planId },
+        });
         if (plan?.vemtapPlanId) {
-          this.vemtapService.provisionUser(email, firstName, lastName, plan.vemtapPlanId).catch(err => {
-            this.logger.error(`Vemtap provisioning failed for ${email} during signup:`, err);
-          });
+          this.vemtapService
+            .provisionUser(email, firstName, lastName, plan.vemtapPlanId)
+            .catch((err) => {
+              this.logger.error(
+                `Vemtap provisioning failed for ${email} during signup:`,
+                err,
+              );
+            });
         }
       }
 
@@ -124,7 +138,14 @@ export class AuthService {
   }
 
   async signupAdmin(adminSignupDto: AdminSignupDto, res: Response) {
-    const { email, password, confirmPassword, firstName, lastName, adminSecret } = adminSignupDto;
+    const {
+      email,
+      password,
+      confirmPassword,
+      firstName,
+      lastName,
+      adminSecret,
+    } = adminSignupDto;
 
     if (password !== confirmPassword) {
       throw new ConflictException('Passwords do not match');
@@ -173,7 +194,9 @@ export class AuthService {
     }
 
     if (!user.password) {
-      this.logger.warn(`Login attempt for passwordless user (Google sign-in only): ${email}`);
+      this.logger.warn(
+        `Login attempt for passwordless user (Google sign-in only): ${email}`,
+      );
       throw new UnauthorizedException('Please log in with Google');
     }
 
@@ -187,7 +210,11 @@ export class AuthService {
     return this.generateAndSetTokens(user.id, res, rememberMe);
   }
 
-  async googleLogin(googleLoginDto: GoogleLoginDto, res: Response, countryCode?: string) {
+  async googleLogin(
+    googleLoginDto: GoogleLoginDto,
+    res: Response,
+    countryCode?: string,
+  ) {
     const { token } = googleLoginDto;
 
     this.logger.log('Attempting Google login...');
@@ -239,7 +266,7 @@ export class AuthService {
       } else {
         // Create new user
         const defaultPlanData = await this.getDefaultPlanData();
-        
+
         user = await this.prisma.user.create({
           data: {
             email,
@@ -256,12 +283,24 @@ export class AuthService {
 
         // Provision on Vemtap for new Google users
         if (defaultPlanData.planId) {
-            const plan = await this.prisma.plan.findUnique({ where: { id: defaultPlanData.planId } });
-            if (plan?.vemtapPlanId) {
-              this.vemtapService.provisionUser(email, firstName || 'User', lastName || '', plan.vemtapPlanId).catch(err => {
-                this.logger.error(`Vemtap provisioning failed for ${email} during Google signup:`, err);
+          const plan = await this.prisma.plan.findUnique({
+            where: { id: defaultPlanData.planId },
+          });
+          if (plan?.vemtapPlanId) {
+            this.vemtapService
+              .provisionUser(
+                email,
+                firstName || 'User',
+                lastName || '',
+                plan.vemtapPlanId,
+              )
+              .catch((err) => {
+                this.logger.error(
+                  `Vemtap provisioning failed for ${email} during Google signup:`,
+                  err,
+                );
               });
-            }
+          }
         }
       }
 
@@ -340,7 +379,9 @@ export class AuthService {
         hasUsedTrial: true,
       },
     });
-    this.logger.log(`Fetching user profile: ${user?.email} - Status: ${user?.subscriptionStatus} - Role: ${user?.role}`);
+    this.logger.log(
+      `Fetching user profile: ${user?.email} - Status: ${user?.subscriptionStatus} - Role: ${user?.role}`,
+    );
     return { user };
   }
 
@@ -357,23 +398,25 @@ export class AuthService {
       },
     });
 
-    const baseUrl = this.configService.get<string>('API_BASE_URL') || 'http://localhost:3000';
+    const baseUrl =
+      this.configService.get<string>('API_BASE_URL') || 'http://localhost:3000';
     return `${baseUrl}/v1/auth/magic-login?token=${token}`;
   }
 
   async validateMagicLink(token: string, res: Response) {
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
 
     try {
       // Find and update in one go to ensure atomicity
       const magicLink = await this.prisma.magicLink.update({
-        where: { 
+        where: {
           token,
           used: false,
-          expiresAt: { gt: new Date() }
+          expiresAt: { gt: new Date() },
         },
         data: { used: true },
-        include: { user: true }
+        include: { user: true },
       });
 
       // Generate tokens and set cookies
@@ -440,7 +483,9 @@ export class AuthService {
     });
 
     const isProd = this.configService.get<string>('NODE_ENV') === 'production';
-    this.logger.log(`Setting tokens for user ${userId}. isProd=${isProd}, sameSite=${isProd ? 'none' : 'lax'}, secure=${isProd}`);
+    this.logger.log(
+      `Setting tokens for user ${userId}. isProd=${isProd}, sameSite=${isProd ? 'none' : 'lax'}, secure=${isProd}`,
+    );
 
     res.cookie('accessToken', accessToken, {
       httpOnly: true,

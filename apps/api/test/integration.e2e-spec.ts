@@ -10,7 +10,10 @@ describe('Integration API & SSO (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   const rawApiKey = 'qr_test_integration_key_12345';
-  const hashedApiKey = crypto.createHash('sha256').update(rawApiKey).digest('hex');
+  const hashedApiKey = crypto
+    .createHash('sha256')
+    .update(rawApiKey)
+    .digest('hex');
   let userId: string;
   let qrCodeId: string;
   const userEmail = `integration-test-${Math.random()}@example.com`;
@@ -23,7 +26,9 @@ describe('Integration API & SSO (e2e)', () => {
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api/v1');
     app.use(cookieParser());
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
 
     prisma = app.get<PrismaService>(PrismaService);
@@ -40,11 +45,13 @@ describe('Integration API & SSO (e2e)', () => {
 
   afterAll(async () => {
     // Cleanup
-    await prisma.magicLink.deleteMany({ where: { user: { email: userEmail } } });
+    await prisma.magicLink.deleteMany({
+      where: { user: { email: userEmail } },
+    });
     await prisma.qRCode.deleteMany({ where: { user: { email: userEmail } } });
     await prisma.apiKey.deleteMany({ where: { name: 'Test Integration' } });
     await prisma.user.deleteMany({ where: { email: userEmail } });
-    
+
     await prisma.$disconnect();
     await app.close();
   });
@@ -136,7 +143,7 @@ describe('Integration API & SSO (e2e)', () => {
       // Create another user
       const otherEmail = `other-${Math.random()}@example.com`;
       const otherUser = await prisma.user.create({
-        data: { email: otherEmail, firstName: 'Other', lastName: 'User' }
+        data: { email: otherEmail, firstName: 'Other', lastName: 'User' },
       });
 
       await request(app.getHttpServer())
@@ -169,11 +176,11 @@ describe('Integration API & SSO (e2e)', () => {
         .expect(302);
 
       expect(res.header.location).toContain('/dashboard?auth_success=true');
-      
+
       // Verify cookies are set
       const cookies = res.get('Set-Cookie') as string[];
-      expect(cookies.some(c => c.startsWith('accessToken='))).toBeTruthy();
-      expect(cookies.some(c => c.startsWith('refreshToken='))).toBeTruthy();
+      expect(cookies.some((c) => c.startsWith('accessToken='))).toBeTruthy();
+      expect(cookies.some((c) => c.startsWith('refreshToken='))).toBeTruthy();
     });
 
     it('should fail on re-using the same magic link', async () => {

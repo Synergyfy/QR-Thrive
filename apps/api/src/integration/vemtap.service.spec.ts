@@ -54,7 +54,9 @@ describe('VemtapService', () => {
     });
 
     it('should return empty array on failure', async () => {
-      mockHttpService.get.mockReturnValue(throwError(() => new Error('API Error')));
+      mockHttpService.get.mockReturnValue(
+        throwError(() => new Error('API Error')),
+      );
       const result = await service.fetchActivePlans();
       expect(result).toEqual([]);
     });
@@ -71,7 +73,12 @@ describe('VemtapService', () => {
       const response: Partial<AxiosResponse> = { data: { success: true } };
       mockHttpService.post.mockReturnValue(of(response));
 
-      await service.provisionUser(payload.email, payload.firstName, payload.lastName, payload.planId);
+      await service.provisionUser(
+        payload.email,
+        payload.firstName,
+        payload.lastName,
+        payload.planId,
+      );
 
       expect(mockHttpService.post).toHaveBeenCalledWith(
         'http://localhost:3001/api/v1/users/provision',
@@ -81,7 +88,9 @@ describe('VemtapService', () => {
     });
 
     it('should handle errors gracefully without throwing', async () => {
-      mockHttpService.post.mockReturnValue(throwError(() => new Error('Provisioning failed')));
+      mockHttpService.post.mockReturnValue(
+        throwError(() => new Error('Provisioning failed')),
+      );
       await expect(
         service.provisionUser('test@example.com', 'John', 'Doe', 'id'),
       ).resolves.not.toThrow();

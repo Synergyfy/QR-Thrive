@@ -5,15 +5,18 @@ import {
   UseGuards,
   Param,
   Get,
+  Query,
+  Delete,
   Logger,
 } from '@nestjs/common';
 import { ApiKeyGuard } from '../auth/guards/api-key.guard';
 import { IntegrationService } from './integration.service';
 import { IntegrationUserDto } from './dto/integration.dto';
+import { StatsQueryDto } from './dto/stats-query.dto';
 import { QRCodesService } from '../qr-codes/qr-codes.service';
 import { FormsService } from '../forms/forms.service';
 import { CreateQRCodeDto } from '../qr-codes/dto/create-qr-code.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiHeader, ApiQuery } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
 
 @ApiTags('External Integration')
@@ -48,6 +51,13 @@ export class IntegrationController {
     return { url };
   }
 
+  @Get('users/:userId/qr-codes')
+  @ApiOperation({ summary: 'Get all QR codes for a user' })
+  @ApiResponse({ status: 200, description: 'List of QR codes retrieved.' })
+  async getAllQrCodes(@Param('userId') userId: string) {
+    return this.qrCodesService.findAll(userId);
+  }
+
   @Post('users/:userId/qr-codes')
   @ApiOperation({ summary: 'Create a QR code on behalf of a user' })
   @ApiResponse({ status: 201, description: 'QR code successfully created.' })
@@ -66,7 +76,7 @@ export class IntegrationController {
     const qrCode = await this.qrCodesService
       .findOneByShortId(id)
       .catch(() => null);
-    
+
     if (qrCode && qrCode.userId === userId) return qrCode;
 
     // Otherwise try by UUID (internal ID) with userId restriction
@@ -83,7 +93,10 @@ export class IntegrationController {
   @Get('users/:userId/qr-codes/:id/responses')
   @ApiOperation({ summary: 'Get form submissions for a specific QR code' })
   @ApiResponse({ status: 200, description: 'Form submissions retrieved.' })
-  async getSubmissions(@Param('userId') userId: string, @Param('id') id: string) {
+  async getSubmissions(
+    @Param('userId') userId: string,
+    @Param('id') id: string,
+  ) {
     return this.formsService.getSubmissions(id, userId);
   }
 
@@ -95,12 +108,34 @@ export class IntegrationController {
   }
 
   @Post('users/:userId/subscription')
-  @ApiOperation({ summary: 'Set a user\'s plan/subscription' })
+  @ApiOperation({ summary: "Set a user's plan/subscription" })
   @ApiResponse({ status: 200, description: 'User subscription updated.' })
   async setUserSubscription(
     @Param('userId') userId: string,
     @Body('planId') planId: string,
   ) {
     return this.integrationService.setUserSubscription(userId, planId);
+  }
+
+  @Get('users/:userId/stats')
+  @ApiOperation({ summary: 'Get aggregated stats for all QR codes of a user' })
+  @ApiResponse({ status: 200, description: 'Aggregated statistics retrieved.' })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  async getStats(
+    @Param('userId') userId: string,
+    @Query() query: StatsQueryDto,
+  ) {
+    return this.qrCodesService.getStats(userId, query.startDate, query.endDate);
+  }
+
+  @Delete('users/:userId/qr-codes/:id')
+  @ApiOperation({ summary: 'Delete a QR code' })
+  @ApiResponse({ status: 200, description: 'QR code deleted.' })
+  async deleteQrCode(
+    @Param('userId') userId: string,
+    @Param('id') qrCodeId: string,
+  ) {
+    return this.qrCodesService.remove(qrCodeId, userId);
   }
 }

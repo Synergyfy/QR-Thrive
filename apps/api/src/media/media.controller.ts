@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Patch,
-  Body,
-  Param,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Patch, Body, Param, Req } from '@nestjs/common';
 import { MediaService } from './media.service';
 import { Request } from 'express';
 import {
@@ -30,8 +23,13 @@ export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
   @Get('signature')
-  @ApiOperation({ summary: 'Get a signed URL signature for Cloudinary uploads' })
-  @ApiResponse({ status: 200, description: 'Signature retrieved successfully.' })
+  @ApiOperation({
+    summary: 'Get a signed URL signature for Cloudinary uploads',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Signature retrieved successfully.',
+  })
   async getSignature(@Req() req: RequestWithUser) {
     return this.mediaService.getSignature('public_uploads');
   }
@@ -43,7 +41,10 @@ export class MediaController {
     schema: {
       type: 'object',
       properties: {
-        secureUrl: { type: 'string', example: 'https://cloudinary.com/image.png' },
+        secureUrl: {
+          type: 'string',
+          example: 'https://cloudinary.com/image.png',
+        },
       },
     },
   })

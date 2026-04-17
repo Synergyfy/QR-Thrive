@@ -52,7 +52,13 @@ export class AdminController {
   @ApiBearerAuth('JWT-auth')
   @Get('stats')
   @ApiOperation({ summary: 'Get global system statistics (Admin only)' })
-  @ApiQuery({ name: 'range', required: false, type: String, enum: ['7d', '30d', 'all'], example: '7d' })
+  @ApiQuery({
+    name: 'range',
+    required: false,
+    type: String,
+    enum: ['7d', '30d', 'all'],
+    example: '7d',
+  })
   @ApiResponse({ status: 200, description: 'Stats retrieved successfully.' })
   @ApiResponse({ status: 403, description: 'Forbidden - requires admin role.' })
   async getStats(@Query('range') range = '7d') {
@@ -62,11 +68,23 @@ export class AdminController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth('JWT-auth')
   @Get('users')
-  @ApiOperation({ summary: 'List all users with pagination and search (Admin only)' })
+  @ApiOperation({
+    summary: 'List all users with pagination and search (Admin only)',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by name or email' })
-  @ApiQuery({ name: 'status', required: false, type: String, description: 'Filter by account status' })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search by name or email',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    type: String,
+    description: 'Filter by account status',
+  })
   @ApiResponse({ status: 200, description: 'List of users retrieved.' })
   async getUsers(
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
@@ -79,7 +97,9 @@ export class AdminController {
 
   @Public()
   @Get('config')
-  @ApiOperation({ summary: 'Get public system configuration (pricing, features, etc.)' })
+  @ApiOperation({
+    summary: 'Get public system configuration (pricing, features, etc.)',
+  })
   @ApiResponse({ status: 200, description: 'Config retrieved successfully.' })
   async getConfig() {
     return this.adminService.getConfig();
@@ -126,7 +146,9 @@ export class AdminController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth('JWT-auth')
   @Get('countries')
-  @ApiOperation({ summary: 'List all countries with optional tier filter (Admin only)' })
+  @ApiOperation({
+    summary: 'List all countries with optional tier filter (Admin only)',
+  })
   async getCountries(@Query('tier') tier?: PricingTier) {
     return this.adminService.getCountries(tier);
   }
@@ -165,7 +187,9 @@ export class AdminController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth('JWT-auth')
   @Patch('price-books/:id')
-  @ApiOperation({ summary: 'Update a price book entry status or value (Admin only)' })
+  @ApiOperation({
+    summary: 'Update a price book entry status or value (Admin only)',
+  })
   async updatePriceBook(
     @Param('id') id: string,
     @Body() body: UpdatePriceBookDto,
