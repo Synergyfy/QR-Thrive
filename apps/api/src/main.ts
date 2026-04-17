@@ -7,19 +7,27 @@ import { Logger as PinoLogger } from 'nestjs-pino';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import express from 'express';
 import helmet from 'helmet';
+import { LoggingInterceptor } from './common/logging.interceptor';
 
 // Explicitly export the bootstrap function
 export async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.set('trust proxy', true);
-  app.useLogger(app.get(PinoLogger));
+
+  const pinoLogger = app.get(PinoLogger);
+  app.useLogger(pinoLogger);
+  app.useGlobalInterceptors(app.get(LoggingInterceptor));
 
   app.use(
     helmet({
       contentSecurityPolicy: {
         directives: {
           defaultSrc: [`'self'`],
-          styleSrc: [`'self'`, `'unsafe-inline'`, 'https://cdnjs.cloudflare.com'],
+          styleSrc: [
+            `'self'`,
+            `'unsafe-inline'`,
+            'https://cdnjs.cloudflare.com',
+          ],
           imgSrc: [
             `'self'`,
             'data:',
@@ -51,13 +59,23 @@ export async function bootstrap() {
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
   app.enableCors({
-    origin: ['http://localhost:5173', 'https://qrthrive.vercel.app', 'https://qrthrive.com', 'https://www.qrthrive.com', 'https://test.qrthrive.com', 'https://api.vemtap.com', 'https://testapi.vemtap.com'],
+    origin: [
+      'http://localhost:5173',
+      'https://qrthrive.vercel.app',
+      'https://qrthrive.com',
+      'https://www.qrthrive.com',
+      'https://test.qrthrive.com',
+      'https://api.vemtap.com',
+      'https://testapi.vemtap.com',
+    ],
     credentials: true,
   });
 
   const config = new DocumentBuilder()
     .setTitle('QR Thrive API')
-    .setDescription('The QR Thrive API description and documentation for all endpoints.')
+    .setDescription(
+      'The QR Thrive API description and documentation for all endpoints.',
+    )
     .setVersion('1.0')
     .addBearerAuth(
       {
