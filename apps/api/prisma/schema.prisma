@@ -11,7 +11,7 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
+  id            String         @id @default(uuid()) @db.Uuid
   email         String         @unique
   firstName     String
   lastName      String
@@ -19,7 +19,7 @@ model User {
   role          Role           @default(USER)
   
   // Dynamic Plan association
-  planId        String?
+  planId        String?    @db.Uuid
   plan          Plan?          @relation(fields: [planId], references: [id])
   
   isBanned      Boolean        @default(false)
@@ -53,9 +53,9 @@ enum Role {
 }
 
 model MagicLink {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid()) @db.Uuid
   token     String   @unique
-  userId    String
+  userId    String   @db.Uuid
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   used      Boolean  @default(false)
@@ -113,7 +113,7 @@ model Country {
 }
 
 model Plan {
-  id            String      @id @default(cuid())
+  id            String      @id @default(uuid()) @db.Uuid
   name          String      @unique
   description   String?
   qrCodeLimit   Int         @default(10)
@@ -134,9 +134,9 @@ model Plan {
 }
 
 model PriceBook {
-  id            String       @id @default(cuid())
+  id            String       @id @default(uuid()) @db.Uuid
   
-  planId        String
+  planId        String       @db.Uuid
   plan          Plan         @relation(fields: [planId], references: [id], onDelete: Cascade)
   
   tier          PricingTier
@@ -146,7 +146,7 @@ model PriceBook {
   price         Float        // Numerical amount
   
   status        PriceStatus  @default(DRAFT)
-  
+
   // Gateway Mapping
   stripePriceId    String?   // Stripe API Price ID
   paystackPlanCode String?   // Paystack API Plan Code (for recurring)
@@ -154,19 +154,20 @@ model PriceBook {
   activeFrom    DateTime?    
 
   activeTo      DateTime?    
-  
+    
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
+  @@unique([planId, tier, currencyCode, status])
   @@index([planId, tier, currencyCode, status])
   @@map("price_books")
 }
 
 model Folder {
-  id        String    @id @default(cuid())
+  id        String    @id @default(uuid()) @db.Uuid
   name      String
   color     String
-  userId    String
+  userId    String    @db.Uuid
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   qrCodes   QRCode[]
   deletedAt DateTime? // Added for Soft-Delete
@@ -177,9 +178,9 @@ model Folder {
 }
 
 model RefreshToken {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid()) @db.Uuid
   token     String   @unique
-  userId    String
+  userId    String   @db.Uuid
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
@@ -234,11 +235,11 @@ enum FormFieldType {
 }
 
 model QRCode {
-  id           String    @id @default(cuid())
-  userId       String
+  id           String    @id @default(uuid()) @db.Uuid
+userId    String    @db.Uuid
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  folderId     String?
+  folderId     String?   @db.Uuid
   folder       Folder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
   
   name         String
@@ -267,7 +268,7 @@ model QRCode {
   scans        Scan[]
   form         Form?
 
-  linkedQRCodeId String?
+  linkedQRCodeId String?   @db.Uuid
   linkedQRCode   QRCode?   @relation("QRLinks", fields: [linkedQRCodeId], references: [id], onDelete: SetNull)
   linkingQRCodes QRCode[]  @relation("QRLinks")
 
@@ -275,8 +276,8 @@ model QRCode {
 }
 
 model Scan {
-  id         String   @id @default(cuid())
-  qrCodeId   String
+  id         String   @id @default(uuid()) @db.Uuid
+  qrCodeId   String   @db.Uuid
   qrCode     QRCode   @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
   
   ip         String?
@@ -295,8 +296,8 @@ model Scan {
 }
 
 model Form {
-  id          String      @id @default(cuid())
-  qrCodeId    String      @unique
+  id          String      @id @default(uuid()) @db.Uuid
+  qrCodeId    String      @unique @db.Uuid
   qrCode      QRCode      @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
   
   title       String
@@ -313,8 +314,8 @@ model Form {
 }
 
 model FormField {
-  id          String        @id @default(cuid())
-  formId      String
+  id          String        @id @default(uuid()) @db.Uuid
+  formId      String        @db.Uuid
   form        Form          @relation(fields: [formId], references: [id], onDelete: Cascade)
   
   type        FormFieldType
@@ -334,8 +335,8 @@ model FormField {
 }
 
 model FormSubmission {
-  id        String   @id @default(cuid())
-  formId    String
+  id        String   @id @default(uuid()) @db.Uuid
+  formId    String   @db.Uuid
   form      Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
   
   answers   Json     // Map of fieldId to value
@@ -350,7 +351,7 @@ model FormSubmission {
 }
 
 model ApiKey {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid()) @db.Uuid
   name      String
   key       String   @unique // Hashed key
   isActive  Boolean  @default(true)

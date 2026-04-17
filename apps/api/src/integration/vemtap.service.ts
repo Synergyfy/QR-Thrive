@@ -66,8 +66,10 @@ export class VemtapService {
     if (!this.baseUrl) return;
 
     try {
-      this.logger.log(`Provisioning user ${email} on Vemtap with plan ${vemtapPlanId}...`);
-      
+      this.logger.log(
+        `Provisioning user ${email} on Vemtap with plan ${vemtapPlanId}...`,
+      );
+
       const response = await firstValueFrom(
         this.httpService.post(
           `${this.baseUrl}/users/provision`,
@@ -88,7 +90,7 @@ export class VemtapService {
         `Failed to provision user ${email} on Vemtap:`,
         error.response?.data || error.message,
       );
-      // We don't throw here to avoid failing the QR-Thrive payment flow, 
+      // We don't throw here to avoid failing the QR-Thrive payment flow,
       // but in production we might want a retry queue.
     }
   }

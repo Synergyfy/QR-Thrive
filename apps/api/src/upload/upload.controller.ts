@@ -83,9 +83,17 @@ export class UploadController {
   }
 
   @Post('signed-url')
-  @ApiOperation({ summary: 'Generate a signed upload URL for direct client-side upload' })
-  @ApiResponse({ status: 201, description: 'Signed URL generated successfully.' })
-  @ApiResponse({ status: 403, description: 'Forbidden - trial expired or insufficient permissions.' })
+  @ApiOperation({
+    summary: 'Generate a signed upload URL for direct client-side upload',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Signed URL generated successfully.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - trial expired or insufficient permissions.',
+  })
   async getSignedUrl(
     @Req() req: { user: { userId: string } },
     @Body() dto: SignedUrlDto,
@@ -167,7 +175,10 @@ export class UploadController {
 
   @Delete('file/:publicId')
   @ApiOperation({ summary: 'Delete a previously uploaded file' })
-  @ApiParam({ name: 'publicId', description: 'The public identifier of the file to delete' })
+  @ApiParam({
+    name: 'publicId',
+    description: 'The public identifier of the file to delete',
+  })
   @ApiResponse({ status: 200, description: 'File deleted successfully.' })
   async deleteFile(@Param('publicId') publicId: string) {
     try {

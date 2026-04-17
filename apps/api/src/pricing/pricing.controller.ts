@@ -34,26 +34,36 @@ import {
 @ApiBearerAuth('JWT-auth')
 export class PricingController {
   constructor(private readonly pricingService: PricingService) {}
-  
+
   @Get('suggest')
-  @ApiOperation({ summary: 'Suggest a localized price based on economic tier and live FX rates (Admin only)' })
+  @ApiOperation({
+    summary:
+      'Suggest a localized price based on economic tier and live FX rates (Admin only)',
+  })
   async suggestPrice(
     @Query('basePriceUSD') basePriceUSD: string,
     @Query('targetCurrencyCode') targetCurrencyCode: string,
-    @Query('tier') tier?: PricingTier
+    @Query('tier') tier?: PricingTier,
   ) {
-    return this.pricingService.getSuggestedPrice(Number(basePriceUSD), targetCurrencyCode, tier);
+    return this.pricingService.getSuggestedPrice(
+      Number(basePriceUSD),
+      targetCurrencyCode,
+      tier,
+    );
   }
 
-
   @Get('config')
-  @ApiOperation({ summary: 'Get pricing discounts (quarterly, yearly) (Admin only)' })
+  @ApiOperation({
+    summary: 'Get pricing discounts (quarterly, yearly) (Admin only)',
+  })
   async getPricingConfig() {
     return this.pricingService.getPricingConfig();
   }
 
   @Patch('config')
-  @ApiOperation({ summary: 'Update pricing discounts (percentage) (Admin only)' })
+  @ApiOperation({
+    summary: 'Update pricing discounts (percentage) (Admin only)',
+  })
   @ApiBody({ type: UpdatePricingDiscountsDto })
   async updatePricingConfig(@Body() body: UpdatePricingDiscountsDto) {
     return this.pricingService.updatePricingConfig(
@@ -63,7 +73,9 @@ export class PricingController {
   }
 
   @Get('countries')
-  @ApiOperation({ summary: 'List all countries and their tier assignments (Admin only)' })
+  @ApiOperation({
+    summary: 'List all countries and their tier assignments (Admin only)',
+  })
   async getCountries() {
     return this.pricingService.getAllCountries();
   }

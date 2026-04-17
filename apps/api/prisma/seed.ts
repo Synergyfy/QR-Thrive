@@ -95,10 +95,14 @@ async function main() {
       // Free Plan Prices
       await prisma.priceBook.upsert({
         where: {
-          id: `free-${tier}-${cycle}`.toLowerCase(), // Not a real cuid but for seeding consistency if we used cuid() we'd need another unique way
+          planId_tier_currencyCode_status: {
+            planId: freePlan.id,
+            tier,
+            currencyCode: 'USD',
+            status: 'ACTIVE',
+          },
         },
         create: {
-          id: `free-${tier}-${cycle}`.toLowerCase(),
           planId: freePlan.id,
           tier,
           currencyCode: 'USD',
@@ -115,10 +119,14 @@ async function main() {
       // Pro Plan Prices
       await prisma.priceBook.upsert({
         where: {
-          id: `pro-${tier}-${cycle}`.toLowerCase(),
+          planId_tier_currencyCode_status: {
+            planId: proPlan.id,
+            tier,
+            currencyCode: 'USD',
+            status: 'ACTIVE',
+          },
         },
         create: {
-          id: `pro-${tier}-${cycle}`.toLowerCase(),
           planId: proPlan.id,
           tier,
           currencyCode: 'USD',

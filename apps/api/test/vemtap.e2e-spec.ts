@@ -27,7 +27,9 @@ describe('Vemtap Integration (e2e)', () => {
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api/v1');
     app.use(cookieParser());
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
 
     prisma = app.get<PrismaService>(PrismaService);
@@ -48,18 +50,27 @@ describe('Vemtap Integration (e2e)', () => {
 
     adminId = res.body.user.id;
     const cookies = res.get('Set-Cookie') as string[];
-    adminAccessToken = cookies.find((c) => c.startsWith('accessToken='))!.split(';')[0].split('=')[1];
+    adminAccessToken = cookies
+      .find((c) => c.startsWith('accessToken='))!
+      .split(';')[0]
+      .split('=')[1];
 
     // Spy on VemtapService
-    jest.spyOn(vemtapService, 'fetchActivePlans').mockResolvedValue([{ id: vemtapPlanId, name: 'Vemtap Pro' }]);
-    jest.spyOn(vemtapService, 'provisionUser').mockResolvedValue({ success: true });
-    
+    jest
+      .spyOn(vemtapService, 'fetchActivePlans')
+      .mockResolvedValue([{ id: vemtapPlanId, name: 'Vemtap Pro' }]);
+    jest
+      .spyOn(vemtapService, 'provisionUser')
+      .mockResolvedValue({ success: true });
+
     // Spy on Paystack signature verification to bypass it
     jest.spyOn(paystackService, 'verifyWebhookSignature').mockReturnValue(true);
   });
 
   afterAll(async () => {
-    await prisma.user.deleteMany({ where: { email: { in: [adminEmail, userEmail] } } });
+    await prisma.user.deleteMany({
+      where: { email: { in: [adminEmail, userEmail] } },
+    });
     await prisma.plan.deleteMany({ where: { vemtapPlanId } });
     await prisma.$disconnect();
     await app.close();
@@ -85,7 +96,7 @@ describe('Vemtap Integration (e2e)', () => {
           qrCodeLimit: 100,
           qrCodeTypes: ['url'],
           vemtapPlanId: vemtapPlanId,
-          highIncomeMonthlyUSD: 29.99
+          highIncomeMonthlyUSD: 29.99,
         })
         .expect(201);
 
@@ -97,11 +108,13 @@ describe('Vemtap Integration (e2e)', () => {
     it('should trigger Vemtap provisioning on successful Paystack payment', async () => {
       // 1. Create a user to be upgraded
       await prisma.user.create({
-        data: { email: userEmail, firstName: 'John', lastName: 'Doe' }
+        data: { email: userEmail, firstName: 'John', lastName: 'Doe' },
       });
 
       // 2. Find the plan we created
-      const plan = await prisma.plan.findUnique({ where: { name: 'Bundled Plan' } });
+      const plan = await prisma.plan.findUnique({
+        where: { name: 'Bundled Plan' },
+      });
 
       // 3. Simulate Paystack Webhook
       await request(app.getHttpServer())
@@ -110,9 +123,12 @@ describe('Vemtap Integration (e2e)', () => {
         .send({
           event: 'charge.success',
           data: {
-            customer: { email: userEmail, customer_code: `CUS_${Math.random()}` },
-            metadata: { planId: plan?.id, interval: 'monthly' }
-          }
+            customer: {
+              email: userEmail,
+              customer_code: `CUS_${Math.random()}`,
+            },
+            metadata: { planId: plan?.id, interval: 'monthly' },
+          },
         })
         .expect(200);
 
@@ -121,11 +137,13 @@ describe('Vemtap Integration (e2e)', () => {
         userEmail,
         'John',
         'Doe',
-        vemtapPlanId
+        vemtapPlanId,
       );
 
       // 5. Verify user is upgraded in DB
-      const user = await prisma.user.findUnique({ where: { email: userEmail } });
+      const user = await prisma.user.findUnique({
+        where: { email: userEmail },
+      });
       expect(user?.planId).toBe(plan?.id);
       expect(user?.subscriptionStatus).toBe('active');
     });

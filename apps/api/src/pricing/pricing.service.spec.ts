@@ -66,9 +66,14 @@ describe('PricingService', () => {
 
   describe('getCountryInfo', () => {
     it('should return country info from DB', async () => {
-      const mockCountry = { code: 'US', tier: PricingTier.HIGH, currencyCode: 'USD', taxRate: 0 };
+      const mockCountry = {
+        code: 'US',
+        tier: PricingTier.HIGH,
+        currencyCode: 'USD',
+        taxRate: 0,
+      };
       mockPrismaService.country.findUnique.mockResolvedValue(mockCountry);
-      
+
       const result = await service.getCountryInfo('US');
       expect(result).toEqual(mockCountry);
     });
@@ -92,7 +97,7 @@ describe('PricingService', () => {
         tier: PricingTier.LOW,
         taxRate: 7.5,
       });
-      
+
       mockPrismaService.plan.findMany.mockResolvedValue([
         {
           id: '1',
@@ -122,9 +127,9 @@ describe('PricingService', () => {
               billingCycle: BillingCycle.YEARLY,
               price: 48000,
               status: PriceStatus.ACTIVE,
-            }
-          ]
-        }
+            },
+          ],
+        },
       ]);
 
       const result = await service.getLocalizedPlans('NG');
@@ -143,7 +148,7 @@ describe('PricingService', () => {
         currencySymbol: '₦',
         tier: PricingTier.LOW,
       });
-      
+
       mockPrismaService.plan.findMany.mockResolvedValue([
         {
           id: '1',
@@ -157,9 +162,9 @@ describe('PricingService', () => {
               billingCycle: BillingCycle.MONTHLY,
               price: 50,
               status: PriceStatus.ACTIVE,
-            }
-          ]
-        }
+            },
+          ],
+        },
       ]);
 
       const result = await service.getLocalizedPlans('NG');

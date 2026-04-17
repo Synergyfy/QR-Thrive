@@ -28,21 +28,23 @@ export class AdminService {
 
   async getStats(range = '7d') {
     const config = await this.prisma.systemConfig.findFirst();
-    const [totalUsers, totalQRs, totalScans, activeSubscribers] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.qRCode.count(),
-      this.prisma.scan.count(),
-      this.prisma.user.count({ 
-        where: { 
-          plan: { isDefault: false } 
-        } 
-      }),
-    ]);
+    const [totalUsers, totalQRs, totalScans, activeSubscribers] =
+      await Promise.all([
+        this.prisma.user.count(),
+        this.prisma.qRCode.count(),
+        this.prisma.scan.count(),
+        this.prisma.user.count({
+          where: {
+            plan: { isDefault: false },
+          },
+        }),
+      ]);
 
-    // Estimated revenue is complex now with tiers. 
+    // Estimated revenue is complex now with tiers.
     // For simplicity in stats, we might just sum some values or keep it symbolic.
     // The user didn't ask for a complex revenue model yet, but let's fix the broken part.
-    const estimatedRevenue = activeSubscribers * (config?.quarterlyDiscount || 0); // Placeholder or keep it simple
+    const estimatedRevenue =
+      activeSubscribers * (config?.quarterlyDiscount || 0); // Placeholder or keep it simple
 
     // Handle different ranges for chart data
     let periods: Date[] = [];
@@ -94,9 +96,15 @@ export class AdminService {
         if (range === '7d') {
           label = date.toLocaleDateString('en-US', { weekday: 'short' });
         } else if (range === '30d') {
-          label = date.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+          label = date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: '2-digit',
+          });
         } else {
-          label = date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+          label = date.toLocaleDateString('en-US', {
+            month: 'short',
+            year: '2-digit',
+          });
         }
 
         return {
@@ -112,19 +120,34 @@ export class AdminService {
     const sixtyDaysAgo = new Date();
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
-    const [currentPeriodUsers, previousPeriodUsers, currentPeriodScans, previousPeriodScans, currentPeriodQRs, previousPeriodQRs] = await Promise.all([
+    const [
+      currentPeriodUsers,
+      previousPeriodUsers,
+      currentPeriodScans,
+      previousPeriodScans,
+      currentPeriodQRs,
+      previousPeriodQRs,
+    ] = await Promise.all([
       this.prisma.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-      this.prisma.user.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
+      this.prisma.user.count({
+        where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
+      }),
       this.prisma.scan.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-      this.prisma.scan.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
-      this.prisma.qRCode.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-      this.prisma.qRCode.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
+      this.prisma.scan.count({
+        where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
+      }),
+      this.prisma.qRCode.count({
+        where: { createdAt: { gte: thirtyDaysAgo } },
+      }),
+      this.prisma.qRCode.count({
+        where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
+      }),
     ]);
 
     const calculateChange = (current: number, previous: number) => {
       if (previous === 0) return current > 0 ? 100 : 0;
       // Using Math.min/max to cap extreme values if necessary, though not strictly required
-      return Number(((current - previous) / previous * 100).toFixed(1));
+      return Number((((current - previous) / previous) * 100).toFixed(1));
     };
 
     return {
@@ -153,10 +176,13 @@ export class AdminService {
           { lastName: { contains: search, mode: 'insensitive' as const } },
         ],
       }),
-      ...(status === 'active' && { subscriptionStatus: 'active', isBanned: false }),
-      ...(status === 'inactive' && { 
-        subscriptionStatus: { not: 'active' as const }, 
-        isBanned: false 
+      ...(status === 'active' && {
+        subscriptionStatus: 'active',
+        isBanned: false,
+      }),
+      ...(status === 'inactive' && {
+        subscriptionStatus: { not: 'active' as const },
+        isBanned: false,
       }),
       ...(status === 'banned' && { isBanned: true }),
     };
@@ -240,7 +266,7 @@ export class AdminService {
 
     return this.prisma.systemConfig.update({
       where: { id: config.id },
-      data: data as any, 
+      data: data as any,
     });
   }
 
@@ -275,10 +301,14 @@ export class AdminService {
       },
     });
 
-    const header = 'ID,Email,First Name,Last Name,Role,Plan,Status,Banned,Joined\n';
-    const rows = users.map(u => 
-      `${u.id},${u.email},${u.firstName},${u.lastName},${u.role},${u.plan},${u.subscriptionStatus || 'N/A'},${u.isBanned},${u.createdAt.toISOString()}`
-    ).join('\n');
+    const header =
+      'ID,Email,First Name,Last Name,Role,Plan,Status,Banned,Joined\n';
+    const rows = users
+      .map(
+        (u) =>
+          `${u.id},${u.email},${u.firstName},${u.lastName},${u.role},${u.plan},${u.subscriptionStatus || 'N/A'},${u.isBanned},${u.createdAt.toISOString()}`,
+      )
+      .join('\n');
 
     return header + rows;
   }
@@ -301,8 +331,10 @@ export class AdminService {
     });
 
     // Invalidate cache for the affected tier and currency
-    await this.cacheManager.del(`pricing:plans:tier:${updated.tier}:currency:${updated.currencyCode}`);
-    
+    await this.cacheManager.del(
+      `pricing:plans:tier:${updated.tier}:currency:${updated.currencyCode}`,
+    );
+
     return updated;
   }
 
@@ -333,8 +365,12 @@ export class AdminService {
     });
 
     // Invalidate cache
-    await this.cacheManager.del(`pricing:plans:tier:${priceBook.tier}:currency:${priceBook.currencyCode}`);
-    await this.cacheManager.del(`pricing:plan:${planId}:tier:${priceBook.tier}:currency:${priceBook.currencyCode}`);
+    await this.cacheManager.del(
+      `pricing:plans:tier:${priceBook.tier}:currency:${priceBook.currencyCode}`,
+    );
+    await this.cacheManager.del(
+      `pricing:plan:${planId}:tier:${priceBook.tier}:currency:${priceBook.currencyCode}`,
+    );
 
     return priceBook;
   }
@@ -349,8 +385,12 @@ export class AdminService {
     });
 
     // Invalidate cache
-    await this.cacheManager.del(`pricing:plans:tier:${updated.tier}:currency:${updated.currencyCode}`);
-    await this.cacheManager.del(`pricing:plan:${updated.planId}:tier:${updated.tier}:currency:${updated.currencyCode}`);
+    await this.cacheManager.del(
+      `pricing:plans:tier:${updated.tier}:currency:${updated.currencyCode}`,
+    );
+    await this.cacheManager.del(
+      `pricing:plan:${updated.planId}:tier:${updated.tier}:currency:${updated.currencyCode}`,
+    );
 
     return updated;
   }
@@ -375,18 +415,21 @@ export class AdminService {
     });
 
     if (newlyActivePrices.length > 0) {
-      this.logger.log(`Invalidating cache for ${newlyActivePrices.length} newly active prices.`);
+      this.logger.log(
+        `Invalidating cache for ${newlyActivePrices.length} newly active prices.`,
+      );
       for (const price of newlyActivePrices) {
-        await this.cacheManager.del(`pricing:plans:tier:${price.tier}:currency:${price.currencyCode}`);
-        await this.cacheManager.del(`pricing:plan:${price.planId}:tier:${price.tier}:currency:${price.currencyCode}`);
+        await this.cacheManager.del(
+          `pricing:plans:tier:${price.tier}:currency:${price.currencyCode}`,
+        );
+        await this.cacheManager.del(
+          `pricing:plan:${price.planId}:tier:${price.tier}:currency:${price.currencyCode}`,
+        );
       }
     }
   }
 
-  private async syncPlansWithPaystack(
-    newData: any,
-    oldData: any,
-  ) {
+  private async syncPlansWithPaystack(newData: any, oldData: any) {
     // Legacy sync logic disabled for now as we transition to tiered pricing
     /*
     if (
