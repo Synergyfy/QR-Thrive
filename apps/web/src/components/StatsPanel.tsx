@@ -102,25 +102,28 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ codes }) => {
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
       {/* Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {[
-          { label: 'Total QR Codes', value: codes.length || 0, icon: QrCode, trend: '+12%', color: 'blue' },
-          { label: 'Total Scans', value: totalScans.toLocaleString(), icon: Zap, trend: '+28%', color: 'emerald' },
-          { label: 'Unique Visitors', value: uniqueScans.toLocaleString(), icon: Users, trend: '+18%', color: 'purple' },
-          { label: 'Conversion Rate', value: conversionRate, icon: TrendingUp, trend: '+5.2%', color: 'amber' },
+          { label: 'Intelligence Count', value: codes.length || 0, icon: QrCode, trend: '+12%', color: 'blue' },
+          { label: 'Engagements', value: totalScans.toLocaleString(), icon: Zap, trend: '+28%', color: 'emerald' },
+          { label: 'Audience Reach', value: uniqueScans.toLocaleString(), icon: Users, trend: '+18%', color: 'purple' },
+          { label: 'Conversion Velocity', value: conversionRate, icon: TrendingUp, trend: '+5.2%', color: 'amber' },
         ].map((metric) => (
-          <div key={metric.label} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all group">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`w-12 h-12 rounded-2xl bg-${metric.color}-50 text-${metric.color}-600 flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                <metric.icon className="w-6 h-6" />
+          <div key={metric.label} className="bg-white p-10 rounded-[3rem] border border-slate-100/50 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] transition-all group relative overflow-hidden">
+            <div className={`absolute top-0 right-0 w-32 h-32 bg-${metric.color}-400/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000`} />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-8">
+                <div className={`w-14 h-14 rounded-2xl bg-${metric.color}-50 text-${metric.color}-600 flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all shadow-sm`}>
+                  <metric.icon className="w-7 h-7" />
+                </div>
+                <div className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  {metric.trend}
+                </div>
               </div>
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest">
-                <ArrowUpRight className="w-3 h-3" />
-                {metric.trend}
-              </div>
+              <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-2">{metric.label}</p>
+              <h3 className="text-4xl font-black text-slate-900 leading-none tracking-tighter">{metric.value}</h3>
             </div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{metric.label}</p>
-            <h3 className="text-2xl font-black text-slate-900 leading-none">{metric.value}</h3>
           </div>
         ))}
       </div>
