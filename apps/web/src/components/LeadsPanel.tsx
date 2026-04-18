@@ -25,71 +25,6 @@ interface LeadsPanelProps {
   codes: BackendQRCode[];
 }
 
-const MOCK_FORMS: Record<string, Form> = {
-  'mock-qr-1': {
-    id: 'f1',
-    qrCodeId: 'mock-qr-1',
-    title: 'Customer Feedback',
-    description: 'General inquiry form',
-    fields: [
-      { id: 'name', type: 'text', label: 'Full Name', required: true, order: 0 },
-      { id: 'email', type: 'email', label: 'Email Address', required: true, order: 1 },
-      { id: 'msg', type: 'text', label: 'Message', required: false, order: 2 }
-    ],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  'mock-qr-2': {
-    id: 'f2',
-    qrCodeId: 'mock-qr-2',
-    title: 'Dine-in Order',
-    description: 'Digital menu order form',
-    fields: [
-      { id: 'cust', type: 'text', label: 'Customer', required: true, order: 0 },
-      { id: 'items', type: 'text', label: 'Ordered Items', required: true, order: 1 },
-      { id: 'table', type: 'text', label: 'Table No.', required: true, order: 2 }
-    ],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-};
-
-const MOCK_LEADS: Lead[] = [
-  {
-    id: 'l1',
-    formId: 'f1',
-    qrCodeId: 'mock-qr-1',
-    qrCodeName: 'Global Feedback QR',
-    qrType: 'form',
-    formTitle: 'Customer Feedback',
-    answers: { name: 'Sarah Jenkins', email: 'sarah.j@gmail.com', msg: 'Interested in the premium plan.' },
-    ip: '192.168.1.1',
-    createdAt: new Date(Date.now() - 3600000).toISOString()
-  },
-  {
-    id: 'l2',
-    formId: 'f2',
-    qrCodeId: 'mock-qr-2',
-    qrCodeName: 'Main Restaurant Menu',
-    qrType: 'menu',
-    formTitle: 'Dine-in Order',
-    answers: { cust: 'Marcus Aurelius', items: '2x Truffle Pasta, 1x Red Wine', table: 'B-12' },
-    ip: '192.168.1.5',
-    createdAt: new Date(Date.now() - 7200000).toISOString()
-  },
-  {
-    id: 'l3',
-    formId: 'f1',
-    qrCodeId: 'mock-qr-1',
-    qrCodeName: 'Global Feedback QR',
-    qrType: 'form',
-    formTitle: 'Customer Feedback',
-    answers: { name: 'David Chen', email: 'd.chen@techcorp.io', msg: 'The QR scan speed is impressive.' },
-    ip: '172.16.0.4',
-    createdAt: new Date(Date.now() - 86400000).toISOString()
-  }
-];
-
 const LeadsPanel: React.FC<LeadsPanelProps> = ({ codes: qrCodes }) => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [formsMap, setFormsMap] = useState<Record<string, Form>>({});
@@ -162,91 +97,42 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ codes: qrCodes }) => {
     const fetchAllLeads = async () => {
       setLoadingLeads(true);
       try {
-        const leadQRs = qrCodes.filter(qr => qr.type === 'form' || qr.type === 'menu' || qr.type === 'coupon');
+        const rawSubmissions = await formsApi.getAllSubmissions();
         
-        const allLeads: Lead[] = [];
         const fMap: Record<string, Form> = {};
-
-        await Promise.all(leadQRs.map(async (qr) => {
-          try {
-            // Attempt to get form info, but if it's a menu/coupon we can also build it from config
-            let form: Form;
-            try {
-               form = await formsApi.getForm(qr.id);
-            } catch (e) {
-               // Build virtual form for Menu/Coupon from config
-               const config = qr.config as any;
-               const fields = [];
-               if (qr.type === 'menu' && config.data.menu?.customFields) {
-                  config.data.menu.customFields.forEach((cf: any) => {
-                     fields.push({ 
-                        id: cf.id, 
-                        label: cf.label, 
-                        type: (cf.type || 'text') as any, // Cast to proper FormField type
-                        order: fields.length, 
-                        required: false 
-                     });
-                  });
-               } else if (qr.type === 'menu') {
-                  // Standard menu fields
-                  fields.push({ id: 'cust', label: 'Customer', type: 'text' as const, order: 0, required: true });
-                  fields.push({ id: 'items', label: 'Ordered Items', type: 'text' as const, order: 1, required: true });
-                  fields.push({ id: 'table', label: 'Table No.', type: 'text' as const, order: 2, required: true });
-               } else {
-                  // Generic
-                  fields.push({ id: 'id', label: 'ID', type: 'text' as const, order: 0, required: false });
-               }
-
-               form = {
-                  id: `v-${qr.id}`,
-                  qrCodeId: qr.id,
-                  title: qr.name,
-                  description: `${qr.type} leads`,
-                  fields,
-                  createdAt: qr.createdAt,
-                  updatedAt: qr.updatedAt
-               };
-            }
-
-            const submissions = await formsApi.getSubmissions(qr.id);
-            
-            fMap[qr.id] = form;
-            
-            const transLeads: Lead[] = submissions.map(s => ({
-              ...s,
-              qrCodeName: qr.name,
-              qrCodeId: qr.id,
-              qrType: qr.type,
-              formTitle: form.title
-            }));
-            
-            allLeads.push(...transLeads);
-          } catch (err) {
-            console.error(`Failed to fetch leads for QR ${qr.id}:`, err);
+        const transLeads: Lead[] = rawSubmissions.map((s: any) => {
+          // Store form in map for lookup
+          if (s.form && !fMap[s.form.qrCodeId]) {
+            fMap[s.form.qrCodeId] = s.form;
           }
-        }));
 
-        // Merge with mocks for demonstration if empty or as extra
-        const finalLeads = allLeads.length > 0 ? allLeads : [...MOCK_LEADS];
-        const finalForms = { ...MOCK_FORMS, ...fMap };
+          return {
+            id: s.id,
+            formId: s.formId,
+            answers: s.answers,
+            ip: s.ip,
+            userAgent: s.userAgent,
+            createdAt: s.createdAt,
+            qrCodeId: s.form.qrCodeId,
+            qrCodeName: s.form.qrCode.name,
+            qrType: s.form.qrCode.type,
+            formTitle: s.form.title
+          };
+        });
 
-        // Sort by date descending
-        finalLeads.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        
-        setLeads(finalLeads);
-        setFormsMap(finalForms);
+        setLeads(transLeads);
+        setFormsMap(fMap);
       } catch (err) {
-        // Fallback to mocks on error for dev visibility
-        setLeads([...MOCK_LEADS]);
-        setFormsMap(MOCK_FORMS);
-        toast.error('Failed to load real lead data, showing demo model.');
+        console.error('Failed to fetch leads:', err);
+        setLeads([]);
+        toast.error('Failed to load lead data');
       } finally {
         setLoadingLeads(false);
       }
     };
 
     fetchAllLeads();
-  }, [qrCodes]);
+  }, []); // Only once on mount or when refresh needed
 
   const filteredLeads = useMemo(() => {
     let result = leads;
