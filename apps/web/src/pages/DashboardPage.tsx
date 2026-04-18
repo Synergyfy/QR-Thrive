@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   LayoutGrid, QrCode, Archive, BarChart3, TrendingUp, User, Settings, Crown,
-  Search, Plus, MoreVertical, Calendar, ExternalLink, Edit2, Brush, Globe,
-  ChevronDown, ChevronRight, Bell, FolderOpen, Trash2, Copy, Printer,
-  RefreshCw, X, FolderPlus, ArrowRight, Edit3, ClipboardList, Users, Download,
+  Search, Plus, MoreVertical, Calendar, ExternalLink, Brush, Globe,
+  ChevronDown, ChevronRight, Bell, FolderOpen, Trash2, Copy,
+  RefreshCw, X, FolderPlus, ArrowRight, Edit3, Users, Download,
   Activity, Eye
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -86,14 +86,6 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const renameQR = async (id: string, name: string) => {
-    try {
-      await updateQRMutation.mutateAsync({ id, data: { name }});
-      toast.success('Renamed successfully');
-    } catch (e) {
-      toast.error('Failed to rename');
-    }
-  };
 
   const createFolder = async (name: string) => {
     try {
@@ -149,8 +141,7 @@ const DashboardPage: React.FC = () => {
   const [downloadMenuOpen, setDownloadMenuOpen] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolder, setShowNewFolder] = useState(false);
-  const [renamingQR, setRenamingQR] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState('');
+
   const [editingURLQR, setEditingURLQR] = useState<string | null>(null);
   const [viewingScansQR, setViewingScansQR] = useState<{ id: string, name: string } | null>(null);
   const [newURLValue, setNewURLValue] = useState('');
@@ -198,12 +189,7 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const handleRename = (id: string) => {
-    if (renameValue.trim()) {
-      renameQR(id, renameValue.trim());
-      setRenamingQR(null);
-    }
-  };
+
 
   const handleURLUpdate = () => {
     if (editingURLQR && newURLValue.trim()) {
