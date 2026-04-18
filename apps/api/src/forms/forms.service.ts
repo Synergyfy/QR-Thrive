@@ -224,4 +224,60 @@ export class FormsService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async getAllSubmissions(userId: string) {
+    return this.prisma.formSubmission.findMany({
+      where: {
+        form: {
+          qrCode: { userId },
+        },
+      },
+      include: {
+        form: {
+          include: {
+            qrCode: {
+              select: {
+                id: true,
+                name: true,
+                type: true,
+              },
+            },
+            fields: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async deleteSubmission(qrCodeId: string, submissionId: string, userId: string) {
+    // Verify ownership of the QR code linked to the submission
+    const qrCode = await this.prisma.qRCode.findFirst({
+      where: {
+        id: qrCodeId,
+        userId,
+      },
+    });
+
+    if (!qrCode) {
+      throw new ForbiddenException('You do not own this QR Code');
+    }
+
+    const submission = await this.prisma.formSubmission.findFirst({
+      where: {
+        id: submissionId,
+        form: { qrCodeId },
+      },
+    });
+
+    if (!submission) {
+      throw new NotFoundException('Submission not found');
+    }
+
+    await this.prisma.formSubmission.delete({
+      where: { id: submissionId },
+    });
+
+    return { success: true };
+  }
 }

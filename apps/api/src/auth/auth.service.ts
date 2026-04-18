@@ -129,7 +129,7 @@ export class AuthService {
         }
       }
 
-      return this.generateAndSetTokens(user.id, res, true);
+      return this.generateAndSetTokens(user.id, res, true, true);
     } catch (error) {
       if (error instanceof ConflictException) throw error;
       this.logger.error(`Signup error for ${email}:`, error.stack);
@@ -249,6 +249,7 @@ export class AuthService {
         where: { email },
       });
 
+      const isNewUser = !user;
       if (user) {
         // Block Admins from logging in with Google
         if (user.role === 'ADMIN') {
@@ -304,7 +305,7 @@ export class AuthService {
         }
       }
 
-      return this.generateAndSetTokens(user.id, res, true);
+      return this.generateAndSetTokens(user.id, res, true, isNewUser);
     } catch (error: any) {
       if (error instanceof UnauthorizedException) throw error;
       this.logger.error(`Google login error: ${error.message}`, error.stack);
@@ -434,6 +435,7 @@ export class AuthService {
     userId: string,
     res: Response,
     rememberMe: boolean = false,
+    isNewUser: boolean = false,
   ) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -501,6 +503,6 @@ export class AuthService {
       maxAge: refreshDays * 24 * 60 * 60 * 1000,
     });
 
-    return { user };
+    return { user, isNewUser };
   }
 }

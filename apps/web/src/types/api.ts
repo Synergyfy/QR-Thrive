@@ -19,6 +19,7 @@ export interface User {
 
 export interface AuthResponse {
   user: User;
+  isNewUser?: boolean;
 }
 
 export type PricingTier = 'HIGH' | 'MIDDLE' | 'LOW';

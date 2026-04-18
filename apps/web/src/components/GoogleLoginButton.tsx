@@ -19,7 +19,7 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess, onErro
       const res = await googleLoginMutation.mutateAsync(credentialResponse.credential);
       onSuccess(res.user);
       toast.success(`Welcome, ${res.user.firstName}!`);
-      navigate(getDashboardPath(res.user));
+      navigate(getDashboardPath(res.user, res.isNewUser));
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Google authentication failed';
       toast.error(message);

@@ -29,6 +29,10 @@ export const formsApi = {
   deleteSubmission: async (qrCodeId: string, submissionId: string): Promise<any> => {
     const { data } = await axios.delete(`${API_URL}/forms/${qrCodeId}/submissions/${submissionId}`, { withCredentials: true });
     return data;
+  },
+  getAllSubmissions: async (): Promise<any[]> => {
+    const { data } = await axios.get(`${API_URL}/forms/leads-all/fetch`, { withCredentials: true });
+    return data;
   }
 };
 
@@ -80,5 +84,12 @@ export const useSubmitForm = (shortId: string) => {
       const message = error.response?.data?.message || 'Failed to submit form';
       toast.error(message);
     }
+  });
+};
+
+export const useAllSubmissions = () => {
+  return useQuery({
+    queryKey: ['submissions', 'all'],
+    queryFn: () => formsApi.getAllSubmissions(),
   });
 };

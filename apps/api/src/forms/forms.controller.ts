@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Req, Delete, Logger } from '@nestjs/common';
 import { FormsService } from './forms.service';
 import { CreateFormDto } from './dto/create-form.dto';
 import type { Request } from 'express';
@@ -20,7 +20,20 @@ interface RequestWithUser extends Request {
 @ApiBearerAuth('JWT-auth')
 @Controller('forms')
 export class FormsController {
+  private readonly logger = new Logger(FormsController.name);
+
   constructor(private readonly formsService: FormsService) {}
+
+  @Get('leads-all/fetch')
+  @ApiOperation({ summary: 'Get all submissions across all user forms' })
+  @ApiResponse({
+    status: 200,
+    description: 'All form submissions retrieved.',
+  })
+  async getAllSubmissions(@Req() req: RequestWithUser) {
+    this.logger.log(`Fetching all leads for user: ${req.user.userId}`);
+    return this.formsService.getAllSubmissions(req.user.userId);
+  }
 
   @Get(':qrCodeId')
   @ApiOperation({ summary: 'Get form details by QR code ID' })
@@ -66,5 +79,22 @@ export class FormsController {
     @Param('qrCodeId') qrCodeId: string,
   ) {
     return this.formsService.getSubmissions(qrCodeId, req.user.userId);
+  }
+
+  @Delete(':qrCodeId/submissions/:submissionId')
+  @ApiOperation({ summary: 'Delete a specific form submission' })
+  @ApiParam({ name: 'qrCodeId', description: 'The QR code ID' })
+  @ApiParam({ name: 'submissionId', description: 'The submission ID' })
+  @ApiResponse({ status: 200, description: 'Submission deleted.' })
+  async deleteSubmission(
+    @Req() req: RequestWithUser,
+    @Param('qrCodeId') qrCodeId: string,
+    @Param('submissionId') submissionId: string,
+  ) {
+    return this.formsService.deleteSubmission(
+      qrCodeId,
+      submissionId,
+      req.user.userId,
+    );
   }
 }
