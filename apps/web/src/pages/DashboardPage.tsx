@@ -625,10 +625,12 @@ const DashboardPage: React.FC = () => {
                     <Crown className="w-4 h-4 text-blue-400 fill-blue-400" />
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold text-blue-400 uppercase tracking-wider leading-none mb-0.5">
-                      {user?.subscriptionStatus === 'non-renewing' ? 'Ending' : 'Pro'}
+                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none mb-0.5">
+                      {user?.subscriptionStatus === 'non-renewing' ? 'Ending Soon' : 'Active Plan'}
                     </p>
-                    <p className="text-[13px] font-semibold text-white">Active Plan</p>
+                    <p className="text-sm font-bold text-white leading-none mt-1">
+                      {user?.plan?.name || 'Pro'} Subscriber
+                    </p>
                   </div>
                 </div>
                 {user?.subscriptionStatus !== 'non-renewing' && (
@@ -648,9 +650,9 @@ const DashboardPage: React.FC = () => {
                 <div className="relative z-10 space-y-3">
                   <div className="flex items-center gap-2 text-blue-400">
                     <Crown className="w-4 h-4 fill-blue-400" />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider">Upgrade</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">{user?.plan?.name || 'Free'} Plan</span>
                   </div>
-                  <p className="text-[15px] font-bold text-white leading-tight">Unlock analytics & dynamic links</p>
+                  <p className="text-[15px] font-bold text-white leading-tight">Upgrade for analytics & dynamic links</p>
                   <div className="flex items-center gap-2 text-blue-400 text-[12px] font-semibold group-hover:gap-3 transition-all">
                     View Plans <ArrowRight className="w-3.5 h-3.5" />
                   </div>

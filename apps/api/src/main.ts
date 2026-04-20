@@ -11,7 +11,9 @@ import { LoggingInterceptor } from './common/logging.interceptor';
 
 // Explicitly export the bootstrap function
 export async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
+  });
   app.set('trust proxy', true);
 
   const pinoLogger = app.get(PinoLogger);
