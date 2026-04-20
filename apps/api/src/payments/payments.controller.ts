@@ -10,6 +10,7 @@ import {
   Body,
   Ip,
 } from '@nestjs/common';
+import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
 import { PaystackService } from './paystack.service';
 import { PricingService } from '../pricing/pricing.service';
@@ -55,14 +56,19 @@ export class PaymentsController {
   })
   async verify(
     @Req() req: Request & { user: { userId: string } },
-    @Body() body: { reference: string },
+    @Body() body: { reference: string; planId?: string; interval?: string },
   ) {
     const userId = req.user.userId;
-    const { reference } = body;
+    const { reference, planId: requestedPlanId, interval: requestedInterval } = body;
 
     this.logger.log(
-      `Direct verification requested for reference: ${reference} by user ${userId}`,
+      `Direct verification requested for reference: ${reference} by user ${userId}, requestedPlanId: ${requestedPlanId}, requestedInterval: ${requestedInterval}`,
     );
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
 
     const transactionData =
       await this.paystackService.verifyTransaction(reference);
@@ -71,8 +77,27 @@ export class PaymentsController {
       throw new BadRequestException('Transaction not successful on Paystack.');
     }
 
-    // Process the data using the common success handler
-    await this.handleChargeSuccess(transactionData);
+    // Get planId and interval from metadata or from request body
+    let metadata = transactionData.metadata;
+    if (typeof metadata === 'string' && metadata.length > 0) {
+      try {
+        metadata = JSON.parse(metadata);
+      } catch (e) {
+        metadata = {};
+      }
+    }
+    
+    const planId = metadata?.planId || metadata?.plan_id || requestedPlanId;
+    const interval = metadata?.interval || metadata?.billing_cycle || requestedInterval;
+
+    // Validate interval matches if provided in request
+    if (requestedInterval && interval && requestedInterval !== interval) {
+      this.logger.error(`Interval mismatch: requested ${requestedInterval}, but got ${interval}`);
+      throw new BadRequestException('Payment interval mismatch.');
+    }
+
+    // Process with explicit user and planId
+    await this.handleChargeSuccess(transactionData, user, planId);
 
     return {
       status: 'success',
@@ -398,6 +423,7 @@ export class PaymentsController {
   @ApiResponse({ status: 200, description: 'Webhook processed successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid signature or payload.' })
   async handleWebhook(
+    @Req() req: RawBodyRequest<Request>,
     @Headers('x-paystack-signature') signature: string,
     @Body() body: { event: string; data: any },
   ) {
@@ -405,16 +431,19 @@ export class PaymentsController {
       throw new BadRequestException('Signature missing');
     }
 
-    // Since NestJS already parsed the body, we need to stringify it identically
-    // Note: In production, it's safer to use a raw body middleware for webhooks
-    const payload = JSON.stringify(body);
+    const payload = req.rawBody;
+    if (!payload) {
+      this.logger.error('Raw body NOT found for webhook. Ensure app.create({ rawBody: true }) is set.');
+      throw new BadRequestException('Payload missing');
+    }
+
     const isValid = this.paystackService.verifyWebhookSignature(
       payload,
       signature,
     );
 
     if (!isValid) {
-      this.logger.warn('Invalid Paystack signature');
+      this.logger.warn('Invalid Paystack signature rejected.');
       throw new BadRequestException('Invalid signature');
     }
 
@@ -446,22 +475,29 @@ export class PaymentsController {
     return { status: 'success' };
   }
 
-  private async handleChargeSuccess(data: {
-    customer: { email: string; customer_code: string };
-    plan?: { interval: string };
-    subscription?: { subscription_code: string };
-    metadata?: any;
-    authorization?: { authorization_code: string };
-  }) {
+  private async handleChargeSuccess(
+    data: {
+      customer: { email: string; customer_code: string };
+      plan?: { interval: string };
+      subscription?: { subscription_code: string };
+      metadata?: any;
+      authorization?: { authorization_code: string };
+    },
+    overrideUser?: { id: string; email: string } | null,
+    overridePlanId?: string | null,
+  ) {
     const { customer, plan, subscription } = data;
     const email = customer.email;
 
     this.logger.log(`Processing charge.success for ${email}`);
 
+    this.logger.log(`RAW data from Paystack: ${JSON.stringify(data, null, 2)}`);
+
     let metadata = data.metadata;
     if (typeof metadata === 'string' && metadata.length > 0) {
       try {
         metadata = JSON.parse(metadata);
+        this.logger.log(`Parsed metadata from string: ${JSON.stringify(metadata, null, 2)}`);
       } catch (e) {
         this.logger.error(
           'Failed to parse Paystack metadata JSON string:',
@@ -469,21 +505,33 @@ export class PaymentsController {
         );
         metadata = {};
       }
+    } else {
+      this.logger.log(`Metadata was already object or empty: ${JSON.stringify(metadata, null, 2)}`);
     }
 
-    const { userId, planId, interval } = metadata || {};
-    const isTrial = metadata?.isTrial === 'true';
+    const userId = overrideUser?.id || metadata?.userId || metadata?.user_id || metadata?.user_id_string;
+    const planId = overridePlanId || metadata?.planId || metadata?.plan_id || metadata?.plan_id_string;
+    const interval = metadata?.interval || metadata?.billing_cycle || metadata?.interval_string;
+
+    const isTrial = metadata?.isTrial === 'true' || metadata?.isTrial === true;
     const trialDays = metadata?.trialDays ? parseInt(metadata.trialDays) : 14;
     const futurePlanCode = metadata?.paystackPlanCode;
 
     this.logger.log(
-      `Transaction metadata: userId=${userId}, planId=${planId}, interval=${interval}, isTrial=${isTrial}`,
+      `EXTRACTED CONTEXT: userId=${userId}, planId=${planId}, interval=${interval}, isTrial=${isTrial}`,
     );
 
-    // Prioritize userId from metadata, fall back to email
-    const user = userId
-      ? await this.prisma.user.findUnique({ where: { id: userId } })
-      : await this.prisma.user.findUnique({ where: { email } });
+    if (!userId && !email) {
+      this.logger.error('No identifiable user data found in webhook payload/metadata');
+      return;
+    }
+
+    // Use override user if provided, otherwise look up from metadata/email
+    let user = overrideUser 
+      ? await this.prisma.user.findUnique({ where: { id: overrideUser.id } })
+      : (userId 
+        ? await this.prisma.user.findUnique({ where: { id: userId } })
+        : await this.prisma.user.findUnique({ where: { email } }));
 
     if (!user) {
       this.logger.error(
@@ -496,71 +544,75 @@ export class PaymentsController {
       ? new Date(Date.now() + trialDays * 86400000)
       : null;
 
-    const updatedUser = await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        plan: planId ? { connect: { id: planId } } : undefined,
-        paystackCustomerCode: customer.customer_code,
-        paystackSubscriptionCode: subscription?.subscription_code || null,
-        subscriptionStatus: isTrial ? 'trialing' : 'active',
-        billingCycle: interval || plan?.interval || null,
-        hasUsedTrial: true,
-        trialEndsAt: trialEndsAt,
-      },
-      include: { plan: true },
-    });
+    try {
+      const updatedUser = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          plan: planId ? { connect: { id: planId } } : undefined,
+          paystackCustomerCode: customer.customer_code,
+          paystackSubscriptionCode: subscription?.subscription_code || null,
+          subscriptionStatus: isTrial ? 'trialing' : 'active',
+          billingCycle: interval || plan?.interval || null,
+          hasUsedTrial: true,
+          trialEndsAt: trialEndsAt,
+        },
+        include: { plan: true },
+      });
 
-    this.logger.log(
-      `Successfully updated plan for user ${user.email} to ${updatedUser.plan?.name || 'Unknown'} (isTrial: ${isTrial})`,
-    );
+      this.logger.log(
+        `Successfully updated plan for user ${user.email} to ${updatedUser.plan?.name || 'Unknown'} (isTrial: ${isTrial})`,
+      );
 
-    // If Trial tokenization succeeded, set up the real subscription for the future
-    if (
-      isTrial &&
-      futurePlanCode &&
-      data.authorization?.authorization_code &&
-      trialEndsAt
-    ) {
-      try {
-        const sub = await this.paystackService.createSubscription(
-          customer.customer_code,
-          futurePlanCode,
-          data.authorization.authorization_code,
-          trialEndsAt.toISOString(),
-        );
+      // If Trial tokenization succeeded, set up the real subscription for the future
+      if (
+        isTrial &&
+        futurePlanCode &&
+        data.authorization?.authorization_code &&
+        trialEndsAt
+      ) {
+        try {
+          const sub = await this.paystackService.createSubscription(
+            customer.customer_code,
+            futurePlanCode,
+            data.authorization.authorization_code,
+            trialEndsAt.toISOString(),
+          );
 
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: { paystackSubscriptionCode: sub.subscription_code },
-        });
+          await this.prisma.user.update({
+            where: { id: user.id },
+            data: { paystackSubscriptionCode: sub.subscription_code },
+          });
 
-        this.logger.log(
-          `Created future trial subscription: ${sub.subscription_code} starting ${trialEndsAt.toISOString()}`,
-        );
-      } catch (err) {
-        this.logger.error(
-          `Failed to create future trial subscription for ${user.email}:`,
-          err,
-        );
-      }
-    }
-
-    // Vemtap Provisioning logic
-    if (updatedUser.plan?.vemtapPlanId) {
-      // Fire and forget provisioning to not block response
-      this.vemtapService
-        .provisionUser(
-          updatedUser.email,
-          updatedUser.firstName,
-          updatedUser.lastName,
-          updatedUser.plan.vemtapPlanId,
-        )
-        .catch((err) => {
+          this.logger.log(
+            `Created future trial subscription: ${sub.subscription_code} starting ${trialEndsAt.toISOString()}`,
+          );
+        } catch (err) {
           this.logger.error(
-            `Deferred Vemtap provisioning failed for ${email}:`,
+            `Failed to create future trial subscription for ${user.email}:`,
             err,
           );
-        });
+        }
+      }
+
+      // Fire and forget provisioning
+      if (updatedUser.plan?.vemtapPlanId) {
+        this.vemtapService
+          .provisionUser(
+            updatedUser.email,
+            updatedUser.firstName,
+            updatedUser.lastName,
+            updatedUser.plan.vemtapPlanId,
+          )
+          .catch((err) => {
+            this.logger.error(
+              `Deferred Vemtap provisioning failed for ${email}:`,
+              err,
+            );
+          });
+      }
+    } catch (dbError) {
+      this.logger.error(`DATABASE UPDATE FAILED for user ${user.email}:`, dbError.stack);
+      throw dbError;
     }
   }
 

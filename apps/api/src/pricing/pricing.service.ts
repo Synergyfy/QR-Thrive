@@ -192,22 +192,46 @@ export class PricingService {
     };
 
     const formatCycle = async (cycle: BillingCycle) => {
-      const pb = getPlanPriceBook(cycle);
-      if (!pb) return undefined;
+      let pb = getPlanPriceBook(cycle);
+      
+      let amount: number;
+      let currency: string;
+      let currencySymbol: string;
+      let priceBookId: string;
+      let gatewayIds: { stripe?: string; paystack?: string } = {};
 
-      let amount = pb.price;
-      let currency = pb.currencyCode;
-      let currencySymbol =
-        pb.currencyCode === 'USD'
-          ? '$'
-          : pb.currencyCode === targetCurrency
-            ? symbol
-            : pb.currencyCode;
+      if (!pb) {
+        // Fallback: If Quarterly/Yearly is missing, calculate from Monthly
+        if (cycle === BillingCycle.MONTHLY) return undefined;
+        
+        const monthlyPb = getPlanPriceBook(BillingCycle.MONTHLY);
+        if (!monthlyPb) return undefined;
 
-      // HYBRID CONVERSION: If we fell back to a USD price but the user expects a local currency
-      if (pb.currencyCode === 'USD' && targetCurrency !== 'USD') {
+        const prices = await this.calculateDiscountedPrices(monthlyPb.price, monthlyPb.currencyCode);
+        amount = cycle === BillingCycle.QUARTERLY ? prices.quarterly : prices.yearly;
+        currency = monthlyPb.currencyCode;
+        currencySymbol = monthlyPb.currencyCode === 'USD' ? '$' : (monthlyPb.currencyCode === targetCurrency ? symbol : monthlyPb.currencyCode);
+        priceBookId = `calc:${monthlyPb.id}:${cycle}`; // Virtual ID
+      } else {
+        amount = pb.price;
+        currency = pb.currencyCode;
+        currencySymbol =
+          pb.currencyCode === 'USD'
+            ? '$'
+            : pb.currencyCode === targetCurrency
+              ? symbol
+              : pb.currencyCode;
+        priceBookId = pb.id;
+        gatewayIds = {
+          stripe: pb.stripePriceId || undefined,
+          paystack: pb.paystackPlanCode || undefined,
+        };
+      }
+
+      // HYBRID CONVERSION: If we have a USD price (base or pb) but the user expects a local currency
+      if (currency === 'USD' && targetCurrency !== 'USD') {
         const rate = await this.getExchangeRate(targetCurrency);
-        amount = this.formatPrice(pb.price * rate, targetCurrency);
+        amount = this.formatPrice(amount * rate, targetCurrency);
         currency = targetCurrency;
         currencySymbol = symbol;
       }
@@ -216,11 +240,8 @@ export class PricingService {
         amount,
         currency,
         currencySymbol,
-        priceBookId: pb.id,
-        gatewayIds: {
-          stripe: pb.stripePriceId || undefined,
-          paystack: pb.paystackPlanCode || undefined,
-        },
+        priceBookId,
+        gatewayIds,
       };
     };
 

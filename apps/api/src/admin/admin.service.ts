@@ -11,7 +11,8 @@ import { UpdateSystemConfigDto } from './dto/update-system-config.dto';
 import { UpdateCountryDto } from './dto/update-country.dto';
 import { CreatePriceBookDto } from './dto/create-price-book.dto';
 import { UpdatePriceBookDto } from './dto/update-price-book.dto';
-import { SystemConfig, PricingTier, PriceStatus } from '@prisma/client';
+import { SystemConfig, PricingTier, PriceStatus, BillingCycle } from '@prisma/client';
+import { PricingService } from '../pricing/pricing.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -23,6 +24,7 @@ export class AdminService {
   constructor(
     private prisma: PrismaService,
     private paystackService: PaystackService,
+    private pricingService: PricingService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
@@ -363,6 +365,46 @@ export class AdminService {
         planId,
       },
     });
+
+    // AUTO-CALCULATION: If this is a MONTHLY entry, auto-generate Quarterly and Yearly
+    if (data.billingCycle === BillingCycle.MONTHLY) {
+      this.logger.log(`Auto-calculating cycle prices for plan ${planId}, tier ${data.tier}, currency ${data.currencyCode}`);
+      
+      const discounted = await this.pricingService.calculateDiscountedPrices(
+        data.price,
+        data.currencyCode,
+      );
+
+      const otherCycles = [
+        { cycle: BillingCycle.QUARTERLY, price: discounted.quarterly },
+        { cycle: BillingCycle.YEARLY, price: discounted.yearly },
+      ];
+
+      for (const item of otherCycles) {
+        // Check if it already exists (to avoid overwriting manual overrides)
+        const existing = await this.prisma.priceBook.findFirst({
+          where: {
+            planId,
+            tier: data.tier,
+            currencyCode: data.currencyCode,
+            billingCycle: item.cycle,
+          },
+        });
+
+        if (!existing) {
+          await this.prisma.priceBook.create({
+            data: {
+              planId,
+              tier: data.tier,
+              currencyCode: data.currencyCode,
+              billingCycle: item.cycle,
+              price: item.price,
+              status: data.status || PriceStatus.ACTIVE,
+            },
+          });
+        }
+      }
+    }
 
     // Invalidate cache
     await this.cacheManager.del(
