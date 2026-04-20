@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Check, ArrowRight, Zap, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePublicPlans, usePublicConfig } from '../../hooks/usePricing';
 import { useCurrentUser, useInitializePayment } from '../../hooks/useApi';
+import { paymentsApi } from '../../services/api';
 import { useSubscribeFree } from '../../hooks/useSubscribeFree';
 import type { PublicPlan } from '../../types/api';
 import toast from 'react-hot-toast';
-import { useQueryClient } from '@tanstack/react-query';
 
 export default function PricingPanel() {
   const queryClient = useQueryClient();
@@ -75,33 +76,70 @@ export default function PricingPanel() {
         interval: selectedCycle
       });
 
-      const pricePoint = plan.pricing[selectedCycle] || plan.pricing.monthly || {
+      console.log('Payment init response:', data);
+
+      if (!data) {
+        toast.error('No response from payment service');
+        return;
+      }
+
+      if (!(data as any).access_code && !(data as any).authorization_url) {
+        console.error('Unexpected payment response:', data);
+        toast.error('Unable to initialize payment. Please try again.');
+        return;
+      }
+
+      const pricePoint = plan.pricing?.[selectedCycle] || plan.pricing?.monthly || {
         amount: 0,
         currency: 'USD',
         currencySymbol: '$',
         priceBookId: '',
         gatewayIds: {}
       };
-
-      if (data && (data as any).access_code) {
-        const handler = (window as any).PaystackPop.setup({
-          key: (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_b8e2d78705a6e87f87053e87053e87053e8705', 
-          email: user.email,
-          amount: Math.round(pricePoint.amount * 100),
-          access_code: (data as any).access_code,
-          onClose: () => {
-             toast.error('Payment window closed');
-          },
-          callback: (_response: any) => {
-             toast.success('Payment successful! Upgrading your account...');
-             queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      
+      const checkPaystack = async () => {
+        const PaystackPop = (window as any).PaystackPop;
+        if (!PaystackPop) {
+          window.location.href = (data as any).authorization_url;
+          return;
+        }
+        
+        const verifyPayment = async (ref: string) => {
+          const verifyingToast = toast.loading('Payment successful! Verifying your access...');
+          try {
+            await paymentsApi.verifyPaymentWithPlanId(ref, plan.id, selectedCycle);
+            queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+            toast.dismiss(verifyingToast);
+            toast.success('Account upgraded successfully!');
+          } catch (err) {
+            toast.dismiss(verifyingToast);
+            toast.error('Failed to verify payment. Please contact support.');
           }
-        });
-        handler.openIframe();
-      } else if (data && (data as any).authorization_url) {
-        window.location.href = (data as any).authorization_url;
-      }
-    } catch (err) {}
+        };
+        
+        try {
+          const handler = PaystackPop.setup({
+            key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_b8e2d78705a6e87f87053e87053e87053e8705',
+            email: user.email,
+            amount: Math.round(pricePoint.amount * 100),
+            access_code: (data as any).access_code,
+            callback: function(response: any) {
+              verifyPayment(response.reference);
+            },
+          });
+          
+          handler.openIframe();
+        } catch (setupError) {
+          console.error('Paystack setup error:', setupError);
+          window.location.href = (data as any).authorization_url;
+        }
+      };
+      
+      setTimeout(checkPaystack, 100);
+    } catch (err: any) {
+      console.error('Payment initialization error:', err);
+      toast.error(err.response?.data?.message || 'Failed to initialize payment');
+    }
   };
 
   if (plansError) {
@@ -146,13 +184,13 @@ export default function PricingPanel() {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-stretch">
             {currentPlans.map((plan, idx) => (
               <motion.div 
-                key={plan.name}
+                key={`${plan.name}-${selectedCycle}`}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
                 className={`flex flex-col relative rounded-[3rem] p-10 transition-all duration-500 overflow-hidden group ${
                   plan.isCurrent
-                    ? 'ring-4 ring-blue-500 ring-offset-4 bg-white border-transparent shadow-2xl z-30'
+                    ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-2xl shadow-blue-500/20 z-30'
                     : plan.highlight 
                       ? 'bg-slate-900 text-white shadow-2xl scale-105 z-20 xl:-translate-y-4 border border-blue-500/30' 
                       : 'bg-white border border-slate-100 shadow-xl shadow-blue-900/5 z-10'
@@ -160,7 +198,7 @@ export default function PricingPanel() {
               >
                 {plan.isCurrent && (
                   <div className="absolute top-8 left-10">
-                    <div className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg animate-pulse">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg">
                       <Zap className="w-3 h-3 fill-white" />
                       Current Plan
                     </div>
@@ -178,19 +216,19 @@ export default function PricingPanel() {
                 )}
 
                 <div className="mb-10 pt-4">
-                  <h3 className={`text-2xl font-black tracking-tight mb-2 ${plan.highlight ? 'text-blue-400' : 'text-slate-900'}`}>
+                  <h3 className={`text-2xl font-black tracking-tight mb-2 ${plan.isCurrent ? 'text-blue-700' : (plan.highlight ? 'text-blue-400' : 'text-slate-900')}`}>
                     {plan.name}
                   </h3>
-                  <p className={`text-sm font-medium leading-relaxed mb-10 ${plan.highlight ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <p className={`text-sm font-medium leading-relaxed mb-10 ${plan.isCurrent ? 'text-blue-600' : (plan.highlight ? 'text-slate-400' : 'text-slate-500')}`}>
                     {plan.description}
                   </p>
                   
                   <div className="flex items-baseline gap-1 mb-2">
-                    <span className={`text-3xl font-bold ${plan.highlight ? 'text-slate-400' : 'text-slate-400'}`}>{plan.currency}</span>
-                    <span className={`text-7xl font-black tracking-tighter ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
+                    <span className={`text-3xl font-bold ${plan.isCurrent ? 'text-blue-600' : 'text-slate-400'}`}>{plan.currency}</span>
+                    <span className={`text-7xl font-black tracking-tighter ${plan.isCurrent ? 'text-slate-800' : (plan.highlight ? 'text-white' : 'text-slate-900')}`}>
                        {plan.price === 0 ? '0' : plan.price.toLocaleString()}
                     </span>
-                    <span className={`text-sm font-bold opacity-60 ml-2 ${plan.highlight ? 'text-white' : 'text-slate-500'}`}>
+                    <span className={`text-sm font-bold opacity-60 ml-2 ${plan.isCurrent ? 'text-blue-600' : (plan.highlight ? 'text-white' : 'text-slate-500')}`}>
                       / {selectedCycle === 'yearly' ? 'year' : (selectedCycle === 'quarterly' ? 'quarter' : 'month')}
                     </span>
                   </div>
@@ -200,11 +238,11 @@ export default function PricingPanel() {
                   {plan.features.map((feature, fIdx) => (
                     <div key={fIdx} className="flex items-center gap-4">
                       <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
-                        plan.highlight ? 'bg-blue-600/20' : 'bg-blue-50'
+                        plan.isCurrent ? 'bg-emerald-100' : (plan.highlight ? 'bg-blue-600/20' : 'bg-blue-50')
                       }`}>
-                        <Check className={`w-3.5 h-3.5 font-bold ${plan.highlight ? 'text-blue-400' : 'text-blue-600'}`} />
+                        <Check className={`w-3.5 h-3.5 font-bold ${plan.isCurrent ? 'text-emerald-600' : (plan.highlight ? 'text-blue-400' : 'text-blue-600')}`} />
                       </div>
-                      <span className={`text-sm font-bold tracking-tight ${plan.highlight ? 'text-slate-200' : 'text-slate-700'}`}>
+                      <span className={`text-sm font-bold tracking-tight ${plan.isCurrent ? 'text-slate-700' : (plan.highlight ? 'text-slate-200' : 'text-slate-700')}`}>
                         {feature}
                       </span>
                     </div>
@@ -217,7 +255,7 @@ export default function PricingPanel() {
                     disabled={initializePayment.isPending || plan.isCurrent}
                     className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
                       plan.isCurrent
-                        ? 'bg-slate-100 text-slate-400 cursor-default'
+                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 cursor-default'
                         : plan.highlight 
                           ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-600/30' 
                           : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'

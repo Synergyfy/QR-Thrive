@@ -158,8 +158,8 @@ model PriceBook {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  @@unique([planId, tier, currencyCode, status])
-  @@index([planId, tier, currencyCode, status])
+  @@unique([planId, tier, currencyCode, billingCycle, status])
+  @@index([planId, tier, currencyCode, billingCycle, status])
   @@map("price_books")
 }
 

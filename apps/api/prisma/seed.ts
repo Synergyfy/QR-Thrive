@@ -95,10 +95,11 @@ async function main() {
       // Free Plan Prices
       await prisma.priceBook.upsert({
         where: {
-          planId_tier_currencyCode_status: {
+          planId_tier_currencyCode_billingCycle_status: {
             planId: freePlan.id,
             tier,
             currencyCode: 'USD',
+            billingCycle: cycle as any,
             status: 'ACTIVE',
           },
         },
@@ -119,10 +120,11 @@ async function main() {
       // Pro Plan Prices
       await prisma.priceBook.upsert({
         where: {
-          planId_tier_currencyCode_status: {
+          planId_tier_currencyCode_billingCycle_status: {
             planId: proPlan.id,
             tier,
             currencyCode: 'USD',
+            billingCycle: cycle as any,
             status: 'ACTIVE',
           },
         },

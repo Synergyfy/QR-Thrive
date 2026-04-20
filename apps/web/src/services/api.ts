@@ -245,6 +245,9 @@ export const paymentsApi = {
   verifyPayment: async (reference: string) => {
     return (await apiClient.post('/payments/verify', { reference })).data;
   },
+  verifyPaymentWithPlanId: async (reference: string, planId: string, interval?: string) => {
+    return (await apiClient.post('/payments/verify', { reference, planId, interval })).data;
+  },
   startTrial: async (data: { planId: string }) => (await apiClient.post<{ message: string; trialEndsAt: string }>('/payments/start-trial', data)).data,
   subscribeFree: async (data: { planId: string }) => (await apiClient.post<{ message: string; planName: string }>('/payments/subscribe-free', data)).data,
   cancelSubscription: async () => (await apiClient.post<{ message: string }>('/payments/cancel')).data,

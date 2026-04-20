@@ -600,7 +600,7 @@ const DashboardPage: React.FC = () => {
                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-0.5">
                        {user?.subscriptionStatus === 'non-renewing' ? 'Ending Soon' : 'Active Plan'}
                      </p>
-                     <p className="text-sm font-bold text-white">Pro Subscriber</p>
+                     <p className="text-sm font-bold text-white">{user?.plan?.name || 'Pro'} Subscriber</p>
                   </div>
                   {user?.subscriptionStatus !== 'non-renewing' && (
                      <button 
@@ -618,7 +618,7 @@ const DashboardPage: React.FC = () => {
                  className="w-full p-4 bg-slate-900 rounded-2xl flex items-center justify-between group overflow-hidden relative"
                >
                   <div className="relative z-10">
-                     <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-0.5">Professional Plan</p>
+                     <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-0.5">{user?.plan?.name || 'Free'} Plan</p>
                      <p className="text-sm font-bold text-white">Upgrade Now</p>
                   </div>
                   <Crown className="w-8 h-8 text-white/10 group-hover:text-blue-500 transition-colors transform rotate-12" />
