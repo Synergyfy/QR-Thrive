@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, ArrowRight, Zap, Loader2 } from 'lucide-react';
+import { Check, ArrowRight, Zap, Loader2, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePublicPlans, usePublicConfig } from '../../hooks/usePricing';
 import { useCurrentUser, useInitializePayment } from '../../hooks/useApi';
@@ -47,7 +47,7 @@ export default function PricingPanel() {
         isCurrent: user?.planId === plan.id,
         trialDays: plan.trialDays,
         trial: plan.trialDays > 0,
-        cta: plan.isFree ? "Start Now" : (plan.trialDays > 0 ? `Start ${plan.trialDays}-Day Free Trial` : "Get Started"),
+        cta: plan.isFree ? "Start Free" : (plan.trialDays > 0 ? `Start ${plan.trialDays}-Day Trial` : "Get Started"),
         features: [
           `${plan.qrCodeLimit === -1 ? 'Unlimited' : plan.qrCodeLimit} Dynamic QR Codes`,
           ...((config?.features as string[]) || [])
@@ -144,11 +144,11 @@ export default function PricingPanel() {
 
   if (plansError) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center p-8 bg-white rounded-3xl shadow-xl max-w-md border border-slate-100">
-           <h2 className="text-2xl font-black text-slate-900 mb-4">Pricing Unavailable</h2>
-           <p className="text-slate-500 mb-8">We couldn't load the plans. Please try again.</p>
-           <button onClick={() => window.location.reload()} className="px-8 py-3 bg-blue-600 text-white font-black rounded-2xl shadow-lg">Retry</button>
+      <div className="flex items-center justify-center py-16">
+        <div className="text-center p-8 bg-white rounded-2xl shadow-sm max-w-md border border-slate-200/60">
+           <h2 className="text-lg font-bold text-slate-900 mb-2">Pricing Unavailable</h2>
+           <p className="text-sm text-slate-500 mb-6">We couldn't load the plans right now.</p>
+           <button onClick={() => window.location.reload()} className="px-6 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-xl shadow-sm hover:bg-blue-700 transition-all">Retry</button>
         </div>
       </div>
     );
@@ -157,31 +157,33 @@ export default function PricingPanel() {
   return (
     <div className="w-full">
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center pt-20">
-           <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-           <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Loading plans...</p>
+        <div className="flex flex-col items-center justify-center pt-16">
+           <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-3" />
+           <p className="text-slate-400 font-medium text-sm">Loading plans...</p>
         </div>
       ) : (
         <>
-            <div className="flex justify-center mb-16">
-              <div className="bg-white p-2 rounded-[2rem] shadow-sm border border-slate-100 flex gap-2">
+            {/* Billing Cycle Toggle */}
+            <div className="flex justify-center mb-10">
+              <div className="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200/50">
                 {(['monthly', 'quarterly', 'yearly'] as const).map((cycle) => (
                   <button
                     key={cycle}
                     onClick={() => setSelectedCycle(cycle)}
-                    className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                    className={`px-5 py-2 rounded-lg text-[13px] font-semibold capitalize transition-all duration-200 ${
                       selectedCycle === cycle
-                        ? 'bg-blue-600 text-white shadow-lg'
-                        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                        ? 'bg-white text-slate-900 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
                     {cycle}
+                    {cycle === 'yearly' && <span className="ml-1.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md">Save 20%</span>}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-stretch">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-stretch max-w-7xl mx-auto">
             {currentPlans.map((plan, idx) => (
               <motion.div 
                 key={`${plan.name}-${selectedCycle}`}
@@ -207,9 +209,10 @@ export default function PricingPanel() {
 
                 {(plan.popular || plan.trial) && !plan.isCurrent && (
                   <div className="absolute top-8 right-10">
-                      <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-5 py-2.5 rounded-full shadow-lg transition-transform group-hover:scale-110 ${
+                      <span className={`flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] px-5 py-2.5 rounded-full shadow-lg transition-transform group-hover:scale-110 ${
                         plan.highlight ? 'bg-blue-600 text-white shadow-blue-500/40' : 'bg-slate-900 text-white'
                      }`}>
+                        <Sparkles className="w-3 h-3" />
                         {plan.trial ? `${plan.trialDays}-Day Trial` : 'Most Popular'}
                      </span>
                   </div>
@@ -255,7 +258,7 @@ export default function PricingPanel() {
                     disabled={initializePayment.isPending || plan.isCurrent}
                     className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
                       plan.isCurrent
-                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 cursor-default'
+                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 cursor-not-allowed'
                         : plan.highlight 
                           ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-600/30' 
                           : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'

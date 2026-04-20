@@ -177,28 +177,28 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ codes: qrCodes }) => {
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
        {/* Stats Cards */}
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
-            { label: 'Total Leads', value: stats.total, icon: Users, color: 'blue', trend: '+12%' },
-            { label: 'Leads Today', value: stats.today, icon: Zap, color: 'indigo', trend: 'Fresh' },
-            { label: 'Active Campaigns', value: stats.activeForms, icon: Target, color: 'amber', trend: 'LIVE' },
-            { label: 'Avg. Conversion', value: `${stats.conversion}%`, icon: TrendingUp, color: 'emerald', trend: 'Good' },
+            { label: 'Intelligence Captured', value: stats.total, icon: Users, color: 'blue', trend: '+12%' },
+            { label: 'Fresh Interactions', value: stats.today, icon: Zap, color: 'indigo', trend: 'ACTIVE' },
+            { label: 'Smart Campaigns', value: stats.activeForms, icon: Target, color: 'amber', trend: 'LIVE' },
+            { label: 'Conversion Power', value: `${stats.conversion}%`, icon: TrendingUp, color: 'emerald', trend: 'OPTIMIZED' },
           ].map((s, i) => (
-            <div key={i} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm relative overflow-hidden group">
+            <div key={i} className="bg-white p-10 rounded-[3rem] border border-slate-100/50 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_45px_90px_-20px_rgba(0,0,0,0.1)] transition-all group relative overflow-hidden">
+               <div className={`absolute top-0 right-0 w-32 h-32 bg-${s.color}-400/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000`} />
                <div className="relative z-10">
-                  <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mb-6", `bg-${s.color}-50 text-${s.color}-600`)}>
-                     <s.icon className="w-6 h-6" />
+                  <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 group-hover:-rotate-6 transition-all", `bg-${s.color}-50 text-${s.color}-600`)}>
+                     <s.icon className="w-7 h-7" />
                   </div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{s.label}</p>
-                  <div className="flex items-end gap-3">
-                     <h3 className="text-2xl font-black text-slate-900 leading-none">{s.value}</h3>
-                     <span className={cn("text-[10px] font-bold px-2 py-1 rounded-md mb-1", 
-                       s.trend === 'LIVE' ? "bg-amber-100 text-amber-600" : "bg-emerald-100 text-emerald-600")}>
+                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-2">{s.label}</p>
+                  <div className="flex items-center justify-between group/val">
+                     <h3 className="text-4xl font-black text-slate-900 leading-none tracking-tighter">{s.value}</h3>
+                     <span className={cn("text-[9px] font-black px-3 py-1.5 rounded-full tracking-widest shadow-sm", 
+                       s.trend === 'LIVE' || s.trend === 'ACTIVE' ? "bg-amber-100 text-amber-600" : "bg-emerald-100 text-emerald-600")}>
                        {s.trend}
                      </span>
                   </div>
                </div>
-               <div className={cn("absolute -bottom-6 -right-6 w-24 h-24 bg-slate-50 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-700", `bg-${s.color}-100`)} />
             </div>
           ))}
        </div>

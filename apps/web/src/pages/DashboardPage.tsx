@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  LayoutGrid, QrCode, Archive, BarChart3, User, Settings, Crown,
-  Search, Plus, MoreVertical, Calendar, ExternalLink, Edit2, Brush, Globe,
-  ChevronDown, ChevronRight, Bell, FolderOpen, Trash2, Copy, Printer,
-  RefreshCw, X, FolderPlus, ArrowRight, Edit3, ClipboardList, Users
+  LayoutGrid, QrCode, Archive, BarChart3, TrendingUp, User, Settings, Crown,
+  Search, Plus, MoreVertical, Calendar, ExternalLink, Brush, Globe,
+  ChevronDown, ChevronRight, Bell, FolderOpen, Trash2, Copy,
+  RefreshCw, X, FolderPlus, ArrowRight, Edit3, Users, Download,
+  Activity, Eye
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
@@ -85,14 +86,6 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const renameQR = async (id: string, name: string) => {
-    try {
-      await updateQRMutation.mutateAsync({ id, data: { name }});
-      toast.success('Renamed successfully');
-    } catch (e) {
-      toast.error('Failed to rename');
-    }
-  };
 
   const createFolder = async (name: string) => {
     try {
@@ -148,8 +141,7 @@ const DashboardPage: React.FC = () => {
   const [downloadMenuOpen, setDownloadMenuOpen] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolder, setShowNewFolder] = useState(false);
-  const [renamingQR, setRenamingQR] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState('');
+
   const [editingURLQR, setEditingURLQR] = useState<string | null>(null);
   const [viewingScansQR, setViewingScansQR] = useState<{ id: string, name: string } | null>(null);
   const [newURLValue, setNewURLValue] = useState('');
@@ -197,12 +189,7 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const handleRename = (id: string) => {
-    if (renameValue.trim()) {
-      renameQR(id, renameValue.trim());
-      setRenamingQR(null);
-    }
-  };
+
 
   const handleURLUpdate = () => {
     if (editingURLQR && newURLValue.trim()) {
@@ -433,620 +420,617 @@ const DashboardPage: React.FC = () => {
     return 'QR Codes';
   };
 
-  const getColorFromType = (type: string) => {
-    const map: Record<string, string> = {
-      URL: 'blue', Socials: 'purple', Event: 'amber', PDF: 'red',
-      Video: 'pink', MP3: 'indigo', App: 'cyan', Image: 'emerald',
-      vCard: 'teal', WiFi: 'orange', Email: 'sky', SMS: 'violet',
+  const getTypeStyles = (type: string) => {
+    const map: Record<string, { bg: string; text: string; dot: string }> = {
+      url:    { bg: 'bg-blue-50', text: 'text-blue-600', dot: 'bg-blue-500' },
+      social: { bg: 'bg-violet-50', text: 'text-violet-600', dot: 'bg-violet-500' },
+      vcard:  { bg: 'bg-emerald-50', text: 'text-emerald-600', dot: 'bg-emerald-500' },
+      event:  { bg: 'bg-amber-50', text: 'text-amber-600', dot: 'bg-amber-500' },
+      pdf:    { bg: 'bg-rose-50', text: 'text-rose-600', dot: 'bg-rose-500' },
+      video:  { bg: 'bg-pink-50', text: 'text-pink-600', dot: 'bg-pink-500' },
+      mp3:    { bg: 'bg-indigo-50', text: 'text-indigo-600', dot: 'bg-indigo-500' },
+      app:    { bg: 'bg-cyan-50', text: 'text-cyan-600', dot: 'bg-cyan-500' },
+      image:  { bg: 'bg-teal-50', text: 'text-teal-600', dot: 'bg-teal-500' },
+      wifi:   { bg: 'bg-orange-50', text: 'text-orange-600', dot: 'bg-orange-500' },
+      email:  { bg: 'bg-sky-50', text: 'text-sky-600', dot: 'bg-sky-500' },
+      sms:    { bg: 'bg-fuchsia-50', text: 'text-fuchsia-600', dot: 'bg-fuchsia-500' },
     };
-    return map[type] || 'blue';
+    return map[type.toLowerCase()] || { bg: 'bg-slate-50', text: 'text-slate-600', dot: 'bg-slate-400' };
   };
 
-  return (
-    <div className="min-h-screen bg-[#F8FAFC] flex font-sans selection:bg-blue-100 selection:text-blue-900">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-100 flex flex-col h-screen sticky top-0 shrink-0">
-        {/* Fixed Top Navbar */}
-        <div className="p-6 pb-2 shrink-0">
-          <div className="flex items-center cursor-pointer mb-8" onClick={() => navigate('/')}>
-             <img src="/QRThrive_Logo_Full-BG.png" alt="QR Thrive" className="h-[96px] w-auto" style={{ filter: 'brightness(0) saturate(100%) invert(32%) sepia(95%) saturate(3033%) hue-rotate(211deg) brightness(96%) contrast(92%)' }} />
-          </div>
+  const navItems = [
+    { id: 'all', icon: QrCode, label: 'All Codes', count: qrCodes.length },
+    { id: 'active', icon: LayoutGrid, label: 'Active', count: activeQRs.length },
+    { id: 'archived', icon: Archive, label: 'Archived', count: archivedQRs.length },
+    { id: 'stats', icon: BarChart3, label: 'Analytics' },
+    { id: 'leads', icon: Users, label: 'Leads' },
+    { id: 'pricing', icon: Crown, label: 'Plans' },
+  ];
 
+  return (
+    <div className="min-h-screen bg-[#f5f6f8] flex font-sans selection:bg-blue-100 selection:text-blue-900 overflow-hidden relative">
+
+      {/* ─── Sidebar ─── */}
+      <aside className="w-[272px] bg-white/80 backdrop-blur-2xl border-r border-slate-200/50 flex flex-col h-screen sticky top-0 shrink-0 z-50">
+
+        {/* Brand + CTA */}
+        <div className="px-6 pt-6 pb-5 shrink-0 border-b border-slate-100/60">
+          <div className="flex items-center cursor-pointer mb-6 group" onClick={() => navigate('/')}>
+            <img
+              src="/QRThrive_Logo_Full-BG.png"
+              alt="QR Thrive"
+              className="h-20 w-auto transition-transform duration-300 group-hover:scale-[1.02]"
+            />
+          </div>
           <button 
             onClick={() => navigate('/dashboard/create')}
-            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-95"
+            className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold text-[13px] flex items-center justify-center gap-2.5 transition-all duration-200 active:scale-[0.97] shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/30"
           >
-            <Plus className="w-5 h-5 stroke-[3]" /> Create QR Code
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            Create QR Code
           </button>
         </div>
 
-        {/* Scrollable Navigation */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pt-4 space-y-8">
-          <nav className="space-y-1.5">
-            {[
-              { id: 'all', icon: QrCode, label: 'QR Codes', count: qrCodes.length },
-              { id: 'active', icon: LayoutGrid, label: 'Active', count: activeQRs.length },
-              { id: 'archived', icon: Archive, label: 'Archived', count: archivedQRs.length },
-              { id: 'stats', icon: BarChart3, label: 'Stats' },
-              { id: 'leads', icon: Users, label: 'Lead Capturing' },
-              { id: 'pricing', icon: Crown, label: 'Subscription' },
-            ].map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={cn(
-                  "w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all group",
-                  activeTab === item.id 
-                    ? "bg-slate-50 text-blue-600 shadow-sm" 
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <item.icon className={cn("w-5 h-5", activeTab === item.id ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />
-                  <span className="text-sm font-bold tracking-tight">{item.label}</span>
-                </div>
-                {item.count !== undefined && (
-                   <span className={cn(
-                     "text-[10px] font-black px-2 py-0.5 rounded-full",
-                     activeTab === item.id ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"
-                   )}>{item.count}</span>
-                )}
-              </button>
-            ))}
-          </nav>
+        {/* Navigation */}
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-4">
 
-          {/* Folders */}
-          <div className="pt-8 border-t border-slate-50">
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 mb-4">Folders</p>
-             <div className="space-y-1">
-                {folders.map(folder => (
-                   <div key={folder.id} className="group flex items-center">
-                     <button 
-                       onClick={() => setActiveTab(`folder:${folder.id}`)}
-                       className={cn(
-                         "flex-1 flex items-center gap-3 px-4 py-2.5 text-sm font-bold rounded-xl transition-all",
-                         activeTab === `folder:${folder.id}` ? "bg-slate-50 text-blue-600" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
-                       )}
-                     >
-                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{backgroundColor: folder.color}} />
-                        <span className="truncate">{folder.name}</span>
-                        <span className="text-[10px] font-black text-slate-300 ml-auto">
-                          {getQRsByFolder(folder.id).length}
-                        </span>
-                     </button>
-                     <button 
-                       onClick={() => deleteFolder(folder.id)}
-                       className="p-1.5 text-slate-300 hover:text-red-500 transition-all mr-2"
-                     >
-                       <X className="w-3 h-3" />
-                     </button>
-                   </div>
-                ))}
-
-                {showNewFolder ? (
-                  <div className="flex items-center gap-2 px-4 py-2">
-                    <input 
-                      autoFocus
-                      value={newFolderName}
-                      onChange={(e) => setNewFolderName(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
-                      placeholder="Folder name..."
-                      className="flex-1 text-sm font-bold outline-none bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 focus:border-blue-600"
-                    />
-                    <button onClick={handleCreateFolder} className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                      <Plus className="w-3 h-3" />
-                    </button>
-                    <button onClick={() => { setShowNewFolder(false); setNewFolderName(''); }} className="p-2 text-slate-400 hover:text-slate-600">
-                      <X className="w-3 h-3" />
-                    </button>
+          <div className="mb-6">
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">Menu</p>
+            <nav className="space-y-0.5">
+              {navItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-150 group",
+                    activeTab === item.id 
+                      ? "bg-blue-50 text-blue-700" 
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <item.icon className={cn(
+                      "w-[18px] h-[18px] transition-colors",
+                      activeTab === item.id ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
+                    )} />
+                    <span className={cn(
+                      "text-[13px]",
+                      activeTab === item.id ? "font-semibold" : "font-medium"
+                    )}>{item.label}</span>
                   </div>
-                ) : (
-                  <button 
-                    onClick={() => setShowNewFolder(true)}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-blue-600 text-sm font-bold hover:bg-blue-50 rounded-xl transition-all"
-                  >
-                     <FolderPlus className="w-4 h-4" /> New Folder
-                  </button>
-                )}
-             </div>
+                  {item.count !== undefined && (
+                    <span className={cn(
+                      "text-[11px] font-semibold min-w-[22px] h-[22px] flex items-center justify-center rounded-md",
+                      activeTab === item.id 
+                        ? "bg-blue-100 text-blue-700" 
+                        : "bg-slate-100 text-slate-500"
+                    )}>{item.count}</span>
+                  )}
+                </button>
+              ))}
+            </nav>
           </div>
 
-          {/* Account Controls */}
-          <div className="pt-8 border-t border-slate-50 space-y-1.5">
-            <div className="flex items-center gap-3 p-3 text-slate-500 hover:text-slate-900 cursor-pointer transition-all hover:bg-slate-50 rounded-xl">
-               <User className="w-5 h-5" /><span className="text-sm font-bold">Account</span>
+          {/* Folders / Collections */}
+          <div className="mb-6">
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">Collections</p>
+            <div className="space-y-0.5">
+              {folders.map(folder => (
+                <div key={folder.id} className="group flex items-center">
+                  <button 
+                    onClick={() => setActiveTab(`folder:${folder.id}`)}
+                    className={cn(
+                      "flex-1 flex items-center gap-3 px-3 py-2.5 text-[13px] rounded-lg transition-all duration-150",
+                      activeTab === `folder:${folder.id}` 
+                        ? "bg-blue-50 text-blue-700 font-semibold" 
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium"
+                    )}
+                  >
+                    <div className="w-2 h-2 rounded-full shrink-0 ring-2 ring-white shadow-sm" style={{backgroundColor: folder.color}} />
+                    <span className="truncate">{folder.name}</span>
+                    <span className={cn(
+                      "text-[11px] font-semibold ml-auto min-w-[22px] h-[22px] flex items-center justify-center rounded-md",
+                      activeTab === `folder:${folder.id}` ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"
+                    )}>
+                      {getQRsByFolder(folder.id).length}
+                    </span>
+                  </button>
+                  <button 
+                    onClick={() => deleteFolder(folder.id)}
+                    className="p-1.5 text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100 rounded-md hover:bg-red-50"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+
+              {showNewFolder ? (
+                <div className="flex items-center gap-2 px-3 py-2">
+                  <input
+                    autoFocus
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
+                    placeholder="Folder name..."
+                    className="flex-1 text-[13px] bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
+                  />
+                  <button onClick={handleCreateFolder} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
+                    <Plus className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => { setShowNewFolder(false); setNewFolderName(''); }} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-md transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setShowNewFolder(true)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-slate-400 text-[13px] font-medium hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all duration-150"
+                >
+                  <FolderPlus className="w-[18px] h-[18px]" /> Add Collection
+                </button>
+              )}
             </div>
-            <div className="flex items-center gap-3 p-3 text-slate-500 hover:text-slate-900 cursor-pointer transition-all hover:bg-slate-50 rounded-xl">
-               <Settings className="w-5 h-5" /><span className="text-sm font-bold">Settings</span>
-            </div>
+          </div>
+
+          {/* Utility Links */}
+          <div className="border-t border-slate-100 pt-4 space-y-0.5">
+            {[
+              { icon: User, label: 'Profile' },
+              { icon: Settings, label: 'Settings' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-3 px-3 py-2.5 text-slate-500 hover:text-slate-900 cursor-pointer transition-all hover:bg-slate-50 rounded-lg group">
+                <item.icon className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600 transition-colors" />
+                <span className="text-[13px] font-medium">{item.label}</span>
+              </div>
+            ))}
             <div 
               onClick={handleLogout}
-              className="flex items-center gap-3 p-3 text-red-500 hover:bg-red-50 cursor-pointer transition-all rounded-xl"
+              className="flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer transition-all rounded-lg group"
             >
-               <LogOut className="w-5 h-5" /><span className="text-sm font-bold">Log Out</span>
+              <LogOut className="w-[18px] h-[18px] group-hover:text-red-500 transition-colors" />
+              <span className="text-[13px] font-medium">Sign Out</span>
             </div>
           </div>
 
-          {/* Plan Banner (Bottom) */}
-          <div className="mt-8">
+          {/* Subscription Widget */}
+          <div className="mt-6 px-1">
             {user?.subscriptionStatus === 'trialing' ? (
-               <div className="w-full p-6 bg-blue-600 rounded-3xl space-y-4 shadow-xl shadow-blue-100">
-                  <div className="flex items-center justify-between text-white">
-                     <div className="flex items-center gap-2">
-                        <Crown className="w-5 h-5 fill-white" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Free Trial</span>
-                     </div>
-                     <span className="text-xs font-black">
-                        {user.trialEndsAt ? Math.max(0, Math.ceil((new Date(user.trialEndsAt).getTime() - new Date().getTime()) / (1000 * 3600 * 24))) : 0} days left
-                     </span>
+              <div className="w-full p-5 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 rounded-2xl space-y-4 shadow-xl shadow-blue-600/20 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 blur-3xl rounded-full -mr-8 -mt-8" />
+                <div className="relative z-10 space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                      <Crown className="w-3.5 h-3.5 fill-white text-white" />
+                    </div>
+                    <span className="text-[11px] font-semibold text-white/80 uppercase tracking-wider">Trial Active</span>
                   </div>
-                  <p className="text-sm font-bold text-white/90">You are currently exploring QR Thrive Pro.</p>
+                  <div>
+                    <p className="text-sm font-bold text-white mb-0.5">
+                      {user.trialEndsAt ? Math.max(0, Math.ceil((new Date(user.trialEndsAt).getTime() - new Date().getTime()) / (1000 * 3600 * 24))) : 0} days remaining
+                    </p>
+                    <p className="text-[11px] text-white/60">Full feature access</p>
+                  </div>
                   <button 
                     onClick={() => setActiveTab('pricing')}
-                    className="w-full py-3 bg-white text-blue-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-50 transition-all shadow-lg"
+                    className="w-full py-2.5 bg-white text-blue-700 rounded-xl font-semibold text-[12px] hover:bg-blue-50 transition-all active:scale-[0.97]"
                   >
-                     Secure Pro Access
+                    Upgrade Now
                   </button>
-                  <button 
-                    onClick={() => { if(window.confirm('Are you sure you want to cancel your trial?')) cancelSubscriptionMutation.mutate(); }}
-                    className="w-full text-[10px] font-bold text-white/60 hover:text-white transition-all text-center pt-1"
-                  >
-                     Cancel Trial
-                  </button>
-               </div>
+                </div>
+              </div>
             ) : user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'non-renewing' ? (
-               <div className="w-full p-4 bg-slate-900 rounded-2xl flex items-center justify-between group overflow-hidden relative">
-                  <div className="relative z-10">
-                     <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-0.5">
-                       {user?.subscriptionStatus === 'non-renewing' ? 'Ending Soon' : 'Active Plan'}
-                     </p>
-                     <p className="text-sm font-bold text-white">{user?.plan?.name || 'Pro'} Subscriber</p>
+              <div className="w-full p-4 bg-slate-900 rounded-2xl flex items-center justify-between group overflow-hidden relative">
+                <div className="relative z-10 flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                    <Crown className="w-4 h-4 text-blue-400 fill-blue-400" />
                   </div>
-                  {user?.subscriptionStatus !== 'non-renewing' && (
-                     <button 
-                       onClick={() => { if(window.confirm('Cancel subscription?')) cancelSubscriptionMutation.mutate(); }}
-                       className="relative z-20 p-2 text-slate-500 hover:text-red-400 transition-all rounded-lg hover:bg-white/10"
-                     >
-                       <Trash2 className="w-4 h-4" />
-                     </button>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/0 via-blue-600/0 to-blue-600/10" />
-               </div>
+                  <div>
+                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none mb-0.5">
+                      {user?.subscriptionStatus === 'non-renewing' ? 'Ending Soon' : 'Active Plan'}
+                    </p>
+                    <p className="text-sm font-bold text-white leading-none mt-1">
+                      {user?.plan?.name || 'Pro'} Subscriber
+                    </p>
+                  </div>
+                </div>
+                {user?.subscriptionStatus !== 'non-renewing' && (
+                  <button 
+                    onClick={() => { if(window.confirm('Cancel subscription?')) cancelSubscriptionMutation.mutate(); }}
+                    className="relative z-20 p-2 text-slate-500 hover:text-red-400 transition-all rounded-lg hover:bg-white/5"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             ) : (
-               <button 
-                 onClick={() => setActiveTab('pricing')}
-                 className="w-full p-4 bg-slate-900 rounded-2xl flex items-center justify-between group overflow-hidden relative"
-               >
-                  <div className="relative z-10">
-                     <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-0.5">{user?.plan?.name || 'Free'} Plan</p>
-                     <p className="text-sm font-bold text-white">Upgrade Now</p>
+              <button 
+                onClick={() => setActiveTab('pricing')}
+                className="w-full p-5 bg-slate-900 rounded-2xl text-left group overflow-hidden relative hover:shadow-xl transition-all duration-300"
+              >
+                <div className="relative z-10 space-y-3">
+                  <div className="flex items-center gap-2 text-blue-400">
+                    <Crown className="w-4 h-4 fill-blue-400" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">{user?.plan?.name || 'Free'} Plan</span>
                   </div>
-                  <Crown className="w-8 h-8 text-white/10 group-hover:text-blue-500 transition-colors transform rotate-12" />
-                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/0 via-blue-600/0 to-blue-600/20 group-hover:to-blue-600/40 transition-all" />
-               </button>
+                  <p className="text-[15px] font-bold text-white leading-tight">Upgrade for analytics & dynamic links</p>
+                  <div className="flex items-center gap-2 text-blue-400 text-[12px] font-semibold group-hover:gap-3 transition-all">
+                    View Plans <ArrowRight className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+                <Crown className="absolute -bottom-3 -right-3 w-20 h-20 text-white/5 transform -rotate-12 group-hover:rotate-0 transition-transform duration-500" />
+              </button>
             )}
           </div>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Top Header */}
-        <header className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-10 relative z-20">
-           <div className="flex items-center gap-4 bg-slate-50 px-5 py-2.5 rounded-2xl border border-slate-100 w-full max-md focus-within:ring-2 ring-blue-100 transition-all">
-              <Search className="w-5 h-5 text-slate-400" />
-              <input 
-                type="text" placeholder="Search QR Codes..." 
-                className="bg-transparent text-sm font-bold text-slate-600 outline-none w-full placeholder:text-slate-400"
-                value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+      {/* ─── Main Content ─── */}
+      <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
+
+        {/* Top Bar */}
+        <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 flex items-center justify-between px-8 relative z-50 shrink-0">
+          <div className="flex items-center gap-3 bg-slate-100/80 px-4 py-2 rounded-xl w-full max-w-md focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-200 focus-within:shadow-sm transition-all duration-200 border border-transparent focus-within:border-blue-200">
+            <Search className="w-4 h-4 text-slate-400" />
+            <input 
+              type="text"
+              placeholder="Search codes..." 
+              className="bg-transparent text-[13px] font-medium text-slate-800 outline-none w-full placeholder:text-slate-400"
+              value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="p-0.5 text-slate-400 hover:text-slate-600 rounded transition-colors">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button className="text-slate-400 hover:text-slate-700 relative p-2 rounded-lg transition-all hover:bg-slate-100 group">
+              <Bell className="w-5 h-5" />
+              <div className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 border-[1.5px] border-white rounded-full" />
+            </button>
+            
+            <div className="h-6 w-px bg-slate-200/50" />
+            
+            <div className="flex items-center gap-3 group cursor-pointer py-1.5 px-2 rounded-xl hover:bg-slate-50 transition-all duration-150">
+              <img
+                src={`https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=64`}
+                alt="Profile"
+                className="w-8 h-8 rounded-lg shadow-sm"
               />
-           </div>
-           <div className="flex items-center gap-8">
-              <div className="relative cursor-pointer">
-                 <Bell className="w-6 h-6 text-slate-400 hover:text-slate-900 transition-colors" />
-                 <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
+              <div className="hidden lg:block text-left">
+                <p className="text-[13px] font-semibold text-slate-800 leading-none mb-0.5">
+                  {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
+                </p>
+                <p className="text-[11px] font-medium text-slate-400">{user?.role || 'Free'}</p>
               </div>
-              <div className="h-10 w-px bg-slate-100" />
-               <div className="flex items-center gap-4 group cursor-pointer">
-                 <div className="text-right flex flex-col items-end">
-                    <p className="text-sm font-black text-slate-900 leading-none mb-1">
-                      {user ? `${user.firstName} ${user.lastName}` : 'Guest'}
-                    </p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Administrator</p>
-                 </div>
-                 <div className="w-12 h-12 rounded-2xl bg-slate-100 overflow-hidden border-2 border-transparent group-hover:border-blue-600 transition-all p-0.5">
-                    <img src={`https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=2563eb&color=fff`} alt="Profile" className="w-full h-full rounded-[14px]" />
-                 </div>
-                 <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-900 transition-all" />
-              </div>
-           </div>
+              <ChevronDown className="w-4 h-4 text-slate-400 hidden lg:block" />
+            </div>
+          </div>
         </header>
 
-        {/* Scrollable Area */}
-        <div className="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar">
-           {/* Promo Banner */}
-           {activeTab !== 'archived' && activeTab !== 'stats' && activeTab !== 'pricing' && user?.subscriptionStatus !== 'active' && user?.subscriptionStatus !== 'non-renewing' && user?.subscriptionStatus !== 'trialing' && (
-             <div className="bg-slate-900 rounded-[32px] p-8 relative overflow-hidden group">
-                <div className="relative z-10 flex items-center justify-between">
-                   <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                         <Crown className="w-5 h-5 text-amber-400 fill-amber-400" />
-                         <span className="text-[11px] font-black text-blue-400 uppercase tracking-widest">Unlimited Possibilities</span>
-                      </div>
-                      <h2 className="text-2xl font-bold text-white">Unlock Full Customization & Real-time Stats</h2>
-                      <p className="text-slate-400 font-medium max-w-xl">Upgrade to a Professional Plan today and get unlimited Dynamic QRs, advanced analytics, and custom domains.</p>
-                   </div>
-                   <button 
-                     onClick={() => setActiveTab('pricing')}
-                     className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-50 active:scale-95 transition-all shadow-xl"
-                   >
-                      View Pricing
-                   </button>
-                </div>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[100px] rounded-full -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-1000" />
-             </div>
-           )}
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto scrollbar-hide">
+          <div className="max-w-[1440px] mx-auto px-8 py-8 space-y-8">
 
-           {/* List Controls */}
-           <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                 <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-                    {activeTab === 'stats' ? 'Analytics Insights' : getTabLabel()}
-                 </h1>
-                 <div className="px-3 py-1 bg-slate-100 text-slate-400 text-xs font-black rounded-lg">
-                    {activeTab === 'stats' ? 'LIVE' : `${displayedQRs.length} TOTAL`}
-                 </div>
+            {/* Page Header */}
+            <div className="flex items-end justify-between">
+              <div className="space-y-1.5">
+                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                  {activeTab === 'stats' ? 'Analytics' : activeTab === 'leads' ? 'Leads' : getTabLabel()}
+                </h1>
+                <p className="text-[14px] text-slate-500 font-medium">
+                  {activeTab === 'stats' 
+                    ? 'Track scan performance and visitor insights' 
+                    : activeTab === 'leads'
+                    ? 'Manage captured lead data'
+                    : activeTab === 'pricing'
+                    ? 'Choose the plan that fits your needs'
+                    : `${displayedQRs.length} code${displayedQRs.length !== 1 ? 's' : ''} in this view`}
+                </p>
               </div>
-              <div className="flex items-center gap-4">
-                 <button className="flex items-center gap-2 px-5 py-3.5 bg-white border border-slate-100 rounded-2xl font-bold text-slate-600 hover:border-blue-600 transition-all shadow-sm">
-                    <Calendar className="w-4 h-4" /> {activeTab === 'stats' ? 'Last 30 Days' : 'Last Created'} <ChevronDown className="w-4 h-4 ml-2" />
-                 </button>
-              </div>
-           </div>
+              {!['stats', 'leads', 'pricing'].includes(activeTab) && (
+                <button
+                  onClick={() => navigate('/dashboard/create')}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[13px] font-semibold transition-all duration-200 active:scale-[0.97] shadow-sm"
+                >
+                  <Plus className="w-4 h-4" /> New Code
+                </button>
+              )}
+            </div>
 
-           {activeTab === 'pricing' ? (
-             <PricingPanel />
-           ) : activeTab === 'stats' ? (
-             <StatsPanel codes={qrCodes} />
-           ) : activeTab === 'leads' ? (
-             <LeadsPanel codes={qrCodes} />
-           ) : (
-             <>
-               {/* Empty State */}
-               {displayedQRs.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-24 text-center">
-                    <div className="w-24 h-24 bg-slate-100 rounded-[32px] flex items-center justify-center mb-8">
-                      <QrCode className="w-12 h-12 text-slate-300" />
+            {/* Tab Content */}
+            {activeTab === 'pricing' ? (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <PricingPanel />
+              </div>
+            ) : activeTab === 'stats' ? (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <StatsPanel codes={qrCodes} />
+              </div>
+            ) : activeTab === 'leads' ? (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <LeadsPanel codes={qrCodes} />
+              </div>
+            ) : (
+              <div className="animate-in fade-in duration-400 space-y-6">
+
+                {/* ─── Stats Overview Cards ─── */}
+                {(() => {
+                  const totalScans = qrCodes.reduce((sum, qr) => sum + (qr.scans || 0), 0);
+                  const avgScans = qrCodes.length > 0 ? Math.round(totalScans / qrCodes.length) : 0;
+                  const statsCards = [
+                    { label: 'Total QR Codes', value: qrCodes.length, icon: QrCode, color: 'blue', change: '+12%' },
+                    { label: 'Total Scans', value: totalScans.toLocaleString(), icon: Eye, color: 'emerald', change: '+8.2%' },
+                    { label: 'Active Codes', value: activeQRs.length, icon: Activity, color: 'violet', change: '+3' },
+                    { label: 'Avg. Scans / Code', value: avgScans.toLocaleString(), icon: TrendingUp, color: 'amber', change: '+5.1%' },
+                  ];
+                  const colorMap: Record<string, { iconBg: string; iconText: string; changeBg: string; changeText: string }> = {
+                    blue:    { iconBg: 'bg-blue-50',    iconText: 'text-blue-600',    changeBg: 'bg-blue-50',    changeText: 'text-blue-600' },
+                    emerald: { iconBg: 'bg-emerald-50', iconText: 'text-emerald-600', changeBg: 'bg-emerald-50', changeText: 'text-emerald-600' },
+                    violet:  { iconBg: 'bg-violet-50',  iconText: 'text-violet-600',  changeBg: 'bg-violet-50',  changeText: 'text-violet-600' },
+                    amber:   { iconBg: 'bg-amber-50',   iconText: 'text-amber-600',   changeBg: 'bg-amber-50',   changeText: 'text-amber-600' },
+                  };
+                  return (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      {statsCards.map((stat) => {
+                        const c = colorMap[stat.color];
+                        return (
+                          <div key={stat.label} className="bg-white rounded-2xl border border-slate-200/60 p-5 hover:shadow-md hover:border-slate-300/60 transition-all duration-200 group">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105', c.iconBg)}>
+                                <stat.icon className={cn('w-5 h-5', c.iconText)} />
+                              </div>
+                              <span className={cn('text-[11px] font-semibold px-2 py-1 rounded-lg', c.changeBg, c.changeText)}>
+                                {stat.change}
+                              </span>
+                            </div>
+                            <p className="text-2xl font-bold text-slate-900 tracking-tight leading-none mb-1">{stat.value}</p>
+                            <p className="text-[12px] font-medium text-slate-400">{stat.label}</p>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <h3 className="text-2xl font-black text-slate-900 mb-2">
-                      {activeTab === 'archived' ? 'No archived QR codes' : 'No QR codes yet'}
+                  );
+                })()}
+
+                {/* Empty State */}
+                {displayedQRs.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-2xl border border-slate-200/60 border-dashed relative group overflow-hidden">
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-300">
+                      <QrCode className="w-10 h-10 text-blue-400" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">
+                      {activeTab === 'archived' ? 'No archived codes' : 'Create your first QR code'}
                     </h3>
-                    <p className="text-slate-400 font-medium mb-8 max-w-sm">
+                    <p className="text-[14px] text-slate-500 mb-8 max-w-sm mx-auto">
                       {activeTab === 'archived' 
-                        ? 'QR codes you archive will appear here.' 
-                        : 'Create your first QR code to get started with your digital marketing journey.'}
+                        ? 'Archived codes will appear here for safekeeping.' 
+                        : 'Generate trackable, dynamic QR codes in seconds.'}
                     </p>
                     {activeTab !== 'archived' && (
                       <button 
                         onClick={() => navigate('/dashboard/create')}
-                        className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black flex items-center gap-3 shadow-xl shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all"
+                        className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold text-[13px] flex items-center gap-2.5 shadow-lg shadow-blue-600/20 hover:shadow-xl active:scale-[0.97] transition-all"
                       >
-                        <Plus className="w-5 h-5" /> Create Your First QR Code
+                        <Plus className="w-4 h-4 stroke-[2.5]" /> Get Started
                       </button>
                     )}
                   </div>
-               )}
+                )}
 
-               {/* QR Grid */}
-               <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-8 pb-10" ref={menuRef}>
+                {/* ─── QR Code Grid ─── */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" ref={menuRef}>
                   {displayedQRs.map((qr) => {
-                    const color = getColorFromType(qr.type);
+                    const typeStyle = getTypeStyles(qr.type);
                     return (
-                     <div key={qr.id} className="bg-white rounded-[40px] border border-slate-100 hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 group flex flex-col relative z-10 hover:z-20">
-                        <div className="p-8 pb-0 flex items-start justify-between relative">
-                           <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center bg-${color}-100 text-${color}-600`}>
-                                 <ChevronRight className="w-5 h-5 rotate-[-45deg]" />
-                              </div>
-                              <div>
-                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{qr.type}</p>
-                                 {renamingQR === qr.id ? (
-                                   <input
-                                     autoFocus
-                                     value={renameValue}
-                                     onChange={(e) => setRenameValue(e.target.value)}
-                                     onKeyDown={(e) => { if (e.key === 'Enter') handleRename(qr.id); if (e.key === 'Escape') setRenamingQR(null); }}
-                                     onBlur={() => handleRename(qr.id)}
-                                     className="text-xl font-bold text-slate-900 outline-none border-b-2 border-blue-600 bg-transparent w-full"
-                                   />
-                                 ) : (
-                                   <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2 group-hover:text-blue-600 transition-colors cursor-pointer"
-                                       onClick={() => { setRenamingQR(qr.id); setRenameValue(qr.name); }}>
-                                      {qr.name}
-                                      <Edit2 className="w-3 h-3 transition-opacity" />
-                                   </h3>
-                                 )}
-                              </div>
-                           </div>
-                           {/* Three-Dot Menu */}
-                           <div className="relative">
-                             <button 
-                               onClick={() => setMenuOpen(menuOpen === qr.id ? null : qr.id)}
-                               className="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all"
-                             >
-                               <MoreVertical className="w-5 h-5" />
-                             </button>
-                             {menuOpen === qr.id && (
-                               <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl shadow-slate-200/50 border border-slate-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-200">
-                                  <button onClick={() => { navigate(`/dashboard/edit/${qr.id}/content`); setMenuOpen(null); }}
-                                    className="w-full flex items-center gap-3 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all">
-                                    <RefreshCw className="w-4 h-4" /> Change QR Code Type
-                                  </button>
-                                  {/* Move to Folder submenu */}
-                                  <div className="relative">
-                                    <button onClick={() => setFolderMenuOpen(folderMenuOpen === qr.id ? null : qr.id)}
-                                      className="w-full flex items-center gap-3 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all">
-                                      <FolderOpen className="w-4 h-4" /> Move to folder <ArrowRight className="w-3 h-3 ml-auto text-slate-300" />
-                                    </button>
-                                    {folderMenuOpen === qr.id && (
-                                      <div className="absolute right-full top-0 mr-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-[60] animate-in slide-in-from-right-4 duration-300">
-                                        <button onClick={() => { moveToFolder(qr.id, undefined); setFolderMenuOpen(null); setMenuOpen(null); }}
-                                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-500 hover:bg-slate-50 hover:text-blue-600">
-                                          <X className="w-3.5 h-3.5" /> No Folder
-                                        </button>
-                                        {folders.map(f => (
-                                          <button key={f.id} onClick={() => { moveToFolder(qr.id, f.id); setFolderMenuOpen(null); setMenuOpen(null); }}
-                                            className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold hover:bg-slate-50 transition-all",
-                                              qr.folderId === f.id ? "text-blue-600 bg-blue-50/50" : "text-slate-600 hover:text-blue-600")}>
-                                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{backgroundColor: f.color}} />
-                                            {f.name}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <button onClick={() => { duplicateQR(qr.id); setMenuOpen(null); }}
-                                    className="w-full flex items-center gap-3 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all">
-                                    <Copy className="w-4 h-4" /> Duplicate
-                              </button>
-                              <button onClick={() => { window.print(); setMenuOpen(null); }}
-                                className="w-full flex items-center gap-3 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all">
-                                <Printer className="w-4 h-4" /> Print QR Code
-                              </button>
-                              <div className="my-2 border-t border-slate-100" />
-                              <button onClick={() => { qr.status === 'archived' ? unarchiveQR(qr.id) : archiveQR(qr.id); setMenuOpen(null); }}
-                                className="w-full flex items-center gap-3 px-5 py-3 text-sm font-bold text-blue-600 hover:bg-blue-50 transition-all">
-                                <Archive className="w-4 h-4" /> {qr.status === 'archived' ? 'Unarchive' : 'Archive'}
-                              </button>
-                              <button onClick={() => { deleteQR(qr.id); setMenuOpen(null); }}
-                                className="w-full flex items-center gap-3 px-5 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-all">
-                                <Trash2 className="w-4 h-4" /> Delete
-                              </button>
-                               </div>
-                             )}
-                           </div>
-                        </div>
-
-                        <div className="p-8 flex-1">
-                           <div className="flex gap-4 items-center bg-slate-50/50 p-6 rounded-[32px] border border-slate-50 relative overflow-hidden">
-                              <div className="w-28 h-28 bg-white rounded-2xl shadow-inner border border-slate-100 shrink-0 relative overflow-hidden group/qr flex items-center justify-center p-2">
-                                 <DashboardQRPreview config={qr.config} shortUrl={qr.shortUrl} />
-                                 <div className="absolute inset-0 bg-blue-600/60 backdrop-blur-sm transition-opacity flex items-center justify-center">
-                                    <ExternalLink className="text-white w-8 h-8" />
-                                 </div>
-                              </div>
-                              <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch py-1">
-                                 <div className="space-y-2.5">
-                                    <div className="space-y-0.5">
-                                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Last Updated</p>
-                                       <p className="text-[12px] font-bold text-slate-600 truncate">{formatDate(qr.updatedAt)}</p>
-                                    </div>
-                                    <a 
-                                      href={qr.shortUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center gap-1.5 text-blue-600 truncate hover:underline group/link"
-                                    >
-                                       <QrCode className="w-3.5 h-3.5 shrink-0 group-hover/link:animate-pulse" />
-                                       <span className="text-[12px] font-black tracking-tight truncate">
-                                          {typeof qr.shortUrl === 'string' ? qr.shortUrl.replace(/^https?:\/\//, '') : ''}
-                                       </span>
-                                    </a>
-                                    {qr.config.data.type === 'url' && qr.config.data.url && (
-                                      <div className="flex items-center gap-2 group/edit-container">
-                                        <a 
-                                          href={qr.config.data.url.startsWith('http') ? qr.config.data.url : `https://${qr.config.data.url}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="flex items-center gap-1.5 text-slate-400 hover:text-blue-600 transition-colors group/dest"
-                                        >
-                                           <Globe className="w-3 h-3 shrink-0" />
-                                           <span className="text-[9px] font-bold truncate underline-offset-2 hover:underline">{qr.config.data.url}</span>
-                                        </a>
-                                        <button 
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setEditingURLQR(qr.id);
-                                            setNewURLValue(qr.config.data.url || '');
-                                          }}
-                                          className="p-1 rounded bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-blue-600 transition-all shadow-sm border border-slate-100"
-                                          title="Quick Edit URL"
-                                        >
-                                          <Edit3 className="w-2.5 h-2.5" />
-                                        </button>
-                                      </div>
-                                    )}
-                                 </div>
-                                 
-                                 <div className="flex items-center gap-3 pt-3 mt-auto border-t border-slate-100/50">
-                                    <button 
-                                      onClick={() => navigate(`/dashboard/edit/${qr.id}/content`)}
-                                      className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 transition-colors shrink-0"
-                                    >
-                                       <Edit2 className="w-2.5 h-2.5" /> Edit
-                                    </button>
-                                    <div className="w-1 h-1 bg-slate-200 rounded-full shrink-0" />
-                                    <button 
-                                      onClick={() => navigate(`/dashboard/edit/${qr.id}/design`)}
-                                      className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 transition-colors shrink-0"
-                                    >
-                                       <Brush className="w-2.5 h-2.5" /> Design
-                                    </button>
-                                 </div>
-                              </div>
-                           </div>
-                        </div>
-
-                        <div className="px-8 pb-8 flex flex-col gap-4">
-                           <div className="flex gap-4">
-                              <button 
-                                onClick={() => setViewingScansQR({ id: qr.id, name: qr.name })}
-                                className="flex-1 px-5 py-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all font-bold text-slate-600"
-                              >
-                                 <BarChart3 className="w-4 h-4" />
-                                 <span className="text-blue-600">{qr.scans}</span> Scans
-                              </button>
-                              
-                              {qr.type === 'form' && (
-                                <button 
-                                  onClick={() => navigate(`/dashboard/qr/${qr.id}/submissions`)}
-                                  className="flex-1 px-5 py-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all font-bold text-slate-600"
-                                >
-                                   <ClipboardList className="w-4 h-4" />
-                                   <span className="text-emerald-600">{qr.form?._count?.submissions || 0}</span> Responses
-                                </button>
-                              )}
-                           </div>
-
-                           <div className="relative">
-                             <button 
-                               onClick={() => setDownloadMenuOpen(downloadMenuOpen === qr.id ? null : qr.id)}
-                               className="w-full px-5 py-4 bg-blue-600 text-white rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-blue-100 font-black text-xs uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all"
-                             >
-                                <ChevronDown className={cn("w-4 h-4 stroke-[3] transition-transform", downloadMenuOpen === qr.id && "rotate-180")} /> Download QR Code
-                             </button>
-                             
-                             {downloadMenuOpen === qr.id && (
-                               <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-2xl shadow-2xl border border-slate-100 py-3 z-[60] animate-in slide-in-from-bottom-2 duration-200">
-                                  <div className="px-4 mb-2">
-                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Format</p>
-                                  </div>
-                                  <div className="grid grid-cols-1 gap-1">
-                                     {[
-                                       { label: 'PNG Image', ext: 'png', desc: 'High quality, transparent' },
-                                       { label: 'JPG Image', ext: 'jpeg', desc: 'Small file size' },
-                                       { label: 'SVG Vector', ext: 'svg', desc: 'Scalable (No Frame)' },
-                                       { label: 'PDF Document', ext: 'pdf', desc: 'Print ready' },
-                                       { label: 'EPS Format', ext: 'eps', desc: 'Professional use' }
-                                     ].map((format) => (
-                                       <button
-                                         key={format.ext}
-                                         onClick={() => {
-                                           if (format.ext === 'pdf' || format.ext === 'eps') {
-                                             toast.success(`${format.label} will be ready in a moment...`);
-                                             handleDownload(qr, 'png'); // Fallback for now or implement if possible
-                                           } else {
-                                             handleDownload(qr, format.ext as any);
-                                           }
-                                           setDownloadMenuOpen(null);
-                                         }}
-                                         className="w-full flex flex-col items-start px-5 py-2.5 hover:bg-blue-50 transition-all group"
-                                       >
-                                          <span className="text-sm font-bold text-slate-700 group-hover:text-blue-600">{format.label}</span>
-                                          <span className="text-[10px] text-slate-400 group-hover:text-blue-400">{format.desc}</span>
-                                       </button>
-                                     ))}
-                                  </div>
-                               </div>
-                             )}
-                           </div>
-                        </div>
-
-                        {/* Status badge */}
-                        {qr.status === 'archived' && (
-                          <div className="absolute top-4 right-20 px-3 py-1 bg-amber-100 text-amber-700 text-[9px] font-black uppercase tracking-widest rounded-full">
-                            Archived
-                          </div>
+                      <div 
+                        key={qr.id} 
+                        className={cn(
+                          "group relative bg-white rounded-2xl border border-slate-200/60 transition-all duration-300 flex flex-col overflow-hidden",
+                          "hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-300",
+                          qr.status === 'archived' && "opacity-50 hover:opacity-75"
                         )}
-                     </div>
+                      >
+                        {/* Colored accent bar */}
+                        <div className={cn('h-1 w-full', typeStyle.dot)} />
+
+                        {/* ── QR Preview — centered & prominent ── */}
+                        <div className="px-6 pt-5 pb-3">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                              <span className={cn(
+                                'text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md',
+                                typeStyle.bg, typeStyle.text
+                              )}>
+                                {qr.type}
+                              </span>
+                              {qr.status === 'archived' && (
+                                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-1 rounded-md">Archived</span>
+                              )}
+                            </div>
+                            {/* Menu */}
+                            <div className="relative">
+                              <button 
+                                onClick={() => setMenuOpen(menuOpen === qr.id ? null : qr.id)} 
+                                className="p-1.5 text-slate-300 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-all"
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+                              {menuOpen === qr.id && (
+                                <div className="absolute top-8 right-0 w-52 bg-white rounded-xl shadow-xl border border-slate-200/80 py-1.5 z-[100] animate-in slide-in-from-top-1 fade-in duration-150">
+                                  <button onClick={() => { navigate(`/dashboard/edit/${qr.id}/content`); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
+                                    <Edit3 className="w-4 h-4 text-slate-400" /> Edit Content
+                                  </button>
+                                  <button onClick={() => { navigate(`/dashboard/edit/${qr.id}/design`); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
+                                    <Brush className="w-4 h-4 text-slate-400" /> Edit Design
+                                  </button>
+                                  <button onClick={() => { duplicateQR(qr.id); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
+                                    <Copy className="w-4 h-4 text-slate-400" /> Duplicate
+                                  </button>
+                                  <div className="h-px bg-slate-100 my-1" />
+                                  {folders.length > 0 && (
+                                    <div className="relative">
+                                      <button 
+                                        onClick={() => setFolderMenuOpen(folderMenuOpen === qr.id ? null : qr.id)}
+                                        className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors"
+                                      >
+                                        <FolderOpen className="w-4 h-4 text-slate-400" /> Move to...
+                                        <ChevronRight className="w-3 h-3 ml-auto text-slate-400" />
+                                      </button>
+                                      {folderMenuOpen === qr.id && (
+                                        <div className="absolute left-full top-0 ml-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200/80 py-1.5 z-[101]">
+                                          <button onClick={() => { moveToFolder(qr.id, undefined); setFolderMenuOpen(null); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 text-slate-500">
+                                            No folder
+                                          </button>
+                                          {folders.map(f => (
+                                            <button key={f.id} onClick={() => { moveToFolder(qr.id, f.id); setFolderMenuOpen(null); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 text-slate-700 flex items-center gap-2">
+                                              <div className="w-2 h-2 rounded-full" style={{backgroundColor: f.color}} />
+                                              {f.name}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  <div className="h-px bg-slate-100 my-1" />
+                                  <button onClick={() => { qr.status === 'archived' ? unarchiveQR(qr.id) : archiveQR(qr.id); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-indigo-600 transition-colors">
+                                    <Archive className="w-4 h-4" /> {qr.status === 'archived' ? 'Restore' : 'Archive'}
+                                  </button>
+                                  <button onClick={() => { deleteQR(qr.id); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-red-50 flex items-center gap-3 text-red-500 transition-colors">
+                                    <Trash2 className="w-4 h-4" /> Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Large QR Preview */}
+                          <div className="flex justify-center mb-4">
+                            <div className="w-[140px] h-[140px] bg-gradient-to-br from-slate-50 to-white rounded-2xl flex items-center justify-center p-3 border border-slate-100 group-hover:border-slate-200 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-slate-100/80 relative">
+                              <DashboardQRPreview config={qr.config} shortUrl={qr.shortUrl} />
+                            </div>
+                          </div>
+
+                          {/* Name + URL */}
+                          <div className="text-center mb-3">
+                            <h3 className="text-[15px] font-bold text-slate-900 truncate leading-snug mb-1 px-2">{qr.name}</h3>
+                            <div className="flex items-center justify-center gap-1.5 text-slate-400">
+                              <Globe className="w-3 h-3 shrink-0" />
+                              <p className="text-[11px] font-medium truncate max-w-[200px]">{qr.shortUrl.replace(/^https?:\/\//, '')}</p>
+                            </div>
+                          </div>
+
+                          {/* Mini Stats Row */}
+                          <div className="flex items-center justify-center gap-4 mb-1">
+                            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
+                              <Calendar className="w-3 h-3" />
+                              {formatDate(qr.updatedAt).split(',')[0]}
+                            </div>
+                            <div className="w-px h-3 bg-slate-200" />
+                            <button 
+                              onClick={() => setViewingScansQR({ id: qr.id, name: qr.name })}
+                              className="flex items-center gap-1.5 text-[11px] font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                            >
+                              <TrendingUp className="w-3 h-3" />
+                              {qr.scans} scans
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* ── Card Action Bar ── */}
+                        <div className="flex items-center border-t border-slate-100 divide-x divide-slate-100 mt-auto">
+                          <button 
+                            onClick={() => window.open(qr.shortUrl, '_blank')} 
+                            className="flex-1 py-3 text-[12px] font-semibold text-slate-500 hover:text-blue-600 hover:bg-blue-50/50 flex items-center justify-center gap-2 transition-all duration-150"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" /> Preview
+                          </button>
+                          <div className="relative flex-1">
+                            <button 
+                              onClick={() => setDownloadMenuOpen(downloadMenuOpen === qr.id ? null : qr.id)} 
+                              className="w-full py-3 text-[12px] font-semibold text-slate-500 hover:text-emerald-600 hover:bg-emerald-50/50 flex items-center justify-center gap-2 transition-all duration-150"
+                            >
+                              <Download className="w-3.5 h-3.5" /> Export
+                            </button>
+                            {downloadMenuOpen === qr.id && (
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 bg-white rounded-xl shadow-xl border border-slate-200/80 py-1.5 z-[100] animate-in slide-in-from-bottom-2 fade-in duration-150">
+                                {(['png', 'svg', 'jpeg', 'webp'] as const).map(ext => (
+                                  <button 
+                                    key={ext}
+                                    onClick={() => { handleDownload(qr, ext); setDownloadMenuOpen(null); }} 
+                                    className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 text-slate-700 uppercase flex items-center gap-2 transition-colors"
+                                  >
+                                    <div className="w-5 h-5 bg-slate-100 rounded text-[9px] font-bold flex items-center justify-center text-slate-500">.{ext}</div>
+                                    {ext.toUpperCase()}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <button 
+                            onClick={() => navigate(`/dashboard/edit/${qr.id}/design`)} 
+                            className="flex-1 py-3 text-[12px] font-semibold text-slate-500 hover:text-violet-600 hover:bg-violet-50/50 flex items-center justify-center gap-2 transition-all duration-150"
+                          >
+                            <Brush className="w-3.5 h-3.5" /> Design
+                          </button>
+                        </div>
+                      </div>
                     );
                   })}
-               </div>
-             </>
-           )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </main>
 
       {/* Quick URL Edit Modal */}
       {editingURLQR && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setEditingURLQR(null)} />
-          <div className="relative w-full max-w-md bg-white rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                    <Globe className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900 leading-none">Update URL</h3>
-                    <p className="text-xs font-bold text-slate-400 mt-1">Quickly change the destination</p>
-                  </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm" onClick={() => setEditingURLQR(null)} />
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200/60 overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                  <RefreshCw className="w-4 h-4" />
                 </div>
-                <button 
-                  onClick={() => setEditingURLQR(null)}
-                  className="p-2 hover:bg-slate-50 rounded-xl text-slate-400 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <h3 className="text-[15px] font-semibold text-slate-900">Update Destination</h3>
               </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Destination URL</label>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors">
-                      <Globe className="w-4 h-4" />
-                    </div>
-                    <input
-                      type="text"
-                      value={newURLValue}
-                      onChange={(e) => setNewURLValue(e.target.value)}
-                      placeholder="https://example.com"
-                      autoFocus
-                      onKeyDown={(e) => e.key === 'Enter' && handleURLUpdate()}
-                      className="w-full pl-11 pr-4 py-4 bg-slate-50 border-2 border-transparent focus:border-blue-600 focus:bg-white rounded-2xl outline-none transition-all font-bold text-slate-900 placeholder:text-slate-300"
-                    />
-                  </div>
+              <button onClick={() => setEditingURLQR(null)} className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <div className="space-y-2">
+                <label className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider block">URL</label>
+                <div className="relative flex items-center">
+                  <Globe className="absolute left-3.5 w-4 h-4 text-slate-400" />
+                  <input 
+                    autoFocus
+                    value={newURLValue}
+                    onChange={(e) => setNewURLValue(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleURLUpdate()}
+                    placeholder="https://example.com"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-50 rounded-xl py-2.5 pl-10 pr-4 text-[13px] font-medium text-slate-900 outline-none transition-all"
+                  />
                 </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={() => setEditingURLQR(null)}
-                    className="flex-1 py-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-2xl font-bold transition-all active:scale-95"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleURLUpdate}
-                    disabled={!newURLValue.trim()}
-                    className="flex-[2] py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-100 transition-all active:scale-95 flex items-center justify-center gap-2"
-                  >
-                    Save Changes <ArrowRight className="w-4 h-4 stroke-[3]" />
-                  </button>
-                </div>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setEditingURLQR(null)} className="flex-1 py-2.5 bg-slate-50 text-slate-600 rounded-xl font-semibold text-[13px] hover:bg-slate-100 border border-slate-200 transition-all">Cancel</button>
+                <button onClick={handleURLUpdate} className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-semibold text-[13px] hover:bg-blue-700 transition-all shadow-sm">Update</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Scans Detail Modal */}
+      {/* Scans Analytics Modal */}
       {viewingScansQR && (
         <ScansModal 
-          qrId={viewingScansQR.id}
-          qrName={viewingScansQR.name}
-          onClose={() => setViewingScansQR(null)}
+          qrId={viewingScansQR.id} 
+          qrName={viewingScansQR.name} 
+          onClose={() => setViewingScansQR(null)} 
         />
       )}
     </div>
