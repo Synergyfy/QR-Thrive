@@ -17,11 +17,49 @@
   "headers": [
     {
       "source": "/(.*)",
+      "has": [
+        { "type": "header", "key": "Origin", "value": "https://test.qrthrive.com" }
+      ],
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "https://test.qrthrive.com" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        { "type": "header", "key": "Origin", "value": "https://qrthrive.vercel.app" }
+      ],
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "https://qrthrive.vercel.app" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        { "type": "header", "key": "Origin", "value": "https://www.qrthrive.com" }
+      ],
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "https://www.qrthrive.com" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        { "type": "header", "key": "Origin", "value": "http://localhost:5173" }
+      ],
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "http://localhost:5173" }
+      ]
+    },
+    {
+      "source": "/(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Credentials", "value": "true" },
-        { "key": "Access-Control-Allow-Origin", "value": "https://qrthrive.vercel.app" },
         { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
-        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" }
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" }
       ]
     }
   ]

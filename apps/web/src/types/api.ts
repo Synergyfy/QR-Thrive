@@ -6,11 +6,98 @@ export interface User {
   firstName: string;
   lastName: string;
   role: 'USER' | 'ADMIN';
-  plan: 'FREE' | 'PRO';
+  planId?: string;
+  plan?: Plan;
+  subscriptionStatus?: 'active' | 'canceled' | 'past_due' | 'trialing' | 'non-renewing' | null;
+  billingCycle?: 'monthly' | 'quarterly' | 'yearly' | null;
+  trialStartedAt?: string | null;
+  trialEndsAt?: string | null;
+  hasUsedTrial?: boolean;
+  isBanned?: boolean;
 }
+
 
 export interface AuthResponse {
   user: User;
+  isNewUser?: boolean;
+}
+
+export type PricingTier = 'HIGH' | 'MIDDLE' | 'LOW';
+export type BillingCycle = 'MONTHLY' | 'QUARTERLY' | 'YEARLY' | 'LIFETIME';
+export type PriceStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+
+export interface PriceBook {
+  id: string;
+  planId: string;
+  tier: PricingTier;
+  currencyCode: string;
+  billingCycle: BillingCycle;
+  price: number;
+  status: PriceStatus;
+  activeFrom?: string;
+  activeTo?: string;
+  stripePriceId?: string;
+  paystackPlanCode?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Country {
+  code: string;
+  name: string;
+  tier: PricingTier;
+  currencyCode: string;
+  currencySymbol: string;
+  taxRate: number;
+}
+
+export interface Plan {
+  id: string;
+  name: string;
+  description: string | null;
+  qrCodeLimit: number;
+  qrCodeTypes: string[];
+  isPopular: boolean;
+  isDefault: boolean;
+  isFree: boolean;
+  trialDays: number;
+  isActive: boolean;
+  priceBooks: PriceBook[];
+}
+
+export interface PricePoint {
+  amount: number;
+  currency: string;
+  currencySymbol: string;
+  priceBookId: string;
+  gatewayIds: {
+    stripe?: string;
+    paystack?: string;
+  };
+}
+
+export interface PlanPricing {
+  monthly?: PricePoint;
+  quarterly?: PricePoint;
+  yearly?: PricePoint;
+}
+
+export interface PublicPlan {
+  id: string;
+  name: string;
+  description: string | null;
+  qrCodeLimit: number;
+  qrCodeTypes: string[];
+  isPopular: boolean;
+  isDefault: boolean;
+  isFree: boolean;
+  trialDays: number;
+  pricing: PlanPricing;
+}
+
+export interface PricingConfig {
+  quarterlyDiscount: number;
+  yearlyDiscount: number;
 }
 
 export interface BackendFolder {
@@ -38,6 +125,7 @@ export interface CreateQRCodeDto {
   width?: number;
   height?: number;
   margin?: number;
+  linkedQRCodeId?: string;
 }
 
 export interface BackendQRCode {
@@ -57,6 +145,13 @@ export interface BackendQRCode {
   width: number;
   height: number;
   margin: number;
+  linkedQRCodeId?: string;
+  linkedQRCode?: {
+    id: string;
+    shortId: string;
+    name: string;
+    type: string;
+  };
   createdAt: string;
   updatedAt: string;
   scans: number;
@@ -101,12 +196,19 @@ export interface AdminStats {
   totalScans: number;
   estimatedRevenue: number;
   chartData: Array<{ name: string; qrs: number }>;
+  trends: {
+    users: number;
+    scans: number;
+    qrs: number;
+    revenue: number;
+  };
 }
 
 export interface AdminUser extends User {
   name: string;
   qrs: number;
-  subscriptionStatus: string | null;
+  subscriptionStatus: 'active' | 'canceled' | 'past_due' | 'trialing' | null | undefined;
+  isBanned: boolean;
   createdAt: string;
 }
 
@@ -118,9 +220,8 @@ export interface AdminUsersResponse {
 
 export interface SystemConfig {
   id: number;
-  monthlyPrice: number;
-  quarterlyPrice: number;
-  yearlyPrice: number;
+  quarterlyDiscount: number;
+  yearlyDiscount: number;
   heroTitle: string;
   heroSubtitle: string;
   features: string[];

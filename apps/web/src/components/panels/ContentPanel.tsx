@@ -30,12 +30,15 @@ import {
   Users,
   CheckCircle,
   Clock,
-  Image as ImageIcon
+  Image as ImageIcon,
+  QrCode
 } from 'lucide-react';
 import type { QRConfiguration, QRData, QRType } from '../../types/qr';
 import FormBuilder from '../FormBuilder';
 import { countries } from '../../constants/countries';
 import ImageEditor from '../ImageEditor';
+
+import { useQRCodes, useCurrentUser } from '../../hooks/useApi';
 
 interface ContentPanelProps {
   config: QRConfiguration;
@@ -73,8 +76,129 @@ const CollapsibleSection = ({ id, title, subtitle, icon: Icon, children, classNa
   );
 };
 
+const QRPickerDropdown = ({ currentData, updateData, typeKey }: any) => {
+  const { data: qrCodes = [] } = useQRCodes();
+  return (
+    <div className="space-y-2 animate-in fade-in duration-300">
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Connect to another QR Code</p>
+      <select
+        className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm appearance-none cursor-pointer"
+        value={currentData.qrLinkId || ''}
+        onChange={(e) => updateData({ [typeKey]: { ...currentData, qrLinkId: e.target.value } })}
+      >
+        <option value="">Select a QR code...</option>
+        {qrCodes.map((qr: any) => (
+           <option key={qr.id} value={qr.id}>{qr.name || qr.type} {qr.shortId ? `(${qr.shortId})` : ''}</option>
+        ))}
+      </select>
+      <p className="text-[9px] text-gray-400 font-medium">When the customer clicks the CTA, they will be directed to the linked QR experience.</p>
+    </div>
+  );
+};
+
+const QROptionsList = () => {
+  const { data: qrCodes = [] } = useQRCodes();
+  return (
+    <>
+      {qrCodes.map((qr: any) => (
+        <option key={qr.id} value={qr.id}>{qr.name || qr.type} {qr.shortId ? `(${qr.shortId})` : ''}</option>
+      ))}
+    </>
+  );
+}
+
+const CTADestinationPicker = ({
+  data,
+  updateData,
+  typeKey, // e.g., 'pdf', 'mp3', 'video', 'imageGalleryInfo', 'booking', 'coupon'
+  urlKey = 'buttonUrl',
+  buttonLabelKey = 'buttonText',
+  showLabelInput = true
+}: any) => {
+  const currentData = data[typeKey] || {};
+  const destinationMode = currentData.destinationMode || 'url';
+  const isDashboard = window.location.pathname.includes('/dashboard');
+
+  return (
+    <div className="space-y-6">
+      {showLabelInput && (
+        <div className="space-y-2">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Text</p>
+          <input 
+            type="text" 
+            className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+            placeholder="e.g. Learn More" 
+            value={currentData[buttonLabelKey] || ''} 
+            onChange={(e) => updateData({ [typeKey]: { ...currentData, [buttonLabelKey]: e.target.value } })} 
+          />
+        </div>
+      )}
+
+      {isDashboard ? (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Destination Mode</p>
+            <div className="grid grid-cols-2 gap-2 bg-gray-50 p-1.5 rounded-2xl">
+              <button
+                onClick={() => updateData({ [typeKey]: { ...currentData, destinationMode: 'url' } })}
+                className={cn(
+                  "flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl text-center transition-all",
+                  destinationMode === 'url' ? "bg-white shadow-lg shadow-blue-100/50 border border-blue-100 scale-[1.02]" : "hover:bg-white/50 border border-transparent"
+                )}
+              >
+                <span className="text-base">🔗</span>
+                <span className={cn("text-[8px] font-black uppercase tracking-widest", destinationMode === 'url' ? "text-blue-600" : "text-gray-400")}>External URL</span>
+              </button>
+              <button
+                onClick={() => updateData({ [typeKey]: { ...currentData, destinationMode: 'qr_link' } })}
+                className={cn(
+                  "flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl text-center transition-all",
+                  destinationMode === 'qr_link' ? "bg-white shadow-lg shadow-blue-100/50 border border-blue-100 scale-[1.02]" : "hover:bg-white/50 border border-transparent"
+                )}
+              >
+                <span className="text-base">⚡</span>
+                <span className={cn("text-[8px] font-black uppercase tracking-widest", destinationMode === 'qr_link' ? "text-blue-600" : "text-gray-400")}>Connect QR</span>
+              </button>
+            </div>
+          </div>
+
+          {destinationMode === 'url' && (
+            <div className="space-y-2 animate-in fade-in duration-300">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Link URL</p>
+              <input 
+                type="url" 
+                className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                placeholder="https://..." 
+                value={currentData[urlKey] || ''} 
+                onChange={(e) => updateData({ [typeKey]: { ...currentData, [urlKey]: e.target.value } })} 
+              />
+            </div>
+          )}
+
+          {destinationMode === 'qr_link' && (
+            <QRPickerDropdown currentData={currentData} updateData={updateData} typeKey={typeKey} />
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Link URL</p>
+          <input 
+            type="url" 
+            className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+            placeholder="https://..." 
+            value={currentData[urlKey] || ''} 
+            onChange={(e) => updateData({ [typeKey]: { ...currentData, [urlKey]: e.target.value } })} 
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTypeSelector }) => {
   const data = config.data;
+  const { data: userData } = useCurrentUser();
+  const user = userData?.user;
   const [uploading, setUploading] = useState<string | null>(null);
   const [editingImage, setEditingImage] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -212,25 +336,73 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
       <div className="animate-in fade-in slide-in-from-top-2 duration-500">
 
         <div className="bg-white rounded-[24px] p-1 border border-gray-100 shadow-sm">
-           <div className="p-6">
+           <div className="p-6 space-y-8">
+            {/* QR Code Name Section - Applied to ALL types */}
+            <CollapsibleSection 
+              id="qr-name-section" 
+              title="Name of the QR Code" 
+              subtitle="Give a name to your QR code." 
+              icon={QrCode} 
+              isExpanded={expandedSections['qr-name-section'] !== false} 
+              onToggle={toggleSection}
+            >
+              <div className="space-y-2">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Name</p>
+                <input 
+                  type="text" 
+                  value={data.name || ''} 
+                  onChange={(e) => updateData({ name: e.target.value })}
+                  placeholder="e.g. My Website QR"
+                  className="w-full px-5 py-4 bg-blue-50/30 border-2 border-blue-100/50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-bold transition-all placeholder:text-gray-300"
+                />
+              </div>
+            </CollapsibleSection>
+
+
+
             {data.type === 'url' && (
-              <div className="space-y-3">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Website Address</p>
-                <div className="relative group">
-                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors">
-                      <Globe className="w-5 h-5" />
-                   </div>
-                   <input
-                    type="url"
-                    value={data.url || ''}
-                    onChange={(e) => updateData({ url: e.target.value })}
-                    placeholder="https://your-website.com"
-                    className={cn(
-                      "w-full pl-12 pr-4 py-4 border-2 rounded-2xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30",
-                      !data.url ? "border-amber-100/50" : "border-gray-50 focus:border-blue-600"
-                    )}
-                  />
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Website Address</p>
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                        <Globe className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="url"
+                      value={data.url || ''}
+                      onChange={(e) => updateData({ url: e.target.value })}
+                      placeholder="https://your-website.com"
+                      className={cn(
+                        "w-full pl-12 pr-4 py-4 border-2 rounded-2xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30",
+                        !data.url ? "border-amber-100/50" : "border-gray-50 focus:border-blue-600"
+                      )}
+                    />
+                  </div>
                 </div>
+
+
+                <CollapsibleSection id="url-theme" title="Mockup Appearance" icon={Palette} isExpanded={expandedSections['url-theme'] !== false} onToggle={toggleSection}>
+                   <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Header Background Color</p>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="color" 
+                            className="w-12 h-12 rounded-xl border-2 border-gray-100 cursor-pointer overflow-hidden" 
+                            value={data.urlPreview?.themeColor || '#00C9E0'} 
+                            onChange={(e) => updateData({ urlPreview: { ...(data.urlPreview || {}), themeColor: e.target.value } })} 
+                          />
+                          <input 
+                            type="text" 
+                            className="flex-1 px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-mono text-sm uppercase font-bold text-gray-600" 
+                            value={data.urlPreview?.themeColor || '#00C9E0'} 
+                            onChange={(e) => updateData({ urlPreview: { ...(data.urlPreview || {}), themeColor: e.target.value } })} 
+                          />
+                        </div>
+                      </div>
+                   </div>
+                </CollapsibleSection>
               </div>
             )}
 
@@ -916,9 +1088,9 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                       className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30"
                     />
                   </div>
-                  </div>
                 </div>
-              )}
+              </div>
+            )}
 
               {data.type === 'image' && (
                 <div className="space-y-6 animate-in zoom-in-95 duration-300">
@@ -970,24 +1142,29 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none">Upload at least one image to your gallery</p>
                     </div>
                   )}
+                  
+                  <CollapsibleSection id="image-cta" title="Call to Action (Optional)" icon={Link} isExpanded={expandedSections['image-cta']} onToggle={toggleSection}>
+                    <CTADestinationPicker data={data} updateData={updateData} typeKey="imageGalleryInfo" />
+                  </CollapsibleSection>
                 </div>
               )}
 
               {data.type === 'video' && (
-                 <div className="space-y-4">
+                <div className="space-y-4">
+                  <div className="space-y-4">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Paste Video URL</p>
                     <div className="relative">
-                       <Video className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                       <input 
+                      <Video className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
                         type="url"
                         value={data.video?.url || ''}
                         onChange={(e) => updateData({ video: { url: e.target.value } })}
                         placeholder="https://youtube.com/watch?v=..."
                         className="w-full pl-11 pr-4 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-bold transition-all bg-gray-50/30"
-                       />
+                      />
                     </div>
                     <p className="text-[11px] text-gray-400 font-bold italic translate-x-2">Supports YouTube, Vimeo, and direct links.</p>
-                    
+
                     <div className="relative mt-4">
                       <div className="absolute inset-0 flex items-center">
                         <span className="w-full border-t border-gray-100"></span>
@@ -1005,23 +1182,23 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                         </div>
                       ) : data.video?.pendingFile ? (
                         <div className="w-full flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-blue-100">
-                           <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                                 <Video className="w-5 h-5" />
-                              </div>
-                              <div className="text-left">
-                                 <p className="text-sm font-bold text-gray-900 truncate max-w-[200px]">
-                                    {data.video.pendingFile.file.name}
-                                 </p>
-                                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ready to upload</p>
-                              </div>
-                           </div>
-                           <button 
-                             onClick={() => updateData({ video: undefined })}
-                             className="p-2 hover:bg-red-50 text-red-500 rounded-xl transition-all"
-                           >
-                             <X className="w-5 h-5" />
-                           </button>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                              <Video className="w-5 h-5" />
+                            </div>
+                            <div className="text-left">
+                              <p className="text-sm font-bold text-gray-900 truncate max-w-[200px]">
+                                {data.video.pendingFile.file.name}
+                              </p>
+                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ready to upload</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => updateData({ video: undefined })}
+                            className="p-2 hover:bg-red-50 text-red-500 rounded-xl transition-all"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
                         </div>
                       ) : (
                         <>
@@ -1029,11 +1206,11 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                             <Upload className="w-7 h-7" />
                           </div>
                           <div className="text-center">
-                             <p className="text-sm font-bold text-gray-900">Upload Video File</p>
-                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">MP4, MOV, WebM up to 50MB</p>
+                            <p className="text-sm font-bold text-gray-900">Upload Video File</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">MP4, MOV, WebM up to 50MB</p>
                           </div>
-                          <input 
-                            type="file" 
+                          <input
+                            type="file"
                             accept="video/*"
                             className="absolute inset-0 opacity-0 cursor-pointer"
                             onChange={(e) => {
@@ -1046,85 +1223,243 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                         </>
                       )}
                     </div>
-                 </div>
+                  </div>
+
+                  <CollapsibleSection id="video-cta" title="Call to Action (Optional)" icon={Link} isExpanded={expandedSections['video-cta']} onToggle={toggleSection}>
+                    <CTADestinationPicker data={data} updateData={updateData} typeKey="video" />
+                  </CollapsibleSection>
+                </div>
               )}
 
-              {(data.type === 'pdf' || data.type === 'mp3') && (
-                <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[32px] p-12 flex flex-col items-center justify-center space-y-4 transition-all relative overflow-hidden group">
-                  {uploading === data.type ? (
-                    <div className="flex items-center gap-2 text-blue-600">
-                      <Loader2 className="w-6 h-6 animate-spin" />
-                      <span className="text-sm font-bold">Uploading...</span>
-                    </div>
-                  ) : (data.type === 'pdf' ? data.pdf?.pendingFile : data.mp3?.pendingFile) ? (
-                     <div className="w-full flex items-center justify-between p-6 bg-white rounded-2xl shadow-sm border border-blue-100">
+              {data.type === 'pdf' && (
+                <div className="space-y-4">
+                  <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[32px] p-12 flex flex-col items-center justify-center space-y-4 transition-all relative overflow-hidden group">
+                    {uploading === 'pdf' ? (
+                      <div className="flex items-center gap-2 text-blue-600">
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                        <span className="text-sm font-bold">Uploading...</span>
+                      </div>
+                    ) : data.pdf?.pendingFile ? (
+                      <div className="w-full flex items-center justify-between p-6 bg-white rounded-2xl shadow-sm border border-blue-100">
                         <div className="flex items-center gap-4">
-                           <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
-                              {data.type === 'pdf' ? <FileText className="w-6 h-6" /> : <Music className="w-6 h-6" />}
-                           </div>
-                           <div className="text-left">
-                              <p className="text-base font-bold text-gray-900 truncate max-w-[250px]">
-                                 {data.type === 'pdf' ? data.pdf?.pendingFile?.file.name : data.mp3?.pendingFile?.file.name}
-                              </p>
-                              <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">Ready to upload</p>
-                           </div>
+                          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                            <FileText className="w-6 h-6" />
+                          </div>
+                          <div className="text-left">
+                            <p className="text-base font-bold text-gray-900 truncate max-w-[250px]">
+                              {data.pdf.pendingFile.file.name}
+                            </p>
+                            <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">Ready to upload</p>
+                          </div>
                         </div>
-                        <button 
-                          onClick={() => updateData({ [data.type]: undefined })}
+                        <button
+                          onClick={() => updateData({ pdf: undefined })}
                           className="p-3 hover:bg-red-50 text-red-500 rounded-2xl transition-all"
                         >
                           <X className="w-6 h-6" />
                         </button>
-                     </div>
-                  ) : (
-                    <>
-                      <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-blue-600 mb-2">
-                          {data.type === 'pdf' ? <FileText className="w-8 h-8" /> : <Music className="w-8 h-8" />}
                       </div>
-                      <div className="text-center space-y-1">
-                         <h4 className="text-sm font-black text-gray-900 leading-none">Upload {data.type.toUpperCase()} File</h4>
-                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Click to browse or drag and drop</p>
+                    ) : (
+                      <>
+                        <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-blue-600 mb-2">
+                          <FileText className="w-8 h-8" />
+                        </div>
+                        <div className="text-center space-y-1">
+                          <h4 className="text-sm font-black text-gray-900 leading-none">Upload PDF File</h4>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Click to browse or drag and drop</p>
+                        </div>
+                        <input
+                          type="file"
+                          accept=".pdf"
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleFileSelect(file, 'pdf');
+                            }
+                          }}
+                        />
+                      </>
+                    )}
+                  </div>
+
+                  <CollapsibleSection id="pdf-cta" title="Call to Action (Optional)" icon={Link} isExpanded={expandedSections['pdf-cta']} onToggle={toggleSection}>
+                    <CTADestinationPicker data={data} updateData={updateData} typeKey="pdf" />
+                  </CollapsibleSection>
+                </div>
+              )}
+
+              {data.type === 'mp3' && (
+                <div className="space-y-6">
+                  <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[32px] p-10 flex flex-col items-center justify-center space-y-4 transition-all relative overflow-hidden group">
+                    {uploading === 'mp3' ? (
+                      <div className="flex items-center gap-2 text-blue-600">
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                        <span className="text-sm font-bold">Uploading...</span>
                       </div>
-                      <input 
-                        type="file" 
-                        accept={data.type === 'pdf' ? '.pdf' : 'audio/*'} 
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            handleFileSelect(file, data.type as 'pdf' | 'mp3');
-                          }
-                        }}
-                      />
-                    </>
-                  )}
+                    ) : data.mp3?.pendingFile ? (
+                      <div className="w-full flex items-center justify-between p-6 bg-white rounded-2xl shadow-sm border border-blue-100">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                                <Music className="w-6 h-6" />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-base font-bold text-gray-900 truncate max-w-[250px]">
+                                  {data.mp3.pendingFile.file.name}
+                                </p>
+                                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">Ready to upload</p>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => updateData({ mp3: undefined })}
+                            className="p-3 hover:bg-red-50 text-red-500 rounded-2xl transition-all"
+                          >
+                            <X className="w-6 h-6" />
+                          </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-blue-600 mb-2">
+                            <Music className="w-8 h-8" />
+                        </div>
+                        <div className="text-center space-y-1">
+                          <h4 className="text-sm font-black text-gray-900 leading-none">Upload MP3 File</h4>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Click to browse or drag and drop</p>
+                        </div>
+                        <input 
+                          type="file" 
+                          accept="audio/*" 
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleFileSelect(file, 'mp3');
+                            }
+                          }}
+                        />
+                      </>
+                    )}
+                  </div>
+
+                  <CollapsibleSection id="mp3-info" title="Audio Player Details" subtitle="Track Information" icon={Music} isExpanded={expandedSections['basic-info']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Company / Show Name</p>
+                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. TechTalk Weekly" value={data.mp3?.companyName || ''} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), companyName: e.target.value } })} />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Track Title</p>
+                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. The Future of Web" value={data.mp3?.title || ''} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), title: e.target.value } })} />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Description</p>
+                        <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="Describe your audio content..." rows={3} value={data.mp3?.description || ''} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), description: e.target.value } })} />
+                      </div>
+                      <CTADestinationPicker data={data} updateData={updateData} typeKey="mp3" />
+                    </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection id="mp3-design" title="Colors & Style" icon={Palette} isExpanded={expandedSections['design']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Background Color</p>
+                          <div className="flex items-center gap-2">
+                            <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.mp3?.themeColor || '#3b82f6'} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), themeColor: e.target.value } })} />
+                            <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase" value={data.mp3?.themeColor || '#3b82f6'} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), themeColor: e.target.value } })} />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Text Color</p>
+                          <div className="flex items-center gap-2">
+                             <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.mp3?.textColor || '#ffffff'} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), textColor: e.target.value } })} />
+                             <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase" value={data.mp3?.textColor || '#ffffff'} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), textColor: e.target.value } })} />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Color</p>
+                          <div className="flex items-center gap-2">
+                            <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.mp3?.buttonColor || 'rgba(0,0,0,0.1)'} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), buttonColor: e.target.value } })} />
+                            <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase" value={data.mp3?.buttonColor || 'rgba(0,0,0,0.1)'} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), buttonColor: e.target.value } })} />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Text</p>
+                          <div className="flex items-center gap-2">
+                             <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.mp3?.buttonTextColor || '#ffffff'} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), buttonTextColor: e.target.value } })} />
+                             <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase" value={data.mp3?.buttonTextColor || '#ffffff'} onChange={(e) => updateData({ mp3: { ...(data.mp3 || {} as any), buttonTextColor: e.target.value } })} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CollapsibleSection>
                 </div>
               )}
 
               {data.type === 'app' && (
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-3">
-                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Apple App Store URL</p>
-                       <input 
-                        type="url"
-                        value={data.app?.ios || ''}
-                        onChange={(e) => updateData({ app: { ...(data.app || {}), ios: e.target.value } })}
-                        placeholder="apps.apple.com/..."
-                        className="w-full px-6 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-bold transition-all bg-gray-50/30 shadow-inner"
-                       />
-                    </div>
-                    <div className="space-y-3">
-                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Google Play Store URL</p>
-                       <input 
-                        type="url"
-                        value={data.app?.android || ''}
-                        onChange={(e) => updateData({ app: { ...(data.app || {}), android: e.target.value } })}
-                        placeholder="play.google.com/..."
-                        className="w-full px-6 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-bold transition-all bg-gray-50/30 shadow-inner"
-                       />
-                    </div>
-                 </div>
-              )}
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">App Store URL (iOS)</p>
+                    <input
+                      type="url"
+                      value={data.app?.ios || ''}
+                      onChange={(e) => updateData({ app: { ...(data.app || {}), ios: e.target.value } })}
+                      placeholder="https://apps.apple.com/..."
+                      className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-sm font-semibold bg-gray-50/30 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Google Play URL (Android)</p>
+                    <input
+                      type="url"
+                      value={data.app?.android || ''}
+                      onChange={(e) => updateData({ app: { ...(data.app || {}), android: e.target.value } })}
+                      placeholder="https://play.google.com/..."
+                      className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-sm font-semibold bg-gray-50/30 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <CollapsibleSection id="app-branding" title="App Branding" icon={Palette} isExpanded={expandedSections['basic-info']} onToggle={toggleSection}>
+                   <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">App Icon</p>
+                        <label className="w-24 h-24 border-2 border-dashed border-gray-200 rounded-[24px] flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden group">
+                           {data.app?.icon ? (
+                             <img src={data.app.icon} className="w-full h-full object-cover" />
+                           ) : (
+                             <div className="flex flex-col items-center">
+                               <Camera className="w-5 h-5 text-gray-300 group-hover:text-blue-400" />
+                               <span className="text-[8px] font-black text-gray-400 uppercase mt-1">Upload</span>
+                             </div>
+                           )}
+                           <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                             const file = e.target.files?.[0];
+                             if (file) {
+                               const reader = new FileReader();
+                               reader.onload = (ev) => {
+                                 updateData({ app: { ...(data.app || {}), icon: ev.target?.result as string } });
+                               };
+                               reader.readAsDataURL(file);
+                             }
+                           }} />
+                        </label>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">App Title</p>
+                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Download our Official App" value={data.app?.title || ''} onChange={(e) => updateData({ app: { ...(data.app || {}), title: e.target.value } })} />
+                      </div>
+                      <div className="space-y-2">
+                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Short Description</p>
+                         <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Get the best experience by downloading..." rows={3} value={data.app?.description || ''} onChange={(e) => updateData({ app: { ...(data.app || {}), description: e.target.value } })} />
+                      </div>
+                   </div>
+                </CollapsibleSection>
+              </div>
+            )}
                {data.type === 'form' && (
                  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="flex items-center justify-between">
@@ -1308,6 +1643,22 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                           </div>
                         </div>
                       </div>
+                    </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection id="business-cta" title="Call to Action" icon={Zap} isExpanded={expandedSections['business-cta']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Text</p>
+                        <input 
+                          type="text" 
+                          className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                          placeholder="e.g. Visit our Shop" 
+                          value={data.business?.buttonText || ''} 
+                          onChange={(e) => updateData({ business: { ...(data.business || {}), buttonText: e.target.value } })} 
+                        />
+                      </div>
+                      <CTADestinationPicker data={data} updateData={updateData} typeKey="business" urlKey="buttonUrl" showLabelInput={false} />
                     </div>
                   </CollapsibleSection>
                 </div>
@@ -1583,10 +1934,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Terms & Conditions</p>
                         <textarea className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" placeholder="e.g. Valid for in-store purchases only..." rows={2} value={data.coupon?.terms || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), terms: e.target.value } })} />
                       </div>
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Website</p>
-                        <input type="url" className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" placeholder="https://company.com" value={data.coupon?.website || ''} onChange={(e) => updateData({ coupon: { ...(data.coupon || {}), website: e.target.value } })} />
-                      </div>
+                        <CTADestinationPicker data={data} updateData={updateData} typeKey="coupon" urlKey="website" showLabelInput={false} />
                     </div>
                   </CollapsibleSection>
 
@@ -1613,6 +1961,301 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                   </CollapsibleSection>
                 </div>
               )}
+
+              {data.type === 'booking' && (
+                <div className="space-y-6">
+                  <CollapsibleSection id="booking-details" title="Booking Information" icon={Calendar} isExpanded={expandedSections['booking-details'] !== false} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Business Name</p>
+                        <input 
+                          type="text" 
+                          className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                          placeholder="e.g. Luxe Wellness Spa" 
+                          value={data.booking?.businessName || ''} 
+                          onChange={(e) => updateData({ booking: { ...(data.booking || {}), businessName: e.target.value } })} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Subject / Service Title</p>
+                        <input 
+                          type="text" 
+                          className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                          placeholder="e.g. Full Body Massage" 
+                          value={data.booking?.title || ''} 
+                          onChange={(e) => updateData({ booking: { ...(data.booking || {}), title: e.target.value } })} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Detail Description</p>
+                        <textarea 
+                          className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm" 
+                          placeholder="Describe your service..." 
+                          rows={3} 
+                          value={data.booking?.description || ''} 
+                          onChange={(e) => updateData({ booking: { ...(data.booking || {}), description: e.target.value } })} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Location</p>
+                        <input 
+                          type="text" 
+                          className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                          placeholder="e.g. Downtown Center, NY" 
+                          value={data.booking?.location || ''} 
+                          onChange={(e) => updateData({ booking: { ...(data.booking || {}), location: e.target.value } })} 
+                        />
+                      </div>
+                    </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection id="booking-cta" title="Booking Destination" icon={Link} isExpanded={expandedSections['booking-cta']} onToggle={toggleSection}>
+                     <div className="space-y-6">
+                        {/* Destination Mode Selector */}
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Destination Type</p>
+                          <div className="grid grid-cols-3 gap-2 bg-gray-50 p-1.5 rounded-2xl">
+                            {([
+                              { id: 'url', label: 'External URL', icon: '🔗' },
+                              { id: 'calendar', label: 'Calendar', icon: '📅' },
+                              { id: 'qr_link', label: 'Link to QR', icon: '⚡' },
+                            ] as const).map(mode => (
+                              <button
+                                key={mode.id}
+                                onClick={() => updateData({ booking: { ...(data.booking || {}), destinationMode: mode.id } })}
+                                className={cn(
+                                  "flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl text-center transition-all",
+                                  (data.booking?.destinationMode || 'url') === mode.id 
+                                    ? "bg-white shadow-lg shadow-blue-100/50 border border-blue-100 scale-[1.02]" 
+                                    : "hover:bg-white/50 border border-transparent"
+                                )}
+                              >
+                                <span className="text-base">{mode.icon}</span>
+                                <span className={cn(
+                                  "text-[8px] font-black uppercase tracking-widest",
+                                  (data.booking?.destinationMode || 'url') === mode.id ? "text-blue-600" : "text-gray-400"
+                                )}>{mode.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* URL Mode */}
+                        {(data.booking?.destinationMode || 'url') === 'url' && (
+                          <div className="space-y-4 animate-in fade-in duration-300">
+                            <div className="space-y-2">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Booking URL (Calendly, etc.)</p>
+                              <input 
+                                type="url" 
+                                className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                                placeholder="https://calendly.com/your-link" 
+                                value={data.booking?.bookingUrl || ''} 
+                                onChange={(e) => updateData({ booking: { ...(data.booking || {}), bookingUrl: e.target.value } })} 
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Calendar Mode */}
+                        {data.booking?.destinationMode === 'calendar' && (
+                          <div className="space-y-4 animate-in fade-in duration-300">
+                            <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-2xl space-y-2">
+                              <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Native Calendar Enabled</p>
+                              <p className="text-[10px] font-medium text-blue-500 leading-relaxed">
+                                Customers will see an interactive calendar in the preview. When they select a date/time and click book, their request will appear in your Lead Capturing dashboard.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* QR Link Mode */}
+                        {data.booking?.destinationMode === 'qr_link' && (
+                          <div className="space-y-4 animate-in fade-in duration-300">
+                            <div className="space-y-2">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Connect to another QR Code</p>
+                                <QRPickerDropdown currentData={data.booking || {}} updateData={updateData} typeKey="booking" />
+                              </div>
+                          </div>
+                        )}
+
+                        {/* Button Text (shown for all modes) */}
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Button Text</p>
+                          <input 
+                            type="text" 
+                            className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                            placeholder="e.g. Schedule Now" 
+                            value={data.booking?.buttonText || ''} 
+                            onChange={(e) => updateData({ booking: { ...(data.booking || {}), buttonText: e.target.value } })} 
+                          />
+                        </div>
+                     </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection id="booking-form" title="Lead Capture & Custom Form" icon={ClipboardList} isExpanded={expandedSections['booking-form']} onToggle={toggleSection}>
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+                        <div className="space-y-1">
+                          <p className="text-sm font-bold text-gray-900">Enable Custom Form</p>
+                          <p className="text-[10px] text-gray-500 font-medium">Capture specific details from customers before they book.</p>
+                        </div>
+                        <button 
+                          onClick={() => updateData({ booking: { ...(data.booking || {}), customFormEnabled: !data.booking?.customFormEnabled } })}
+                          className={cn(
+                            "relative w-12 h-6 rounded-full transition-all duration-300",
+                            data.booking?.customFormEnabled ? "bg-blue-600" : "bg-gray-200"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-all duration-300",
+                            data.booking?.customFormEnabled ? "translate-x-6" : "translate-x-0"
+                          )} />
+                        </button>
+                      </div>
+
+                      {data.booking?.customFormEnabled && (
+                        <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+                          <FormBuilder 
+                            fields={(data.booking?.customFormFields || []) as any} 
+                            onChange={(fields) => updateData({ booking: { ...(data.booking || {}), customFormFields: fields } })}
+                          />
+                        </div>
+                      )}
+
+                      <div className="pt-6 border-t border-gray-50 space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-emerald-50/30 rounded-2xl border border-emerald-50">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                              <MessageSquare className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-sm font-bold text-gray-900">WhatsApp Support</p>
+                              <p className="text-[10px] text-gray-500 font-medium">Add a "Chat on WhatsApp" button to the success screen.</p>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => updateData({ booking: { ...(data.booking || {}), whatsappEnabled: !data.booking?.whatsappEnabled } })}
+                            className={cn(
+                              "relative w-12 h-6 rounded-full transition-all duration-300",
+                              data.booking?.whatsappEnabled ? "bg-emerald-600" : "bg-gray-200"
+                            )}
+                          >
+                            <div className={cn(
+                              "absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-all duration-300",
+                              data.booking?.whatsappEnabled ? "translate-x-6" : "translate-x-0"
+                            )} />
+                          </button>
+                        </div>
+
+                        {data.booking?.whatsappEnabled && (
+                          <div className="space-y-2 animate-in fade-in duration-300">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none pl-1">WhatsApp Number</p>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <Smartphone className="w-4 h-4 text-gray-300" />
+                              </div>
+                              <input 
+                                type="text" 
+                                className="w-full px-4 py-3 pl-11 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                                placeholder="e.g. +1234567890" 
+                                value={data.booking?.whatsappNumber || ''} 
+                                onChange={(e) => updateData({ booking: { ...(data.booking || {}), whatsappNumber: e.target.value } })} 
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection id="booking-design" title="Design & Media" icon={Palette} isExpanded={expandedSections['booking-design']} onToggle={toggleSection}>
+                    <div className="space-y-4">
+                      {/* Profile Image Upload */}
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Business Profile Image</p>
+                        <div className="flex items-center gap-4">
+                          <label className="w-16 h-16 rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all overflow-hidden group">
+                            {data.booking?.profileImageUrl ? (
+                              <img src={data.booking.profileImageUrl} className="w-full h-full object-cover" />
+                            ) : (
+                              <User className="w-6 h-6 text-gray-300 group-hover:text-blue-500" />
+                            )}
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => {
+                                  updateData({ booking: { ...(data.booking || {}), profileImageUrl: ev.target?.result as string } });
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }} />
+                          </label>
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-gray-600">Company Logo/Avatar</p>
+                            <p className="text-[9px] text-gray-400">Recommended 400x400px</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Cover Image Upload */}
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Cover Image</p>
+                        <label className="w-full h-32 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden group">
+                          {data.booking?.imageUrl ? (
+                            <img src={data.booking.imageUrl} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="flex flex-col items-center">
+                              <ImageIcon className="w-6 h-6 text-gray-300 group-hover:text-blue-500" />
+                              <span className="text-[10px] font-bold text-gray-400 uppercase mt-2">Upload Cover Image</span>
+                            </div>
+                          )}
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (ev) => {
+                                updateData({ booking: { ...(data.booking || {}), imageUrl: ev.target?.result as string } });
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }} />
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Price (Optional)</p>
+                          <input 
+                            type="text" 
+                            className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                            placeholder="e.g. $120" 
+                            value={data.booking?.price || ''} 
+                            onChange={(e) => updateData({ booking: { ...(data.booking || {}), price: e.target.value } })} 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Duration (Optional)</p>
+                          <input 
+                            type="text" 
+                            className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm" 
+                            placeholder="e.g. 60 Min" 
+                            value={data.booking?.duration || ''} 
+                            onChange={(e) => updateData({ booking: { ...(data.booking || {}), duration: e.target.value } })} 
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Branding Color</p>
+                        <div className="flex items-center gap-2">
+                          <input type="color" className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer" value={data.booking?.themeColor || '#3b82f6'} onChange={(e) => updateData({ booking: { ...(data.booking || {}), themeColor: e.target.value } })} />
+                          <input type="text" className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase" value={data.booking?.themeColor || '#3b82f6'} onChange={(e) => updateData({ booking: { ...(data.booking || {}), themeColor: e.target.value } })} />
+                        </div>
+                      </div>
+                    </div>
+                  </CollapsibleSection>
+                </div>
+              )}
+
 
               {data.type === 'links' && (
                 <div className="space-y-6">
@@ -1695,6 +2338,60 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
               )}
             </div>
          </div>
+
+         {/* Universal QR Connector - Hidden on redirect types */}
+         {!['url', 'instagram', 'facebook', 'whatsapp', 'twitter', 'youtube', 'tiktok', 'linkedin'].includes(data.type) && (
+           <div className="mt-8">
+             <CollapsibleSection 
+                id="universal-connector" 
+                title="QR Connector (Chaining)" 
+                subtitle="Redirect users to another QR experience" 
+                icon={Link} 
+                isExpanded={expandedSections['universal-connector']} 
+                onToggle={toggleSection}
+             >
+                <div className="space-y-4 animate-in fade-in duration-300">
+                   {!user ? (
+                     <div className="bg-blue-50/50 rounded-2xl p-6 border-2 border-dashed border-blue-100 flex flex-col items-center justify-center text-center">
+                        <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600 mb-3">
+                           <Zap className="w-6 h-6 fill-yellow-400 text-yellow-400" />
+                        </div>
+                        <h4 className="text-sm font-bold text-gray-900 mb-1">Unlock QR Chaining</h4>
+                        <p className="text-[10px] text-gray-500 font-medium mb-4 leading-relaxed max-w-[250px]">
+                           Sign in or register to chain multiple QR codes together. Automatically redirect users after they interact with this code.
+                        </p>
+                        <button 
+                          onClick={() => {
+                            const authModalBtn = document.querySelector('[data-auth-trigger]') as HTMLElement;
+                            if (authModalBtn) authModalBtn.click();
+                          }}
+                          className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-200/50 hover:bg-blue-700 transition-all active:scale-95"
+                        >
+                          Sign in to connect
+                        </button>
+                     </div>
+                   ) : (
+                     <>
+                       <div className="space-y-2">
+                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Connect to another QR Code</p>
+                         <select
+                           className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm appearance-none cursor-pointer"
+                           value={data.linkedQRCodeId || ''}
+                           onChange={(e) => updateData({ linkedQRCodeId: e.target.value })}
+                         >
+                           <option value="">None (Don't connect)</option>
+                           <QROptionsList />
+                         </select>
+                       </div>
+                       <p className="text-[9px] text-gray-400 font-medium leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
+                          When visitors complete the interaction for this QR code (like submitting a form or clicking a CTA button), they will be automatically redirected to the connected experience you select here.
+                       </p>
+                     </>
+                   )}
+                </div>
+             </CollapsibleSection>
+           </div>
+         )}
 
          <div className="flex items-start gap-5 p-7 bg-blue-50 rounded-[32px] border border-blue-100/50">
           <div className="bg-blue-600 text-white p-2.5 rounded-2xl shadow-lg shadow-blue-100 shrink-0">

@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../services/api';
-import type { AdminStats, AdminUsersResponse, SystemConfig } from '../types/api';
+import type { AdminStats, AdminUsersResponse, SystemConfig, Plan, Country, PricingConfig, PriceBook } from '../types/api';
 
-export const useAdminStats = () => {
+export const useAdminStats = (range = '7d') => {
   return useQuery<AdminStats>({
-    queryKey: ['adminStats'],
-    queryFn: adminApi.getStats,
+    queryKey: ['adminStats', range],
+    queryFn: () => adminApi.getStats(range),
     refetchOnWindowFocus: true,
     staleTime: 30000, // 30 seconds
   });
@@ -34,5 +34,136 @@ export const useUpdateSystemConfig = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['systemConfig'] });
     },
+  });
+};
+
+export const useBanUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => adminApi.banUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+    },
+  });
+};
+
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => adminApi.deleteUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+    },
+  });
+};
+
+export const useExportUsers = () => {
+  return useMutation({
+    mutationFn: adminApi.exportUsers,
+  });
+};
+
+// Plans Hooks
+export const useAdminPlans = () => {
+  return useQuery<Plan[]>({
+    queryKey: ['adminPlans'],
+    queryFn: adminApi.getPlans,
+  });
+};
+
+export const useUpsertPlan = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<Plan> & { id?: string }) => {
+      if (data.id) return adminApi.updatePlan(data.id, data);
+      return adminApi.createPlan(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminPlans'] });
+    },
+  });
+};
+
+export const useDeletePlan = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => adminApi.deletePlan(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminPlans'] });
+    },
+  });
+};
+
+// Pricing & Geography Hooks
+export const useAdminCountries = () => {
+  return useQuery<Country[]>({
+    queryKey: ['adminCountries'],
+    queryFn: adminApi.getCountries,
+  });
+};
+
+export const useUpdateCountry = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<Country> & { code: string }) => adminApi.updateCountry(data.code, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
+    },
+  });
+};
+
+export const usePlanPrices = (planId: string | null) => {
+  return useQuery<PriceBook[]>({
+    queryKey: ['planPrices', planId],
+    queryFn: () => planId ? adminApi.getPlanPrices(planId) : Promise.resolve([]),
+    enabled: !!planId,
+  });
+};
+
+export const useCreatePriceBook = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { planId: string; data: Partial<PriceBook> }) => 
+      adminApi.createPriceBook(params.planId, params.data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['planPrices', variables.planId] });
+      queryClient.invalidateQueries({ queryKey: ['adminPlans'] });
+    },
+  });
+};
+
+export const useUpdatePriceBook = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { id: string; planId: string; data: Partial<PriceBook> }) => 
+      adminApi.updatePriceBook(params.id, params.data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['planPrices', variables.planId] });
+      queryClient.invalidateQueries({ queryKey: ['adminPlans'] });
+    },
+  });
+};
+
+export const useAdminPricingConfig = () => {
+  return useQuery<PricingConfig>({
+    queryKey: ['adminPricingConfig'],
+    queryFn: adminApi.getPricingConfig,
+  });
+};
+
+export const useUpdatePricingConfig = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<PricingConfig>) => adminApi.updatePricingConfig(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminPricingConfig'] });
+    },
+  });
+};
+
+export const useSuggestPrice = () => {
+  return useMutation({
+    mutationFn: (params: { basePriceUSD: number; targetCurrencyCode: string; tier?: string }) => 
+      adminApi.suggestPrice(params.basePriceUSD, params.targetCurrencyCode, params.tier),
   });
 };

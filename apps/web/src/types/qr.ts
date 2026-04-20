@@ -1,4 +1,5 @@
 import type { DotType, CornerDotType, CornerSquareType, ErrorCorrectionLevel, Mode, TypeNumber, GradientType } from "qr-code-styling";
+import type { FormField } from "./form";
 
 export type QRType = 
   | 'url' 
@@ -27,7 +28,8 @@ export type QRType =
   | 'form'
   | 'business'
   | 'menu'
-  | 'coupon';
+  | 'coupon'
+  | 'booking';
   
 export interface FileData {
   id?: string;
@@ -70,7 +72,14 @@ export interface MenuData {
 
 export interface QRData {
   type: QRType;
+  name?: string;
   url?: string;
+
+  urlPreview?: {
+    title?: string;
+    description?: string;
+    themeColor?: string;
+  };
   text?: string;
   image?: {
     url: string;
@@ -88,6 +97,8 @@ export interface QRData {
     description?: string;
     buttonText?: string;
     buttonUrl?: string;
+    destinationMode?: 'url' | 'qr_link';
+    qrLinkId?: string;
     themeColor?: string;
   };
   pdf?: FileData & { 
@@ -100,6 +111,10 @@ export interface QRData {
     textColor?: string;
     buttonColor?: string;
     buttonTextColor?: string;
+    buttonText?: string;
+    buttonUrl?: string;
+    destinationMode?: 'url' | 'qr_link';
+    qrLinkId?: string;
   };
   video?: {
     id?: string;
@@ -117,12 +132,21 @@ export interface QRData {
     textColor?: string;
     buttonColor?: string;
     buttonTextColor?: string;
+    buttonText?: string;
+    buttonUrl?: string;
+    destinationMode?: 'url' | 'qr_link';
+    qrLinkId?: string;
   };
   mp3?: FileData & { 
     pendingFile?: PendingFile;
     companyName?: string;
     title?: string;
     description?: string;
+    artist?: string;
+    buttonText?: string;
+    buttonUrl?: string;
+    destinationMode?: 'url' | 'qr_link';
+    qrLinkId?: string;
     themeColor?: string;
     textColor?: string;
     buttonColor?: string;
@@ -137,6 +161,10 @@ export interface QRData {
   app?: {
     ios?: string;
     android?: string;
+    title?: string;
+    description?: string;
+    icon?: string;
+    themeColor?: string;
   };
   vcard?: {
     firstName: string;
@@ -221,17 +249,7 @@ export interface QRData {
   form?: {
     title: string;
     description?: string;
-    fields: {
-      id: string;
-      type: 'text' | 'number' | 'range' | 'checkbox' | 'select' | 'radio' | 'email' | 'phone';
-      label: string;
-      placeholder?: string;
-      helpText?: string;
-      required: boolean;
-      options?: { label: string; value: string }[];
-      validation?: { min?: number; max?: number; step?: number };
-      order: number;
-    }[];
+    fields: FormField[];
   };
   linksInfo?: {
     themeColor?: string;
@@ -255,6 +273,8 @@ export interface QRData {
     accentColor?: string;
     companyName?: string;
     headline?: string;
+    buttonText?: string;
+    buttonUrl?: string;
     about?: string;
     logo?: string;
     banner?: string;
@@ -295,6 +315,29 @@ export interface QRData {
     companyName?: string;
     website?: string;
   };
+  booking?: {
+    businessName?: string;
+    title?: string;
+    description?: string;
+    location?: string;
+    bookingUrl?: string;
+    imageUrl?: string;
+    profileImageUrl?: string;
+    themeColor?: string;
+    buttonText?: string;
+    price?: string;
+    duration?: string;
+    destinationMode?: 'url' | 'calendar' | 'qr_link';
+    qrLinkId?: string;
+    customFormEnabled?: boolean;
+    customFormFields?: FormField[];
+    whatsappEnabled?: boolean;
+    whatsappNumber?: string;
+  };
+
+  // Universal QR Connector — works across all QR types
+  linkedQRCodeId?: string;
+  connectedQrId?: string;
 }
 
 export interface Gradient {
@@ -353,4 +396,5 @@ export interface QRConfiguration {
   margin: number;
   isDynamic: boolean;
   shortId?: string;
+  linkedQRCodeId?: string;
 }

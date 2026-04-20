@@ -15,14 +15,25 @@ import { MediaModule } from './media/media.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
+import { PricingModule } from './pricing/pricing.module';
+import { IntegrationModule } from './integration/integration.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import { ScheduleModule } from '@nestjs/schedule';
+import { LoggingInterceptor } from './common/logging.interceptor';
 
 @Module({
   imports: [
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 3600, // 1 hour default
+    }),
+    ScheduleModule.forRoot(),
     LoggerModule.forRoot({
       pinoHttp: {
-        // transport: process.env.NODE_ENV !== 'production'
-        //   ? { target: 'pino-pretty', options: { colorize: true } }
-        //   : undefined,
+        transport: {
+          target: 'pino-pretty',
+          options: { colorize: true },
+        },
       },
     }),
     ConfigModule.forRoot({
@@ -43,10 +54,13 @@ import { AdminModule } from './admin/admin.module';
     MediaModule,
     PaymentsModule,
     AdminModule,
+    PricingModule,
+    IntegrationModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
+    LoggingInterceptor,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

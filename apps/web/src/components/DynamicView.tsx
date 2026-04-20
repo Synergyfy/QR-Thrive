@@ -4,25 +4,20 @@ import {
   Mail, 
   MessageSquare, 
   Phone, 
-  Wifi, 
   User, 
   Share2,
-  ExternalLink,
   ChevronRight,
   ShieldCheck,
   Smartphone,
   Type,
-  Music,
-  ShoppingBag,
-  Download,
   ClipboardList,
   CheckCircle2,
-  Play,
   Link2,
   Building2,
   Ticket,
   MapPin,
-  Clock
+  Clock,
+  Copy
 } from 'lucide-react';
 import WhatsAppChatPreview from './WhatsAppChatPreview';
 import InstagramProfilePreview from './InstagramProfilePreview';
@@ -32,12 +27,17 @@ import VideoProfilePreview from './VideoProfilePreview';
 import PhotoProfilePreview from './PhotoProfilePreview';
 import SocialsProfilePreview from './SocialsProfilePreview';
 import MenuPreview from './MenuPreview';
+import AudioProfilePreview from './AudioProfilePreview';
+import WebsiteProfilePreview from './WebsiteProfilePreview';
+import WifiProfilePreview from './WifiProfilePreview';
+import AppStorePreview from './AppStorePreview';
+import BookingProfilePreview from './BookingProfilePreview';
 import type { QRData } from '../types/qr';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useSubmitForm } from '../hooks/useForms';
+import toast from 'react-hot-toast';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { getDownloadUrl } from '../utils/upload';
 import { DEMO_DATA } from '../constants/demoData';
 
 const getSocialConfig = (platform: string) => {
@@ -76,10 +76,55 @@ function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 interface DynamicViewProps {
   data: QRData;
   isWizardPreview?: boolean;
+  linkedQRCode?: {
+    id: string;
+    shortId: string;
+    name: string;
+    type: string;
+    logo?: string;
+  };
 }
 
-const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPreview }) => {
+const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPreview, linkedQRCode }) => {
   const { id: shortId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  // Handle CTA actions (Redirect to URL or Chained QR)
+  const handleAction = React.useCallback((target: string | { mode?: string, url?: string, qrLinkId?: string }) => {
+    if (typeof target === 'string') {
+      if (target.startsWith('qr:')) {
+        const qrLinkId = target.replace('qr:', '');
+        if (isWizardPreview) {
+          toast.success(`In live, this would link to QR: ${qrLinkId}`);
+          return;
+        }
+        navigate(`/s/${qrLinkId}`);
+      } else {
+        if (isWizardPreview) {
+          toast.success(`In live, this would open: ${target}`);
+          return;
+        }
+        window.open(target.startsWith('http') ? target : `https://${target}`, '_blank');
+      }
+      return;
+    }
+
+    const { mode, url, qrLinkId } = target;
+
+    if (mode === 'url' && url) {
+      if (isWizardPreview) {
+        toast.success(`In live, this would open: ${url}`);
+        return;
+      }
+      window.open(url.startsWith('http') ? url : `https://${url}`, '_blank');
+    } else if (mode === 'qr_link' && qrLinkId) {
+      if (isWizardPreview) {
+        toast.success(`In live, this would link to QR: ${qrLinkId}`);
+        return;
+      }
+      navigate(`/s/${qrLinkId}`);
+    }
+  }, [isWizardPreview, navigate]);
 
   // Merge with demo data if in wizard preview
   const data = React.useMemo(() => {
@@ -117,7 +162,19 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
         vcard: { ...(demo as any).vcard, ...initialData.vcard },
         business: { ...(demo as any).business, ...initialData.business },
         menu: { ...(demo as any).menu, ...initialData.menu },
-        coupon: { ...(demo as any).coupon, ...initialData.coupon }
+        coupon: { ...(demo as any).coupon, ...initialData.coupon },
+        booking: { 
+          ...(demo as any).booking,
+          ...initialData.booking,
+          imageUrl: initialData.booking?.imageUrl || (demo as any).booking?.imageUrl,
+          profileImageUrl: initialData.booking?.profileImageUrl || (demo as any).booking?.profileImageUrl,
+          destinationMode: initialData.booking?.destinationMode || (demo as any).booking?.destinationMode || 'url',
+          qrLinkId: initialData.booking?.qrLinkId || (demo as any).booking?.qrLinkId,
+          customFormEnabled: initialData.booking?.customFormEnabled ?? (demo as any).booking?.customFormEnabled,
+          customFormFields: initialData.booking?.customFormFields || (demo as any).booking?.customFormFields || [],
+          whatsappEnabled: initialData.booking?.whatsappEnabled ?? (demo as any).booking?.whatsappEnabled,
+          whatsappNumber: initialData.booking?.whatsappNumber || (demo as any).booking?.whatsappNumber
+        }
       } as QRData;
     }
     
@@ -127,7 +184,6 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
   const submitMutation = useSubmitForm(shortId || '');
   const [answers, setAnswers] = React.useState<Record<string, any>>({});
   const [submitted, setSubmitted] = React.useState(false);
-  const [playingAudio, setPlayingAudio] = React.useState(false);
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({});
 
 
@@ -201,23 +257,13 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
     switch (data.type) {
       case 'url':
         return (
-          <div className="text-center space-y-6">
-            <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-blue-100">
-              <Globe className="w-10 h-10" />
-            </div>
-            <div>
-              <h1 className="text-xl font-medium text-gray-900 mb-1">Website Link</h1>
-              <p className="text-gray-500 font-normal text-sm break-all">{data.url}</p>
-            </div>
-            <a 
-              href={data.url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="w-full py-4 bg-blue-600 text-white rounded-2xl font-normal flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-200"
-            >
-              Visit Website
-              <ExternalLink className="w-4 h-4" />
-            </a>
+          <div className="w-full h-full rounded-none overflow-hidden">
+             <WebsiteProfilePreview 
+                url={data.url} 
+                title={data.urlPreview?.title}
+                description={data.urlPreview?.description}
+                themeColor={data.urlPreview?.themeColor}
+             />
           </div>
         );
 
@@ -249,26 +295,12 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
         );
        case 'wifi':
         return (
-          <div className="text-center space-y-8">
-            <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-xl shadow-emerald-100 animate-pulse">
-               <Wifi className="w-12 h-12" />
-            </div>
-            <div>
-               <h1 className="text-2xl font-normal text-gray-900 mb-4">Wi-Fi Connection</h1>
-               <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 space-y-4">
-                  <div className="flex justify-between items-center border-b border-gray-200 pb-4">
-                     <span className="text-xs font-normal text-gray-400 uppercase">Network</span>
-                     <span className="font-normal text-gray-900">{data.wifi?.ssid}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                     <span className="text-xs font-normal text-gray-400 uppercase">Security</span>
-                     <span className="font-normal text-gray-900">{data.wifi?.encryption}</span>
-                  </div>
-               </div>
-            </div>
-            <div className="p-4 bg-emerald-50 text-emerald-700 rounded-2xl text-xs font-normal leading-relaxed border border-emerald-100">
-               Scan successful! Your device should automatically prompt you to join the network.
-            </div>
+          <div className="w-full h-full rounded-none overflow-hidden">
+             <WifiProfilePreview 
+                ssid={data.wifi?.ssid} 
+                password={data.wifi?.password}
+                encryption={data.wifi?.encryption}
+             />
           </div>
         );
 
@@ -646,7 +678,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                textColor={data.pdf?.textColor}
                buttonColor={data.pdf?.buttonColor}
                buttonTextColor={data.pdf?.buttonTextColor}
-               onView={() => {}}
+               onView={() => handleAction({ mode: data.pdf?.destinationMode, url: data.pdf?.buttonUrl, qrLinkId: data.pdf?.qrLinkId })}
              />
           </div>
         );
@@ -661,6 +693,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                 buttonText={data.imageGalleryInfo?.buttonText}
                 themeColor={data.imageGalleryInfo?.themeColor}
                 images={(data.images || []).map(img => ({ url: img.url }))}
+                onButtonClick={() => handleAction({ mode: data.imageGalleryInfo?.destinationMode, url: data.imageGalleryInfo?.buttonUrl, qrLinkId: data.imageGalleryInfo?.qrLinkId })}
              />
           </div>
         );
@@ -679,84 +712,42 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                 buttonColor={data.video?.buttonColor}
                 buttonTextColor={data.video?.buttonTextColor}
                 onPlay={() => {}}
+                onButtonClick={() => handleAction({ mode: data.video?.destinationMode, url: data.video?.buttonUrl, qrLinkId: data.video?.qrLinkId })}
              />
           </div>
         );
 
       case 'mp3':
          return (
-           <div className="space-y-8">
-              <div className="text-center">
-                 <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-blue-100">
-                    <Music className="w-12 h-12" />
-                 </div>
-                 <h1 className="text-2xl font-normal text-gray-900 mb-2">Audio Player</h1>
-                 <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest">
-                   {data.mp3?.name || 'Audio File'}
-                 </p>
-              </div>
-              
-              <div className="bg-gray-900 rounded-[32px] p-6 shadow-2xl">
-                <audio 
-                  controls 
-                  autoPlay={playingAudio}
-                  className="w-full rounded-xl"
-                  src={data.mp3?.url}
-                  onPlay={() => setPlayingAudio(true)}
-                  onPause={() => setPlayingAudio(false)}
-                >
-                  Your browser does not support the audio element.
-                </audio>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <a 
-                  href={data.mp3?.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="py-4 bg-blue-600 text-white rounded-[32px] font-normal text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2 text-center"
-                >
-                  <Play className="w-5 h-5" />
-                  View
-                </a>
-                <a 
-                  href={data.mp3?.url ? getDownloadUrl(data.mp3.url) : '#'}
-                  download={data.mp3?.name || 'audio.mp3'}
-                  className="py-4 bg-gray-50 text-gray-900 rounded-[32px] font-normal text-sm shadow-sm border border-gray-100 flex items-center justify-center gap-2"
-                >
-                  <Download className="w-5 h-5" />
-                  Download
-                </a>
-              </div>
+           <div className="w-full h-full rounded-none overflow-hidden">
+             <AudioProfilePreview 
+                companyName={data.mp3?.companyName}
+                title={data.mp3?.title}
+                description={data.mp3?.description}
+                name={data.mp3?.name}
+                artist={data.mp3?.artist as any || 'Podcast Guest'}
+                audioUrl={data.mp3?.url}
+                themeColor={data.mp3?.themeColor}
+                textColor={data.mp3?.textColor}
+                buttonColor={data.mp3?.buttonColor}
+                buttonTextColor={data.mp3?.buttonTextColor}
+                buttonText={data.mp3?.buttonText}
+                onButtonClick={() => handleAction({ mode: data.mp3?.destinationMode, url: data.mp3?.buttonUrl, qrLinkId: data.mp3?.qrLinkId })}
+             />
            </div>
          );
 
       case 'app':
          return (
-           <div className="space-y-10">
-              <div className="text-center">
-                 <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-100">
-                    <ShoppingBag className="w-10 h-10" />
-                 </div>
-                 <h1 className="text-2xl font-normal text-gray-900 mb-2">Download App</h1>
-                 <p className="text-gray-400 text-sm">Available on all your devices</p>
-              </div>
-              <div className="space-y-4">
-                 <button className="w-full py-6 bg-black text-white rounded-[40px] font-normal flex items-center px-8 gap-4 shadow-xl">
-                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.96.95-2.22 1.48-3.48 1.48s-2.52-.53-3.48-1.48c-.96-1-1.39-2.31-1.28-3.64.11-1.33.74-2.52 1.77-3.35 1.03-.84 2.37-1.18 3.65-1.14 1.28.05 2.44.47 3.24 1.18-.8.15-1.93.91-1.93 2.1 0 1.19.78 2.36 2.36 2.36.19 0 .37-.02.55-.06-.11.85-.5 1.63-1.14 2.24l-3.26.31zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" /></svg>
-                    <div className="text-left">
-                       <p className="text-[10px] uppercase font-normal opacity-60">App Store</p>
-                       <p className="text-sm font-normal">Download for iOS</p>
-                    </div>
-                 </button>
-                 <button className="w-full py-6 bg-white border-2 border-gray-100 text-gray-900 rounded-[40px] font-normal flex items-center px-8 gap-4 shadow-sm">
-                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.609 22.186c-.18.18-.285.424-.285.679 0 .528.432.96 1.011.96.183 0 .354-.051.5-.141l14.945-8.407c.54-.303.896-.879.896-1.528 0-.649-.356-1.225-.896-1.528L4.835.132c-.146-.09-.32-.141-.498-.141C3.758 0 3.326.432 3.326.96c0 .255.105.499.283.679l.001-.001-.001.176v.001z" /></svg>
-                    <div className="text-left">
-                       <p className="text-[10px] uppercase font-normal opacity-60">Google Play</p>
-                       <p className="text-sm font-normal">Get it on Android</p>
-                    </div>
-                 </button>
-              </div>
+           <div className="w-full h-full rounded-none overflow-hidden">
+             <AppStorePreview 
+                title={data.app?.title}
+                description={data.app?.description}
+                icon={data.app?.icon}
+                iosUrl={data.app?.ios}
+                androidUrl={data.app?.android}
+                themeColor={data.app?.themeColor}
+             />
            </div>
          );
 
@@ -1038,7 +1029,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                     )}
                  </div>
 
-                 <div className="space-y-6">
+                  <div className="space-y-6">
                     {data.business?.about && (
                        <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100">
                           <p className="text-[10px] font-normal text-gray-400 uppercase tracking-widest mb-2">About Us</p>
@@ -1095,15 +1086,29 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                           </div>
                        </div>
                     )}
+
+                    {data.business?.buttonUrl && (
+                      <button 
+                        onClick={() => handleAction(data.business!.buttonUrl!)}
+                        className="w-full py-5 text-white rounded-[32px] font-normal text-lg shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
+                        style={{ backgroundColor: data.business.accentColor || '#2563eb' }}
+                      >
+                        {data.business.buttonText || 'Discover More'}
+                        <ChevronRight className="w-6 h-6" />
+                      </button>
+                    )}
                  </div>
                  <div className="h-8"></div>
-             </div>
-          </div>
+              </div>
+           </div>
         );
 
       case 'menu':
         return (
-          <MenuPreview data={data.menu} />
+          <MenuPreview 
+            data={data.menu} 
+            onButtonClick={(targetQrId) => handleAction(`qr:${targetQrId}`)} 
+          />
         );
 
       case 'coupon':
@@ -1153,20 +1158,41 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                 </div>
              )}
 
-             <button 
-               onClick={() => {
-                 if (data.coupon?.promoCode) {
-                   navigator.clipboard.writeText(data.coupon.promoCode);
-                   alert('Promo code copied!');
-                 }
-               }}
-               className="w-full py-5 bg-gray-900 text-white rounded-[32px] font-normal text-lg shadow-2xl shadow-gray-200 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
-             >
-               Copy Code
-             </button>
+             <div className="flex flex-col gap-4">
+               <button 
+                 onClick={() => {
+                   if (data.coupon?.promoCode) {
+                     navigator.clipboard.writeText(data.coupon.promoCode);
+                     alert('Promo code copied!');
+                   }
+                 }}
+                 className="w-full py-5 bg-orange-600 text-white rounded-[32px] font-normal text-lg shadow-2xl shadow-orange-100 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
+               >
+                 <Copy className="w-5 h-5" />
+                 Copy Code
+               </button>
+
+               {data.coupon?.website && (
+                  <button 
+                    onClick={() => handleAction(data.coupon!.website!)}
+                    className="w-full py-5 bg-gray-900 text-white rounded-[32px] font-normal text-lg shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
+                  >
+                    Redeem Offer
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+               )}
+             </div>
           </div>
         );
-
+      case 'app':
+        return <AppStorePreview {...data.app} />;
+      case 'booking':
+        return (
+          <BookingProfilePreview 
+            {...data.booking} 
+            onButtonClick={handleAction}
+          />
+        );
       default:
         return (
           <div className="text-center space-y-6">
@@ -1186,7 +1212,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
   };
 
   if (isWizardPreview) {
-    if (data.type === 'whatsapp' || data.type === 'instagram' || data.type === 'facebook' || data.type === 'pdf' || data.type === 'video' || data.type === 'image') {
+    if (data.type === 'whatsapp' || data.type === 'instagram' || data.type === 'facebook' || data.type === 'pdf' || data.type === 'video' || data.type === 'image' || data.type === 'mp3' || data.type === 'url' || data.type === 'wifi' || data.type === 'app' || data.type === 'booking') {
       return (
         <div className="w-full h-full">
            {renderContent()}
@@ -1212,6 +1238,36 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
         </div>
 
         {renderContent()}
+        
+        {/* Linked QR Teaser - "Next Experience" */}
+        {linkedQRCode && !isWizardPreview && (
+          <div className="mt-12 pt-8 border-t border-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <p className="text-[10px] font-normal text-gray-400 uppercase tracking-widest mb-4">Discover More</p>
+            <button 
+              onClick={() => handleAction({ mode: 'qr_link', qrLinkId: linkedQRCode.shortId })}
+              className="w-full bg-gray-50 hover:bg-gray-100 p-4 rounded-3xl border border-gray-100 flex items-center gap-4 transition-all group"
+            >
+              <div className="w-12 h-12 bg-white rounded-2xl border border-gray-100 flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
+                {linkedQRCode.logo ? (
+                  <img src={linkedQRCode.logo} alt={linkedQRCode.name} className="w-full h-full object-cover" />
+                ) : (
+                  <ShieldCheck className="w-6 h-6 text-gray-400" />
+                )}
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-xs font-normal text-gray-900 leading-tight mb-0.5 group-hover:text-blue-600 transition-colors">
+                  {linkedQRCode.name}
+                </p>
+                <p className="text-[10px] font-normal text-gray-400 capitalize">
+                  {linkedQRCode.type} Experience
+                </p>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-gray-100 group-hover:border-blue-100 group-hover:bg-blue-50 transition-all">
+                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-600" />
+              </div>
+            </button>
+          </div>
+        )}
 
         {/* Footer info */}
         <div className="mt-16 text-center">

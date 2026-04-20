@@ -16,6 +16,9 @@ build/
 .next/
 out/
 *.tsbuildinfo
+*.js
+*.js.map
+*.d.ts
 
 # Turbo
 .turbo/

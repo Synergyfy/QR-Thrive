@@ -40,20 +40,24 @@ export class PaystackService {
     plan?: string,
     metadata?: any,
   ) {
+    this.logger.log(
+      `Initializing Paystack transaction for email: ${email}, amount: ${amount}, plan: ${plan}`,
+    );
     try {
       const response = await firstValueFrom(
         this.httpService.post(
           `${this.baseUrl}/transaction/initialize`,
           {
             email,
-            amount: amount * 100, // Convert to kobo
+            amount: Math.round(amount * 100), // Ensure it's an integer for kobo
             plan,
             metadata,
-            callback_url: `${this.configService.get('FRONTEND_URL')}/dashboard/billing`,
+            callback_url: `${this.configService.get('FRONTEND_URL') || 'http://localhost:3000'}/dashboard`,
           },
           { headers: this.headers },
         ),
       );
+      this.logger.log(`Paystack response status: ${response.status}`);
       return response.data.data;
     } catch (error) {
       this.logger.error(
@@ -88,7 +92,7 @@ export class PaystackService {
     }
   }
 
-  verifyWebhookSignature(payload: string, signature: string): boolean {
+  verifyWebhookSignature(payload: string | Buffer, signature: string): boolean {
     const hash = crypto
       .createHmac('sha512', this.secretKey)
       .update(payload)
@@ -142,6 +146,57 @@ export class PaystackService {
         error.response?.data || error.message,
       );
       throw new InternalServerErrorException('Error updating Paystack plan');
+    }
+  }
+
+  async createSubscription(
+    customer: string,
+    plan: string,
+    authorization: string,
+    start_date?: string,
+  ) {
+    try {
+      const payload: any = { customer, plan, authorization };
+      if (start_date) payload.start_date = start_date;
+
+      const response = await firstValueFrom(
+        this.httpService.post(`${this.baseUrl}/subscription`, payload, {
+          headers: this.headers,
+        }),
+      );
+      return response.data.data;
+    } catch (error) {
+      this.logger.error(
+        'Paystack create subscription error:',
+        error.response?.data || error.message,
+      );
+      throw new InternalServerErrorException(
+        'Error creating Paystack subscription',
+      );
+    }
+  }
+
+  async disableSubscription(code: string, token: string) {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.baseUrl}/subscription/disable`,
+          {
+            code,
+            token,
+          },
+          { headers: this.headers },
+        ),
+      );
+      return response.data;
+    } catch (error) {
+      this.logger.error(
+        'Paystack subscription disable error:',
+        error.response?.data || error.message,
+      );
+      throw new InternalServerErrorException(
+        'Error disabling Paystack subscription',
+      );
     }
   }
 }

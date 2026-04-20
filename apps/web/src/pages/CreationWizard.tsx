@@ -10,7 +10,6 @@ import {
   Music,
   Building2,
   UtensilsCrossed,
-  CheckCircle2,
   Phone,
   Link2,
   Users,
@@ -23,7 +22,8 @@ import {
   Loader2,
   LayoutGrid,
   FileEdit,
-  X
+  X,
+  Lock
 } from 'lucide-react';
 
 const FacebookIcon = (props: any) => (
@@ -53,6 +53,7 @@ import toast from 'react-hot-toast';
 import { useQRCode, useCreateQRCode, useUpdateQRCode, useCurrentUser } from '../hooks/useApi';
 import { uploadAllPendingFiles } from '../utils/upload';
 import { uploadApi } from '../services/api';
+import { getDashboardPath } from '../utils/auth';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -160,6 +161,12 @@ const CreationWizard: React.FC = () => {
   const { data: userData } = useCurrentUser();
   const user = userData?.user;
 
+  const isLocked = (typeId: string) => {
+    if (user?.role === 'ADMIN') return false;
+    const allowedTypes = user?.plan?.qrCodeTypes || [];
+    return !allowedTypes.includes(typeId as any);
+  };
+
   // Sync types for new QRs
   useEffect(() => {
     if (selectedType && !isEditing) {
@@ -247,7 +254,8 @@ const CreationWizard: React.FC = () => {
             logo: config.logo, 
             width: config.width, 
             height: config.height, 
-            margin: config.margin 
+            margin: config.margin,
+            linkedQRCodeId: dataToSave.linkedQRCodeId || dataToSave.connectedQrId || config.linkedQRCodeId
           } 
         });
         toast.success('QR Code updated successfully!');
@@ -261,11 +269,12 @@ const CreationWizard: React.FC = () => {
           logo: config.logo, 
           width: config.width, 
           height: config.height, 
-          margin: config.margin 
+          margin: config.margin,
+          linkedQRCodeId: dataToSave.linkedQRCodeId || dataToSave.connectedQrId || config.linkedQRCodeId
         });
         toast.success('QR Code created successfully!');
       }
-      navigate('/dashboard');
+      navigate(getDashboardPath(user));
     } catch (error: any) {
       await cleanupUploadedFiles();
       toast.error(error?.response?.data?.message || 'Failed to save QR Code');
@@ -279,9 +288,9 @@ const CreationWizard: React.FC = () => {
   const handleBack = () => {
     if (isEditing) {
       // In edit mode, back always goes to dashboard
-      navigate('/dashboard');
+      navigate(getDashboardPath(user));
     } else if (step === 'type') {
-      navigate('/dashboard');
+      navigate(getDashboardPath(user));
     } else {
       setStep(steps[steps.findIndex(s => s.id === step) - 1].id as Step);
     }
@@ -299,11 +308,8 @@ const CreationWizard: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
       {/* Navbar */}
       <nav className="h-16 bg-white border-b border-slate-100 px-8 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => navigate('/dashboard')}>
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-100">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-            <span className="text-lg font-bold text-slate-900 tracking-tighter">QR Thrive</span>
+        <div className="flex items-center cursor-pointer shrink-0" onClick={() => navigate(getDashboardPath(user))}>
+            <img src="/QRThrive_Logo_Full-BG.png" alt="QR Thrive" className="h-14 w-auto" style={{ filter: 'brightness(0) saturate(100%) invert(32%) sepia(95%) saturate(3033%) hue-rotate(211deg) brightness(96%) contrast(92%)' }} />
         </div>
 
         {/* Stepper (Centered) */}
@@ -380,27 +386,40 @@ const CreationWizard: React.FC = () => {
                             key={type.id}
                             onMouseEnter={() => setHoveredType(type.id)}
                             onMouseLeave={() => setHoveredType(null)}
-                            onClick={() => setSelectedType(type.id)}
+                            onClick={() => !isLocked(type.id) && setSelectedType(type.id)}
                             className={cn(
-                              "flex flex-col items-center text-center p-6 rounded-[2rem] border-2 transition-all hover:scale-[1.02] active:scale-[0.98] group relative overflow-hidden",
-                              selectedType === type.id 
-                                ? "border-blue-600 bg-blue-50/10 ring-4 ring-blue-50/30" 
-                                : "border-white bg-white hover:border-slate-100 shadow-sm shadow-slate-200/50"
+                              "flex flex-col items-center text-center p-6 rounded-[2rem] border-2 transition-all group relative overflow-hidden",
+                              isLocked(type.id)
+                                ? "border-slate-100 bg-slate-50/30 opacity-80 cursor-not-allowed"
+                                : selectedType === type.id
+                                  ? "border-blue-600 bg-blue-50/10 ring-4 ring-blue-50/30 hover:scale-[1.02] active:scale-[0.98]"
+                                  : "border-white bg-white hover:border-slate-100 shadow-sm shadow-slate-200/50 hover:scale-[1.02] active:scale-[0.98]"
                             )}
                           >
+                             {/* Padlock for restricted types */}
+                             {isLocked(type.id) && (
+                               <div className="absolute top-4 right-4 text-slate-300">
+                                 <Lock className="w-4 h-4" />
+                               </div>
+                             )}
+
                              <div className={cn(
                                "w-16 h-16 rounded-full flex items-center justify-center transition-all mb-4 border-2",
-                               selectedType === type.id 
-                                 ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200" 
-                                 : "bg-white text-slate-400 border-slate-100 group-hover:border-blue-100 group-hover:text-blue-600"
+                               isLocked(type.id)
+                                 ? "bg-slate-100 text-slate-300 border-slate-200"
+                                 : selectedType === type.id
+                                   ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200"
+                                   : "bg-white text-slate-400 border-slate-100 group-hover:border-blue-100 group-hover:text-blue-600"
                              )}>
                                 <type.icon className="w-7 h-7" />
                              </div>
                              <div className="space-y-1">
                                 <h3 className="font-bold text-slate-900 text-sm tracking-tight">{type.title}</h3>
-                                <p className="text-xs font-medium text-slate-400 leading-tight px-2">{type.description}</p>
+                                <p className="text-xs font-medium text-slate-400 leading-tight px-2">
+                                  {isLocked(type.id) ? 'Upgrade to unlock' : type.description}
+                                </p>
                              </div>
-                             {type.category === 'dynamic' && (
+                             {type.category === 'dynamic' && !isLocked(type.id) && (
                                 <div className="absolute top-3 right-3 w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
                              )}
                           </button>

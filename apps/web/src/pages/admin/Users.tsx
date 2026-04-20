@@ -3,7 +3,6 @@ import {
   Search, 
   Filter, 
   Download, 
-  MoreHorizontal, 
   ChevronLeft, 
   ChevronRight,
   Shield,
@@ -12,8 +11,9 @@ import {
   Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAdminUsers } from '../../hooks/useAdmin';
+import { useAdminUsers, useBanUser, useDeleteUser, useExportUsers } from '../../hooks/useAdmin';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 
 
 export default function UsersManagement() {
@@ -26,6 +26,10 @@ export default function UsersManagement() {
     search: searchTerm,
     status: selectedStatus === 'All' ? undefined : selectedStatus.toLowerCase(),
   });
+
+  const banMutation = useBanUser();
+  const deleteMutation = useDeleteUser();
+  const exportMutation = useExportUsers();
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -45,8 +49,18 @@ export default function UsersManagement() {
           <p className="text-sm text-slate-500 font-medium">Manage and track all registered users on the platform.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-slate-50 transition-all shadow-sm shadow-slate-900/5">
-            <Download className="w-4 h-4" />
+          <button 
+            onClick={() => {
+              const t = toast.loading('Exporting users...');
+              exportMutation.mutate(undefined, {
+                onSuccess: () => toast.success('Export completed', { id: t }),
+                onError: () => toast.error('Export failed', { id: t })
+              });
+            }}
+            disabled={exportMutation.isPending}
+            className="bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-slate-50 transition-all shadow-sm shadow-slate-900/5 disabled:opacity-50"
+          >
+            {exportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             Export CSV
           </button>
           <button className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95">
@@ -132,19 +146,21 @@ export default function UsersManagement() {
                         <div>
                           <p className="text-sm font-bold text-slate-800 leading-tight flex items-center gap-1.5">
                             {user.firstName} {user.lastName}
-                            {user.plan === 'PRO' && <Shield className="w-3 h-3 text-blue-500" />}
+                            {user.plan?.name === 'PRO' && <Shield className="w-3 h-3 text-blue-500" />}
                           </p>
                           <p className="text-[10px] text-slate-400 font-medium">{user.email}</p>
+
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
-                        user.plan === 'PRO' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-500'
+                        user.plan?.name === 'PRO' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-500'
                       }`}>
-                        {user.plan}
+                        {user.plan?.name || 'FREE'}
                       </span>
                     </td>
+
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-slate-700">{user.qrs}</span>
@@ -159,11 +175,15 @@ export default function UsersManagement() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className={`w-1.5 h-1.5 rounded-full ${
+                          user.isBanned ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]' :
                           user.subscriptionStatus === 'active' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 
-                          user.subscriptionStatus === 'cancelled' ? 'bg-slate-300' : 
+                          user.subscriptionStatus === 'canceled' ? 'bg-slate-300' : 
                           'bg-amber-500'
                         }`}></div>
-                        <span className="text-xs font-bold text-slate-600 capitalize">{user.subscriptionStatus || 'N/A'}</span>
+
+                        <span className="text-xs font-bold text-slate-600 capitalize">
+                          {user.isBanned ? 'Banned' : (user.subscriptionStatus || 'N/A')}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
@@ -174,11 +194,33 @@ export default function UsersManagement() {
                         <button className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-blue-600 transition-all shadow-none hover:shadow-sm border border-transparent hover:border-slate-100">
                           <ExternalLink className="w-4 h-4" />
                         </button>
-                        <button className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-red-500 transition-all shadow-none hover:shadow-sm border border-transparent hover:border-slate-100">
-                          <Trash2 className="w-4 h-4" />
+                        <button 
+                          title={user.isBanned ? "Unban User" : "Ban User"}
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to ${user.isBanned ? 'unban' : 'ban'} ${user.firstName}?`)) {
+                              banMutation.mutate(user.id, {
+                                onSuccess: () => toast.success(`User ${user.isBanned ? 'unbanned' : 'banned'} successfully`)
+                              });
+                            }
+                          }}
+                          className={`p-2 hover:bg-white rounded-lg transition-all shadow-none hover:shadow-sm border border-transparent hover:border-slate-100 ${
+                            user.isBanned ? 'text-emerald-500' : 'text-amber-500'
+                          }`}
+                        >
+                          <Shield className="w-4 h-4" />
                         </button>
-                        <button className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-slate-600 transition-all shadow-none hover:shadow-sm border border-transparent hover:border-slate-100">
-                          <MoreHorizontal className="w-4 h-4" />
+                        <button 
+                          title="Delete User"
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to delete ${user.firstName}? This cannot be undone.`)) {
+                              deleteMutation.mutate(user.id, {
+                                onSuccess: () => toast.success('User deleted successfully')
+                              });
+                            }
+                          }}
+                          className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-red-500 transition-all shadow-none hover:shadow-sm border border-transparent hover:border-slate-100"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>

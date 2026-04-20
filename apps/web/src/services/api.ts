@@ -10,6 +10,10 @@ import type {
   AdminStats,
   AdminUsersResponse,
   SystemConfig,
+  Plan,
+  Country,
+  PricingConfig,
+  PriceBook,
 } from '../types/api';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:3005/api/v1');
@@ -39,11 +43,11 @@ apiClient.interceptors.response.use(
         return Promise.reject(err);
       }
     }
-    
+
     if (error.response?.status === 401) {
-       localStorage.removeItem(SESSION_HINT_KEY);
+      localStorage.removeItem(SESSION_HINT_KEY);
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -59,11 +63,28 @@ export const authApi = {
     localStorage.setItem(SESSION_HINT_KEY, 'true');
     return res.data;
   },
+  googleLogin: async (token: string) => {
+    const res = await apiClient.post<AuthResponse>('/auth/google', { token });
+    localStorage.setItem(SESSION_HINT_KEY, 'true');
+    return res.data;
+  },
   logout: async () => {
     localStorage.removeItem(SESSION_HINT_KEY);
     return (await apiClient.post('/auth/logout')).data;
   },
-  getMe: async () => (await apiClient.get<AuthResponse>('/auth/me')).data,
+  getMe: async () => {
+    const hint = localStorage.getItem(SESSION_HINT_KEY);
+    console.log('authApi.getMe: session hint check:', !!hint);
+    if (!hint) return null;
+    try {
+      const res = await apiClient.get<AuthResponse>('/auth/me');
+      console.log('authApi.getMe: Successfully fetched profile');
+      return res.data;
+    } catch (err) {
+      console.error('authApi.getMe: Failed to fetch profile', err);
+      throw err;
+    }
+  },
 };
 
 export const foldersApi = {
@@ -166,7 +187,7 @@ export const mediaApi = {
     formData.append('timestamp', credentials.timestamp.toString());
     formData.append('api_key', credentials.apiKey);
     formData.append('folder', credentials.folder);
-    
+
     // Unauthenticated POST directly to Cloudinary
     // Note: Use /auto/ upload for dynamic handling of videos, PDFs, images, etc.
     const res = await axios.post(
@@ -179,9 +200,55 @@ export const mediaApi = {
 };
 
 export const adminApi = {
-  getStats: async () => (await apiClient.get<AdminStats>('/admin/stats')).data,
-  getUsers: async (params?: { page?: number; limit?: number; search?: string; status?: string }) => 
+  getStats: async (range = '7d') => (await apiClient.get<AdminStats>('/admin/stats', { params: { range } })).data,
+  getUsers: async (params?: { page?: number; limit?: number; search?: string; status?: string }) =>
     (await apiClient.get<AdminUsersResponse>('/admin/users', { params })).data,
   getConfig: async () => (await apiClient.get<SystemConfig>('/admin/config')).data,
   updateConfig: async (data: Partial<SystemConfig>) => (await apiClient.patch<SystemConfig>('/admin/config', data)).data,
+
+  // Plans Management
+  getPlans: async () => (await apiClient.get<Plan[]>('/plans/all')).data,
+  createPlan: async (data: Partial<Plan>) => (await apiClient.post<Plan>('/plans', data)).data,
+  updatePlan: async (id: string, data: Partial<Plan>) => (await apiClient.patch<Plan>(`/plans/${id}`, data)).data,
+  deletePlan: async (id: string) => (await apiClient.delete(`/plans/${id}`)).data,
+
+  // Pricing & Geography
+  getCountries: async () => (await apiClient.get<Country[]>('/admin/countries')).data,
+  updateCountry: async (code: string, data: Partial<Country>) => (await apiClient.patch<Country>(`/admin/countries/${code}`, data)).data,
+  getPlanPrices: async (planId: string) => (await apiClient.get<PriceBook[]>(`/admin/plans/${planId}/prices`)).data,
+  createPriceBook: async (planId: string, data: Partial<PriceBook>) => (await apiClient.post<PriceBook>(`/admin/plans/${planId}/prices`, data)).data,
+  updatePriceBook: async (id: string, data: Partial<PriceBook>) => (await apiClient.patch<PriceBook>(`/admin/price-books/${id}`, data)).data,
+  
+  getPricingConfig: async () => (await apiClient.get<PricingConfig>('/pricing/config')).data,
+  updatePricingConfig: async (data: Partial<PricingConfig>) => (await apiClient.patch<PricingConfig>('/pricing/config', data)).data,
+
+  suggestPrice: async (basePriceUSD: number, targetCurrencyCode: string, tier?: string) => 
+    (await apiClient.get('/pricing/suggest', { params: { basePriceUSD, targetCurrencyCode, tier } })).data,
+
+  banUser: async (id: string) => (await apiClient.patch(`/admin/users/${id}/ban`)).data,
+  deleteUser: async (id: string) => (await apiClient.delete(`/admin/users/${id}`)).data,
+  exportUsers: async () => {
+    const res = await apiClient.get('/admin/users/export', { responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'users-export.csv');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  },
+};
+export const paymentsApi = {
+  initialize: async (data: { planId: string; interval: string; isTrial?: boolean }) => {
+    return (await apiClient.post('/payments/initialize', data)).data;
+  },
+  verifyPayment: async (reference: string) => {
+    return (await apiClient.post('/payments/verify', { reference })).data;
+  },
+  verifyPaymentWithPlanId: async (reference: string, planId: string, interval?: string) => {
+    return (await apiClient.post('/payments/verify', { reference, planId, interval })).data;
+  },
+  startTrial: async (data: { planId: string }) => (await apiClient.post<{ message: string; trialEndsAt: string }>('/payments/start-trial', data)).data,
+  subscribeFree: async (data: { planId: string }) => (await apiClient.post<{ message: string; planName: string }>('/payments/subscribe-free', data)).data,
+  cancelSubscription: async () => (await apiClient.post<{ message: string }>('/payments/cancel')).data,
 };

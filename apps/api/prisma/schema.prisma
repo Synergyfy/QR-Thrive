@@ -11,23 +11,37 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
+  id            String         @id @default(uuid()) @db.Uuid
   email         String         @unique
   firstName     String
   lastName      String
-  password      String
+  password      String?
   role          Role           @default(USER)
-  plan          PlanType       @default(FREE)
+  
+  // Dynamic Plan association
+  planId        String?    @db.Uuid
+  plan          Plan?          @relation(fields: [planId], references: [id])
+  
+  isBanned      Boolean        @default(false)
+  googleId      String?        @unique
+  avatar        String?
   
   // Paystack Integration
   paystackCustomerCode     String?   @unique
   paystackSubscriptionCode String?   @unique
-  subscriptionStatus       String?   // e.g., "active", "non-renewing", "attention", "cancelled"
+  subscriptionStatus       String?   // e.g., "active", "non-renewing", "attention", "cancelled", "trialing"
   billingCycle             String?   // "monthly", "quarterly", "yearly"
+
+  // Trial System
+  trialStartedAt           DateTime?
+  trialEndsAt              DateTime?
+  hasUsedTrial             Boolean   @default(false)
 
   refreshTokens RefreshToken[]
   folders       Folder[]
   qrCodes       QRCode[]
+  magicLinks    MagicLink[]    // Added for SSO
+  countryCode   String?        // ISO-2 country code for account locking
   deletedAt     DateTime?      // Added for Soft-Delete
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -38,23 +52,25 @@ enum Role {
   ADMIN
 }
 
-enum PlanType {
-  FREE
-  PRO
+model MagicLink {
+  id        String   @id @default(uuid()) @db.Uuid
+  token     String   @unique
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
 }
 
 model SystemConfig {
   id              Int      @id @default(1)
   
-  // Pricing
-  monthlyPrice    Float    @default(5000)
-  quarterlyPrice  Float    @default(13500)
-  yearlyPrice     Float    @default(50000)
-  
-  // Paystack Plan Codes (Sync'd with Paystack)
-  monthlyPlanCode   String?
-  quarterlyPlanCode String?
-  yearlyPlanCode    String?
+  // Pricing Discounts (Percentage)
+  quarterlyDiscount Float    @default(10)
+  yearlyDiscount    Float    @default(20)
   
   // Content
   heroTitle       String   @default("Turn Every Scan Into a Customer")
@@ -66,11 +82,92 @@ model SystemConfig {
   updatedAt       DateTime @updatedAt
 }
 
+enum PricingTier {
+  HIGH
+  MIDDLE
+  LOW
+}
+
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  LIFETIME
+}
+
+enum PriceStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model Country {
+  code           String      @id // ISO 3166-1 alpha-2 (e.g., "US", "NG")
+  name           String
+  currencyCode   String      @default("USD")
+  currencySymbol String      @default("$")
+  tier           PricingTier @default(HIGH)
+  taxRate        Float       @default(0.0)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Plan {
+  id            String      @id @default(uuid()) @db.Uuid
+  name          String      @unique
+  description   String?
+  qrCodeLimit   Int         @default(10)
+  qrCodeTypes   QRType[]    // PostgreSQL supporting enum arrays
+  isPopular     Boolean     @default(false)
+  isDefault     Boolean     @default(false)
+  isFree        Boolean     @default(false)
+  trialDays     Int         @default(0)
+  isActive      Boolean     @default(true)
+  
+  vemtapPlanId          String? // Attached Vemtap Plan ID for bundling
+  
+  priceBooks    PriceBook[]
+  users         User[]
+  deletedAt     DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model PriceBook {
+  id            String       @id @default(uuid()) @db.Uuid
+  
+  planId        String       @db.Uuid
+  plan          Plan         @relation(fields: [planId], references: [id], onDelete: Cascade)
+  
+  tier          PricingTier
+  currencyCode  String       // e.g., "NGN", "USD", "EUR"
+  
+  billingCycle  BillingCycle @default(MONTHLY)
+  price         Float        // Numerical amount
+  
+  status        PriceStatus  @default(DRAFT)
+
+  // Gateway Mapping
+  stripePriceId    String?   // Stripe API Price ID
+  paystackPlanCode String?   // Paystack API Plan Code (for recurring)
+
+  activeFrom    DateTime?    
+
+  activeTo      DateTime?    
+    
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([planId, tier, currencyCode, billingCycle, status])
+  @@index([planId, tier, currencyCode, billingCycle, status])
+  @@map("price_books")
+}
+
 model Folder {
-  id        String    @id @default(cuid())
+  id        String    @id @default(uuid()) @db.Uuid
   name      String
   color     String
-  userId    String
+  userId    String    @db.Uuid
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   qrCodes   QRCode[]
   deletedAt DateTime? // Added for Soft-Delete
@@ -81,9 +178,9 @@ model Folder {
 }
 
 model RefreshToken {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid()) @db.Uuid
   token     String   @unique
-  userId    String
+  userId    String   @db.Uuid
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
@@ -138,11 +235,11 @@ enum FormFieldType {
 }
 
 model QRCode {
-  id           String    @id @default(cuid())
-  userId       String
+  id           String    @id @default(uuid()) @db.Uuid
+userId    String    @db.Uuid
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  folderId     String?
+  folderId     String?   @db.Uuid
   folder       Folder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
   
   name         String
@@ -171,12 +268,16 @@ model QRCode {
   scans        Scan[]
   form         Form?
 
+  linkedQRCodeId String?   @db.Uuid
+  linkedQRCode   QRCode?   @relation("QRLinks", fields: [linkedQRCodeId], references: [id], onDelete: SetNull)
+  linkingQRCodes QRCode[]  @relation("QRLinks")
+
   @@index([userId])
 }
 
 model Scan {
-  id         String   @id @default(cuid())
-  qrCodeId   String
+  id         String   @id @default(uuid()) @db.Uuid
+  qrCodeId   String   @db.Uuid
   qrCode     QRCode   @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
   
   ip         String?
@@ -195,8 +296,8 @@ model Scan {
 }
 
 model Form {
-  id          String      @id @default(cuid())
-  qrCodeId    String      @unique
+  id          String      @id @default(uuid()) @db.Uuid
+  qrCodeId    String      @unique @db.Uuid
   qrCode      QRCode      @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
   
   title       String
@@ -213,8 +314,8 @@ model Form {
 }
 
 model FormField {
-  id          String        @id @default(cuid())
-  formId      String
+  id          String        @id @default(uuid()) @db.Uuid
+  formId      String        @db.Uuid
   form        Form          @relation(fields: [formId], references: [id], onDelete: Cascade)
   
   type        FormFieldType
@@ -234,8 +335,8 @@ model FormField {
 }
 
 model FormSubmission {
-  id        String   @id @default(cuid())
-  formId    String
+  id        String   @id @default(uuid()) @db.Uuid
+  formId    String   @db.Uuid
   form      Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
   
   answers   Json     // Map of fieldId to value
@@ -247,4 +348,13 @@ model FormSubmission {
 
   @@index([formId])
   @@index([createdAt])
+}
+
+model ApiKey {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  key       String   @unique // Hashed key
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

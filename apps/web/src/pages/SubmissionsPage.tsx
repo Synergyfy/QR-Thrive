@@ -5,7 +5,8 @@ import {
   Download, Globe, X, Check
 } from 'lucide-react';
 import { useForm, useFormSubmissions } from '../hooks/useForms';
-import { useQRCodes } from '../hooks/useApi';
+import { useQRCodes, useCurrentUser } from '../hooks/useApi';
+import { getDashboardPath } from '../utils/auth';
 import toast from 'react-hot-toast';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -17,6 +18,9 @@ const SubmissionsPage: React.FC = () => {
   const navigate = useNavigate();
   const { data: qrCodes = [] } = useQRCodes();
   const qrCode = qrCodes.find(q => q.id === id);
+  
+  const { data: userData } = useCurrentUser();
+  const user = userData?.user;
   
   const { data: form, isLoading: loadingForm } = useForm(id);
   const { data: submissions = [], isLoading: loadingSubmissions } = useFormSubmissions(id);
@@ -215,7 +219,7 @@ const SubmissionsPage: React.FC = () => {
         <header className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-10 relative z-20">
            <div className="flex items-center gap-6">
               <button 
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate(getDashboardPath(user))}
                 className="p-3 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-blue-600 hover:border-blue-600 transition-all shadow-sm active:scale-95"
               >
                 <ArrowLeft className="w-5 h-5" />

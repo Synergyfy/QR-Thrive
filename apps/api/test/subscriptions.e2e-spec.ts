@@ -146,8 +146,11 @@ describe('Subscriptions (e2e)', () => {
       .send(payload)
       .expect(200);
 
-    const updatedUser = await prisma.user.findUnique({ where: { id: userId } });
-    expect(updatedUser?.plan).toBe('PRO');
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { plan: true },
+    });
+    expect(updatedUser?.plan?.name).toBe('Pro');
   });
 
   it('Successfully create and scan after PRO upgrade', async () => {

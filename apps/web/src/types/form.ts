@@ -1,6 +1,6 @@
 export interface FormField {
   id: string;
-  type: 'text' | 'number' | 'range' | 'checkbox' | 'select' | 'radio' | 'email' | 'phone';
+  type: 'text' | 'textarea' | 'number' | 'range' | 'checkbox' | 'select' | 'radio' | 'email' | 'phone' | 'date' | 'boolean';
   label: string;
   placeholder?: string;
   helpText?: string;

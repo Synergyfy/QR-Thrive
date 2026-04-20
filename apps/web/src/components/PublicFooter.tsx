@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Zap, Globe, MessageSquare, Camera, Briefcase, type LucideIcon } from 'lucide-react';
+import { Globe, MessageSquare, Camera, Briefcase, type LucideIcon } from 'lucide-react';
+import { useCurrentUser } from '../hooks/useApi';
 
 function SocialIcon({ icon: Icon }: { icon: LucideIcon }) {
   return (
@@ -10,16 +11,16 @@ function SocialIcon({ icon: Icon }: { icon: LucideIcon }) {
 }
 
 export default function PublicFooter() {
+  const { data: userData } = useCurrentUser();
+  const user = userData?.user;
+
   return (
     <footer className="bg-blue-600 py-24 px-4 text-white font-sans mt-auto border-t border-blue-500">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-16 mb-24">
           <div className="col-span-2">
             <div className="flex items-center gap-2 mb-8">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                <Zap className="text-white w-6 h-6 fill-yellow-300" />
-              </div>
-              <span className="text-2xl font-bold tracking-tighter">QR Thrive</span>
+              <img src="/QRThrive_Logo_Full-BG.png" alt="QR Thrive" className="h-[120px] md:h-[140px] w-auto brightness-0 invert opacity-100" />
             </div>
             <p className="text-blue-100 max-w-xs mb-10 font-medium leading-relaxed">Modernize your business interactions with the world's most intuitive QR management engine.</p>
             <div className="flex gap-5">
@@ -36,7 +37,7 @@ export default function PublicFooter() {
               <li><Link to="/" className="hover:text-white transition-colors">QR Generator</Link></li>
               <li><a href="#" className="hover:text-white transition-colors">Dynamic Links</a></li>
               <li><a href="#" className="hover:text-white transition-colors">Analytics Pro</a></li>
-              <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing Plans</Link></li>
+              <li><Link to={user ? "/dashboard?tab=pricing" : "/pricing"} className="hover:text-white transition-colors">Pricing Plans</Link></li>
             </ul>
           </div>
 

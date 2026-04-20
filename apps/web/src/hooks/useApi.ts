@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authApi, foldersApi, qrCodesApi, statsApi } from '../services/api';
+import { authApi, foldersApi, qrCodesApi, statsApi, paymentsApi } from '../services/api';
 import type { CreateFolderDto, BackendQRCode, CreateQRCodeDto } from '../types/api';
+import toast from 'react-hot-toast';
 
 // --- AUTH HOOKS ---
 
@@ -18,6 +19,7 @@ export const useLogin = () => {
     mutationFn: authApi.login,
     onSuccess: (data) => {
       queryClient.setQueryData(['currentUser'], data);
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
   });
 };
@@ -28,6 +30,18 @@ export const useSignup = () => {
     mutationFn: authApi.signup,
     onSuccess: (data) => {
       queryClient.setQueryData(['currentUser'], data);
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
+  });
+};
+
+export const useGoogleLogin = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: authApi.googleLogin,
+    onSuccess: (data) => {
+      queryClient.setQueryData(['currentUser'], data);
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
   });
 };
@@ -37,8 +51,9 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: authApi.logout,
     onSuccess: () => {
-      queryClient.setQueryData(['currentUser'], null);
       queryClient.clear();
+      queryClient.setQueryData(['currentUser'], null);
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
   });
 };
@@ -151,5 +166,53 @@ export const useDashboardStats = () => {
   return useQuery({
     queryKey: ['stats'],
     queryFn: statsApi.getDashboardStats,
+  });
+};
+
+// --- PAYMENTS HOOKS ---
+
+export const useCancelSubscription = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => paymentsApi.cancelSubscription(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      toast.success('Subscription cancelled successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to cancel subscription');
+    },
+  });
+};
+export const useInitializePayment = () => {
+  return useMutation({
+    mutationFn: (data: { planId: string; interval: string; isTrial?: boolean }) => paymentsApi.initialize(data),
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to initialize payment');
+    },
+  });
+};
+
+export const useVerifyPayment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reference: string) => paymentsApi.verifyPayment(reference),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
+  });
+};
+
+export const useStartTrial = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { planId: string }) => paymentsApi.startTrial(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      toast.success('Trial started successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to start trial');
+    },
   });
 };
