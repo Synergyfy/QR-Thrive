@@ -206,6 +206,17 @@ export class QRCodesController {
       const data = qrCode.data as any;
       let url = '/';
 
+      let baseUrl = process.env.FRONTEND_URL;
+      if (!baseUrl) {
+        if (process.env.NODE_ENV === 'production') {
+          const scheme = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+          const host = req.headers['x-forwarded-host'] || req.get('host');
+          baseUrl = `${scheme}://${host}`; // Dynamic host for production
+        } else {
+          baseUrl = 'http://localhost:5173'; // Fallback for local development
+        }
+      }
+
       if (qrCode.type === 'url' && data.url) {
         url = data.url.startsWith('http') ? data.url : `https://${data.url}`;
       } else if (qrCode.type === 'whatsapp' && data.phoneNumber) {
@@ -213,13 +224,8 @@ export class QRCodesController {
           ? `?text=${encodeURIComponent(data.message)}`
           : '';
         url = `https://wa.me/${data.phoneNumber}${message}`;
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-
-      if (qrCode.type === 'form') {
-        url = `${frontendUrl}/s/${shortId}?scanned=1`;
       } else {
-        // For other types (vcard, wifi, etc), we redirect to the frontend dynamic landing page
-        url = `${frontendUrl}/s/${shortId}?scanned=1`;
+        url = `${baseUrl}/s/${shortId}?scanned=1`;
       }
 
       return res.redirect(url);

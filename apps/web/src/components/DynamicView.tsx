@@ -66,6 +66,14 @@ const getSocialConfig = (platform: string) => {
       icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.01.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.06-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96s3.35-1.92 5.27-1.74c1.1.07 2.13.44 3.06 1.06V.02z"/></svg>, 
       color: 'bg-black' 
     };
+    case 'github': return { 
+      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.373 0 12c0 5.302 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.605-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>, 
+      color: 'bg-slate-900 border border-slate-700' 
+    };
+    case 'whatsapp': return { 
+      icon: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 0C5.397 0 .016 5.38.016 12.015c0 2.122.553 4.195 1.603 6.02L.016 24l6.104-1.599a11.983 11.983 0 005.911 1.564h.005c6.634 0 12.015-5.382 12.015-12.015 0-3.216-1.252-6.239-3.525-8.513A11.956 11.956 0 0012.031 0zm0 20.015h-.004a9.98 9.98 0 01-5.076-1.378l-.364-.216-3.771.99.998-3.676-.237-.377A9.957 9.957 0 012.016 12.015c0-5.526 4.498-10.024 10.025-10.024A9.932 9.932 0 0119.124 4.93a9.934 9.934 0 012.924 7.085c-.001 5.527-4.499 10.025-10.026 10.025zm5.505-7.52c-.302-.152-1.789-.884-2.065-.986-.276-.101-.478-.152-.679.151-.201.303-.779.986-.955 1.188-.176.202-.353.228-.654.076-.301-.151-1.275-.471-2.427-1.498-.897-.799-1.503-1.787-1.68-2.091-.176-.304-.019-.467.132-.619.135-.135.302-.353.453-.529.151-.177.201-.303.301-.505.101-.202.051-.38-.025-.531-.076-.151-.679-1.637-.931-2.242-.246-.59-.496-.51-.679-.52-.176-.01-.378-.01-.579-.01-.201 0-.528.076-.804.378-.276.303-1.056 1.034-1.056 2.52 0 1.488 1.081 2.925 1.232 3.127.151.202 2.128 3.245 5.155 4.545.719.309 1.28.494 1.718.632.721.229 1.378.197 1.894.12 5.768-.86 2.387-1.691 2.613-2.195.226-.505.226-.939.151-1.034-.075-.095-.276-.151-.578-.303z"/></svg>, 
+      color: 'bg-[#25D366]' 
+    };
     default: return { icon: Share2, color: 'bg-gray-600' };
   }
 };
@@ -304,64 +312,76 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
           </div>
         );
 
-      case 'vcard':
+      case 'vcard': {
+        const vcardData = data.vcard || ({} as any);
+        const isUserTyping = isWizardPreview && !!initialData?.vcard;
+        
+        // If user is editing vcard form, only show the fields if explicitly filled. 
+        // Otherwise use demo data (which vcardData already is).
+        const displayMobile = isUserTyping ? initialData.vcard?.mobile : vcardData.mobile;
+        const displayEmail = isUserTyping ? initialData.vcard?.email : vcardData.email;
+        const displayWebsite = isUserTyping ? initialData.vcard?.website : vcardData.website;
+        const displayJobTitle = isUserTyping ? initialData.vcard?.jobTitle : vcardData.jobTitle;
+        const displayCompany = isUserTyping ? initialData.vcard?.company : vcardData.company;
+        const displayAddress = isUserTyping ? initialData.vcard?.address : vcardData.address;
+
         return (
           <div className="flex-1 flex flex-col relative bg-white -mx-6 -mt-6 rounded-t-[44px]">
              {/* Banner with Content Inside */}
              <div 
                className="h-60 rounded-b-[48px] relative overflow-hidden flex flex-col items-center justify-start text-center px-6 pt-10"
-               style={{ backgroundColor: data.vcard?.themeColor || '#2563eb' }}
+               style={{ backgroundColor: vcardData.themeColor || '#2563eb' }}
              >
-                {data.vcard?.banner && (
-                   <img src={data.vcard.banner} className="absolute inset-0 w-full h-full object-cover opacity-50" alt="Banner" />
+                {vcardData.banner && (
+                   <img src={vcardData.banner} className="absolute inset-0 w-full h-full object-cover opacity-50" alt="Banner" />
                 )}
                 <div className="relative z-10 flex flex-col items-center">
                    {/* Logo / Profile */}
                    <div className="w-20 h-20 rounded-full border-4 border-white shadow-2xl overflow-hidden bg-white flex items-center justify-center mb-4">
-                      {data.vcard?.avatar ? (
-                         <img src={data.vcard.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                      {vcardData.avatar ? (
+                         <img src={vcardData.avatar} alt="Avatar" className="w-full h-full object-cover" />
                       ) : (
                          <User className="w-10 h-10 text-blue-600" />
                       )}
                    </div>
 
                    <h1 className="text-xl font-medium text-white tracking-tight mb-1 drop-shadow-md">
-                      {data.vcard?.firstName} {data.vcard?.lastName}
+                      {vcardData.firstName} {vcardData.lastName}
                    </h1>
-                   <p className="text-[10px] font-normal text-white/90 uppercase tracking-[0.2em] drop-shadow-md">
-                      Digital Contact Card
+                   <p className="text-[10px] font-medium text-white/90 uppercase tracking-[0.2em] drop-shadow-md">
+                      {displayJobTitle || displayCompany || 'Digital Contact Card'}
                    </p>
                 </div>
              </div>
 
              <div className="relative z-20 flex flex-col px-6">
                 {/* Overlapping Icons */}
-                <div className="flex items-center justify-center gap-4 -mt-10 mb-8">
-                    {data.vcard?.mobile && (
+                <div className="flex items-center justify-center gap-4 -mt-10 mb-8 min-h-[64px]">
+                    {displayMobile && (
                        <a 
-                         href={`tel:${data.vcard.mobile}`} 
+                         href={`tel:${displayMobile}`} 
                          className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
-                         style={{ color: (data.vcard as any)?.accentColor || '#2563eb' }}
+                         style={{ color: (vcardData as any).accentColor || '#2563eb' }}
                        >
                           <Phone className="w-6 h-6" />
                        </a>
                     )}
-                    {data.vcard?.email && (
+                    {displayEmail && (
                        <a 
-                         href={`mailto:${data.vcard.email}`} 
+                         href={`mailto:${displayEmail}`} 
                          className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
-                         style={{ color: (data.vcard as any)?.accentColor || '#2563eb' }}
+                         style={{ color: (vcardData as any).accentColor || '#2563eb' }}
                        >
                           <Mail className="w-6 h-6" />
                        </a>
                     )}
-                    {data.vcard?.website && (
+                    {displayWebsite && (
                        <a 
-                         href={data.vcard.website} 
+                         href={displayWebsite} 
                          target="_blank" 
                          rel="noopener noreferrer" 
                          className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
-                         style={{ color: (data.vcard as any)?.accentColor || '#2563eb' }}
+                         style={{ color: (vcardData as any).accentColor || '#2563eb' }}
                        >
                           <Globe className="w-6 h-6" />
                        </a>
@@ -370,12 +390,12 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
 
                 <div className="space-y-2 mb-8">
                   {[
-                    { icon: Phone, label: 'Mobile', value: data.vcard?.mobile, href: `tel:${data.vcard?.mobile}` },
-                    { icon: Mail, label: 'Email', value: data.vcard?.email, href: `mailto:${data.vcard?.email}` },
-                    { icon: Globe, label: 'Website', value: data.vcard?.website, href: data.vcard?.website },
-                    { icon: Building2, label: 'Company', value: data.vcard?.company },
-                    { icon: User, label: 'Profession', value: data.vcard?.jobTitle },
-                    { icon: MapPin, label: 'Address', value: data.vcard?.address, href: `https://maps.google.com/?q=${encodeURIComponent(data.vcard?.address || '')}` },
+                    { icon: Phone, label: 'Mobile', value: displayMobile, href: `tel:${displayMobile}` },
+                    { icon: Mail, label: 'Email', value: displayEmail, href: `mailto:${displayEmail}` },
+                    { icon: Globe, label: 'Website', value: displayWebsite, href: displayWebsite as string },
+                    { icon: Building2, label: 'Company', value: displayCompany },
+                    { icon: User, label: 'Profession', value: displayJobTitle },
+                    { icon: MapPin, label: 'Address', value: displayAddress, href: `https://maps.google.com/?q=${encodeURIComponent(displayAddress as string || '')}` },
                   ].map((item) => item.value ? (
                     <a 
                       key={item.label} 
@@ -396,22 +416,22 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                     </a>
                   ) : null)}
 
-                  {data.vcard?.note && (
+                  {vcardData.note && (
                     <div className="p-5 bg-slate-50 border border-slate-100 rounded-[28px] mt-4">
                        <p className="text-[9px] font-normal text-slate-400 uppercase tracking-widest mb-2">Summary</p>
-                       <p className="text-xs font-normal text-slate-600 leading-relaxed italic">"{data.vcard.note}"</p>
+                       <p className="text-xs font-normal text-slate-600 leading-relaxed italic">"{vcardData.note}"</p>
                     </div>
                   )}
 
-                  {data.vcard?.socials && Object.values(data.vcard.socials).some(v => !!v) && (
+                  {vcardData.socials && Object.values(vcardData.socials).some(v => !!v) && (
                     <div className="mt-6 pt-6 border-t border-gray-50">
                        <p className="text-[10px] font-normal text-gray-400 uppercase tracking-[0.2em] text-center mb-4">Connect with me</p>
                        <div className="flex flex-wrap justify-center gap-3">
-                          {Object.entries(data.vcard.socials).map(([platform, url]) => {
+                          {Object.entries(vcardData.socials).map(([platform, url]) => {
                              if (!url) return null;
                              const s = getSocialConfig(platform);
                              return (
-                                <a key={platform} href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noopener noreferrer" 
+                                <a key={platform} href={(url as string).startsWith('http') ? url as string : `https://${url}`} target="_blank" rel="noopener noreferrer" 
                                    className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg transition-transform hover:scale-110 active:scale-95", s.color)}>
                                    <s.icon className="w-5 h-5" />
                                 </a>
@@ -424,7 +444,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                 
                 <button 
                   className="w-full py-4 text-white rounded-2xl font-normal text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-gray-200"
-                  style={{ backgroundColor: (data.vcard as any)?.accentColor || '#111827' }}
+                  style={{ backgroundColor: (vcardData as any).accentColor || '#111827' }}
                 >
                    Save Contact
                    <Smartphone className="w-4 h-4" />
@@ -433,6 +453,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
              </div>
           </div>
         );
+      }
 
        case 'text':
         return (
