@@ -313,7 +313,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
         );
 
       case 'vcard': {
-        const vcardData = data.vcard || {};
+        const vcardData = data.vcard || ({} as any);
         const isUserTyping = isWizardPreview && !!initialData?.vcard;
         
         // If user is editing vcard form, only show the fields if explicitly filled. 

@@ -4,8 +4,8 @@ import {
   Search, Plus, MoreVertical, Calendar, ExternalLink, Brush, Globe,
   ChevronDown, ChevronRight, Bell, FolderOpen, Trash2, Copy,
   RefreshCw, X, FolderPlus, ArrowRight, Edit3, Users, Download,
-  Activity, Eye, Shield, Mail, Key, Lock, Camera, MapPin, Clock,
-  Smartphone, AlertTriangle, Zap
+  Activity, Eye, Shield, Mail, Key, Lock, Camera, MapPin,
+  Smartphone, AlertTriangle
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
