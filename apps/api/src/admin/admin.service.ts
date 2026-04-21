@@ -11,7 +11,9 @@ import { UpdateSystemConfigDto } from './dto/update-system-config.dto';
 import { UpdateCountryDto } from './dto/update-country.dto';
 import { CreatePriceBookDto } from './dto/create-price-book.dto';
 import { UpdatePriceBookDto } from './dto/update-price-book.dto';
+import { GrantPlanDto, GiftPlanDuration } from './dto/grant-plan.dto';
 import { SystemConfig, PricingTier, PriceStatus, BillingCycle } from '@prisma/client';
+import { VemtapService } from '../integration/vemtap.service';
 import { PricingService } from '../pricing/pricing.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
@@ -25,6 +27,7 @@ export class AdminService {
     private prisma: PrismaService,
     private paystackService: PaystackService,
     private pricingService: PricingService,
+    private vemtapService: VemtapService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
@@ -467,6 +470,111 @@ export class AdminService {
         await this.cacheManager.del(
           `pricing:plan:${price.planId}:tier:${price.tier}:currency:${price.currencyCode}`,
         );
+      }
+    }
+  }
+
+  async grantPlan(userId: string, dto: GrantPlanDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    const plan = await this.prisma.plan.findUnique({
+      where: { id: dto.planId },
+    });
+    if (!plan) throw new NotFoundException('Plan not found');
+
+    const now = new Date();
+    const expirationDate = new Date();
+
+    switch (dto.duration) {
+      case GiftPlanDuration.MONTH:
+        expirationDate.setDate(now.getDate() + 30);
+        break;
+      case GiftPlanDuration.QUARTER:
+        expirationDate.setDate(now.getDate() + 90);
+        break;
+      case GiftPlanDuration.YEAR:
+        expirationDate.setDate(now.getDate() + 365);
+        break;
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        planId: plan.id,
+        subscriptionStatus: 'active',
+        billingCycle: dto.duration,
+        trialEndsAt: expirationDate,
+        // Ensure we clear any old paystack subscription code as this is a gifted plan
+        paystackSubscriptionCode: null,
+      },
+      include: { plan: true },
+    });
+
+    // Provision on Vemtap if applicable
+    if (updatedUser.plan?.vemtapPlanId) {
+      this.vemtapService
+        .provisionUser(
+          updatedUser.email,
+          updatedUser.firstName,
+          updatedUser.lastName,
+          updatedUser.plan.vemtapPlanId,
+        )
+        .catch((err) => {
+          this.logger.error(
+            `Vemtap provisioning failed for ${updatedUser.email} during gift grant:`,
+            err,
+          );
+        });
+    }
+
+    return {
+      message: `Successfully granted ${plan.name} for 1 ${dto.duration}`,
+      expiresAt: expirationDate,
+    };
+  }
+
+  /**
+   * Cron job that runs every hour to downgrade expired gifted or trial plans.
+   */
+  @Cron(CronExpression.EVERY_HOUR)
+  async handlePlanExpirations() {
+    const now = new Date();
+
+    // Find users whose trial/gift period has ended and who have no active Paystack subscription
+    const expiredUsers = await this.prisma.user.findMany({
+      where: {
+        trialEndsAt: { lt: now },
+        subscriptionStatus: { in: ['active', 'trialing'] },
+        paystackSubscriptionCode: null,
+      },
+    });
+
+    if (expiredUsers.length === 0) return;
+
+    this.logger.log(`Handling expiration for ${expiredUsers.length} users.`);
+
+    // Get the default free plan
+    const freePlan = await this.prisma.plan.findFirst({
+      where: { isDefault: true },
+    });
+
+    for (const user of expiredUsers) {
+      try {
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            planId: freePlan?.id || null,
+            subscriptionStatus: 'expired',
+            billingCycle: null,
+            trialEndsAt: null,
+          },
+        });
+        this.logger.log(`User ${user.email} subscription expired and downgraded.`);
+      } catch (err) {
+        this.logger.error(`Failed to downgrade user ${user.email}:`, err);
       }
     }
   }

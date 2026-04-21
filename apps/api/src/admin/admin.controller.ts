@@ -21,6 +21,7 @@ import { UpdateSystemConfigDto } from './dto/update-system-config.dto';
 import { UpdateCountryDto } from './dto/update-country.dto';
 import { CreatePriceBookDto } from './dto/create-price-book.dto';
 import { UpdatePriceBookDto } from './dto/update-price-book.dto';
+import { GrantPlanDto } from './dto/grant-plan.dto';
 import { PricingTier } from '@prisma/client';
 import type { Response } from 'express';
 import {
@@ -130,6 +131,19 @@ export class AdminController {
   async deleteUser(@Param('id') id: string) {
     return this.adminService.deleteUser(id);
   }
+
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @Post('users/:id/grant-plan')
+  @ApiOperation({ summary: 'Grant a free plan to a user (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Plan granted successfully.' })
+  async grantPlan(
+    @Param('id') id: string,
+    @Body() body: GrantPlanDto,
+  ) {
+    return this.adminService.grantPlan(id, body);
+  }
+
 
   @Roles(Role.ADMIN)
   @ApiBearerAuth('JWT-auth')

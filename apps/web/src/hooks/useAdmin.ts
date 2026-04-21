@@ -47,6 +47,17 @@ export const useBanUser = () => {
   });
 };
 
+export const useGrantPlan = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { userId: string; planId: string; duration: string }) =>
+      adminApi.grantPlan(params.userId, { planId: params.planId, duration: params.duration }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+    },
+  });
+};
+
 export const useDeleteUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
