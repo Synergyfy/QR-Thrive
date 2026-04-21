@@ -171,7 +171,12 @@ const CreationWizard: React.FC = () => {
   useEffect(() => {
     if (selectedType && !isEditing) {
       setConfig(prev => {
-        const newData = { ...prev.data, type: selectedType as any } as any;
+        const typeTitle = qrTypes.find(t => t.id === selectedType)?.title || selectedType;
+        const newData = { 
+          ...prev.data, 
+          type: selectedType as any,
+          name: prev.data.name || `${typeTitle} QR`
+        } as any;
         
         // Auto-populate whatsappNumber for menu if user has a phone
         if (selectedType === 'menu' && (user as any)?.phone) {
@@ -246,7 +251,7 @@ const CreationWizard: React.FC = () => {
         await updateQRMutation.mutateAsync({ 
           id: editId, 
           data: { 
-            name: `${config.data.type} QR`, 
+            name: config.data.name || `${config.data.type} QR`, 
             type: config.data.type, 
             data: dataToSave, 
             design: config.design, 
@@ -261,7 +266,7 @@ const CreationWizard: React.FC = () => {
         toast.success('QR Code updated successfully!');
       } else {
         await createQRMutation.mutateAsync({ 
-          name: `${config.data.type} QR`, 
+          name: config.data.name || `${config.data.type} QR`, 
           type: config.data.type, 
           data: dataToSave, 
           design: config.design, 

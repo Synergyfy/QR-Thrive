@@ -153,7 +153,14 @@ const DashboardPage: React.FC = () => {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
   const [editingURLQR, setEditingURLQR] = useState<string | null>(null);
+  const [viewingQR, setViewingQR] = useState<BackendQRCode | null>(null);
   const [viewingScansQR, setViewingScansQR] = useState<{ id: string, name: string } | null>(null);
+
+  const copyToClipboard = (text: string) => {
+    const fullUrl = text.startsWith('http') ? text : `${window.location.origin}${text}`;
+    navigator.clipboard.writeText(fullUrl);
+    toast.success('Link copied to clipboard');
+  };
   const [newURLValue, setNewURLValue] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -655,7 +662,7 @@ const DashboardPage: React.FC = () => {
                       {user?.subscriptionStatus === 'non-renewing' ? 'Ending Soon' : 'Active Plan'}
                     </p>
                     <p className="text-sm font-bold text-white leading-none mt-1">
-                      {user?.plan?.name || 'Pro'} Subscriber
+                      {user?.plan?.name || 'Pro'} 
                     </p>
                   </div>
                 </div>
@@ -987,10 +994,9 @@ const DashboardPage: React.FC = () => {
                   </div>
                   <div className="divide-y divide-slate-100">
                     {[
-                      { label: 'Email Notifications', desc: 'Get notified about account activity', value: emailNotifs, setter: setEmailNotifs },
+                      { label: 'Push Notification', desc: 'Get notified about account activity', value: emailNotifs, setter: setEmailNotifs },
                       { label: 'Scan Alerts', desc: 'Real-time alerts when your QR codes are scanned', value: scanAlerts, setter: setScanAlerts },
                       { label: 'Weekly Digest', desc: 'Summary of your weekly QR performance', value: weeklyDigest, setter: setWeeklyDigest },
-                      { label: 'Marketing Emails', desc: 'Product news, tips, and special offers', value: marketingEmails, setter: setMarketingEmails },
                     ].map(row => (
                       <div key={row.label} className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
                         <div>
@@ -1059,16 +1065,16 @@ const DashboardPage: React.FC = () => {
                         Manage
                       </button>
                     </div>
-                    <div className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
+                    <div className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors opacity-60">
                       <div className="flex items-center gap-3">
                         <Key className="w-4 h-4 text-slate-400" />
                         <div>
                           <p className="text-[14px] font-semibold text-slate-900 mb-0.5">API Keys</p>
-                          <p className="text-[12px] text-slate-400 font-medium">Manage your API access credentials</p>
+                          <p className="text-[12px] text-slate-400 font-medium">Advanced developer features are arriving soon.</p>
                         </div>
                       </div>
-                      <button className="px-3.5 py-1.5 text-[12px] font-semibold text-blue-600 hover:bg-blue-50 rounded-lg border border-blue-200 transition-all active:scale-[0.97]">
-                        Generate
+                      <button className="px-3.5 py-1.5 text-[10px] font-bold text-slate-400 bg-slate-100 rounded-lg border border-slate-200 uppercase tracking-widest cursor-not-allowed">
+                        Coming Soon
                       </button>
                     </div>
                   </div>
@@ -1167,7 +1173,7 @@ const DashboardPage: React.FC = () => {
                 )}
 
                 {/* ─── QR Code Grid ─── */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" ref={menuRef}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" ref={menuRef}>
                   {displayedQRs.map((qr) => {
                     const typeStyle = getTypeStyles(qr.type);
                     return (
@@ -1183,7 +1189,7 @@ const DashboardPage: React.FC = () => {
                         <div className={cn('h-1 w-full', typeStyle.dot)} />
 
                         {/* ── QR Preview — centered & prominent ── */}
-                        <div className="px-6 pt-5 pb-3">
+                        <div className="px-4 pt-5 pb-3">
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-2">
                               <span className={cn(
@@ -1211,6 +1217,9 @@ const DashboardPage: React.FC = () => {
                                   </button>
                                   <button onClick={() => { navigate(`/dashboard/edit/${qr.id}/design`); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
                                     <Brush className="w-4 h-4 text-slate-400" /> Edit Design
+                                  </button>
+                                  <button onClick={() => { window.open(qr.shortUrl, '_blank'); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
+                                    <ExternalLink className="w-4 h-4 text-slate-400" /> Preview Link
                                   </button>
                                   <button onClick={() => { duplicateQR(qr.id); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
                                     <Copy className="w-4 h-4 text-slate-400" /> Duplicate
@@ -1265,6 +1274,13 @@ const DashboardPage: React.FC = () => {
                             <div className="flex items-center justify-center gap-1.5 text-slate-400">
                               <Globe className="w-3 h-3 shrink-0" />
                               <p className="text-[11px] font-medium truncate max-w-[200px]">{qr.shortUrl.replace(/^https?:\/\//, '')}</p>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); copyToClipboard(qr.shortUrl); }}
+                                className="p-1 text-slate-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-all"
+                                title="Copy Link"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
                             </div>
                           </div>
 
@@ -1285,42 +1301,42 @@ const DashboardPage: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* ── Card Action Bar ── */}
-                        <div className="flex items-center border-t border-slate-100 divide-x divide-slate-100 mt-auto">
+                        {/* ── Card Action Bar (Two Prominent Buttons) ── */}
+                        <div className="flex items-center border-t border-slate-100 divide-x divide-slate-100 mt-auto bg-slate-50/10">
                           <button 
-                            onClick={() => window.open(qr.shortUrl, '_blank')} 
-                            className="flex-1 py-3 text-[12px] font-semibold text-slate-500 hover:text-blue-600 hover:bg-blue-50/50 flex items-center justify-center gap-2 transition-all duration-150"
+                            onClick={() => setViewingQR(qr)} 
+                            className="flex-1 py-3.5 text-[12px] font-bold text-slate-600 hover:text-blue-600 hover:bg-white flex items-center justify-center gap-2 transition-all duration-150"
                           >
-                            <ExternalLink className="w-3.5 h-3.5" /> Preview
+                            <Eye className="w-4 h-4" /> View
                           </button>
+                          
                           <div className="relative flex-1">
                             <button 
                               onClick={() => setDownloadMenuOpen(downloadMenuOpen === qr.id ? null : qr.id)} 
-                              className="w-full py-3 text-[12px] font-semibold text-slate-500 hover:text-emerald-600 hover:bg-emerald-50/50 flex items-center justify-center gap-2 transition-all duration-150"
+                              className="w-full py-3.5 text-[12px] font-bold text-slate-600 hover:text-emerald-600 hover:bg-white flex items-center justify-center gap-2 transition-all duration-150"
                             >
-                              <Download className="w-3.5 h-3.5" /> Export
+                              <Download className="w-4 h-4" /> Export
                             </button>
                             {downloadMenuOpen === qr.id && (
-                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 bg-white rounded-xl shadow-xl border border-slate-200/80 py-1.5 z-[100] animate-in slide-in-from-bottom-2 fade-in duration-150">
-                                {(['png', 'svg', 'jpeg', 'webp'] as const).map(ext => (
-                                  <button 
-                                    key={ext}
-                                    onClick={() => { handleDownload(qr, ext); setDownloadMenuOpen(null); }} 
-                                    className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 text-slate-700 uppercase flex items-center gap-2 transition-colors"
-                                  >
-                                    <div className="w-5 h-5 bg-slate-100 rounded text-[9px] font-bold flex items-center justify-center text-slate-500">.{ext}</div>
-                                    {ext.toUpperCase()}
-                                  </button>
-                                ))}
+                              <div className="absolute bottom-full left-0 right-0 mb-3 px-3 z-[100] animate-in slide-in-from-bottom-2 fade-in duration-150">
+                                <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 py-2 overflow-hidden">
+                                  <div className="px-3 py-1.5 mb-1 border-b border-slate-50">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Select Format</p>
+                                  </div>
+                                  {(['png', 'svg', 'jpeg', 'webp'] as const).map(ext => (
+                                    <button 
+                                      key={ext}
+                                      onClick={() => { handleDownload(qr, ext); setDownloadMenuOpen(null); }} 
+                                      className="w-full text-left px-4 py-2.5 text-[13px] font-semibold hover:bg-slate-50 text-slate-700 uppercase flex items-center gap-3 transition-colors"
+                                    >
+                                      <div className="w-6 h-6 bg-slate-100 rounded-lg text-[10px] font-black flex items-center justify-center text-slate-500 border border-slate-200/50">.{ext}</div>
+                                      {ext.toUpperCase()}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
                             )}
                           </div>
-                          <button 
-                            onClick={() => navigate(`/dashboard/edit/${qr.id}/design`)} 
-                            className="flex-1 py-3 text-[12px] font-semibold text-slate-500 hover:text-violet-600 hover:bg-violet-50/50 flex items-center justify-center gap-2 transition-all duration-150"
-                          >
-                            <Brush className="w-3.5 h-3.5" /> Design
-                          </button>
                         </div>
                       </div>
                     );
@@ -1492,6 +1508,55 @@ const DashboardPage: React.FC = () => {
                 Save Changes
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* View QR Code Modal */}
+      {viewingQR && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 transition-all">
+          <div 
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" 
+            onClick={() => setViewingQR(null)} 
+          />
+          <div className="relative w-full max-w-sm bg-white rounded-[40px] shadow-2xl border border-slate-200/60 overflow-hidden animate-in zoom-in-95 fade-in duration-300 p-8 flex flex-col items-center gap-6">
+            <div className="w-full flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl font-bold text-slate-900 truncate">{viewingQR.name}</h3>
+                <p className="text-[12px] font-medium text-slate-400 mt-0.5 truncate">{viewingQR.shortUrl.replace(/^https?:\/\//, '')}</p>
+              </div>
+              <button 
+                onClick={() => setViewingQR(null)} 
+                className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="w-full aspect-square bg-white rounded-[32px] p-10 shadow-inner border border-slate-100 flex items-center justify-center group relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-indigo-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[32px]" />
+              <div className="relative z-10 w-full h-full">
+                <DashboardQRPreview config={viewingQR.config} shortUrl={viewingQR.shortUrl} size={400} />
+              </div>
+            </div>
+
+            <div className="w-full grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => handleDownload(viewingQR, 'png')}
+                className="py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold text-[13px] transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20"
+              >
+                <Download className="w-4 h-4" /> Export
+              </button>
+              <button 
+                onClick={() => copyToClipboard(viewingQR.shortUrl)}
+                className="py-3.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-2xl font-bold text-[13px] transition-all active:scale-[0.98] flex items-center justify-center gap-2 border border-blue-100"
+              >
+                <Copy className="w-4 h-4" /> Copy Link
+              </button>
+            </div>
+            
+            <p className="text-[11px] text-slate-400 font-medium text-center px-4">
+              Use this high-resolution QR code for digital displays or quick scanning.
+            </p>
           </div>
         </div>
       )}
