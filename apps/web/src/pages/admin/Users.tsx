@@ -8,10 +8,12 @@ import {
   Shield,
   Trash2,
   ExternalLink,
-  Loader2
+  Loader2,
+  Gift,
+  CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAdminUsers, useBanUser, useDeleteUser, useExportUsers } from '../../hooks/useAdmin';
+import { useAdminUsers, useBanUser, useDeleteUser, useExportUsers, useGrantPlan, useAdminPlans } from '../../hooks/useAdmin';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
@@ -26,6 +28,14 @@ export default function UsersManagement() {
     search: searchTerm,
     status: selectedStatus === 'All' ? undefined : selectedStatus.toLowerCase(),
   });
+
+  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState('');
+  const [duration, setDuration] = useState('month');
+
+  const grantPlanMutation = useGrantPlan();
+  const { data: plans } = useAdminPlans();
 
   const banMutation = useBanUser();
   const deleteMutation = useDeleteUser();
@@ -207,7 +217,17 @@ export default function UsersManagement() {
                             user.isBanned ? 'text-emerald-500' : 'text-amber-500'
                           }`}
                         >
-                          <Shield className="w-4 h-4" />
+                          <Shield className={`w-4 h-4 ${user.isBanned ? 'text-emerald-500' : 'text-rose-500'}`} />
+                        </button>
+                        <button 
+                          title="Gift Plan"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setIsGiftModalOpen(true);
+                          }}
+                          className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-amber-500 transition-all shadow-none hover:shadow-sm border border-transparent hover:border-slate-100"
+                        >
+                          <Gift className="w-4 h-4" />
                         </button>
                         <button 
                           title="Delete User"
@@ -267,6 +287,124 @@ export default function UsersManagement() {
           </div>
         </div>
       </div>
+
+      {/* Gift Plan Modal */}
+      <AnimatePresence>
+        {isGiftModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsGiftModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+            >
+              <div className="p-8">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center">
+                    <Gift className="w-6 h-6 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900">Gift Free Plan</h3>
+                    <p className="text-sm text-slate-500 font-medium">{selectedUser?.email}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2.5">
+                      Select Plan
+                    </label>
+                    <div className="grid grid-cols-1 gap-2">
+                      {plans?.filter(p => !p.isDefault).map((plan) => (
+                        <button
+                          key={plan.id}
+                          onClick={() => setSelectedPlanId(plan.id)}
+                          className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
+                            selectedPlanId === plan.id
+                              ? 'border-blue-600 bg-blue-50/50'
+                              : 'border-slate-100 hover:border-slate-200 bg-slate-50/30'
+                          }`}
+                        >
+                          <div className="text-left">
+                            <p className={`text-sm font-bold ${selectedPlanId === plan.id ? 'text-blue-700' : 'text-slate-700'}`}>
+                              {plan.name}
+                            </p>
+                            <p className="text-[10px] text-slate-400 font-medium">
+                              Limit: {plan.qrCodeLimit} QRs
+                            </p>
+                          </div>
+                          {selectedPlanId === plan.id && <CheckCircle2 className="w-5 h-5 text-blue-600" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2.5">
+                      Duration
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {['month', 'quarter', 'year'].map((d) => (
+                        <button
+                          key={d}
+                          onClick={() => setDuration(d)}
+                          className={`py-3 px-4 rounded-xl text-xs font-bold capitalize transition-all border-2 ${
+                            duration === d
+                              ? 'bg-slate-900 border-slate-900 text-white shadow-lg'
+                              : 'bg-white border-slate-100 text-slate-500 hover:border-slate-200'
+                          }`}
+                        >
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 mt-8">
+                  <button
+                    onClick={() => setIsGiftModalOpen(false)}
+                    className="flex-1 py-4 text-sm font-bold text-slate-500 hover:text-slate-700 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={!selectedPlanId || grantPlanMutation.isPending}
+                    onClick={async () => {
+                      try {
+                        await grantPlanMutation.mutateAsync({
+                          userId: selectedUser.id,
+                          planId: selectedPlanId,
+                          duration
+                        });
+                        toast.success('Plan gifted successfully!');
+                        setIsGiftModalOpen(false);
+                        setSelectedPlanId('');
+                      } catch (err) {
+                        toast.error('Failed to gift plan');
+                      }
+                    }}
+                    className="flex-1 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 text-white rounded-2xl text-sm font-extrabold shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2"
+                  >
+                    {grantPlanMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      'Grant Access'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

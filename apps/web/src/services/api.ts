@@ -226,6 +226,8 @@ export const adminApi = {
     (await apiClient.get('/pricing/suggest', { params: { basePriceUSD, targetCurrencyCode, tier } })).data,
 
   banUser: async (id: string) => (await apiClient.patch(`/admin/users/${id}/ban`)).data,
+  grantPlan: async (userId: string, data: { planId: string; duration: string }) =>
+    (await apiClient.post(`/admin/users/${userId}/grant-plan`, data)).data,
   deleteUser: async (id: string) => (await apiClient.delete(`/admin/users/${id}`)).data,
   exportUsers: async () => {
     const res = await apiClient.get('/admin/users/export', { responseType: 'blob' });
