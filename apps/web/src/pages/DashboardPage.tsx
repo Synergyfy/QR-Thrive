@@ -4,7 +4,8 @@ import {
   Search, Plus, MoreVertical, Calendar, ExternalLink, Brush, Globe,
   ChevronDown, ChevronRight, Bell, FolderOpen, Trash2, Copy,
   RefreshCw, X, FolderPlus, ArrowRight, Edit3, Users, Download,
-  Activity, Eye
+  Activity, Eye, Shield, Mail, Key, Lock, Camera, MapPin, Clock,
+  Smartphone, AlertTriangle, Zap
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
@@ -141,6 +142,15 @@ const DashboardPage: React.FC = () => {
   const [downloadMenuOpen, setDownloadMenuOpen] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolder, setShowNewFolder] = useState(false);
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+  // Settings toggles (mocked)
+  const [emailNotifs, setEmailNotifs] = useState(true);
+  const [scanAlerts, setScanAlerts] = useState(true);
+  const [weeklyDigest, setWeeklyDigest] = useState(false);
+  const [marketingEmails, setMarketingEmails] = useState(false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
   const [editingURLQR, setEditingURLQR] = useState<string | null>(null);
   const [viewingScansQR, setViewingScansQR] = useState<{ id: string, name: string } | null>(null);
@@ -154,6 +164,7 @@ const DashboardPage: React.FC = () => {
         setMenuOpen(null);
         setFolderMenuOpen(null);
         setDownloadMenuOpen(null);
+        setHeaderMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -575,13 +586,28 @@ const DashboardPage: React.FC = () => {
           {/* Utility Links */}
           <div className="border-t border-slate-100 pt-4 space-y-0.5">
             {[
-              { icon: User, label: 'Profile' },
-              { icon: Settings, label: 'Settings' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 px-3 py-2.5 text-slate-500 hover:text-slate-900 cursor-pointer transition-all hover:bg-slate-50 rounded-lg group">
-                <item.icon className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600 transition-colors" />
-                <span className="text-[13px] font-medium">{item.label}</span>
-              </div>
+              { id: 'profile', icon: User, label: 'Profile' },
+              { id: 'settings', icon: Settings, label: 'Settings' },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group",
+                  activeTab === item.id
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                )}
+              >
+                <item.icon className={cn(
+                  "w-[18px] h-[18px] transition-colors",
+                  activeTab === item.id ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
+                )} />
+                <span className={cn(
+                  "text-[13px]",
+                  activeTab === item.id ? "font-semibold" : "font-medium"
+                )}>{item.label}</span>
+              </button>
             ))}
             <div 
               onClick={handleLogout}
@@ -692,19 +718,48 @@ const DashboardPage: React.FC = () => {
             
             <div className="h-6 w-px bg-slate-200/50" />
             
-            <div className="flex items-center gap-3 group cursor-pointer py-1.5 px-2 rounded-xl hover:bg-slate-50 transition-all duration-150">
-              <img
-                src={`https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=64`}
-                alt="Profile"
-                className="w-8 h-8 rounded-lg shadow-sm"
-              />
-              <div className="hidden lg:block text-left">
-                <p className="text-[13px] font-semibold text-slate-800 leading-none mb-0.5">
-                  {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
-                </p>
-                <p className="text-[11px] font-medium text-slate-400">{user?.role || 'Free'}</p>
+            <div className="relative">
+              <div 
+                onClick={() => setHeaderMenuOpen(!headerMenuOpen)}
+                className="flex items-center gap-3 group cursor-pointer py-1.5 px-2 rounded-xl hover:bg-slate-50 transition-all duration-150"
+              >
+                <img
+                  src={`https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=64`}
+                  alt="Profile"
+                  className="w-8 h-8 rounded-lg shadow-sm"
+                />
+                <div className="hidden lg:block text-left">
+                  <p className="text-[13px] font-semibold text-slate-800 leading-none mb-0.5">
+                    {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
+                  </p>
+                  <p className="text-[11px] font-medium text-slate-400">{user?.role || 'Free'}</p>
+                </div>
+                <ChevronDown className={cn("w-4 h-4 text-slate-400 hidden lg:block transition-transform duration-200", headerMenuOpen && "rotate-180")} />
               </div>
-              <ChevronDown className="w-4 h-4 text-slate-400 hidden lg:block" />
+
+              {headerMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200/80 py-2 z-[100] animate-in slide-in-from-top-2 fade-in duration-150">
+                  <div className="px-4 py-2 border-b border-slate-100 mb-1">
+                    <p className="text-[13px] font-bold text-slate-900 truncate">
+                      {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
+                    </p>
+                    <p className="text-[11px] font-medium text-slate-500 truncate">{user?.email}</p>
+                  </div>
+                  <button onClick={() => { setActiveTab('profile'); setHeaderMenuOpen(false); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
+                    <User className="w-4 h-4 text-slate-400" /> My Profile
+                  </button>
+                  <button onClick={() => { setActiveTab('settings'); setHeaderMenuOpen(false); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
+                    <Settings className="w-4 h-4 text-slate-400" /> Settings
+                  </button>
+                  <button onClick={() => { setActiveTab('pricing'); setHeaderMenuOpen(false); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
+                    <Crown className="w-4 h-4 text-slate-400" /> Plan & Billing
+                  </button>
+                  <div className="h-px bg-slate-100 my-1" />
+                  <button onClick={() => { handleLogout(); setHeaderMenuOpen(false); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-red-50 flex items-center gap-3 text-red-600 transition-colors">
+                    <LogOut className="w-4 h-4" /> Sign Out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -714,30 +769,37 @@ const DashboardPage: React.FC = () => {
           <div className="max-w-[1440px] mx-auto px-8 py-8 space-y-8">
 
             {/* Page Header */}
-            <div className="flex items-end justify-between">
-              <div className="space-y-1.5">
-                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                  {activeTab === 'stats' ? 'Analytics' : activeTab === 'leads' ? 'Leads' : getTabLabel()}
-                </h1>
-                <p className="text-[14px] text-slate-500 font-medium">
-                  {activeTab === 'stats' 
-                    ? 'Track scan performance and visitor insights' 
-                    : activeTab === 'leads'
-                    ? 'Manage captured lead data'
-                    : activeTab === 'pricing'
-                    ? 'Choose the plan that fits your needs'
-                    : `${displayedQRs.length} code${displayedQRs.length !== 1 ? 's' : ''} in this view`}
-                </p>
+            {activeTab !== 'profile' && (
+              <div className="flex items-end justify-between">
+                <div className="space-y-1.5">
+                  <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                    {activeTab === 'stats' ? 'Analytics' 
+                      : activeTab === 'leads' ? 'Leads'
+                      : activeTab === 'settings' ? 'Settings'
+                      : getTabLabel()}
+                  </h1>
+                  <p className="text-[14px] text-slate-500 font-medium">
+                    {activeTab === 'stats' 
+                      ? 'Track scan performance and visitor insights' 
+                      : activeTab === 'leads'
+                      ? 'Manage captured lead data'
+                      : activeTab === 'pricing'
+                      ? 'Choose the plan that fits your needs'
+                      : activeTab === 'settings'
+                      ? 'Customize your experience and preferences'
+                      : `${displayedQRs.length} code${displayedQRs.length !== 1 ? 's' : ''} in this view`}
+                  </p>
+                </div>
+                {!['stats', 'leads', 'pricing', 'settings'].includes(activeTab) && (
+                  <button
+                    onClick={() => navigate('/dashboard/create')}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[13px] font-semibold transition-all duration-200 active:scale-[0.97] shadow-sm"
+                  >
+                    <Plus className="w-4 h-4" /> New Code
+                  </button>
+                )}
               </div>
-              {!['stats', 'leads', 'pricing'].includes(activeTab) && (
-                <button
-                  onClick={() => navigate('/dashboard/create')}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[13px] font-semibold transition-all duration-200 active:scale-[0.97] shadow-sm"
-                >
-                  <Plus className="w-4 h-4" /> New Code
-                </button>
-              )}
-            </div>
+            )}
 
             {/* Tab Content */}
             {activeTab === 'pricing' ? (
@@ -752,6 +814,291 @@ const DashboardPage: React.FC = () => {
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <LeadsPanel codes={qrCodes} />
               </div>
+
+            ) : activeTab === 'profile' ? (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+
+                {/* ─── Profile Hero Card ─── */}
+                <div className="relative bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm">
+                  {/* Gradient Banner integrated as Page Title */}
+                  <div className="h-48 sm:h-56 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 relative overflow-hidden flex flex-col justify-start pt-8 px-6 sm:px-10">
+                    <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'radial-gradient(circle at 25% 50%, white 1.5px, transparent 1.5px), radial-gradient(circle at 75% 30%, white 1px, transparent 1px)', backgroundSize: '50px 50px, 35px 35px' }} />
+                    <div className="absolute -bottom-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+                    <div className="absolute top-6 left-10 w-24 h-24 bg-white/5 rounded-full blur-2xl" />
+                    
+                    <div className="relative z-10 w-full mb-auto mt-2">
+                      <h1 className="text-3xl font-bold text-white tracking-tight drop-shadow-sm mb-1.5">Profile</h1>
+                      <p className="text-[15px] text-indigo-100 font-medium drop-shadow-sm max-w-sm">Manage your account and personal information</p>
+                    </div>
+                  </div>
+
+                  <div className="px-6 sm:px-10 pb-8 flex flex-col">
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between relative z-20 gap-4 sm:gap-6">
+                      {/* Avatar */}
+                      <div className="relative shrink-0 -mt-16 sm:-mt-20 mx-auto sm:mx-0">
+                        <img
+                          src={`https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=160`}
+                          alt="Profile"
+                          className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl border-[6px] border-white shadow-lg object-cover bg-white mx-auto sm:mx-0"
+                        />
+                        <button className="absolute -bottom-1.5 -right-1.5 w-9 h-9 sm:w-10 sm:h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-blue-700 transition-all active:scale-95 ring-[3px] ring-white">
+                          <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
+                      </div>
+
+                      {/* Info & Action Row */}
+                      <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2 sm:mt-0 pb-1">
+                        <div className="text-center sm:text-left">
+                          <div className="flex items-center justify-center sm:justify-start gap-3 mb-1 flex-wrap">
+                            <h2 className="text-[22px] sm:text-2xl font-bold text-slate-900 tracking-tight">
+                              {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
+                            </h2>
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 hidden sm:flex items-center">
+                              {user?.role || 'USER'}
+                            </span>
+                          </div>
+                          <p className="text-[14px] text-slate-500 font-medium truncate">{user?.email || 'guest@example.com'}</p>
+                        </div>
+
+                        <button onClick={() => setIsEditingProfile(true)} className="shrink-0 w-full sm:w-auto px-6 py-2.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white rounded-xl text-[13px] font-semibold transition-all active:scale-[0.97] flex items-center justify-center sm:justify-start gap-2 shadow-sm">
+                          <Edit3 className="w-3.5 h-3.5" /> Edit Profile
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ─── Account Details + Plan Info ─── */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Account Details */}
+                  <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                      <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
+                        <User className="w-4 h-4 text-slate-600" />
+                      </div>
+                      <h3 className="text-[15px] font-semibold text-slate-900">Account Details</h3>
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                      {[
+                        { icon: Mail, label: 'Email Address', value: user?.email || '—' },
+                        { icon: Shield, label: 'Account Role', value: user?.role === 'ADMIN' ? 'Administrator' : 'Member' },
+                        { icon: Calendar, label: 'Member Since', value: 'April 2026' },
+                        { icon: MapPin, label: 'Timezone', value: Intl.DateTimeFormat().resolvedOptions().timeZone },
+                        { icon: Globe, label: 'Language', value: 'English (US)' },
+                      ].map(row => (
+                        <div key={row.label} className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <row.icon className="w-4 h-4 text-slate-400" />
+                            <span className="text-[13px] font-medium text-slate-500">{row.label}</span>
+                          </div>
+                          <span className="text-[13px] font-semibold text-slate-900">{row.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Plan Card */}
+                  <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                      <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
+                        <Crown className="w-4 h-4 text-amber-600" />
+                      </div>
+                      <h3 className="text-[15px] font-semibold text-slate-900">Current Plan</h3>
+                    </div>
+                    <div className="p-6 space-y-5">
+                      <div className="text-center py-4">
+                        <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-blue-600/20">
+                          <Crown className="w-6 h-6 text-white fill-white" />
+                        </div>
+                        <p className="text-xl font-bold text-slate-900">{user?.plan?.name || 'Free'}</p>
+                        <p className="text-[12px] font-medium text-slate-400 mt-1">
+                          {user?.subscriptionStatus === 'active' ? 'Active Subscription'
+                            : user?.subscriptionStatus === 'trialing' ? 'Trial Period'
+                            : user?.subscriptionStatus === 'non-renewing' ? 'Ending Soon'
+                            : 'No active subscription'}
+                        </p>
+                      </div>
+                      <div className="space-y-2.5">
+                        {[
+                          { label: 'QR Code Limit', value: user?.plan?.qrCodeLimit ? `${user.plan.qrCodeLimit} codes` : '∞ Unlimited' },
+                          { label: 'Billing Cycle', value: user?.billingCycle ? user.billingCycle.charAt(0).toUpperCase() + user.billingCycle.slice(1) : 'N/A' },
+                          { label: 'Status', value: user?.subscriptionStatus || 'Free', highlight: true },
+                        ].map(item => (
+                          <div key={item.label} className="flex items-center justify-between py-2.5 px-3 bg-slate-50 rounded-lg">
+                            <span className="text-[12px] font-medium text-slate-500">{item.label}</span>
+                            <span className={cn('text-[12px] font-semibold', 'highlight' in item && item.highlight ? 'text-emerald-600' : 'text-slate-900')}>{item.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => setActiveTab('pricing')}
+                        className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold text-[13px] transition-all active:scale-[0.97] shadow-lg shadow-blue-600/20"
+                      >
+                        {user?.subscriptionStatus === 'active' ? 'Manage Plan' : 'Upgrade Plan'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            ) : activeTab === 'settings' ? (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6 max-w-3xl">
+
+                {/* ─── Account Settings ─── */}
+                <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                    <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
+                      <User className="w-4 h-4 text-slate-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-[15px] font-semibold text-slate-900">Account</h3>
+                      <p className="text-[11px] text-slate-400 font-medium">Manage your personal information</p>
+                    </div>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    {[
+                      { label: 'Full Name', value: user ? `${user.firstName} ${user.lastName}` : 'Guest User', action: 'Edit' },
+                      { label: 'Email Address', value: user?.email || '—', action: 'Change' },
+                      { label: 'Password', value: '••••••••••••', action: 'Update' },
+                    ].map(row => (
+                      <div key={row.label} className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
+                        <div>
+                          <p className="text-[12px] font-medium text-slate-400 mb-0.5">{row.label}</p>
+                          <p className="text-[14px] font-semibold text-slate-900">{row.value}</p>
+                        </div>
+                        <button className="px-3.5 py-1.5 text-[12px] font-semibold text-blue-600 hover:bg-blue-50 rounded-lg border border-blue-200 transition-all active:scale-[0.97]">
+                          {row.action}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ─── Notifications ─── */}
+                <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                    <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                      <Bell className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-[15px] font-semibold text-slate-900">Notifications</h3>
+                      <p className="text-[11px] text-slate-400 font-medium">Control how you receive updates</p>
+                    </div>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    {[
+                      { label: 'Email Notifications', desc: 'Get notified about account activity', value: emailNotifs, setter: setEmailNotifs },
+                      { label: 'Scan Alerts', desc: 'Real-time alerts when your QR codes are scanned', value: scanAlerts, setter: setScanAlerts },
+                      { label: 'Weekly Digest', desc: 'Summary of your weekly QR performance', value: weeklyDigest, setter: setWeeklyDigest },
+                      { label: 'Marketing Emails', desc: 'Product news, tips, and special offers', value: marketingEmails, setter: setMarketingEmails },
+                    ].map(row => (
+                      <div key={row.label} className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
+                        <div>
+                          <p className="text-[14px] font-semibold text-slate-900 mb-0.5">{row.label}</p>
+                          <p className="text-[12px] text-slate-400 font-medium">{row.desc}</p>
+                        </div>
+                        <button
+                          onClick={() => row.setter(!row.value)}
+                          className={cn(
+                            'w-11 h-6 rounded-full transition-all duration-200 relative shrink-0 ml-4',
+                            row.value ? 'bg-blue-600' : 'bg-slate-200'
+                          )}
+                        >
+                          <div className={cn(
+                            'w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-all duration-200',
+                            row.value ? 'left-[22px]' : 'left-0.5'
+                          )} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ─── Security ─── */}
+                <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                    <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center">
+                      <Shield className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-[15px] font-semibold text-slate-900">Security</h3>
+                      <p className="text-[11px] text-slate-400 font-medium">Protect your account</p>
+                    </div>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    <div className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <Lock className="w-4 h-4 text-slate-400" />
+                        <div>
+                          <p className="text-[14px] font-semibold text-slate-900 mb-0.5">Two-Factor Authentication</p>
+                          <p className="text-[12px] text-slate-400 font-medium">Add an extra layer of security to your account</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setTwoFactorEnabled(!twoFactorEnabled)}
+                        className={cn(
+                          'w-11 h-6 rounded-full transition-all duration-200 relative shrink-0 ml-4',
+                          twoFactorEnabled ? 'bg-emerald-600' : 'bg-slate-200'
+                        )}
+                      >
+                        <div className={cn(
+                          'w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-all duration-200',
+                          twoFactorEnabled ? 'left-[22px]' : 'left-0.5'
+                        )} />
+                      </button>
+                    </div>
+                    <div className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <Smartphone className="w-4 h-4 text-slate-400" />
+                        <div>
+                          <p className="text-[14px] font-semibold text-slate-900 mb-0.5">Active Sessions</p>
+                          <p className="text-[12px] text-slate-400 font-medium">1 active session on this device</p>
+                        </div>
+                      </div>
+                      <button className="px-3.5 py-1.5 text-[12px] font-semibold text-slate-600 hover:bg-slate-100 rounded-lg border border-slate-200 transition-all active:scale-[0.97]">
+                        Manage
+                      </button>
+                    </div>
+                    <div className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <Key className="w-4 h-4 text-slate-400" />
+                        <div>
+                          <p className="text-[14px] font-semibold text-slate-900 mb-0.5">API Keys</p>
+                          <p className="text-[12px] text-slate-400 font-medium">Manage your API access credentials</p>
+                        </div>
+                      </div>
+                      <button className="px-3.5 py-1.5 text-[12px] font-semibold text-blue-600 hover:bg-blue-50 rounded-lg border border-blue-200 transition-all active:scale-[0.97]">
+                        Generate
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ─── Danger Zone ─── */}
+                <div className="bg-white rounded-2xl border border-red-200/80 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-red-100 flex items-center gap-3">
+                    <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center">
+                      <AlertTriangle className="w-4 h-4 text-red-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-[15px] font-semibold text-red-900">Danger Zone</h3>
+                      <p className="text-[11px] text-red-400 font-medium">Irreversible and destructive actions</p>
+                    </div>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[14px] font-semibold text-slate-900 mb-0.5">Delete Account</p>
+                        <p className="text-[12px] text-slate-400 font-medium">Permanently remove your account and all associated data</p>
+                      </div>
+                      <button className="px-4 py-2 text-[12px] font-semibold text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-all active:scale-[0.97] shrink-0 ml-4">
+                        Delete Account
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             ) : (
               <div className="animate-in fade-in duration-400 space-y-6">
 
@@ -1032,6 +1379,121 @@ const DashboardPage: React.FC = () => {
           qrName={viewingScansQR.name} 
           onClose={() => setViewingScansQR(null)} 
         />
+      )}
+
+      {/* Edit Profile Modal */}
+      {isEditingProfile && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setIsEditingProfile(false)} />
+          <div className="relative bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white z-10 relative">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">Edit Profile</h3>
+                <p className="text-[13px] text-slate-500 font-medium mt-0.5">Update your personal information</p>
+              </div>
+              <button 
+                onClick={() => setIsEditingProfile(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Form Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-hide bg-white">
+              
+              {/* Avatar Section */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pb-2">
+                <div className="relative shrink-0">
+                  <img
+                    src={`https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=120`}
+                    alt="Avatar"
+                    className="w-20 h-20 rounded-full border-2 border-slate-100 shadow-sm object-cover"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <button className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[13px] font-medium transition-all shadow-sm">
+                      Change Photo
+                    </button>
+                    <button className="px-4 py-2 bg-white text-slate-600 border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100 rounded-lg text-[13px] font-medium transition-all">
+                      Remove
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-medium">Supported formats: JPG, PNG, GIF (Max. 5MB)</p>
+                </div>
+              </div>
+
+              {/* Name Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-slate-700">First Name</label>
+                  <input 
+                    defaultValue={user?.firstName || ''}
+                    placeholder="Enter first name"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-50 rounded-xl py-2.5 px-4 text-[13px] font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-slate-700">Last Name</label>
+                  <input 
+                    defaultValue={user?.lastName || ''}
+                    placeholder="Enter last name"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-50 rounded-xl py-2.5 px-4 text-[13px] font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400"
+                  />
+                </div>
+              </div>
+
+              <hr className="border-slate-100/80" />
+
+              {/* Read Only Fields */}
+              <div className="space-y-5">
+                <h4 className="text-[14px] font-bold text-slate-900">Account Information</h4>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <label className="text-[13px] font-bold text-slate-700 flex items-center justify-between">
+                      Email Address
+                      <span className="text-[10px] uppercase font-bold text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-100 ml-2">Primary</span>
+                    </label>
+                    <div className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 flex items-center justify-between min-w-0">
+                      <span className="text-[13px] font-medium text-slate-600 truncate mr-3">{user?.email || 'guest@example.com'}</span>
+                      <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[13px] font-bold text-slate-700">Role & Plan</label>
+                    <div className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 flex items-center justify-between min-w-0">
+                      <span className="text-[13px] font-medium text-slate-600 truncate capitalize mr-3">{user?.role || 'User'}</span>
+                      <Shield className="w-4 h-4 text-slate-400 shrink-0" />
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[12px] text-slate-500 font-medium">To change your email address or update your billing plan, please contact our support team securely.</p>
+              </div>
+              
+            </div>
+
+            {/* Modal Footer / Actions */}
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 shrink-0 flex items-center justify-end gap-3 rounded-b-2xl">
+              <button 
+                onClick={() => setIsEditingProfile(false)} 
+                className="px-5 py-2.5 bg-white text-slate-700 rounded-xl font-semibold text-[13px] hover:bg-slate-100 border border-slate-200 transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => setIsEditingProfile(false)} 
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-[13px] transition-all shadow-sm shadow-blue-200"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
