@@ -213,12 +213,13 @@ export class QRCodesController {
           ? `?text=${encodeURIComponent(data.message)}`
           : '';
         url = `https://wa.me/${data.phoneNumber}${message}`;
-      } else if (qrCode.type === 'form') {
-        url = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/s/${shortId}?scanned=1`;
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+      if (qrCode.type === 'form') {
+        url = `${frontendUrl}/s/${shortId}?scanned=1`;
       } else {
-        // For other types (vcard, wifi, etc), we might redirect to a landing page
-        // For now, let's just use a placeholder or the short URL logic
-        url = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/s/${shortId}?scanned=1`;
+        // For other types (vcard, wifi, etc), we redirect to the frontend dynamic landing page
+        url = `${frontendUrl}/s/${shortId}?scanned=1`;
       }
 
       return res.redirect(url);

@@ -400,8 +400,10 @@ export class AuthService {
     });
 
     const baseUrl =
-      this.configService.get<string>('API_BASE_URL') || 'http://localhost:3000';
-    return `${baseUrl}/v1/auth/magic-login?token=${token}`;
+      this.configService.get<string>('API_BASE_URL') ||
+      this.configService.get<string>('APP_URL') ||
+      'http://localhost:3005';
+    return `${baseUrl}/api/v1/auth/magic-login?token=${token}`;
   }
 
   async validateMagicLink(token: string, res: Response) {
