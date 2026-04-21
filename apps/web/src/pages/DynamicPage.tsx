@@ -5,7 +5,10 @@ import type { QRData } from '../types/qr';
 import { qrCodesApi } from '../services/api';
 import { useCurrentUser } from '../hooks/useApi';
 
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:3005/api/v1');
+const API_URL = import.meta.env.VITE_API_URL || 
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:3005/api/v1' 
+    : `${window.location.origin}/api/v1`);
 
 const DynamicPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
