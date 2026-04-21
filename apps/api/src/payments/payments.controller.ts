@@ -200,7 +200,7 @@ export class PaymentsController {
         );
 
       const currency = pricing?.currency || 'USD';
-      amount = currency === 'NGN' ? 50 : 1;
+      amount = currency === 'NGN' ? 100 : 1;
       paystackPlanCode = undefined; // Don't attach plan immediately to tokenize
     }
 
