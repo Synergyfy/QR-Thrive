@@ -11,7 +11,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import toast from 'react-hot-toast';
-import { useFolders, useCreateFolder, useDeleteFolder, useQRCodes, useDeleteQRCode, useUpdateQRCode, useDuplicateQRCode, useCurrentUser, useLogout, useCancelSubscription } from '../hooks/useApi';
+import { useFolders, useCreateFolder, useDeleteFolder, useQRCodes, useDeleteQRCode, useUpdateQRCode, useDuplicateQRCode, useCurrentUser, useLogout, useCancelSubscription, useUpdateProfile } from '../hooks/useApi';
+import { usePushNotifications } from '../hooks/usePushNotifications';
+import { uploadPendingFile } from '../utils/upload';
 import type { BackendQRCode } from '../types/api';
 import StatsPanel from '../components/StatsPanel';
 import DashboardQRPreview from '../components/DashboardQRPreview';
@@ -28,6 +30,12 @@ const DashboardPage: React.FC = () => {
   const { data: userData } = useCurrentUser();
   const logoutMutation = useLogout();
   const user = userData?.user;
+
+  useEffect(() => {
+    if (user) {
+      console.log('Current user avatar:', user.avatar);
+    }
+  }, [user]);
   
   const { data: folders = [] } = useFolders();
   const { data: qrCodes = [] } = useQRCodes();
@@ -145,11 +153,39 @@ const DashboardPage: React.FC = () => {
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
-  // Settings toggles (mocked)
-  const [emailNotifs, setEmailNotifs] = useState(true);
-  const [scanAlerts, setScanAlerts] = useState(true);
-  const [weeklyDigest, setWeeklyDigest] = useState(false);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  // Settings hooks
+  const updateProfileMutation = useUpdateProfile();
+  const { subscribeBrowser, toggleUserPreference, loading: pushLoading } = usePushNotifications();
+
+  // Settings values from user data
+  const emailNotifs = user?.emailNotificationsEnabled ?? false;
+  const pushNotifs = user?.scanNotificationsEnabled ?? false;
+  const weeklyDigest = user?.weeklyDigestEnabled ?? false;
+  const twoFactorEnabled = user?.twoFactorEnabled ?? false;
+
+  const handleTogglePush = async () => {
+    const nextState = !pushNotifs;
+    console.log('[Push] handleTogglePush called, current pushNotifs:', pushNotifs, 'nextState:', nextState);
+    if (nextState) {
+      console.log('[Push] Attempting to subscribe browser...');
+      const success = await subscribeBrowser();
+      console.log('[Push] Subscribe browser result:', success);
+      if (!success) return;
+    }
+    console.log('[Push] Updating scanNotificationsEnabled (Push) to:', nextState);
+    await toggleUserPreference(nextState);
+    console.log('[Push] User preference update complete');
+  };
+
+  const handleToggleSetting = async (key: string, value: boolean) => {
+    console.log('[Settings] handleToggleSetting called:', { key, value });
+    try {
+      await updateProfileMutation.mutateAsync({ [key]: value });
+      console.log('[Settings] handleToggleSetting success for key:', key);
+    } catch (err) {
+      console.error('[Settings] handleToggleSetting failed for key:', key, err);
+    }
+  };
 
   const [editingURLQR, setEditingURLQR] = useState<string | null>(null);
   const [viewingQR, setViewingQR] = useState<BackendQRCode | null>(null);
@@ -162,6 +198,32 @@ const DashboardPage: React.FC = () => {
   };
   const [newURLValue, setNewURLValue] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingPhoto(true);
+    console.log('Starting photo upload to Cloudinary...');
+    try {
+      const result = await uploadPendingFile({ file }, 'image');
+      if (result) {
+        console.log('Photo upload successful:', result.url);
+        await updateProfileMutation.mutateAsync({ avatar: result.url });
+        toast.success('Profile photo updated');
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (err) {
+      console.error('Photo upload failed:', err);
+      toast.error('Failed to upload photo');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   // Close menus on outside click
   useEffect(() => {
@@ -730,7 +792,7 @@ const DashboardPage: React.FC = () => {
                 className="flex items-center gap-3 group cursor-pointer py-1.5 px-2 rounded-xl hover:bg-slate-50 transition-all duration-150"
               >
                 <img
-                  src={`https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=64`}
+                  src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=64`}
                   alt="Profile"
                   className="w-8 h-8 rounded-lg shadow-sm"
                 />
@@ -842,12 +904,23 @@ const DashboardPage: React.FC = () => {
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between relative z-20 gap-4 sm:gap-6">
                       {/* Avatar */}
                       <div className="relative shrink-0 -mt-16 sm:-mt-20 mx-auto sm:mx-0">
-                        <img
-                          src={`https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=160`}
-                          alt="Profile"
-                          className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl border-[6px] border-white shadow-lg object-cover bg-white mx-auto sm:mx-0"
-                        />
-                        <button className="absolute -bottom-1.5 -right-1.5 w-9 h-9 sm:w-10 sm:h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-blue-700 transition-all active:scale-95 ring-[3px] ring-white">
+                        <div className="relative">
+                          <img
+                            src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=160`}
+                            alt="Profile"
+                            className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl border-[6px] border-white shadow-lg object-cover bg-white mx-auto sm:mx-0"
+                          />
+                          {isUploadingPhoto && (
+                            <div className="absolute inset-0 bg-white/60 rounded-2xl flex items-center justify-center m-[6px]">
+                              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                            </div>
+                          )}
+                        </div>
+                        <button 
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploadingPhoto}
+                          className="absolute -bottom-1.5 -right-1.5 w-9 h-9 sm:w-10 sm:h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-blue-700 transition-all active:scale-95 ring-[3px] ring-white cursor-pointer disabled:opacity-50"
+                        >
                           <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                       </div>
@@ -866,7 +939,13 @@ const DashboardPage: React.FC = () => {
                           <p className="text-[14px] text-slate-500 font-medium truncate">{user?.email || 'guest@example.com'}</p>
                         </div>
 
-                        <button onClick={() => setIsEditingProfile(true)} className="shrink-0 w-full sm:w-auto px-6 py-2.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white rounded-xl text-[13px] font-semibold transition-all active:scale-[0.97] flex items-center justify-center sm:justify-start gap-2 shadow-sm">
+                        <button 
+                          onClick={() => {
+                            console.log('Edit Profile button clicked (Profile Tab)');
+                            setIsEditingProfile(true);
+                          }} 
+                          className="shrink-0 w-full sm:w-auto px-6 py-2.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white rounded-xl text-[13px] font-semibold transition-all active:scale-[0.97] flex items-center justify-center sm:justify-start gap-2 shadow-sm"
+                        >
                           <Edit3 className="w-3.5 h-3.5" /> Edit Profile
                         </button>
                       </div>
@@ -972,7 +1051,17 @@ const DashboardPage: React.FC = () => {
                           <p className="text-[12px] font-medium text-slate-400 mb-0.5">{row.label}</p>
                           <p className="text-[14px] font-semibold text-slate-900">{row.value}</p>
                         </div>
-                        <button className="px-3.5 py-1.5 text-[12px] font-semibold text-blue-600 hover:bg-blue-50 rounded-lg border border-blue-200 transition-all active:scale-[0.97]">
+                        <button 
+                          onClick={() => {
+                            console.log('Settings button clicked:', row.label);
+                            if (row.action === 'Edit') {
+                              setIsEditingProfile(true);
+                            } else {
+                              toast.error(`${row.action} is not implemented yet`);
+                            }
+                          }}
+                          className="px-3.5 py-1.5 text-[12px] font-semibold text-blue-600 hover:bg-blue-50 rounded-lg border border-blue-200 transition-all active:scale-[0.97]"
+                        >
                           {row.action}
                         </button>
                       </div>
@@ -993,9 +1082,9 @@ const DashboardPage: React.FC = () => {
                   </div>
                   <div className="divide-y divide-slate-100">
                     {[
-                      { label: 'Push Notification', desc: 'Get notified about account activity', value: emailNotifs, setter: setEmailNotifs },
-                      { label: 'Scan Alerts', desc: 'Real-time alerts when your QR codes are scanned', value: scanAlerts, setter: setScanAlerts },
-                      { label: 'Weekly Digest', desc: 'Summary of your weekly QR performance', value: weeklyDigest, setter: setWeeklyDigest },
+                      { label: 'Push Notification', desc: 'Get notified about account activity', value: pushNotifs, key: 'scanNotificationsEnabled' },
+                      { label: 'Scan Alerts', desc: 'Real-time alerts when your QR codes are scanned', value: emailNotifs, key: 'emailNotificationsEnabled' },
+                      { label: 'Weekly Digest', desc: 'Summary of your weekly QR performance', value: weeklyDigest, key: 'weeklyDigestEnabled' },
                     ].map(row => (
                       <div key={row.label} className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
                         <div>
@@ -1003,10 +1092,18 @@ const DashboardPage: React.FC = () => {
                           <p className="text-[12px] text-slate-400 font-medium">{row.desc}</p>
                         </div>
                         <button
-                          onClick={() => row.setter(!row.value)}
+                          onClick={() => {
+                            if (row.label === 'Push Notification') {
+                              handleTogglePush();
+                            } else {
+                              handleToggleSetting(row.key, !row.value);
+                            }
+                          }}
+                          disabled={pushLoading || updateProfileMutation.isPending}
                           className={cn(
                             'w-11 h-6 rounded-full transition-all duration-200 relative shrink-0 ml-4',
-                            row.value ? 'bg-blue-600' : 'bg-slate-200'
+                            row.value ? 'bg-blue-600' : 'bg-slate-200',
+                            (pushLoading || updateProfileMutation.isPending) && 'opacity-50 cursor-not-allowed'
                           )}
                         >
                           <div className={cn(
@@ -1040,7 +1137,7 @@ const DashboardPage: React.FC = () => {
                         </div>
                       </div>
                       <button
-                        onClick={() => setTwoFactorEnabled(!twoFactorEnabled)}
+                        onClick={() => handleToggleSetting('twoFactorEnabled', !twoFactorEnabled)}
                         className={cn(
                           'w-11 h-6 rounded-full transition-all duration-200 relative shrink-0 ml-4',
                           twoFactorEnabled ? 'bg-emerald-600' : 'bg-slate-200'
@@ -1417,23 +1514,61 @@ const DashboardPage: React.FC = () => {
             </div>
 
             {/* Scrollable Form Body */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-hide bg-white">
+            <form 
+              onSubmit={async (e) => {
+                e.preventDefault();
+                console.log('Profile update form submitted');
+                const formData = new FormData(e.currentTarget);
+                const firstName = formData.get('firstName') as string;
+                const lastName = formData.get('lastName') as string;
+                console.log('Form data:', { firstName, lastName });
+                try {
+                  await updateProfileMutation.mutateAsync({ firstName, lastName });
+                  console.log('Profile update successful');
+                  setIsEditingProfile(false);
+                } catch (err) {
+                  console.error('Profile update failed:', err);
+                }
+              }}
+              className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-hide bg-white"
+            >
               
               {/* Avatar Section */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pb-2">
                 <div className="relative shrink-0">
                   <img
-                    src={`https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=120`}
+                    src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=120`}
                     alt="Avatar"
                     className="w-20 h-20 rounded-full border-2 border-slate-100 shadow-sm object-cover"
                   />
+                  {isUploadingPhoto && (
+                    <div className="absolute inset-0 bg-white/60 rounded-full flex items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col gap-2">
                   <div className="flex gap-2">
-                    <button className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[13px] font-medium transition-all shadow-sm">
-                      Change Photo
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={handlePhotoUpload} 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingPhoto}
+                      className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[13px] font-medium transition-all shadow-sm disabled:opacity-50"
+                    >
+                      {isUploadingPhoto ? 'Uploading...' : 'Change Photo'}
                     </button>
-                    <button className="px-4 py-2 bg-white text-slate-600 border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100 rounded-lg text-[13px] font-medium transition-all">
+                    <button 
+                      type="button" 
+                      onClick={() => updateProfileMutation.mutateAsync({ avatar: null })}
+                      className="px-4 py-2 bg-white text-slate-600 border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100 rounded-lg text-[13px] font-medium transition-all"
+                    >
                       Remove
                     </button>
                   </div>
@@ -1446,6 +1581,7 @@ const DashboardPage: React.FC = () => {
                 <div className="space-y-1.5">
                   <label className="text-[13px] font-bold text-slate-700">First Name</label>
                   <input 
+                    name="firstName"
                     defaultValue={user?.firstName || ''}
                     placeholder="Enter first name"
                     className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-50 rounded-xl py-2.5 px-4 text-[13px] font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400"
@@ -1454,6 +1590,7 @@ const DashboardPage: React.FC = () => {
                 <div className="space-y-1.5">
                   <label className="text-[13px] font-bold text-slate-700">Last Name</label>
                   <input 
+                    name="lastName"
                     defaultValue={user?.lastName || ''}
                     placeholder="Enter last name"
                     className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-50 rounded-xl py-2.5 px-4 text-[13px] font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400"
@@ -1489,24 +1626,25 @@ const DashboardPage: React.FC = () => {
                 </div>
                 <p className="text-[12px] text-slate-500 font-medium">To change your email address or update your billing plan, please contact our support team securely.</p>
               </div>
-              
-            </div>
 
-            {/* Modal Footer / Actions */}
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 shrink-0 flex items-center justify-end gap-3 rounded-b-2xl">
-              <button 
-                onClick={() => setIsEditingProfile(false)} 
-                className="px-5 py-2.5 bg-white text-slate-700 rounded-xl font-semibold text-[13px] hover:bg-slate-100 border border-slate-200 transition-all"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => setIsEditingProfile(false)} 
-                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-[13px] transition-all shadow-sm shadow-blue-200"
-              >
-                Save Changes
-              </button>
-            </div>
+              {/* Modal Footer / Actions */}
+              <div className="pt-4 flex items-center justify-end gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setIsEditingProfile(false)} 
+                  className="px-5 py-2.5 bg-white text-slate-700 rounded-xl font-semibold text-[13px] hover:bg-slate-100 border border-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={updateProfileMutation.isPending}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-[13px] transition-all shadow-sm shadow-blue-200 disabled:opacity-50"
+                >
+                  {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
