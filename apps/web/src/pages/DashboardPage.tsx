@@ -149,7 +149,6 @@ const DashboardPage: React.FC = () => {
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [scanAlerts, setScanAlerts] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
-  const [marketingEmails, setMarketingEmails] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
   const [editingURLQR, setEditingURLQR] = useState<string | null>(null);
