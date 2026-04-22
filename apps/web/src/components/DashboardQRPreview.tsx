@@ -5,9 +5,10 @@ import type { QRConfiguration } from '../types/qr';
 interface DashboardQRPreviewProps {
   config: QRConfiguration;
   shortUrl: string;
+  size?: number;
 }
 
-const DashboardQRPreview: React.FC<DashboardQRPreviewProps> = ({ config, shortUrl }) => {
+const DashboardQRPreview: React.FC<DashboardQRPreviewProps> = ({ config, shortUrl, size = 150 }) => {
   const qrCodeRef = useRef<QRCodeStyling | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -19,9 +20,9 @@ const DashboardQRPreview: React.FC<DashboardQRPreviewProps> = ({ config, shortUr
       : `${window.location.origin}${shortUrl}`;
 
     const options = {
-      width: 150,
-      height: 150,
-      margin: 10,
+      width: size,
+      height: size,
+      margin: Math.round(size * 0.1),
       data: qrData,
       image: config.logo,
       dotsOptions: {
