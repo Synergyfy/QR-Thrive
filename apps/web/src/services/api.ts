@@ -85,6 +85,16 @@ export const authApi = {
       throw err;
     }
   },
+  updateProfile: async (data: any) => {
+    const res = await apiClient.patch<AuthResponse>('/auth/profile', data);
+    return res.data;
+  },
+};
+
+export const notificationsApi = {
+  subscribePush: async (subscription: PushSubscription) => {
+    return (await apiClient.post('/notifications/push/subscribe', subscription)).data;
+  },
 };
 
 export const foldersApi = {
