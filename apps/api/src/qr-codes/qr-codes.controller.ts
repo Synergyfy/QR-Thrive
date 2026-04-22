@@ -224,11 +224,7 @@ export class QRCodesController {
           ? `?text=${encodeURIComponent(data.message)}`
           : '';
         url = `https://wa.me/${data.phoneNumber}${message}`;
-      } else if (qrCode.type === 'form') {
-        url = `${baseUrl}/s/${shortId}?scanned=1`;
       } else {
-        // For other types (vcard, wifi, etc), we might redirect to a landing page
-        // For now, let's just use a placeholder or the short URL logic
         url = `${baseUrl}/s/${shortId}?scanned=1`;
       }
 

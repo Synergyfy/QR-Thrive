@@ -89,6 +89,7 @@ export function urlBase64ToUint8Array(base64String: string) {
 ### Profile & Push Notification Hook
 
 This hook handles both the Browser Push Subscription and the User Preference toggle.
+### Push Notification Hook / Service
 
 ```typescript
 /* src/hooks/usePushNotifications.ts */
@@ -104,6 +105,10 @@ export const usePushNotifications = () => {
    * Step 1: Subscribe the browser to the Push Service
    */
   const subscribeBrowser = async () => {
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const subscribeUser = async () => {
     setLoading(true);
     try {
       const registration = await navigator.serviceWorker.register('/sw.js');
@@ -120,6 +125,13 @@ export const usePushNotifications = () => {
     } catch (err) {
       console.error('Failed to subscribe browser: ', err);
       return false;
+      // Send to backend
+      await axios.post('/notifications/push/subscribe', subscription);
+      
+      setIsSubscribed(true);
+      console.log('User is subscribed.');
+    } catch (err) {
+      console.error('Failed to subscribe the user: ', err);
     } finally {
       setLoading(false);
     }
@@ -187,6 +199,30 @@ const NotificationSettings = ({ user }) => {
         className={`px-4 py-2 rounded ${enabled ? 'bg-green-500' : 'bg-gray-300'} text-white`}
       >
         {loading ? 'Processing...' : enabled ? 'Enabled' : 'Disabled'}
+  return { subscribeUser, isSubscribed, loading };
+};
+```
+
+## 5. UI Integration
+
+Register the feature in your Dashboard or Profile page.
+
+```tsx
+/* src/pages/DashboardPage.tsx */
+
+import { usePushNotifications } from '../hooks/usePushNotifications';
+
+const DashboardPage = () => {
+  const { subscribeUser, isSubscribed, loading } = usePushNotifications();
+
+  return (
+    <div>
+      <button 
+        onClick={subscribeUser} 
+        disabled={loading || isSubscribed}
+        className="btn btn-primary"
+      >
+        {isSubscribed ? 'Notifications Enabled' : 'Enable Scan Notifications'}
       </button>
     </div>
   );
@@ -211,6 +247,7 @@ const NotificationSettings = ({ user }) => {
 - **Auth**: Required
 
 ## 7. Important Notes
+## 6. Important Notes
 
 1.  **Scope**: Ensure `sw.js` is served from the root (`/sw.js`) for proper scope coverage.
 2.  **HTTPS**: Push notifications only work over HTTPS (and `localhost`).
@@ -219,6 +256,8 @@ const NotificationSettings = ({ user }) => {
 5.  **Critical Requirement**: For a notification to be sent, **BOTH** conditions must be met:
     - The user must have a valid `PushSubscription` stored in the database.
     - The `scanNotificationsEnabled` field in the `User` record must be `true`.
+4.  **JWT**: Ensure the `POST` request to `/notifications/push/subscribe` includes the user's Auth token in the `Authorization` header.
+5.  **Database Migration**: verify `scanNotificationsEnabled` is set to `true` in the user's profile settings to actually trigger the notifications from the backend.
 
 ---
 *Documentation generated for QR-Thrive Push Implementation.*
