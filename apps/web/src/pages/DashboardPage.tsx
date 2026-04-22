@@ -4,13 +4,16 @@ import {
   Search, Plus, MoreVertical, Calendar, ExternalLink, Brush, Globe,
   ChevronDown, ChevronRight, Bell, FolderOpen, Trash2, Copy,
   RefreshCw, X, FolderPlus, ArrowRight, Edit3, Users, Download,
-  Activity, Eye
+  Activity, Eye, Shield, Mail, Key, Lock, Camera, MapPin,
+  Smartphone, AlertTriangle
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import toast from 'react-hot-toast';
-import { useFolders, useCreateFolder, useDeleteFolder, useQRCodes, useDeleteQRCode, useUpdateQRCode, useDuplicateQRCode, useCurrentUser, useLogout, useCancelSubscription } from '../hooks/useApi';
+import { useFolders, useCreateFolder, useDeleteFolder, useQRCodes, useDeleteQRCode, useUpdateQRCode, useDuplicateQRCode, useCurrentUser, useLogout, useCancelSubscription, useUpdateProfile } from '../hooks/useApi';
+import { usePushNotifications } from '../hooks/usePushNotifications';
+import { uploadPendingFile } from '../utils/upload';
 import type { BackendQRCode } from '../types/api';
 import StatsPanel from '../components/StatsPanel';
 import DashboardQRPreview from '../components/DashboardQRPreview';
@@ -27,6 +30,12 @@ const DashboardPage: React.FC = () => {
   const { data: userData } = useCurrentUser();
   const logoutMutation = useLogout();
   const user = userData?.user;
+
+  useEffect(() => {
+    if (user) {
+      console.log('Current user avatar:', user.avatar);
+    }
+  }, [user]);
   
   const { data: folders = [] } = useFolders();
   const { data: qrCodes = [] } = useQRCodes();
@@ -141,11 +150,80 @@ const DashboardPage: React.FC = () => {
   const [downloadMenuOpen, setDownloadMenuOpen] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolder, setShowNewFolder] = useState(false);
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+  // Settings hooks
+  const updateProfileMutation = useUpdateProfile();
+  const { subscribeBrowser, toggleUserPreference, loading: pushLoading } = usePushNotifications();
+
+  // Settings values from user data
+  const emailNotifs = user?.emailNotificationsEnabled ?? false;
+  const pushNotifs = user?.scanNotificationsEnabled ?? false;
+  const weeklyDigest = user?.weeklyDigestEnabled ?? false;
+  const twoFactorEnabled = user?.twoFactorEnabled ?? false;
+
+  const handleTogglePush = async () => {
+    const nextState = !pushNotifs;
+    console.log('[Push] handleTogglePush called, current pushNotifs:', pushNotifs, 'nextState:', nextState);
+    if (nextState) {
+      console.log('[Push] Attempting to subscribe browser...');
+      const success = await subscribeBrowser();
+      console.log('[Push] Subscribe browser result:', success);
+      if (!success) return;
+    }
+    console.log('[Push] Updating scanNotificationsEnabled (Push) to:', nextState);
+    await toggleUserPreference(nextState);
+    console.log('[Push] User preference update complete');
+  };
+
+  const handleToggleSetting = async (key: string, value: boolean) => {
+    console.log('[Settings] handleToggleSetting called:', { key, value });
+    try {
+      await updateProfileMutation.mutateAsync({ [key]: value });
+      console.log('[Settings] handleToggleSetting success for key:', key);
+    } catch (err) {
+      console.error('[Settings] handleToggleSetting failed for key:', key, err);
+    }
+  };
 
   const [editingURLQR, setEditingURLQR] = useState<string | null>(null);
+  const [viewingQR, setViewingQR] = useState<BackendQRCode | null>(null);
   const [viewingScansQR, setViewingScansQR] = useState<{ id: string, name: string } | null>(null);
+
+  const copyToClipboard = (text: string) => {
+    const fullUrl = text.startsWith('http') ? text : `${window.location.origin}${text}`;
+    navigator.clipboard.writeText(fullUrl);
+    toast.success('Link copied to clipboard');
+  };
   const [newURLValue, setNewURLValue] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingPhoto(true);
+    console.log('Starting photo upload to Cloudinary...');
+    try {
+      const result = await uploadPendingFile({ file }, 'image');
+      if (result) {
+        console.log('Photo upload successful:', result.url);
+        await updateProfileMutation.mutateAsync({ avatar: result.url });
+        toast.success('Profile photo updated');
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (err) {
+      console.error('Photo upload failed:', err);
+      toast.error('Failed to upload photo');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   // Close menus on outside click
   useEffect(() => {
@@ -154,6 +232,7 @@ const DashboardPage: React.FC = () => {
         setMenuOpen(null);
         setFolderMenuOpen(null);
         setDownloadMenuOpen(null);
+        setHeaderMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -575,13 +654,28 @@ const DashboardPage: React.FC = () => {
           {/* Utility Links */}
           <div className="border-t border-slate-100 pt-4 space-y-0.5">
             {[
-              { icon: User, label: 'Profile' },
-              { icon: Settings, label: 'Settings' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 px-3 py-2.5 text-slate-500 hover:text-slate-900 cursor-pointer transition-all hover:bg-slate-50 rounded-lg group">
-                <item.icon className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600 transition-colors" />
-                <span className="text-[13px] font-medium">{item.label}</span>
-              </div>
+              { id: 'profile', icon: User, label: 'Profile' },
+              { id: 'settings', icon: Settings, label: 'Settings' },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group",
+                  activeTab === item.id
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                )}
+              >
+                <item.icon className={cn(
+                  "w-[18px] h-[18px] transition-colors",
+                  activeTab === item.id ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
+                )} />
+                <span className={cn(
+                  "text-[13px]",
+                  activeTab === item.id ? "font-semibold" : "font-medium"
+                )}>{item.label}</span>
+              </button>
             ))}
             <div 
               onClick={handleLogout}
@@ -629,7 +723,7 @@ const DashboardPage: React.FC = () => {
                       {user?.subscriptionStatus === 'non-renewing' ? 'Ending Soon' : 'Active Plan'}
                     </p>
                     <p className="text-sm font-bold text-white leading-none mt-1">
-                      {user?.plan?.name || 'Pro'} Subscriber
+                      {user?.plan?.name || 'Pro'} 
                     </p>
                   </div>
                 </div>
@@ -692,19 +786,48 @@ const DashboardPage: React.FC = () => {
             
             <div className="h-6 w-px bg-slate-200/50" />
             
-            <div className="flex items-center gap-3 group cursor-pointer py-1.5 px-2 rounded-xl hover:bg-slate-50 transition-all duration-150">
-              <img
-                src={`https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=64`}
-                alt="Profile"
-                className="w-8 h-8 rounded-lg shadow-sm"
-              />
-              <div className="hidden lg:block text-left">
-                <p className="text-[13px] font-semibold text-slate-800 leading-none mb-0.5">
-                  {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
-                </p>
-                <p className="text-[11px] font-medium text-slate-400">{user?.role || 'Free'}</p>
+            <div className="relative">
+              <div 
+                onClick={() => setHeaderMenuOpen(!headerMenuOpen)}
+                className="flex items-center gap-3 group cursor-pointer py-1.5 px-2 rounded-xl hover:bg-slate-50 transition-all duration-150"
+              >
+                <img
+                  src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=64`}
+                  alt="Profile"
+                  className="w-8 h-8 rounded-lg shadow-sm"
+                />
+                <div className="hidden lg:block text-left">
+                  <p className="text-[13px] font-semibold text-slate-800 leading-none mb-0.5">
+                    {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
+                  </p>
+                  <p className="text-[11px] font-medium text-slate-400">{user?.role || 'Free'}</p>
+                </div>
+                <ChevronDown className={cn("w-4 h-4 text-slate-400 hidden lg:block transition-transform duration-200", headerMenuOpen && "rotate-180")} />
               </div>
-              <ChevronDown className="w-4 h-4 text-slate-400 hidden lg:block" />
+
+              {headerMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200/80 py-2 z-[100] animate-in slide-in-from-top-2 fade-in duration-150">
+                  <div className="px-4 py-2 border-b border-slate-100 mb-1">
+                    <p className="text-[13px] font-bold text-slate-900 truncate">
+                      {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
+                    </p>
+                    <p className="text-[11px] font-medium text-slate-500 truncate">{user?.email}</p>
+                  </div>
+                  <button onClick={() => { setActiveTab('profile'); setHeaderMenuOpen(false); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
+                    <User className="w-4 h-4 text-slate-400" /> My Profile
+                  </button>
+                  <button onClick={() => { setActiveTab('settings'); setHeaderMenuOpen(false); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
+                    <Settings className="w-4 h-4 text-slate-400" /> Settings
+                  </button>
+                  <button onClick={() => { setActiveTab('pricing'); setHeaderMenuOpen(false); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
+                    <Crown className="w-4 h-4 text-slate-400" /> Plan & Billing
+                  </button>
+                  <div className="h-px bg-slate-100 my-1" />
+                  <button onClick={() => { handleLogout(); setHeaderMenuOpen(false); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-red-50 flex items-center gap-3 text-red-600 transition-colors">
+                    <LogOut className="w-4 h-4" /> Sign Out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -714,30 +837,37 @@ const DashboardPage: React.FC = () => {
           <div className="max-w-[1440px] mx-auto px-8 py-8 space-y-8">
 
             {/* Page Header */}
-            <div className="flex items-end justify-between">
-              <div className="space-y-1.5">
-                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                  {activeTab === 'stats' ? 'Analytics' : activeTab === 'leads' ? 'Leads' : getTabLabel()}
-                </h1>
-                <p className="text-[14px] text-slate-500 font-medium">
-                  {activeTab === 'stats' 
-                    ? 'Track scan performance and visitor insights' 
-                    : activeTab === 'leads'
-                    ? 'Manage captured lead data'
-                    : activeTab === 'pricing'
-                    ? 'Choose the plan that fits your needs'
-                    : `${displayedQRs.length} code${displayedQRs.length !== 1 ? 's' : ''} in this view`}
-                </p>
+            {activeTab !== 'profile' && (
+              <div className="flex items-end justify-between">
+                <div className="space-y-1.5">
+                  <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                    {activeTab === 'stats' ? 'Analytics' 
+                      : activeTab === 'leads' ? 'Leads'
+                      : activeTab === 'settings' ? 'Settings'
+                      : getTabLabel()}
+                  </h1>
+                  <p className="text-[14px] text-slate-500 font-medium">
+                    {activeTab === 'stats' 
+                      ? 'Track scan performance and visitor insights' 
+                      : activeTab === 'leads'
+                      ? 'Manage captured lead data'
+                      : activeTab === 'pricing'
+                      ? 'Choose the plan that fits your needs'
+                      : activeTab === 'settings'
+                      ? 'Customize your experience and preferences'
+                      : `${displayedQRs.length} code${displayedQRs.length !== 1 ? 's' : ''} in this view`}
+                  </p>
+                </div>
+                {!['stats', 'leads', 'pricing', 'settings'].includes(activeTab) && (
+                  <button
+                    onClick={() => navigate('/dashboard/create')}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[13px] font-semibold transition-all duration-200 active:scale-[0.97] shadow-sm"
+                  >
+                    <Plus className="w-4 h-4" /> New Code
+                  </button>
+                )}
               </div>
-              {!['stats', 'leads', 'pricing'].includes(activeTab) && (
-                <button
-                  onClick={() => navigate('/dashboard/create')}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[13px] font-semibold transition-all duration-200 active:scale-[0.97] shadow-sm"
-                >
-                  <Plus className="w-4 h-4" /> New Code
-                </button>
-              )}
-            </div>
+            )}
 
             {/* Tab Content */}
             {activeTab === 'pricing' ? (
@@ -752,6 +882,325 @@ const DashboardPage: React.FC = () => {
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <LeadsPanel codes={qrCodes} />
               </div>
+
+            ) : activeTab === 'profile' ? (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+
+                {/* ─── Profile Hero Card ─── */}
+                <div className="relative bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm">
+                  {/* Gradient Banner integrated as Page Title */}
+                  <div className="h-48 sm:h-56 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 relative overflow-hidden flex flex-col justify-start pt-8 px-6 sm:px-10">
+                    <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'radial-gradient(circle at 25% 50%, white 1.5px, transparent 1.5px), radial-gradient(circle at 75% 30%, white 1px, transparent 1px)', backgroundSize: '50px 50px, 35px 35px' }} />
+                    <div className="absolute -bottom-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+                    <div className="absolute top-6 left-10 w-24 h-24 bg-white/5 rounded-full blur-2xl" />
+                    
+                    <div className="relative z-10 w-full mb-auto mt-2">
+                      <h1 className="text-3xl font-bold text-white tracking-tight drop-shadow-sm mb-1.5">Profile</h1>
+                      <p className="text-[15px] text-indigo-100 font-medium drop-shadow-sm max-w-sm">Manage your account and personal information</p>
+                    </div>
+                  </div>
+
+                  <div className="px-6 sm:px-10 pb-8 flex flex-col">
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between relative z-20 gap-4 sm:gap-6">
+                      {/* Avatar */}
+                      <div className="relative shrink-0 -mt-16 sm:-mt-20 mx-auto sm:mx-0">
+                        <div className="relative">
+                          <img
+                            src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=160`}
+                            alt="Profile"
+                            className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl border-[6px] border-white shadow-lg object-cover bg-white mx-auto sm:mx-0"
+                          />
+                          {isUploadingPhoto && (
+                            <div className="absolute inset-0 bg-white/60 rounded-2xl flex items-center justify-center m-[6px]">
+                              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                            </div>
+                          )}
+                        </div>
+                        <button 
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploadingPhoto}
+                          className="absolute -bottom-1.5 -right-1.5 w-9 h-9 sm:w-10 sm:h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-blue-700 transition-all active:scale-95 ring-[3px] ring-white cursor-pointer disabled:opacity-50"
+                        >
+                          <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
+                      </div>
+
+                      {/* Info & Action Row */}
+                      <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2 sm:mt-0 pb-1">
+                        <div className="text-center sm:text-left">
+                          <div className="flex items-center justify-center sm:justify-start gap-3 mb-1 flex-wrap">
+                            <h2 className="text-[22px] sm:text-2xl font-bold text-slate-900 tracking-tight">
+                              {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
+                            </h2>
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 hidden sm:flex items-center">
+                              {user?.role || 'USER'}
+                            </span>
+                          </div>
+                          <p className="text-[14px] text-slate-500 font-medium truncate">{user?.email || 'guest@example.com'}</p>
+                        </div>
+
+                        <button 
+                          onClick={() => {
+                            console.log('Edit Profile button clicked (Profile Tab)');
+                            setIsEditingProfile(true);
+                          }} 
+                          className="shrink-0 w-full sm:w-auto px-6 py-2.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white rounded-xl text-[13px] font-semibold transition-all active:scale-[0.97] flex items-center justify-center sm:justify-start gap-2 shadow-sm"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" /> Edit Profile
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ─── Account Details + Plan Info ─── */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Account Details */}
+                  <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                      <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
+                        <User className="w-4 h-4 text-slate-600" />
+                      </div>
+                      <h3 className="text-[15px] font-semibold text-slate-900">Account Details</h3>
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                      {[
+                        { icon: Mail, label: 'Email Address', value: user?.email || '—' },
+                        { icon: Shield, label: 'Account Role', value: user?.role === 'ADMIN' ? 'Administrator' : 'Member' },
+                        { icon: Calendar, label: 'Member Since', value: 'April 2026' },
+                        { icon: MapPin, label: 'Timezone', value: Intl.DateTimeFormat().resolvedOptions().timeZone },
+                        { icon: Globe, label: 'Language', value: 'English (US)' },
+                      ].map(row => (
+                        <div key={row.label} className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <row.icon className="w-4 h-4 text-slate-400" />
+                            <span className="text-[13px] font-medium text-slate-500">{row.label}</span>
+                          </div>
+                          <span className="text-[13px] font-semibold text-slate-900">{row.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Plan Card */}
+                  <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                      <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
+                        <Crown className="w-4 h-4 text-amber-600" />
+                      </div>
+                      <h3 className="text-[15px] font-semibold text-slate-900">Current Plan</h3>
+                    </div>
+                    <div className="p-6 space-y-5">
+                      <div className="text-center py-4">
+                        <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-blue-600/20">
+                          <Crown className="w-6 h-6 text-white fill-white" />
+                        </div>
+                        <p className="text-xl font-bold text-slate-900">{user?.plan?.name || 'Free'}</p>
+                        <p className="text-[12px] font-medium text-slate-400 mt-1">
+                          {user?.subscriptionStatus === 'active' ? 'Active Subscription'
+                            : user?.subscriptionStatus === 'trialing' ? 'Trial Period'
+                            : user?.subscriptionStatus === 'non-renewing' ? 'Ending Soon'
+                            : 'No active subscription'}
+                        </p>
+                      </div>
+                      <div className="space-y-2.5">
+                        {[
+                          { label: 'QR Code Limit', value: user?.plan?.qrCodeLimit ? `${user.plan.qrCodeLimit} codes` : '∞ Unlimited' },
+                          { label: 'Billing Cycle', value: user?.billingCycle ? user.billingCycle.charAt(0).toUpperCase() + user.billingCycle.slice(1) : 'N/A' },
+                          { label: 'Status', value: user?.subscriptionStatus || 'Free', highlight: true },
+                        ].map(item => (
+                          <div key={item.label} className="flex items-center justify-between py-2.5 px-3 bg-slate-50 rounded-lg">
+                            <span className="text-[12px] font-medium text-slate-500">{item.label}</span>
+                            <span className={cn('text-[12px] font-semibold', 'highlight' in item && item.highlight ? 'text-emerald-600' : 'text-slate-900')}>{item.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => setActiveTab('pricing')}
+                        className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold text-[13px] transition-all active:scale-[0.97] shadow-lg shadow-blue-600/20"
+                      >
+                        {user?.subscriptionStatus === 'active' ? 'Manage Plan' : 'Upgrade Plan'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            ) : activeTab === 'settings' ? (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6 max-w-3xl">
+
+                {/* ─── Account Settings ─── */}
+                <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                    <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
+                      <User className="w-4 h-4 text-slate-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-[15px] font-semibold text-slate-900">Account</h3>
+                      <p className="text-[11px] text-slate-400 font-medium">Manage your personal information</p>
+                    </div>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    {[
+                      { label: 'Full Name', value: user ? `${user.firstName} ${user.lastName}` : 'Guest User', action: 'Edit' },
+                      { label: 'Email Address', value: user?.email || '—', action: 'Change' },
+                      { label: 'Password', value: '••••••••••••', action: 'Update' },
+                    ].map(row => (
+                      <div key={row.label} className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
+                        <div>
+                          <p className="text-[12px] font-medium text-slate-400 mb-0.5">{row.label}</p>
+                          <p className="text-[14px] font-semibold text-slate-900">{row.value}</p>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            console.log('Settings button clicked:', row.label);
+                            if (row.action === 'Edit') {
+                              setIsEditingProfile(true);
+                            } else {
+                              toast.error(`${row.action} is not implemented yet`);
+                            }
+                          }}
+                          className="px-3.5 py-1.5 text-[12px] font-semibold text-blue-600 hover:bg-blue-50 rounded-lg border border-blue-200 transition-all active:scale-[0.97]"
+                        >
+                          {row.action}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ─── Notifications ─── */}
+                <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                    <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                      <Bell className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-[15px] font-semibold text-slate-900">Notifications</h3>
+                      <p className="text-[11px] text-slate-400 font-medium">Control how you receive updates</p>
+                    </div>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    {[
+                      { label: 'Push Notification', desc: 'Get notified about account activity', value: pushNotifs, key: 'scanNotificationsEnabled' },
+                      { label: 'Scan Alerts', desc: 'Real-time alerts when your QR codes are scanned', value: emailNotifs, key: 'emailNotificationsEnabled' },
+                      { label: 'Weekly Digest', desc: 'Summary of your weekly QR performance', value: weeklyDigest, key: 'weeklyDigestEnabled' },
+                    ].map(row => (
+                      <div key={row.label} className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
+                        <div>
+                          <p className="text-[14px] font-semibold text-slate-900 mb-0.5">{row.label}</p>
+                          <p className="text-[12px] text-slate-400 font-medium">{row.desc}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (row.label === 'Push Notification') {
+                              handleTogglePush();
+                            } else {
+                              handleToggleSetting(row.key, !row.value);
+                            }
+                          }}
+                          disabled={pushLoading || updateProfileMutation.isPending}
+                          className={cn(
+                            'w-11 h-6 rounded-full transition-all duration-200 relative shrink-0 ml-4',
+                            row.value ? 'bg-blue-600' : 'bg-slate-200',
+                            (pushLoading || updateProfileMutation.isPending) && 'opacity-50 cursor-not-allowed'
+                          )}
+                        >
+                          <div className={cn(
+                            'w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-all duration-200',
+                            row.value ? 'left-[22px]' : 'left-0.5'
+                          )} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ─── Security ─── */}
+                <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                    <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center">
+                      <Shield className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-[15px] font-semibold text-slate-900">Security</h3>
+                      <p className="text-[11px] text-slate-400 font-medium">Protect your account</p>
+                    </div>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    <div className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <Lock className="w-4 h-4 text-slate-400" />
+                        <div>
+                          <p className="text-[14px] font-semibold text-slate-900 mb-0.5">Two-Factor Authentication</p>
+                          <p className="text-[12px] text-slate-400 font-medium">Add an extra layer of security to your account</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleToggleSetting('twoFactorEnabled', !twoFactorEnabled)}
+                        className={cn(
+                          'w-11 h-6 rounded-full transition-all duration-200 relative shrink-0 ml-4',
+                          twoFactorEnabled ? 'bg-emerald-600' : 'bg-slate-200'
+                        )}
+                      >
+                        <div className={cn(
+                          'w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-all duration-200',
+                          twoFactorEnabled ? 'left-[22px]' : 'left-0.5'
+                        )} />
+                      </button>
+                    </div>
+                    <div className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <Smartphone className="w-4 h-4 text-slate-400" />
+                        <div>
+                          <p className="text-[14px] font-semibold text-slate-900 mb-0.5">Active Sessions</p>
+                          <p className="text-[12px] text-slate-400 font-medium">1 active session on this device</p>
+                        </div>
+                      </div>
+                      <button className="px-3.5 py-1.5 text-[12px] font-semibold text-slate-600 hover:bg-slate-100 rounded-lg border border-slate-200 transition-all active:scale-[0.97]">
+                        Manage
+                      </button>
+                    </div>
+                    <div className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors opacity-60">
+                      <div className="flex items-center gap-3">
+                        <Key className="w-4 h-4 text-slate-400" />
+                        <div>
+                          <p className="text-[14px] font-semibold text-slate-900 mb-0.5">API Keys</p>
+                          <p className="text-[12px] text-slate-400 font-medium">Advanced developer features are arriving soon.</p>
+                        </div>
+                      </div>
+                      <button className="px-3.5 py-1.5 text-[10px] font-bold text-slate-400 bg-slate-100 rounded-lg border border-slate-200 uppercase tracking-widest cursor-not-allowed">
+                        Coming Soon
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ─── Danger Zone ─── */}
+                <div className="bg-white rounded-2xl border border-red-200/80 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-red-100 flex items-center gap-3">
+                    <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center">
+                      <AlertTriangle className="w-4 h-4 text-red-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-[15px] font-semibold text-red-900">Danger Zone</h3>
+                      <p className="text-[11px] text-red-400 font-medium">Irreversible and destructive actions</p>
+                    </div>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[14px] font-semibold text-slate-900 mb-0.5">Delete Account</p>
+                        <p className="text-[12px] text-slate-400 font-medium">Permanently remove your account and all associated data</p>
+                      </div>
+                      <button className="px-4 py-2 text-[12px] font-semibold text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-all active:scale-[0.97] shrink-0 ml-4">
+                        Delete Account
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             ) : (
               <div className="animate-in fade-in duration-400 space-y-6">
 
@@ -820,7 +1269,7 @@ const DashboardPage: React.FC = () => {
                 )}
 
                 {/* ─── QR Code Grid ─── */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" ref={menuRef}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" ref={menuRef}>
                   {displayedQRs.map((qr) => {
                     const typeStyle = getTypeStyles(qr.type);
                     return (
@@ -836,7 +1285,7 @@ const DashboardPage: React.FC = () => {
                         <div className={cn('h-1 w-full', typeStyle.dot)} />
 
                         {/* ── QR Preview — centered & prominent ── */}
-                        <div className="px-6 pt-5 pb-3">
+                        <div className="px-4 pt-5 pb-3">
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-2">
                               <span className={cn(
@@ -864,6 +1313,9 @@ const DashboardPage: React.FC = () => {
                                   </button>
                                   <button onClick={() => { navigate(`/dashboard/edit/${qr.id}/design`); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
                                     <Brush className="w-4 h-4 text-slate-400" /> Edit Design
+                                  </button>
+                                  <button onClick={() => { window.open(qr.shortUrl, '_blank'); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
+                                    <ExternalLink className="w-4 h-4 text-slate-400" /> Preview Link
                                   </button>
                                   <button onClick={() => { duplicateQR(qr.id); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
                                     <Copy className="w-4 h-4 text-slate-400" /> Duplicate
@@ -918,6 +1370,13 @@ const DashboardPage: React.FC = () => {
                             <div className="flex items-center justify-center gap-1.5 text-slate-400">
                               <Globe className="w-3 h-3 shrink-0" />
                               <p className="text-[11px] font-medium truncate max-w-[200px]">{qr.shortUrl.replace(/^https?:\/\//, '')}</p>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); copyToClipboard(qr.shortUrl); }}
+                                className="p-1 text-slate-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-all"
+                                title="Copy Link"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
                             </div>
                           </div>
 
@@ -938,42 +1397,42 @@ const DashboardPage: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* ── Card Action Bar ── */}
-                        <div className="flex items-center border-t border-slate-100 divide-x divide-slate-100 mt-auto">
+                        {/* ── Card Action Bar (Two Prominent Buttons) ── */}
+                        <div className="flex items-center border-t border-slate-100 divide-x divide-slate-100 mt-auto bg-slate-50/10">
                           <button 
-                            onClick={() => window.open(qr.shortUrl, '_blank')} 
-                            className="flex-1 py-3 text-[12px] font-semibold text-slate-500 hover:text-blue-600 hover:bg-blue-50/50 flex items-center justify-center gap-2 transition-all duration-150"
+                            onClick={() => setViewingQR(qr)} 
+                            className="flex-1 py-3.5 text-[12px] font-bold text-slate-600 hover:text-blue-600 hover:bg-white flex items-center justify-center gap-2 transition-all duration-150"
                           >
-                            <ExternalLink className="w-3.5 h-3.5" /> Preview
+                            <Eye className="w-4 h-4" /> View
                           </button>
+                          
                           <div className="relative flex-1">
                             <button 
                               onClick={() => setDownloadMenuOpen(downloadMenuOpen === qr.id ? null : qr.id)} 
-                              className="w-full py-3 text-[12px] font-semibold text-slate-500 hover:text-emerald-600 hover:bg-emerald-50/50 flex items-center justify-center gap-2 transition-all duration-150"
+                              className="w-full py-3.5 text-[12px] font-bold text-slate-600 hover:text-emerald-600 hover:bg-white flex items-center justify-center gap-2 transition-all duration-150"
                             >
-                              <Download className="w-3.5 h-3.5" /> Export
+                              <Download className="w-4 h-4" /> Export
                             </button>
                             {downloadMenuOpen === qr.id && (
-                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 bg-white rounded-xl shadow-xl border border-slate-200/80 py-1.5 z-[100] animate-in slide-in-from-bottom-2 fade-in duration-150">
-                                {(['png', 'svg', 'jpeg', 'webp'] as const).map(ext => (
-                                  <button 
-                                    key={ext}
-                                    onClick={() => { handleDownload(qr, ext); setDownloadMenuOpen(null); }} 
-                                    className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 text-slate-700 uppercase flex items-center gap-2 transition-colors"
-                                  >
-                                    <div className="w-5 h-5 bg-slate-100 rounded text-[9px] font-bold flex items-center justify-center text-slate-500">.{ext}</div>
-                                    {ext.toUpperCase()}
-                                  </button>
-                                ))}
+                              <div className="absolute bottom-full left-0 right-0 mb-3 px-3 z-[100] animate-in slide-in-from-bottom-2 fade-in duration-150">
+                                <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 py-2 overflow-hidden">
+                                  <div className="px-3 py-1.5 mb-1 border-b border-slate-50">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Select Format</p>
+                                  </div>
+                                  {(['png', 'svg', 'jpeg', 'webp'] as const).map(ext => (
+                                    <button 
+                                      key={ext}
+                                      onClick={() => { handleDownload(qr, ext); setDownloadMenuOpen(null); }} 
+                                      className="w-full text-left px-4 py-2.5 text-[13px] font-semibold hover:bg-slate-50 text-slate-700 uppercase flex items-center gap-3 transition-colors"
+                                    >
+                                      <div className="w-6 h-6 bg-slate-100 rounded-lg text-[10px] font-black flex items-center justify-center text-slate-500 border border-slate-200/50">.{ext}</div>
+                                      {ext.toUpperCase()}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
                             )}
                           </div>
-                          <button 
-                            onClick={() => navigate(`/dashboard/edit/${qr.id}/design`)} 
-                            className="flex-1 py-3 text-[12px] font-semibold text-slate-500 hover:text-violet-600 hover:bg-violet-50/50 flex items-center justify-center gap-2 transition-all duration-150"
-                          >
-                            <Brush className="w-3.5 h-3.5" /> Design
-                          </button>
                         </div>
                       </div>
                     );
@@ -1032,6 +1491,211 @@ const DashboardPage: React.FC = () => {
           qrName={viewingScansQR.name} 
           onClose={() => setViewingScansQR(null)} 
         />
+      )}
+
+      {/* Edit Profile Modal */}
+      {isEditingProfile && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setIsEditingProfile(false)} />
+          <div className="relative bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white z-10 relative">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">Edit Profile</h3>
+                <p className="text-[13px] text-slate-500 font-medium mt-0.5">Update your personal information</p>
+              </div>
+              <button 
+                onClick={() => setIsEditingProfile(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Form Body */}
+            <form 
+              onSubmit={async (e) => {
+                e.preventDefault();
+                console.log('Profile update form submitted');
+                const formData = new FormData(e.currentTarget);
+                const firstName = formData.get('firstName') as string;
+                const lastName = formData.get('lastName') as string;
+                console.log('Form data:', { firstName, lastName });
+                try {
+                  await updateProfileMutation.mutateAsync({ firstName, lastName });
+                  console.log('Profile update successful');
+                  setIsEditingProfile(false);
+                } catch (err) {
+                  console.error('Profile update failed:', err);
+                }
+              }}
+              className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-hide bg-white"
+            >
+              
+              {/* Avatar Section */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pb-2">
+                <div className="relative shrink-0">
+                  <img
+                    src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=120`}
+                    alt="Avatar"
+                    className="w-20 h-20 rounded-full border-2 border-slate-100 shadow-sm object-cover"
+                  />
+                  {isUploadingPhoto && (
+                    <div className="absolute inset-0 bg-white/60 rounded-full flex items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={handlePhotoUpload} 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingPhoto}
+                      className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[13px] font-medium transition-all shadow-sm disabled:opacity-50"
+                    >
+                      {isUploadingPhoto ? 'Uploading...' : 'Change Photo'}
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => updateProfileMutation.mutateAsync({ avatar: null })}
+                      className="px-4 py-2 bg-white text-slate-600 border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100 rounded-lg text-[13px] font-medium transition-all"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-medium">Supported formats: JPG, PNG, GIF (Max. 5MB)</p>
+                </div>
+              </div>
+
+              {/* Name Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-slate-700">First Name</label>
+                  <input 
+                    name="firstName"
+                    defaultValue={user?.firstName || ''}
+                    placeholder="Enter first name"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-50 rounded-xl py-2.5 px-4 text-[13px] font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-slate-700">Last Name</label>
+                  <input 
+                    name="lastName"
+                    defaultValue={user?.lastName || ''}
+                    placeholder="Enter last name"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-50 rounded-xl py-2.5 px-4 text-[13px] font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400"
+                  />
+                </div>
+              </div>
+
+              <hr className="border-slate-100/80" />
+
+              {/* Read Only Fields */}
+              <div className="space-y-5">
+                <h4 className="text-[14px] font-bold text-slate-900">Account Information</h4>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <label className="text-[13px] font-bold text-slate-700 flex items-center justify-between">
+                      Email Address
+                      <span className="text-[10px] uppercase font-bold text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-100 ml-2">Primary</span>
+                    </label>
+                    <div className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 flex items-center justify-between min-w-0">
+                      <span className="text-[13px] font-medium text-slate-600 truncate mr-3">{user?.email || 'guest@example.com'}</span>
+                      <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[13px] font-bold text-slate-700">Role & Plan</label>
+                    <div className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 flex items-center justify-between min-w-0">
+                      <span className="text-[13px] font-medium text-slate-600 truncate capitalize mr-3">{user?.role || 'User'}</span>
+                      <Shield className="w-4 h-4 text-slate-400 shrink-0" />
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[12px] text-slate-500 font-medium">To change your email address or update your billing plan, please contact our support team securely.</p>
+              </div>
+
+              {/* Modal Footer / Actions */}
+              <div className="pt-4 flex items-center justify-end gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setIsEditingProfile(false)} 
+                  className="px-5 py-2.5 bg-white text-slate-700 rounded-xl font-semibold text-[13px] hover:bg-slate-100 border border-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={updateProfileMutation.isPending}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-[13px] transition-all shadow-sm shadow-blue-200 disabled:opacity-50"
+                >
+                  {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* View QR Code Modal */}
+      {viewingQR && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 transition-all">
+          <div 
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" 
+            onClick={() => setViewingQR(null)} 
+          />
+          <div className="relative w-full max-w-sm bg-white rounded-[40px] shadow-2xl border border-slate-200/60 overflow-hidden animate-in zoom-in-95 fade-in duration-300 p-8 flex flex-col items-center gap-6">
+            <div className="w-full flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl font-bold text-slate-900 truncate">{viewingQR.name}</h3>
+                <p className="text-[12px] font-medium text-slate-400 mt-0.5 truncate">{viewingQR.shortUrl.replace(/^https?:\/\//, '')}</p>
+              </div>
+              <button 
+                onClick={() => setViewingQR(null)} 
+                className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="w-full aspect-square bg-white rounded-[32px] p-10 shadow-inner border border-slate-100 flex items-center justify-center group relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-indigo-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[32px]" />
+              <div className="relative z-10 w-full h-full">
+                <DashboardQRPreview config={viewingQR.config} shortUrl={viewingQR.shortUrl} size={400} />
+              </div>
+            </div>
+
+            <div className="w-full grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => handleDownload(viewingQR, 'png')}
+                className="py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold text-[13px] transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20"
+              >
+                <Download className="w-4 h-4" /> Export
+              </button>
+              <button 
+                onClick={() => copyToClipboard(viewingQR.shortUrl)}
+                className="py-3.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-2xl font-bold text-[13px] transition-all active:scale-[0.98] flex items-center justify-center gap-2 border border-blue-100"
+              >
+                <Copy className="w-4 h-4" /> Copy Link
+              </button>
+            </div>
+            
+            <p className="text-[11px] text-slate-400 font-medium text-center px-4">
+              Use this high-resolution QR code for digital displays or quick scanning.
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );

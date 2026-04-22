@@ -14,6 +14,11 @@ export interface User {
   trialEndsAt?: string | null;
   hasUsedTrial?: boolean;
   isBanned?: boolean;
+  emailNotificationsEnabled?: boolean;
+  scanNotificationsEnabled?: boolean;
+  weeklyDigestEnabled?: boolean;
+  twoFactorEnabled?: boolean;
+  avatar?: string;
 }
 
 
@@ -62,6 +67,7 @@ export interface Plan {
   isFree: boolean;
   trialDays: number;
   isActive: boolean;
+  features: string[];
   priceBooks: PriceBook[];
 }
 
@@ -92,6 +98,7 @@ export interface PublicPlan {
   isDefault: boolean;
   isFree: boolean;
   trialDays: number;
+  features: string[];
   pricing: PlanPricing;
 }
 

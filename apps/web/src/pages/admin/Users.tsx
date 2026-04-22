@@ -200,8 +200,8 @@ export default function UsersManagement() {
                       {format(new Date(user.createdAt), 'MMM dd, yyyy')}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-blue-600 transition-all shadow-none hover:shadow-sm border border-transparent hover:border-slate-100">
+                      <div className="flex items-center gap-2 transition-all">
+                        <button className="p-2 bg-white rounded-lg text-slate-400 hover:text-blue-600 transition-all shadow-sm border border-slate-100">
                           <ExternalLink className="w-4 h-4" />
                         </button>
                         <button 

@@ -20,6 +20,7 @@ import { IntegrationModule } from './integration/integration.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ScheduleModule } from '@nestjs/schedule';
 import { LoggingInterceptor } from './common/logging.interceptor';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { LoggingInterceptor } from './common/logging.interceptor';
     AdminModule,
     PricingModule,
     IntegrationModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [
