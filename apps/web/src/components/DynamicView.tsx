@@ -695,6 +695,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                title={data.pdf?.title}
                description={data.pdf?.description}
                previewImage={data.pdf?.previewImage}
+               pdfUrl={data.pdf?.url}
                themeColor={data.pdf?.themeColor}
                textColor={data.pdf?.textColor}
                buttonColor={data.pdf?.buttonColor}
