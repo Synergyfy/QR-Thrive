@@ -4,6 +4,7 @@ import {
   ConflictException,
   Logger,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -13,6 +14,7 @@ import {
   LoginDto,
   AdminSignupDto,
   GoogleLoginDto,
+  UpdateProfileDto,
 } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
@@ -384,6 +386,43 @@ export class AuthService {
       `Fetching user profile: ${user?.email} - Status: ${user?.subscriptionStatus} - Role: ${user?.role}`,
     );
     return { user };
+  }
+
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
+    const { firstName, lastName, avatar, scanNotificationsEnabled } =
+      updateProfileDto;
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(firstName && { firstName }),
+        ...(lastName && { lastName }),
+        ...(avatar !== undefined && { avatar }),
+        ...(scanNotificationsEnabled !== undefined && {
+          scanNotificationsEnabled,
+        }),
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        avatar: true,
+        scanNotificationsEnabled: true,
+      },
+    });
+
+    this.logger.log(`User profile updated for user: ${user.email}`);
+    return { user: updatedUser };
   }
 
   async generateMagicLink(userId: string) {
