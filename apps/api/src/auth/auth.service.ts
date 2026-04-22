@@ -389,7 +389,8 @@ export class AuthService {
   }
 
   async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
-    const { firstName, lastName, avatar } = updateProfileDto;
+    const { firstName, lastName, avatar, scanNotificationsEnabled } =
+      updateProfileDto;
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -405,6 +406,9 @@ export class AuthService {
         ...(firstName && { firstName }),
         ...(lastName && { lastName }),
         ...(avatar !== undefined && { avatar }),
+        ...(scanNotificationsEnabled !== undefined && {
+          scanNotificationsEnabled,
+        }),
       },
       select: {
         id: true,
@@ -413,6 +417,7 @@ export class AuthService {
         lastName: true,
         role: true,
         avatar: true,
+        scanNotificationsEnabled: true,
       },
     });
 

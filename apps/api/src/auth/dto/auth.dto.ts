@@ -128,4 +128,13 @@ export class UpdateProfileDto {
   @IsString()
   @IsOptional()
   avatar?: string;
+
+  @ApiProperty({
+    description: 'Whether to receive push notifications on scans',
+    example: true,
+    required: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  scanNotificationsEnabled?: boolean;
 }

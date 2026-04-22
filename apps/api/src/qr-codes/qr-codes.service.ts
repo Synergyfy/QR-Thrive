@@ -13,6 +13,7 @@ import { User, Prisma, Plan } from '@prisma/client';
 
 import { FormsService } from '../forms/forms.service';
 import { UploadService } from '../upload/upload.service';
+import { PushService } from '../notifications/push.service';
 
 const TRIAL_DAYS = 7;
 
@@ -22,6 +23,7 @@ export class QRCodesService {
     private readonly prisma: PrismaService,
     private readonly formsService: FormsService,
     private readonly uploadService: UploadService,
+    private readonly pushService: PushService,
   ) {}
 
   /**
@@ -469,6 +471,18 @@ export class QRCodesService {
         },
       }),
     ]);
+    
+    // Trigger push notification if owner has opted in
+    if (qrCode.user.scanNotificationsEnabled) {
+      this.pushService.sendPushNotification(qrCode.userId, {
+        title: 'QR Code Scanned',
+        body: `Your QR code "${qrCode.name}" was just scanned.`,
+        url: `/dashboard/stats?id=${qrCode.id}`,
+      }).catch(err => {
+        // Silently fail notification errors to not break the scan redirect
+        console.error('[QRCodesService] Push notification failed:', err);
+      });
+    }
 
     return qrCode;
   }
