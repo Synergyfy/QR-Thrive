@@ -14,6 +14,11 @@ export interface User {
   trialEndsAt?: string | null;
   hasUsedTrial?: boolean;
   isBanned?: boolean;
+  emailNotificationsEnabled?: boolean;
+  scanNotificationsEnabled?: boolean;
+  weeklyDigestEnabled?: boolean;
+  twoFactorEnabled?: boolean;
+  avatar?: string;
 }
 
 
