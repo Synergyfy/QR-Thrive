@@ -65,6 +65,7 @@ export default function PricingPage() {
         cta: plan.isFree ? "Start Now" : (plan.trialDays > 0 ? `Start ${plan.trialDays}-Day Free Trial` : "Get Started"),
         features: [
           `${plan.qrCodeLimit === -1 ? 'Unlimited' : plan.qrCodeLimit} Dynamic QR Codes`,
+          ...(plan.features || []),
           ...((config?.features as string[]) || [])
         ]
       };
