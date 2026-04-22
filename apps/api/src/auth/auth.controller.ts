@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Res, Req, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, Res, Req, Get, Query, Patch } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { PricingService } from '../pricing/pricing.service';
 import {
@@ -6,6 +6,7 @@ import {
   LoginDto,
   AdminSignupDto,
   GoogleLoginDto,
+  UpdateProfileDto,
 } from './dto/auth.dto';
 import type { Response, Request } from 'express';
 import { Public } from './decorators/public.decorator';
@@ -135,6 +136,20 @@ export class AuthController {
   async me(@Req() req: RequestWithUser) {
     const userId = req.user.userId;
     return this.authService.getUserById(userId);
+  }
+
+  @Patch('profile')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Update current user profile' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  async updateProfile(
+    @Req() req: RequestWithUser,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ) {
+    const userId = req.user.userId;
+    return this.authService.updateProfile(userId, updateProfileDto);
   }
 
   @Public()

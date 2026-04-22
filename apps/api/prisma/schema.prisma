@@ -41,6 +41,8 @@ model User {
   folders       Folder[]
   qrCodes       QRCode[]
   magicLinks    MagicLink[]    // Added for SSO
+  pushSubscriptions PushSubscription[]
+  scanNotificationsEnabled Boolean    @default(false)
   countryCode   String?        // ISO-2 country code for account locking
   deletedAt     DateTime?      // Added for Soft-Delete
   createdAt     DateTime       @default(now())
@@ -357,4 +359,17 @@ model ApiKey {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
