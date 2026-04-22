@@ -10,7 +10,9 @@ import {
   Settings2,
   Activity,
   ArrowRight,
-  Loader2
+  Loader2,
+  PlusCircle,
+  MinusCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -220,14 +222,15 @@ export default function PricingManager() {
                 >
                     {activeTab === 'Economics' && (
                        <PlanEconomics 
-                           plans={plans || []}
+                          plans={plans || []}
                           tiers={STATIC_TIERS}
                           pricingConfig={pricingConfig || { quarterlyDiscount: 10, yearlyDiscount: 20 }}
                           onEditPlan={(plan) => {
                              setEditingPlan(JSON.parse(JSON.stringify({
                                ...plan,
                                isFree: plan.isFree || false,
-                               trialDays: plan.trialDays || 0
+                               trialDays: plan.trialDays || 0,
+                               features: plan.features || []
                              })));
                              setIsPlanModalOpen(true);
                           }}
@@ -254,7 +257,8 @@ export default function PricingManager() {
                                isActive: true,
                                isFree: false,
                                isDefault: false,
-                               trialDays: 0
+                               trialDays: 0,
+                               features: []
                              });
                              setIsPlanModalOpen(true);
                           }}
@@ -424,6 +428,71 @@ export default function PricingManager() {
                            />
                         </label>
                      </div>
+                  </div>
+                </div>
+
+                {/* Feature List Editor */}
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between pl-2">
+                    <Tooltip content="Add specific features that will be listed for this plan on the pricing page.">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-help">Plan Features List</label>
+                    </Tooltip>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = editingPlan.features || [];
+                        setEditingPlan({ ...editingPlan, features: [...current, ''] });
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      Add Feature
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <AnimatePresence mode="popLayout">
+                      {(editingPlan.features || []).map((feature, idx) => (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 10 }}
+                          className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl group transition-all hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-100"
+                        >
+                          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-slate-300 font-black text-[10px]">
+                            {idx + 1}
+                          </div>
+                          <input
+                            type="text"
+                            value={feature}
+                            onChange={(e) => {
+                              const next = [...(editingPlan.features || [])];
+                              next[idx] = e.target.value;
+                              setEditingPlan({ ...editingPlan, features: next });
+                            }}
+                            className="flex-grow bg-transparent border-none p-0 text-sm font-medium text-slate-600 focus:ring-0 outline-none"
+                            placeholder="e.g. Advanced Analytics"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = (editingPlan.features || []).filter((_, i) => i !== idx);
+                              setEditingPlan({ ...editingPlan, features: next });
+                            }}
+                            className="p-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
+                          >
+                            <MinusCircle className="w-4 h-4" />
+                          </button>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                    {(editingPlan.features || []).length === 0 && (
+                      <div className="col-span-full py-10 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-3xl text-slate-300 gap-3">
+                         <Layout className="w-8 h-8 opacity-20" />
+                         <span className="text-[10px] font-black uppercase tracking-widest">No custom features added yet</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
