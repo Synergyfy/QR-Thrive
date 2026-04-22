@@ -28,7 +28,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ codes }) => {
   };
 
   const chartData = useMemo(() => {
-    if (!stats) return [];
+    if (!stats || !stats.chartData) return [];
     return stats.chartData.map(d => {
       // Map ISO date to shorter date e.g., '30 Mar'
       const dateObj = new Date(d.name);
@@ -41,7 +41,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ codes }) => {
   }, [stats]);
 
   const osData = useMemo(() => {
-    if (!stats) return [];
+    if (!stats || !stats.osDist) return [];
     const colors = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#ec4899'];
     return Object.entries(stats.osDist).map(([name, value], idx) => ({
       name,
@@ -51,7 +51,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ codes }) => {
   }, [stats]);
 
   const countryData = useMemo(() => {
-    if (!stats) return [];
+    if (!stats || !stats.countryDist) return [];
     const totalCountriesScans = Object.values(stats.countryDist).reduce((a, b) => a + b, 0);
     return Object.entries(stats.countryDist).map(([name, scans]) => ({
       name,
@@ -62,7 +62,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ codes }) => {
   }, [stats]);
 
   const timeData = useMemo(() => {
-    if (!stats) return [];
+    if (!stats || !stats.timeDist) return [];
     const data = [];
     for (let i = 0; i < 24; i++) {
         const hourLabel = i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i-12}pm`;
@@ -72,7 +72,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ codes }) => {
   }, [stats]);
 
   const peakHour = useMemo(() => {
-    if (!stats) return { hour: 'N/A', scans: 0 };
+    if (!stats || !stats.timeDist) return { hour: 'N/A', scans: 0 };
     let maxScans = 0;
     let peak = 'N/A';
     Object.entries(stats.timeDist).forEach(([h, scans]) => {
