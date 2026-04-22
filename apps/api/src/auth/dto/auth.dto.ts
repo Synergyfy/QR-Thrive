@@ -100,3 +100,32 @@ export class GoogleLoginDto {
   @IsNotEmpty({ message: 'Google ID token is required' })
   token: string;
 }
+
+export class UpdateProfileDto {
+  @ApiProperty({
+    description: 'First name of the user',
+    example: 'John',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  firstName?: string;
+
+  @ApiProperty({
+    description: 'Last name of the user',
+    example: 'Doe',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  lastName?: string;
+
+  @ApiProperty({
+    description: 'Avatar URL of the user',
+    example: 'https://example.com/avatar.jpg',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  avatar?: string;
+}
