@@ -61,8 +61,9 @@ const FloatingChat: React.FC = () => {
         <motion.div
           drag
           dragMomentum={false}
-          className="absolute pointer-events-auto"
-          initial={{ right: 32, bottom: 32 }}
+          className="absolute pointer-events-auto bottom-[90px] lg:bottom-8 right-6 lg:right-8"
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
           style={{ cursor: isOpen ? 'default' : 'grab' }}
           dragListener={!isOpen}
         >
