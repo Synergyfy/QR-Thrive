@@ -27,21 +27,51 @@ export const apiClient = axios.create({
   },
 });
 
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any) => {
+  failedQueue.forEach((prom: any) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve();
+    }
+  });
+  failedQueue = [];
+};
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    // Assuming backend endpoint /auth/refresh exists, but if it's automatic via cookie,
-    // interceptor might just handle generic retries. For now, we'll let it fail so hooks handle it.
+
     if (error.response?.status === 401 && !originalRequest._retry && localStorage.getItem(SESSION_HINT_KEY)) {
-      originalRequest._retry = true;
-      try {
-        await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
-        return apiClient(originalRequest);
-      } catch (err) {
-        localStorage.removeItem(SESSION_HINT_KEY);
-        return Promise.reject(err);
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => apiClient(originalRequest))
+          .catch((err) => Promise.reject(err));
       }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      return new Promise((resolve, reject) => {
+        axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true })
+          .then(() => {
+            isRefreshing = false;
+            processQueue(null);
+            resolve(apiClient(originalRequest));
+          })
+          .catch((err) => {
+            isRefreshing = false;
+            processQueue(err);
+            localStorage.removeItem(SESSION_HINT_KEY);
+            reject(err);
+          });
+      });
     }
 
     if (error.response?.status === 401) {

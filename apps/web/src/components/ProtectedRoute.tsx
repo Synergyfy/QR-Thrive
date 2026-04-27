@@ -5,9 +5,8 @@ import { useCurrentUser } from '../hooks/useApi';
 const ProtectedRoute: React.FC = () => {
   const { data: user, isLoading, isError, fetchStatus } = useCurrentUser();
 
-  // Show loading spinner while the auth check is in-flight
-  // Also wait if the query is pending but hasn't started fetching yet (fetchStatus === 'idle')
-  if (isLoading || fetchStatus === 'fetching') {
+  // Show loading spinner ONLY on initial load when we don't have user data yet
+  if (isLoading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
         <div className="flex flex-col items-center gap-6">

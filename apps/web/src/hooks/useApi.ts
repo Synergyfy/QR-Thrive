@@ -9,6 +9,7 @@ export const useCurrentUser = () => {
   return useQuery({
     queryKey: ['currentUser'],
     queryFn: authApi.getMe,
+    staleTime: 5 * 60 * 1000, // 5 minutes
     retry: false, // Do not retry if unauthorized
   });
 };
