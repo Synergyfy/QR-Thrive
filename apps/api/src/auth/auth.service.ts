@@ -380,6 +380,7 @@ export class AuthService {
         trialStartedAt: true,
         trialEndsAt: true,
         hasUsedTrial: true,
+        avatar: true,
       },
     });
     this.logger.log(
@@ -493,6 +494,7 @@ export class AuthService {
         trialStartedAt: true,
         trialEndsAt: true,
         hasUsedTrial: true,
+        avatar: true,
       },
     });
 

@@ -86,7 +86,9 @@ export function urlBase64ToUint8Array(base64String: string) {
 }
 ```
 
-### Push Notification Hook / Service
+### Profile & Push Notification Hook
+
+This hook handles both the Browser Push Subscription and the User Preference toggle.
 
 ```typescript
 /* src/hooks/usePushNotifications.ts */
@@ -96,10 +98,12 @@ import axios from 'axios'; // Or your API client
 import { urlBase64ToUint8Array } from '../utils/push-utils';
 
 export const usePushNotifications = () => {
-  const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const subscribeUser = async () => {
+  /**
+   * Step 1: Subscribe the browser to the Push Service
+   */
+  const subscribeBrowser = async () => {
     setLoading(true);
     try {
       const registration = await navigator.serviceWorker.register('/sw.js');
@@ -109,55 +113,112 @@ export const usePushNotifications = () => {
         applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC_KEY)
       });
 
-      // Send to backend
+      // Send subscription object to backend
       await axios.post('/notifications/push/subscribe', subscription);
       
-      setIsSubscribed(true);
-      console.log('User is subscribed.');
+      return true;
     } catch (err) {
-      console.error('Failed to subscribe the user: ', err);
+      console.error('Failed to subscribe browser: ', err);
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  return { subscribeUser, isSubscribed, loading };
+  /**
+   * Step 2: Toggle the 'scanNotificationsEnabled' preference in User Profile
+   */
+  const toggleUserPreference = async (enabled: boolean) => {
+    setLoading(true);
+    try {
+      await axios.patch('/auth/profile', {
+        scanNotificationsEnabled: enabled
+      });
+      return true;
+    } catch (err) {
+      console.error('Failed to update user preference: ', err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { subscribeBrowser, toggleUserPreference, loading };
 };
 ```
 
-## 5. UI Integration
+## 5. UI Integration Example
 
-Register the feature in your Dashboard or Profile page.
+You should typically offer a toggle in the **User Settings/Profile** page.
 
 ```tsx
-/* src/pages/DashboardPage.tsx */
+/* src/pages/ProfilePage.tsx */
 
+import React, { useState } from 'react';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 
-const DashboardPage = () => {
-  const { subscribeUser, isSubscribed, loading } = usePushNotifications();
+const NotificationSettings = ({ user }) => {
+  const [enabled, setEnabled] = useState(user.scanNotificationsEnabled);
+  const { subscribeBrowser, toggleUserPreference, loading } = usePushNotifications();
+
+  const handleToggle = async () => {
+    const nextState = !enabled;
+    
+    if (nextState) {
+      // 1. Ensure browser is subscribed first
+      const success = await subscribeBrowser();
+      if (!success) return alert("Please allow notification permissions in your browser.");
+    }
+
+    // 2. Update backend preference
+    const updated = await toggleUserPreference(nextState);
+    if (updated) setEnabled(nextState);
+  };
 
   return (
-    <div>
+    <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow">
+      <div>
+        <h3 className="text-lg font-medium">QR Scan Push Notifications</h3>
+        <p className="text-gray-500">Receive a real-time alert when your QR codes are scanned.</p>
+      </div>
       <button 
-        onClick={subscribeUser} 
-        disabled={loading || isSubscribed}
-        className="btn btn-primary"
+        onClick={handleToggle} 
+        disabled={loading}
+        className={`px-4 py-2 rounded ${enabled ? 'bg-green-500' : 'bg-gray-300'} text-white`}
       >
-        {isSubscribed ? 'Notifications Enabled' : 'Enable Scan Notifications'}
+        {loading ? 'Processing...' : enabled ? 'Enabled' : 'Disabled'}
       </button>
     </div>
   );
 };
 ```
 
-## 6. Important Notes
+## 6. API Endpoints Reference
+
+### Subscribe Push (Browser Token)
+- **URL**: `POST /notifications/push/subscribe`
+- **Payload**: `PushSubscription` object (endpoint, keys, etc.)
+- **Auth**: Required
+
+### Update Profile (User Preference)
+- **URL**: `PATCH /auth/profile`
+- **Payload**: `{ scanNotificationsEnabled: boolean }`
+- **Auth**: Required
+
+### Get Current Status
+- **URL**: `GET /auth/me`
+- **Returns**: User object including `scanNotificationsEnabled`
+- **Auth**: Required
+
+## 7. Important Notes
 
 1.  **Scope**: Ensure `sw.js` is served from the root (`/sw.js`) for proper scope coverage.
 2.  **HTTPS**: Push notifications only work over HTTPS (and `localhost`).
 3.  **Permissions**: Browsers will block push requests if not triggered by a user action (like a button click).
-4.  **JWT**: Ensure the `POST` request to `/notifications/push/subscribe` includes the user's Auth token in the `Authorization` header.
-5.  **Database Migration**: verify `scanNotificationsEnabled` is set to `true` in the user's profile settings to actually trigger the notifications from the backend.
+4.  **JWT**: Ensure all requests include the user's Auth token in the `Authorization` header.
+5.  **Critical Requirement**: For a notification to be sent, **BOTH** conditions must be met:
+    - The user must have a valid `PushSubscription` stored in the database.
+    - The `scanNotificationsEnabled` field in the `User` record must be `true`.
 
 ---
 *Documentation generated for QR-Thrive Push Implementation.*
