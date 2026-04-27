@@ -137,7 +137,7 @@ const DashboardPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
 
-  const [activeTab, setActiveTab] = useState(() => {
+   const [activeTab, setActiveTab] = useState(() => {
     if (tabParam) return tabParam;
     return user?.role !== 'ADMIN' && 
     user?.subscriptionStatus !== 'active' && 
@@ -148,9 +148,10 @@ const DashboardPage: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [folderMenuOpen, setFolderMenuOpen] = useState<string | null>(null);
   const [downloadMenuOpen, setDownloadMenuOpen] = useState<string | null>(null);
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolder, setShowNewFolder] = useState(false);
-  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   // Settings hooks
@@ -529,8 +530,20 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f5f6f8] flex font-sans selection:bg-blue-100 selection:text-blue-900 overflow-hidden relative">
 
+      {/* ─── Mobile Sidebar Overlay ─── */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] lg:hidden animate-in fade-in duration-300"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* ─── Sidebar ─── */}
-      <aside className="w-[272px] bg-white/80 backdrop-blur-2xl border-r border-slate-200/50 flex flex-col h-screen sticky top-0 shrink-0 z-50">
+      <aside className={cn(
+        "bg-white/80 backdrop-blur-2xl border-r border-slate-200/50 flex flex-col h-screen sticky top-0 shrink-0 z-[70] transition-all duration-300",
+        "fixed lg:sticky lg:translate-x-0 w-[272px]",
+        isMobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:flex"
+      )}>
 
         {/* Brand + CTA */}
         <div className="px-6 pt-6 pb-5 shrink-0 border-b border-slate-100/60">
@@ -559,7 +572,7 @@ const DashboardPage: React.FC = () => {
               {navItems.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
                   className={cn(
                     "w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-150 group",
                     activeTab === item.id 
@@ -597,7 +610,7 @@ const DashboardPage: React.FC = () => {
               {folders.map(folder => (
                 <div key={folder.id} className="group flex items-center">
                   <button 
-                    onClick={() => setActiveTab(`folder:${folder.id}`)}
+                    onClick={() => { setActiveTab(`folder:${folder.id}`); setIsMobileMenuOpen(false); }}
                     className={cn(
                       "flex-1 flex items-center gap-3 px-3 py-2.5 text-[13px] rounded-lg transition-all duration-150",
                       activeTab === `folder:${folder.id}` 
@@ -657,9 +670,9 @@ const DashboardPage: React.FC = () => {
               { id: 'profile', icon: User, label: 'Profile' },
               { id: 'settings', icon: Settings, label: 'Settings' },
             ].map((item) => (
-              <button
+               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group",
                   activeTab === item.id
@@ -705,7 +718,7 @@ const DashboardPage: React.FC = () => {
                     <p className="text-[11px] text-white/60">Full feature access</p>
                   </div>
                   <button 
-                    onClick={() => setActiveTab('pricing')}
+                    onClick={() => { setActiveTab('pricing'); setIsMobileMenuOpen(false); }}
                     className="w-full py-2.5 bg-white text-blue-700 rounded-xl font-semibold text-[12px] hover:bg-blue-50 transition-all active:scale-[0.97]"
                   >
                     Upgrade Now
@@ -737,8 +750,8 @@ const DashboardPage: React.FC = () => {
                 )}
               </div>
             ) : (
-              <button 
-                onClick={() => setActiveTab('pricing')}
+               <button 
+                onClick={() => { setActiveTab('pricing'); setIsMobileMenuOpen(false); }}
                 className="w-full p-5 bg-slate-900 rounded-2xl text-left group overflow-hidden relative hover:shadow-xl transition-all duration-300"
               >
                 <div className="relative z-10 space-y-3">
@@ -761,9 +774,17 @@ const DashboardPage: React.FC = () => {
       {/* ─── Main Content ─── */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
 
-        {/* Top Bar */}
-        <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 flex items-center justify-between px-8 relative z-50 shrink-0">
-          <div className="flex items-center gap-3 bg-slate-100/80 px-4 py-2 rounded-xl w-full max-w-md focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-200 focus-within:shadow-sm transition-all duration-200 border border-transparent focus-within:border-blue-200">
+         {/* Top Bar */}
+        <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 flex items-center justify-between px-4 sm:px-8 relative z-50 shrink-0">
+          <div className="flex items-center gap-4 flex-1">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <LayoutGrid className="w-6 h-6" />
+            </button>
+
+            <div className="flex items-center gap-3 bg-slate-100/80 px-4 py-2 rounded-xl w-full max-w-md focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-200 focus-within:shadow-sm transition-all duration-200 border border-transparent focus-within:border-blue-200">
             <Search className="w-4 h-4 text-slate-400" />
             <input 
               type="text"
@@ -777,8 +798,9 @@ const DashboardPage: React.FC = () => {
               </button>
             )}
           </div>
+        </div>
 
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
             <button className="text-slate-400 hover:text-slate-700 relative p-2 rounded-lg transition-all hover:bg-slate-100 group">
               <Bell className="w-5 h-5" />
               <div className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 border-[1.5px] border-white rounded-full" />
@@ -832,21 +854,21 @@ const DashboardPage: React.FC = () => {
           </div>
         </header>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide">
-          <div className="max-w-[1440px] mx-auto px-8 py-8 space-y-8">
+         {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto scrollbar-hide pb-20 lg:pb-0">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
 
             {/* Page Header */}
             {activeTab !== 'profile' && (
-              <div className="flex items-end justify-between">
-                <div className="space-y-1.5">
-                  <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                 <div className="space-y-1 sm:space-y-1.5">
+                  <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                     {activeTab === 'stats' ? 'Analytics' 
                       : activeTab === 'leads' ? 'Leads'
                       : activeTab === 'settings' ? 'Settings'
                       : getTabLabel()}
                   </h1>
-                  <p className="text-[14px] text-slate-500 font-medium">
+                  <p className="text-[12px] sm:text-[14px] text-slate-500 font-medium">
                     {activeTab === 'stats' 
                       ? 'Track scan performance and visitor insights' 
                       : activeTab === 'leads'
@@ -855,15 +877,15 @@ const DashboardPage: React.FC = () => {
                       ? 'Choose the plan that fits your needs'
                       : activeTab === 'settings'
                       ? 'Customize your experience and preferences'
-                      : `${displayedQRs.length} code${displayedQRs.length !== 1 ? 's' : ''} in this view`}
+                      : `${displayedQRs.length} code${displayedQRs.length !== 1 ? 's' : ''}`}
                   </p>
                 </div>
                 {!['stats', 'leads', 'pricing', 'settings'].includes(activeTab) && (
                   <button
                     onClick={() => navigate('/dashboard/create')}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[13px] font-semibold transition-all duration-200 active:scale-[0.97] shadow-sm"
+                    className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[12px] sm:text-[13px] font-semibold transition-all duration-200 active:scale-[0.97] shadow-sm shrink-0"
                   >
-                    <Plus className="w-4 h-4" /> New Code
+                    <Plus className="w-4 h-4" /> <span className="hidden xs:inline">New Code</span>
                   </button>
                 )}
               </div>
@@ -1697,6 +1719,69 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Mobile Bottom Navigation */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-[72px] bg-white/80 backdrop-blur-xl border-t border-slate-100 px-6 flex items-center justify-between z-[100] safe-area-inset-bottom">
+          <button 
+            onClick={() => setActiveTab('all')}
+            className={cn(
+              "flex flex-col items-center gap-1.5 transition-all duration-300",
+              activeTab === 'all' ? "text-blue-600 scale-110" : "text-slate-400"
+            )}
+          >
+             <div className={cn("p-1 rounded-xl transition-all", activeTab === 'all' ? "bg-blue-50" : "bg-transparent")}>
+                <LayoutGrid className="w-5 h-5" />
+             </div>
+             <span className="text-[10px] font-bold uppercase tracking-tight">Home</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('stats')}
+            className={cn(
+              "flex flex-col items-center gap-1.5 transition-all duration-300",
+              activeTab === 'stats' ? "text-blue-600 scale-110" : "text-slate-400"
+            )}
+          >
+             <div className={cn("p-1 rounded-xl transition-all", activeTab === 'stats' ? "bg-blue-50" : "bg-transparent")}>
+                <BarChart3 className="w-5 h-5" />
+             </div>
+             <span className="text-[10px] font-bold uppercase tracking-tight">Stats</span>
+          </button>
+
+          {/* Floating Create Button */}
+          <button 
+            onClick={() => navigate('/dashboard/create')}
+            className="w-14 h-14 bg-slate-900 text-white rounded-2xl shadow-xl flex items-center justify-center -mt-12 border-[4px] border-slate-50 active:scale-90 transition-all"
+          >
+             <Plus className="w-6 h-6" />
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('leads')}
+            className={cn(
+              "flex flex-col items-center gap-1.5 transition-all duration-300",
+              activeTab === 'leads' ? "text-blue-600 scale-110" : "text-slate-400"
+            )}
+          >
+             <div className={cn("p-1 rounded-xl transition-all", activeTab === 'leads' ? "bg-blue-50" : "bg-transparent")}>
+                <Users className="w-5 h-5" />
+             </div>
+             <span className="text-[10px] font-bold uppercase tracking-tight">Leads</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('settings')}
+            className={cn(
+              "flex flex-col items-center gap-1.5 transition-all duration-300",
+              activeTab === 'settings' ? "text-blue-600 scale-110" : "text-slate-400"
+            )}
+          >
+             <div className={cn("p-1 rounded-xl transition-all", activeTab === 'settings' ? "bg-blue-50" : "bg-transparent")}>
+                <Settings className="w-5 h-5" />
+             </div>
+             <span className="text-[10px] font-bold uppercase tracking-tight">Setup</span>
+          </button>
+      </div>
     </div>
   );
 };
