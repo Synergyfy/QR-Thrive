@@ -195,6 +195,114 @@ const CTADestinationPicker = ({
   );
 };
 
+const OpeningHoursManager = ({ data, updateData }: { data: any, updateData: any }) => {
+  const [isAdding, setIsAdding] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  
+  const currentHours = data.business?.openingHours || {};
+  const activeDays = Object.keys(currentHours).filter(d => !!currentHours[d]);
+
+  const toggleDay = (day: string) => {
+    if (selectedDays.includes(day)) {
+      setSelectedDays(selectedDays.filter(d => d !== day));
+    } else {
+      setSelectedDays([...selectedDays, day]);
+    }
+  };
+
+  const handleConfirm = () => {
+    const newHours = { ...currentHours };
+    selectedDays.forEach(day => {
+      if (!newHours[day]) {
+        newHours[day] = { from: '09:00', to: '17:00', isClosed: false };
+      }
+    });
+    updateData({ business: { ...(data.business || {}), openingHours: newHours } });
+    setIsAdding(false);
+    setSelectedDays([]);
+  };
+
+  const ALL_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+  return (
+     <div className="space-y-4">
+        <div className="space-y-3">
+          {ALL_DAYS.filter(d => activeDays.includes(d)).map(day => {
+            const hours = currentHours[day];
+            const hourObj = typeof hours === 'object' ? hours : { from: '09:00', to: '17:00', isClosed: false };
+            const isClosed = typeof hours === 'object' ? hours.isClosed : false;
+            return (
+              <div key={day} className="flex items-center gap-3">
+                 <button onClick={() => {
+                   const newHours = { ...currentHours };
+                   delete newHours[day];
+                   updateData({ business: { ...(data.business || {}), openingHours: newHours } });
+                 }} className="p-1 text-red-400 hover:bg-red-50 rounded-md transition-colors"><X className="w-4 h-4"/></button>
+                 <span className="text-xs font-bold text-gray-700 capitalize w-20">{day}</span>
+                 <button
+                   onClick={() => {
+                     const newHours = { ...currentHours };
+                     newHours[day] = { ...hourObj, isClosed: !isClosed };
+                     updateData({ business: { ...(data.business || {}), openingHours: newHours } });
+                   }}
+                   className={cn("px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all", isClosed ? "bg-red-50 text-red-500 border-red-100" : "bg-green-50 text-green-600 border-green-100")}
+                 >
+                   {isClosed ? 'Closed' : 'Open'}
+                 </button>
+                 {!isClosed && (
+                   <>
+                     <input type="time" className="px-2 py-1.5 border border-gray-100 rounded-lg text-xs font-bold" value={hourObj.from || '09:00'} onChange={(e) => {
+                       const newHours = { ...currentHours };
+                       newHours[day] = { ...hourObj, from: e.target.value };
+                       updateData({ business: { ...(data.business || {}), openingHours: newHours } });
+                     }} />
+                     <span className="text-gray-400 text-xs">to</span>
+                     <input type="time" className="px-2 py-1.5 border border-gray-100 rounded-lg text-xs font-bold" value={hourObj.to || '17:00'} onChange={(e) => {
+                       const newHours = { ...currentHours };
+                       newHours[day] = { ...hourObj, to: e.target.value };
+                       updateData({ business: { ...(data.business || {}), openingHours: newHours } });
+                     }} />
+                   </>
+                 )}
+              </div>
+            );
+          })}
+        </div>
+
+        {!isAdding ? (
+           <button onClick={() => setIsAdding(true)} className="w-full py-3 border-2 border-dashed border-gray-200 text-blue-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-50 hover:border-blue-200 transition-colors">
+              <Plus className="w-4 h-4" /> Add Operating Hours
+           </button>
+        ) : (
+           <div className="bg-gray-50/80 p-4 rounded-2xl border border-gray-100 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Select Days</p>
+              <div className="flex flex-wrap gap-2">
+                 <button 
+                   onClick={() => setSelectedDays(selectedDays.length === ALL_DAYS.length ? [] : [...ALL_DAYS])}
+                   className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", selectedDays.length === ALL_DAYS.length ? "bg-blue-600 text-white" : "bg-white text-gray-600 border border-gray-200")}
+                 >
+                   All
+                 </button>
+                 {ALL_DAYS.map(day => (
+                    <button 
+                      key={day}
+                      onClick={() => toggleDay(day)}
+                      className={cn("px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-colors", selectedDays.includes(day) ? "bg-blue-600 text-white" : "bg-white text-gray-600 border border-gray-200 hover:border-blue-300")}
+                    >
+                      {day}
+                    </button>
+                 ))}
+              </div>
+              <div className="flex gap-2 pt-2">
+                 <button onClick={() => { setIsAdding(false); setSelectedDays([]); }} className="flex-1 py-2 bg-white text-gray-600 font-bold rounded-xl text-sm border border-gray-200 hover:bg-gray-50">Cancel</button>
+                 <button onClick={handleConfirm} disabled={selectedDays.length === 0} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded-xl text-sm disabled:opacity-50 hover:bg-blue-700">Confirm</button>
+              </div>
+           </div>
+        )}
+     </div>
+  );
+};
+
 const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTypeSelector }) => {
   const data = config.data;
   const { data: userData } = useCurrentUser();
@@ -1586,43 +1694,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ config, updateData, hideTyp
                   </CollapsibleSection>
 
                   <CollapsibleSection id="business-hours" title="Opening Hours" icon={Clock} isExpanded={expandedSections['business-hours']} onToggle={toggleSection}>
-                    <div className="space-y-3">
-                      {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => {
-                        const hours = data.business?.openingHours?.[day as keyof typeof data.business.openingHours];
-                        const hourObj = typeof hours === 'object' ? hours : { from: '09:00', to: '17:00', isClosed: false };
-                        const isClosed = typeof hours === 'object' ? hours.isClosed : false;
-                        return (
-                          <div key={day} className="flex items-center gap-3">
-                            <span className="text-xs font-bold text-gray-700 capitalize w-20">{day}</span>
-                            <button
-                              onClick={() => {
-                                const newHours = { ...(data.business?.openingHours || {}) };
-                                (newHours as any)[day] = { ...hourObj, isClosed: !isClosed };
-                                updateData({ business: { ...(data.business || {}), openingHours: newHours } });
-                              }}
-                              className={cn("px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all", isClosed ? "bg-red-50 text-red-500 border-red-100" : "bg-green-50 text-green-600 border-green-100")}
-                            >
-                              {isClosed ? 'Closed' : 'Open'}
-                            </button>
-                            {!isClosed && (
-                              <>
-                                <input type="time" className="px-2 py-1.5 border border-gray-100 rounded-lg text-xs font-bold" value={hourObj.from || '09:00'} onChange={(e) => {
-                                  const newHours = { ...(data.business?.openingHours || {}) };
-                                  (newHours as any)[day] = { ...hourObj, from: e.target.value };
-                                  updateData({ business: { ...(data.business || {}), openingHours: newHours } });
-                                }} />
-                                <span className="text-gray-400 text-xs">to</span>
-                                <input type="time" className="px-2 py-1.5 border border-gray-100 rounded-lg text-xs font-bold" value={hourObj.to || '17:00'} onChange={(e) => {
-                                  const newHours = { ...(data.business?.openingHours || {}) };
-                                  (newHours as any)[day] = { ...hourObj, to: e.target.value };
-                                  updateData({ business: { ...(data.business || {}), openingHours: newHours } });
-                                }} />
-                              </>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <OpeningHoursManager data={data} updateData={updateData} />
                   </CollapsibleSection>
 
                   <CollapsibleSection id="business-design" title="Colors & Branding" icon={Palette} isExpanded={expandedSections['business-design']} onToggle={toggleSection}>

@@ -47,10 +47,13 @@ export default function PricingPage() {
       const isActive = user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trialing' || user?.subscriptionStatus === 'non-renewing';
       const isCurrent = isCurrentPlan && isActive;
 
+      const monthlyPrice = Math.round(pricePoint.amount / (selectedCycle === 'yearly' ? 12 : (selectedCycle === 'quarterly' ? 3 : 1)));
+
       return {
         name: plan.name,
         description: plan.description || '',
-        price: pricePoint.amount,
+        price: monthlyPrice,
+        totalPrice: pricePoint.amount,
         currency: pricePoint.currencySymbol,
         currencyCode: pricePoint.currency,
         highlight: plan.isPopular,
@@ -62,11 +65,12 @@ export default function PricingPage() {
         cta: plan.isFree ? "Start Now" : (plan.trialDays > 0 ? `Start ${plan.trialDays}-Day Free Trial` : "Get Started"),
         features: [
           `${plan.qrCodeLimit === -1 ? 'Unlimited' : plan.qrCodeLimit} Dynamic QR Codes`,
+          ...(plan.features || []),
           ...((config?.features as string[]) || [])
         ]
       };
     });
-  }, [plans, config, selectedCycle]);
+  }, [plans, config, selectedCycle, user]);
 
   const handleJoinPlan = async (plan: PublicPlan, isTrial = false) => {
     setSelectedPlan(plan);
@@ -219,18 +223,27 @@ export default function PricingPage() {
             <>
               {/* Billing Switcher */}
               <div className="flex justify-center mb-16">
-                <div className="bg-white p-2 rounded-[2rem] shadow-xl shadow-blue-900/5 border border-slate-100 flex gap-2">
+                <div className="bg-white p-2 rounded-[2.5rem] shadow-xl shadow-blue-900/5 border border-slate-100 flex gap-2">
                   {(['monthly', 'quarterly', 'yearly'] as const).map((cycle) => (
                     <button
                       key={cycle}
                       onClick={() => setSelectedCycle(cycle)}
-                      className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                      className={`relative px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
                         selectedCycle === cycle
                           ? 'bg-slate-900 text-white shadow-lg'
                           : 'text-slate-400 hover:text-slate-600'
                       }`}
                     >
                       {cycle}
+                      {(cycle === 'yearly' || cycle === 'quarterly') && (
+                        <span className={`absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-1 rounded-full text-[8px] font-black border uppercase tracking-tighter ${
+                          selectedCycle === cycle 
+                            ? 'bg-emerald-500 text-white border-emerald-400 shadow-md shadow-emerald-500/20' 
+                            : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                        }`}>
+                          {cycle === 'yearly' ? '20% OFF' : '10% OFF'}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -283,15 +296,21 @@ export default function PricingPage() {
                       {plan.description}
                     </p>
                     
-                    <div className="flex items-baseline gap-1 mb-2">
+                    <div className="flex items-baseline gap-1 mb-1">
                       <span className={`text-3xl font-bold text-slate-400`}>{plan.currency}</span>
                       <span className={`text-7xl font-black tracking-tighter ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
                          {plan.price === 0 ? '0' : plan.price.toLocaleString()}
                       </span>
                       <span className={`text-sm font-bold opacity-60 ml-2 ${plan.highlight ? 'text-white' : 'text-slate-500'}`}>
-                        / {selectedCycle === 'yearly' ? 'year' : (selectedCycle === 'quarterly' ? 'quarter' : 'month')}
+                        / mo
                       </span>
                     </div>
+                    {selectedCycle !== 'monthly' && (
+                       <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-10 ${plan.highlight ? 'text-blue-400' : 'text-slate-400'}`}>
+                         billed {plan.currency}{plan.totalPrice?.toLocaleString()} {selectedCycle === 'yearly' ? 'annually' : 'quarterly'}
+                       </p>
+                    )}
+                    {selectedCycle === 'monthly' && <div className="h-10 mb-4" />}
                   </div>
 
                   <div className="space-y-6 mb-12 flex-grow">

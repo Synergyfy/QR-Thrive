@@ -695,6 +695,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                title={data.pdf?.title}
                description={data.pdf?.description}
                previewImage={data.pdf?.previewImage}
+               pdfUrl={data.pdf?.url}
                themeColor={data.pdf?.themeColor}
                textColor={data.pdf?.textColor}
                buttonColor={data.pdf?.buttonColor}
@@ -1102,6 +1103,24 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
                                       <span className="text-xs font-normal text-gray-400 capitalize">{day}</span>
                                       <span className="text-xs font-normal text-gray-900">{displayHours}</span>
                                    </div>
+                                );
+                             })}
+                          </div>
+                       </div>
+                    )}
+
+                    {data.business?.socials && Object.values(data.business.socials).some(v => !!v) && (
+                       <div className="mt-2 pt-6 border-t border-gray-50">
+                          <p className="text-[10px] font-normal text-gray-400 uppercase tracking-[0.2em] text-center mb-4">Connect with us</p>
+                          <div className="flex flex-wrap justify-center gap-3">
+                             {Object.entries(data.business.socials).map(([platform, url]) => {
+                                if (!url) return null;
+                                const s = getSocialConfig(platform);
+                                return (
+                                   <a key={platform} href={(url as string).startsWith('http') ? url as string : `https://${url}`} target="_blank" rel="noopener noreferrer" 
+                                      className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg transition-transform hover:scale-110 active:scale-95", s.color)}>
+                                      <s.icon className="w-5 h-5" />
+                                   </a>
                                 );
                              })}
                           </div>

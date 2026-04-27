@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authApi, foldersApi, qrCodesApi, statsApi, paymentsApi } from '../services/api';
+import { authApi, foldersApi, qrCodesApi, statsApi, paymentsApi, notificationsApi } from '../services/api';
 import type { CreateFolderDto, BackendQRCode, CreateQRCodeDto } from '../types/api';
 import toast from 'react-hot-toast';
 
@@ -9,6 +9,7 @@ export const useCurrentUser = () => {
   return useQuery({
     queryKey: ['currentUser'],
     queryFn: authApi.getMe,
+    staleTime: 5 * 60 * 1000, // 5 minutes
     retry: false, // Do not retry if unauthorized
   });
 };
@@ -54,6 +55,33 @@ export const useLogout = () => {
       queryClient.clear();
       queryClient.setQueryData(['currentUser'], null);
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
+  });
+};
+
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => authApi.updateProfile(data),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['currentUser'], data);
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      toast.success('Profile updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update profile');
+    },
+  });
+};
+
+export const useSubscribePush = () => {
+  return useMutation({
+    mutationFn: (subscription: PushSubscription) => notificationsApi.subscribePush(subscription),
+    onSuccess: () => {
+      toast.success('Push notifications enabled');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to subscribe to push notifications');
     },
   });
 };

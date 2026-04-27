@@ -147,6 +147,7 @@ const CreationWizard: React.FC = () => {
   const [config, setConfig] = useState<QRConfiguration>(INITIAL_CONFIG);
   const [designTab, setDesignTab] = useState<'shape' | 'frame' | 'logo' | 'colors'>('shape');
   const [previewMode, setPreviewMode] = useState<'preview' | 'qr'>('preview');
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
 
   // Load existing QR when editing
   useEffect(() => {
@@ -171,7 +172,12 @@ const CreationWizard: React.FC = () => {
   useEffect(() => {
     if (selectedType && !isEditing) {
       setConfig(prev => {
-        const newData = { ...prev.data, type: selectedType as any } as any;
+        const typeTitle = qrTypes.find(t => t.id === selectedType)?.title || selectedType;
+        const newData = { 
+          ...prev.data, 
+          type: selectedType as any,
+          name: prev.data.name || `${typeTitle} QR`
+        } as any;
         
         // Auto-populate whatsappNumber for menu if user has a phone
         if (selectedType === 'menu' && (user as any)?.phone) {
@@ -246,7 +252,7 @@ const CreationWizard: React.FC = () => {
         await updateQRMutation.mutateAsync({ 
           id: editId, 
           data: { 
-            name: `${config.data.type} QR`, 
+            name: config.data.name || `${config.data.type} QR`, 
             type: config.data.type, 
             data: dataToSave, 
             design: config.design, 
@@ -261,7 +267,7 @@ const CreationWizard: React.FC = () => {
         toast.success('QR Code updated successfully!');
       } else {
         await createQRMutation.mutateAsync({ 
-          name: `${config.data.type} QR`, 
+          name: config.data.name || `${config.data.type} QR`, 
           type: config.data.type, 
           data: dataToSave, 
           design: config.design, 
@@ -307,13 +313,13 @@ const CreationWizard: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
       {/* Navbar */}
-      <nav className="h-16 bg-white border-b border-slate-100 px-8 flex items-center justify-between sticky top-0 z-40">
+      <nav className="h-16 sm:h-20 bg-white border-b border-slate-100 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center cursor-pointer shrink-0" onClick={() => navigate(getDashboardPath(user))}>
-            <img src="/QRThrive_Logo_Full-BG.png" alt="QR Thrive" className="h-14 w-auto" style={{ filter: 'brightness(0) saturate(100%) invert(32%) sepia(95%) saturate(3033%) hue-rotate(211deg) brightness(96%) contrast(92%)' }} />
+            <img src="/QRThrive_Logo_Full-BG.png" alt="QR Thrive" className="h-10 sm:h-14 w-auto" style={{ filter: 'brightness(0) saturate(100%) invert(32%) sepia(95%) saturate(3033%) hue-rotate(211deg) brightness(96%) contrast(92%)' }} />
         </div>
 
         {/* Stepper (Centered) */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden lg:flex items-center gap-4">
             {steps.map((s, idx) => (
               <React.Fragment key={s.id}>
                 <div className="flex items-center gap-2">
@@ -336,8 +342,8 @@ const CreationWizard: React.FC = () => {
             ))}
         </div>
 
-        <div className="flex items-center gap-4 shrink-0">
-           <div className="hidden sm:flex items-center gap-2 mr-4">
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+           <div className="hidden lg:flex items-center gap-2 mr-4">
               <button 
                 onClick={() => setIsHelpOpen(true)}
                 className="p-2 bg-slate-50 text-slate-400 rounded-lg border border-slate-100 hover:text-blue-600 transition-colors"
@@ -347,7 +353,7 @@ const CreationWizard: React.FC = () => {
            </div>
            <button 
             onClick={handleBack}
-            className="px-5 py-2 bg-slate-50 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-100 transition-all flex items-center gap-2"
+            className="px-3 sm:px-5 py-2 bg-slate-50 text-slate-600 rounded-xl text-[10px] sm:text-xs font-bold hover:bg-slate-100 transition-all flex items-center gap-2"
            >
               Back
            </button>
@@ -355,7 +361,7 @@ const CreationWizard: React.FC = () => {
             disabled={!selectedType || isSaving}
             onClick={handleNext}
             className={cn(
-              "px-6 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-lg min-w-[100px] justify-center tracking-widest uppercase",
+              "px-4 sm:px-6 py-2 rounded-xl text-[10px] sm:text-xs font-bold flex items-center gap-2 transition-all shadow-lg min-w-[80px] sm:min-w-[100px] justify-center tracking-widest uppercase",
               selectedType ? "bg-blue-600 text-white shadow-blue-100 hover:bg-blue-700 active:scale-95" : "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
             )}
            >
@@ -371,16 +377,16 @@ const CreationWizard: React.FC = () => {
       </nav>
 
       {/* Content area */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
          {/* Left Side: Configuration */}
-         <div className="flex-1 overflow-y-auto p-12 custom-scrollbar flex flex-col items-center relative z-20 pr-[480px]">
-            <div className="w-full max-w-4xl space-y-10">
-               {step === 'type' && (
-                 <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+         <div className="flex-1 overflow-y-auto p-4 sm:p-8 lg:p-12 custom-scrollbar flex flex-col items-center relative z-20 lg:pr-[480px]">
+            <div className="w-full max-w-4xl space-y-6 sm:space-y-10">
+                {step === 'type' && (
+                 <div className="space-y-6 sm:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="space-y-2">
-                       <h1 className="text-3xl font-bold text-slate-900 tracking-tight">1. Select a type of QR code</h1>
+                       <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">1. Select a type of QR code</h1>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                        {qrTypes.map(type => (
                           <button
                             key={type.id}
@@ -404,19 +410,19 @@ const CreationWizard: React.FC = () => {
                              )}
 
                              <div className={cn(
-                               "w-16 h-16 rounded-full flex items-center justify-center transition-all mb-4 border-2",
+                               "w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all mb-3 sm:mb-4 border-2",
                                isLocked(type.id)
                                  ? "bg-slate-100 text-slate-300 border-slate-200"
                                  : selectedType === type.id
                                    ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200"
                                    : "bg-white text-slate-400 border-slate-100 group-hover:border-blue-100 group-hover:text-blue-600"
                              )}>
-                                <type.icon className="w-7 h-7" />
+                                <type.icon className="w-6 h-6 sm:w-7 sm:h-7" />
                              </div>
                              <div className="space-y-1">
-                                <h3 className="font-bold text-slate-900 text-sm tracking-tight">{type.title}</h3>
-                                <p className="text-xs font-medium text-slate-400 leading-tight px-2">
-                                  {isLocked(type.id) ? 'Upgrade to unlock' : type.description}
+                                <h3 className="font-bold text-slate-900 text-xs sm:text-sm tracking-tight">{type.title}</h3>
+                                <p className="text-[10px] sm:text-xs font-medium text-slate-400 leading-tight px-1 sm:px-2">
+                                  {isLocked(type.id) ? 'Upgrade' : type.description}
                                 </p>
                              </div>
                              {type.category === 'dynamic' && !isLocked(type.id) && (
@@ -432,10 +438,10 @@ const CreationWizard: React.FC = () => {
                   <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
                      <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+                           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                               2. {isEditing ? 'Edit Content' : qrTypes.find(t => t.id === selectedType)?.title}
                            </h1>
-                           <p className="text-slate-400 font-medium">
+                           <p className="text-xs sm:text-sm text-slate-400 font-medium">
                               {isEditing ? 'Update the information for your QR Code.' : 'Complete the information for your QR Code.'}
                            </p>
                         </div>
@@ -453,22 +459,22 @@ const CreationWizard: React.FC = () => {
 
                {step === 'design' && (
                  <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-                    <div className="space-y-2">
-                       <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+                     <div className="space-y-2">
+                       <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                           3. {isEditing ? 'Edit Design' : 'Design QR Code'}
                        </h1>
-                       <p className="text-slate-400 font-medium">Customize the look of your QR code to match your brand.</p>
+                       <p className="text-xs sm:text-sm text-slate-400 font-medium">Customize the look of your QR code to match your brand.</p>
                     </div>
-                    <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden flex flex-col">
-                       <div className="flex border-b border-slate-100 p-2 bg-slate-50/50">
+                     <div className="bg-white rounded-3xl sm:rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden flex flex-col">
+                       <div className="flex border-b border-slate-100 p-1 sm:p-2 bg-slate-50/50 overflow-x-auto custom-scrollbar">
                           {(['shape', 'frame', 'logo'] as const).map(tab => (
                             <button
-                              key={tab}
-                              onClick={() => setDesignTab(tab)}
-                              className={cn(
-                                "flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all",
-                                designTab === tab ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                              )}>
+                               key={tab}
+                               onClick={() => setDesignTab(tab)}
+                               className={cn(
+                                 "flex-1 flex items-center justify-center gap-2 py-3 sm:py-4 px-4 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap",
+                                 designTab === tab ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                               )}>
                                {tab === 'shape' && <Palette className="w-4 h-4" />}
                                {tab === 'frame' && <Frame className="w-4 h-4" />}
                                {tab === 'logo' && <LogoIcon className="w-4 h-4" />}
@@ -476,7 +482,7 @@ const CreationWizard: React.FC = () => {
                             </button>
                           ))}
                        </div>
-                       <div className="p-8">
+                        <div className="p-4 sm:p-8">
                           {designTab === 'shape' && <DesignPanel design={config.design} updateDesign={updateDesign} />}
                           {designTab === 'frame' && <FramePanel config={config} updateConfig={updateConfig} />}
                           {designTab === 'logo' && <LogoPanel config={config} updateConfig={updateConfig} />}
@@ -487,8 +493,18 @@ const CreationWizard: React.FC = () => {
             </div>
          </div>
 
-         {/* Right Side: Preview (Fixed) */}
-         <div className="fixed top-20 right-0 bottom-0 w-[480px] bg-white border-l border-slate-100 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] z-30 p-12 flex flex-col items-center justify-center overflow-y-auto custom-scrollbar">
+         {/* Right Side: Preview (Fixed on desktop, toggleable on mobile) */}
+         <div className={cn(
+           "fixed lg:top-20 lg:right-0 lg:bottom-0 lg:w-[480px] bg-white border-l border-slate-100 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] z-30 flex flex-col items-center justify-center overflow-y-auto custom-scrollbar transition-all duration-500",
+           showMobilePreview ? "inset-0 top-16 z-50 p-6" : "top-full lg:p-12 p-0 hidden lg:flex"
+         )}>
+            {/* Close Mobile Preview */}
+            <button 
+              onClick={() => setShowMobilePreview(false)}
+              className="lg:hidden absolute top-6 right-6 p-3 bg-slate-100 text-slate-900 rounded-full z-50"
+            >
+               <X className="w-6 h-6" />
+            </button>
             <div className="w-full flex flex-col items-center">
                {selectedType && (
                   <div className="mb-10 w-full max-w-[240px] p-1.5 bg-blue-50/50 rounded-full border border-blue-100 flex items-center relative group/switcher shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
@@ -602,6 +618,17 @@ const CreationWizard: React.FC = () => {
                )}
             </div>
          </div>
+      </div>
+
+      {/* Mobile Preview Toggle */}
+      <div className="lg:hidden fixed bottom-6 right-6 z-40">
+         <button 
+           onClick={() => setShowMobilePreview(true)}
+           className="w-14 h-14 bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center group active:scale-90 transition-transform"
+         >
+            <SmartphoneNfc className="w-6 h-6 group-hover:animate-bounce" />
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white animate-pulse" />
+         </button>
       </div>
 
       {/* Help Modal */}

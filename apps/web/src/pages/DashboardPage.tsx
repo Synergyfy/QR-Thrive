@@ -11,7 +11,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import toast from 'react-hot-toast';
-import { useFolders, useCreateFolder, useDeleteFolder, useQRCodes, useDeleteQRCode, useUpdateQRCode, useDuplicateQRCode, useCurrentUser, useLogout, useCancelSubscription } from '../hooks/useApi';
+import { useFolders, useCreateFolder, useDeleteFolder, useQRCodes, useDeleteQRCode, useUpdateQRCode, useDuplicateQRCode, useCurrentUser, useLogout, useCancelSubscription, useUpdateProfile } from '../hooks/useApi';
+import { usePushNotifications } from '../hooks/usePushNotifications';
+import { uploadPendingFile } from '../utils/upload';
 import type { BackendQRCode } from '../types/api';
 import StatsPanel from '../components/StatsPanel';
 import DashboardQRPreview from '../components/DashboardQRPreview';
@@ -28,6 +30,12 @@ const DashboardPage: React.FC = () => {
   const { data: userData } = useCurrentUser();
   const logoutMutation = useLogout();
   const user = userData?.user;
+
+  useEffect(() => {
+    if (user) {
+      console.log('Current user avatar:', user.avatar);
+    }
+  }, [user]);
   
   const { data: folders = [] } = useFolders();
   const { data: qrCodes = [] } = useQRCodes();
@@ -129,7 +137,7 @@ const DashboardPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
 
-  const [activeTab, setActiveTab] = useState(() => {
+   const [activeTab, setActiveTab] = useState(() => {
     if (tabParam) return tabParam;
     return user?.role !== 'ADMIN' && 
     user?.subscriptionStatus !== 'active' && 
@@ -140,22 +148,83 @@ const DashboardPage: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [folderMenuOpen, setFolderMenuOpen] = useState<string | null>(null);
   const [downloadMenuOpen, setDownloadMenuOpen] = useState<string | null>(null);
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolder, setShowNewFolder] = useState(false);
-  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
-  // Settings toggles (mocked)
-  const [emailNotifs, setEmailNotifs] = useState(true);
-  const [scanAlerts, setScanAlerts] = useState(true);
-  const [weeklyDigest, setWeeklyDigest] = useState(false);
-  const [marketingEmails, setMarketingEmails] = useState(false);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  // Settings hooks
+  const updateProfileMutation = useUpdateProfile();
+  const { subscribeBrowser, toggleUserPreference, loading: pushLoading } = usePushNotifications();
+
+  // Settings values from user data
+  const emailNotifs = user?.emailNotificationsEnabled ?? false;
+  const pushNotifs = user?.scanNotificationsEnabled ?? false;
+  const weeklyDigest = user?.weeklyDigestEnabled ?? false;
+  const twoFactorEnabled = user?.twoFactorEnabled ?? false;
+
+  const handleTogglePush = async () => {
+    const nextState = !pushNotifs;
+    console.log('[Push] handleTogglePush called, current pushNotifs:', pushNotifs, 'nextState:', nextState);
+    if (nextState) {
+      console.log('[Push] Attempting to subscribe browser...');
+      const success = await subscribeBrowser();
+      console.log('[Push] Subscribe browser result:', success);
+      if (!success) return;
+    }
+    console.log('[Push] Updating scanNotificationsEnabled (Push) to:', nextState);
+    await toggleUserPreference(nextState);
+    console.log('[Push] User preference update complete');
+  };
+
+  const handleToggleSetting = async (key: string, value: boolean) => {
+    console.log('[Settings] handleToggleSetting called:', { key, value });
+    try {
+      await updateProfileMutation.mutateAsync({ [key]: value });
+      console.log('[Settings] handleToggleSetting success for key:', key);
+    } catch (err) {
+      console.error('[Settings] handleToggleSetting failed for key:', key, err);
+    }
+  };
 
   const [editingURLQR, setEditingURLQR] = useState<string | null>(null);
+  const [viewingQR, setViewingQR] = useState<BackendQRCode | null>(null);
   const [viewingScansQR, setViewingScansQR] = useState<{ id: string, name: string } | null>(null);
+
+  const copyToClipboard = (text: string) => {
+    const fullUrl = text.startsWith('http') ? text : `${window.location.origin}${text}`;
+    navigator.clipboard.writeText(fullUrl);
+    toast.success('Link copied to clipboard');
+  };
   const [newURLValue, setNewURLValue] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingPhoto(true);
+    console.log('Starting photo upload to Cloudinary...');
+    try {
+      const result = await uploadPendingFile({ file }, 'image');
+      if (result) {
+        console.log('Photo upload successful:', result.url);
+        await updateProfileMutation.mutateAsync({ avatar: result.url });
+        toast.success('Profile photo updated');
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (err) {
+      console.error('Photo upload failed:', err);
+      toast.error('Failed to upload photo');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   // Close menus on outside click
   useEffect(() => {
@@ -461,8 +530,20 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f5f6f8] flex font-sans selection:bg-blue-100 selection:text-blue-900 overflow-hidden relative">
 
+      {/* ─── Mobile Sidebar Overlay ─── */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] lg:hidden animate-in fade-in duration-300"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* ─── Sidebar ─── */}
-      <aside className="w-[272px] bg-white/80 backdrop-blur-2xl border-r border-slate-200/50 flex flex-col h-screen sticky top-0 shrink-0 z-50">
+      <aside className={cn(
+        "bg-white/80 backdrop-blur-2xl border-r border-slate-200/50 flex flex-col h-screen sticky top-0 shrink-0 z-[70] transition-all duration-300",
+        "fixed lg:sticky lg:translate-x-0 w-[272px]",
+        isMobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:flex"
+      )}>
 
         {/* Brand + CTA */}
         <div className="px-6 pt-6 pb-5 shrink-0 border-b border-slate-100/60">
@@ -491,7 +572,7 @@ const DashboardPage: React.FC = () => {
               {navItems.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
                   className={cn(
                     "w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-150 group",
                     activeTab === item.id 
@@ -529,7 +610,7 @@ const DashboardPage: React.FC = () => {
               {folders.map(folder => (
                 <div key={folder.id} className="group flex items-center">
                   <button 
-                    onClick={() => setActiveTab(`folder:${folder.id}`)}
+                    onClick={() => { setActiveTab(`folder:${folder.id}`); setIsMobileMenuOpen(false); }}
                     className={cn(
                       "flex-1 flex items-center gap-3 px-3 py-2.5 text-[13px] rounded-lg transition-all duration-150",
                       activeTab === `folder:${folder.id}` 
@@ -589,9 +670,9 @@ const DashboardPage: React.FC = () => {
               { id: 'profile', icon: User, label: 'Profile' },
               { id: 'settings', icon: Settings, label: 'Settings' },
             ].map((item) => (
-              <button
+               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group",
                   activeTab === item.id
@@ -637,7 +718,7 @@ const DashboardPage: React.FC = () => {
                     <p className="text-[11px] text-white/60">Full feature access</p>
                   </div>
                   <button 
-                    onClick={() => setActiveTab('pricing')}
+                    onClick={() => { setActiveTab('pricing'); setIsMobileMenuOpen(false); }}
                     className="w-full py-2.5 bg-white text-blue-700 rounded-xl font-semibold text-[12px] hover:bg-blue-50 transition-all active:scale-[0.97]"
                   >
                     Upgrade Now
@@ -655,7 +736,7 @@ const DashboardPage: React.FC = () => {
                       {user?.subscriptionStatus === 'non-renewing' ? 'Ending Soon' : 'Active Plan'}
                     </p>
                     <p className="text-sm font-bold text-white leading-none mt-1">
-                      {user?.plan?.name || 'Pro'} Subscriber
+                      {user?.plan?.name || 'Pro'} 
                     </p>
                   </div>
                 </div>
@@ -669,8 +750,8 @@ const DashboardPage: React.FC = () => {
                 )}
               </div>
             ) : (
-              <button 
-                onClick={() => setActiveTab('pricing')}
+               <button 
+                onClick={() => { setActiveTab('pricing'); setIsMobileMenuOpen(false); }}
                 className="w-full p-5 bg-slate-900 rounded-2xl text-left group overflow-hidden relative hover:shadow-xl transition-all duration-300"
               >
                 <div className="relative z-10 space-y-3">
@@ -693,9 +774,17 @@ const DashboardPage: React.FC = () => {
       {/* ─── Main Content ─── */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
 
-        {/* Top Bar */}
-        <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 flex items-center justify-between px-8 relative z-50 shrink-0">
-          <div className="flex items-center gap-3 bg-slate-100/80 px-4 py-2 rounded-xl w-full max-w-md focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-200 focus-within:shadow-sm transition-all duration-200 border border-transparent focus-within:border-blue-200">
+         {/* Top Bar */}
+        <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 flex items-center justify-between px-4 sm:px-8 relative z-50 shrink-0">
+          <div className="flex items-center gap-4 flex-1">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <LayoutGrid className="w-6 h-6" />
+            </button>
+
+            <div className="flex items-center gap-3 bg-slate-100/80 px-4 py-2 rounded-xl w-full max-w-md focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-200 focus-within:shadow-sm transition-all duration-200 border border-transparent focus-within:border-blue-200">
             <Search className="w-4 h-4 text-slate-400" />
             <input 
               type="text"
@@ -709,8 +798,9 @@ const DashboardPage: React.FC = () => {
               </button>
             )}
           </div>
+        </div>
 
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
             <button className="text-slate-400 hover:text-slate-700 relative p-2 rounded-lg transition-all hover:bg-slate-100 group">
               <Bell className="w-5 h-5" />
               <div className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 border-[1.5px] border-white rounded-full" />
@@ -724,7 +814,7 @@ const DashboardPage: React.FC = () => {
                 className="flex items-center gap-3 group cursor-pointer py-1.5 px-2 rounded-xl hover:bg-slate-50 transition-all duration-150"
               >
                 <img
-                  src={`https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=64`}
+                  src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=64`}
                   alt="Profile"
                   className="w-8 h-8 rounded-lg shadow-sm"
                 />
@@ -764,21 +854,21 @@ const DashboardPage: React.FC = () => {
           </div>
         </header>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide">
-          <div className="max-w-[1440px] mx-auto px-8 py-8 space-y-8">
+         {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto scrollbar-hide pb-20 lg:pb-0">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
 
             {/* Page Header */}
             {activeTab !== 'profile' && (
-              <div className="flex items-end justify-between">
-                <div className="space-y-1.5">
-                  <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                 <div className="space-y-1 sm:space-y-1.5">
+                  <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                     {activeTab === 'stats' ? 'Analytics' 
                       : activeTab === 'leads' ? 'Leads'
                       : activeTab === 'settings' ? 'Settings'
                       : getTabLabel()}
                   </h1>
-                  <p className="text-[14px] text-slate-500 font-medium">
+                  <p className="text-[12px] sm:text-[14px] text-slate-500 font-medium">
                     {activeTab === 'stats' 
                       ? 'Track scan performance and visitor insights' 
                       : activeTab === 'leads'
@@ -787,15 +877,15 @@ const DashboardPage: React.FC = () => {
                       ? 'Choose the plan that fits your needs'
                       : activeTab === 'settings'
                       ? 'Customize your experience and preferences'
-                      : `${displayedQRs.length} code${displayedQRs.length !== 1 ? 's' : ''} in this view`}
+                      : `${displayedQRs.length} code${displayedQRs.length !== 1 ? 's' : ''}`}
                   </p>
                 </div>
                 {!['stats', 'leads', 'pricing', 'settings'].includes(activeTab) && (
                   <button
                     onClick={() => navigate('/dashboard/create')}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[13px] font-semibold transition-all duration-200 active:scale-[0.97] shadow-sm"
+                    className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[12px] sm:text-[13px] font-semibold transition-all duration-200 active:scale-[0.97] shadow-sm shrink-0"
                   >
-                    <Plus className="w-4 h-4" /> New Code
+                    <Plus className="w-4 h-4" /> <span className="hidden xs:inline">New Code</span>
                   </button>
                 )}
               </div>
@@ -836,12 +926,23 @@ const DashboardPage: React.FC = () => {
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between relative z-20 gap-4 sm:gap-6">
                       {/* Avatar */}
                       <div className="relative shrink-0 -mt-16 sm:-mt-20 mx-auto sm:mx-0">
-                        <img
-                          src={`https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=160`}
-                          alt="Profile"
-                          className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl border-[6px] border-white shadow-lg object-cover bg-white mx-auto sm:mx-0"
-                        />
-                        <button className="absolute -bottom-1.5 -right-1.5 w-9 h-9 sm:w-10 sm:h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-blue-700 transition-all active:scale-95 ring-[3px] ring-white">
+                        <div className="relative">
+                          <img
+                            src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=160`}
+                            alt="Profile"
+                            className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl border-[6px] border-white shadow-lg object-cover bg-white mx-auto sm:mx-0"
+                          />
+                          {isUploadingPhoto && (
+                            <div className="absolute inset-0 bg-white/60 rounded-2xl flex items-center justify-center m-[6px]">
+                              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                            </div>
+                          )}
+                        </div>
+                        <button 
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploadingPhoto}
+                          className="absolute -bottom-1.5 -right-1.5 w-9 h-9 sm:w-10 sm:h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-blue-700 transition-all active:scale-95 ring-[3px] ring-white cursor-pointer disabled:opacity-50"
+                        >
                           <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                       </div>
@@ -860,7 +961,13 @@ const DashboardPage: React.FC = () => {
                           <p className="text-[14px] text-slate-500 font-medium truncate">{user?.email || 'guest@example.com'}</p>
                         </div>
 
-                        <button onClick={() => setIsEditingProfile(true)} className="shrink-0 w-full sm:w-auto px-6 py-2.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white rounded-xl text-[13px] font-semibold transition-all active:scale-[0.97] flex items-center justify-center sm:justify-start gap-2 shadow-sm">
+                        <button 
+                          onClick={() => {
+                            console.log('Edit Profile button clicked (Profile Tab)');
+                            setIsEditingProfile(true);
+                          }} 
+                          className="shrink-0 w-full sm:w-auto px-6 py-2.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white rounded-xl text-[13px] font-semibold transition-all active:scale-[0.97] flex items-center justify-center sm:justify-start gap-2 shadow-sm"
+                        >
                           <Edit3 className="w-3.5 h-3.5" /> Edit Profile
                         </button>
                       </div>
@@ -966,7 +1073,17 @@ const DashboardPage: React.FC = () => {
                           <p className="text-[12px] font-medium text-slate-400 mb-0.5">{row.label}</p>
                           <p className="text-[14px] font-semibold text-slate-900">{row.value}</p>
                         </div>
-                        <button className="px-3.5 py-1.5 text-[12px] font-semibold text-blue-600 hover:bg-blue-50 rounded-lg border border-blue-200 transition-all active:scale-[0.97]">
+                        <button 
+                          onClick={() => {
+                            console.log('Settings button clicked:', row.label);
+                            if (row.action === 'Edit') {
+                              setIsEditingProfile(true);
+                            } else {
+                              toast.error(`${row.action} is not implemented yet`);
+                            }
+                          }}
+                          className="px-3.5 py-1.5 text-[12px] font-semibold text-blue-600 hover:bg-blue-50 rounded-lg border border-blue-200 transition-all active:scale-[0.97]"
+                        >
                           {row.action}
                         </button>
                       </div>
@@ -987,10 +1104,9 @@ const DashboardPage: React.FC = () => {
                   </div>
                   <div className="divide-y divide-slate-100">
                     {[
-                      { label: 'Email Notifications', desc: 'Get notified about account activity', value: emailNotifs, setter: setEmailNotifs },
-                      { label: 'Scan Alerts', desc: 'Real-time alerts when your QR codes are scanned', value: scanAlerts, setter: setScanAlerts },
-                      { label: 'Weekly Digest', desc: 'Summary of your weekly QR performance', value: weeklyDigest, setter: setWeeklyDigest },
-                      { label: 'Marketing Emails', desc: 'Product news, tips, and special offers', value: marketingEmails, setter: setMarketingEmails },
+                      { label: 'Push Notification', desc: 'Get notified about account activity', value: pushNotifs, key: 'scanNotificationsEnabled' },
+                      { label: 'Scan Alerts', desc: 'Real-time alerts when your QR codes are scanned', value: emailNotifs, key: 'emailNotificationsEnabled' },
+                      { label: 'Weekly Digest', desc: 'Summary of your weekly QR performance', value: weeklyDigest, key: 'weeklyDigestEnabled' },
                     ].map(row => (
                       <div key={row.label} className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
                         <div>
@@ -998,10 +1114,18 @@ const DashboardPage: React.FC = () => {
                           <p className="text-[12px] text-slate-400 font-medium">{row.desc}</p>
                         </div>
                         <button
-                          onClick={() => row.setter(!row.value)}
+                          onClick={() => {
+                            if (row.label === 'Push Notification') {
+                              handleTogglePush();
+                            } else {
+                              handleToggleSetting(row.key, !row.value);
+                            }
+                          }}
+                          disabled={pushLoading || updateProfileMutation.isPending}
                           className={cn(
                             'w-11 h-6 rounded-full transition-all duration-200 relative shrink-0 ml-4',
-                            row.value ? 'bg-blue-600' : 'bg-slate-200'
+                            row.value ? 'bg-blue-600' : 'bg-slate-200',
+                            (pushLoading || updateProfileMutation.isPending) && 'opacity-50 cursor-not-allowed'
                           )}
                         >
                           <div className={cn(
@@ -1035,7 +1159,7 @@ const DashboardPage: React.FC = () => {
                         </div>
                       </div>
                       <button
-                        onClick={() => setTwoFactorEnabled(!twoFactorEnabled)}
+                        onClick={() => handleToggleSetting('twoFactorEnabled', !twoFactorEnabled)}
                         className={cn(
                           'w-11 h-6 rounded-full transition-all duration-200 relative shrink-0 ml-4',
                           twoFactorEnabled ? 'bg-emerald-600' : 'bg-slate-200'
@@ -1059,16 +1183,16 @@ const DashboardPage: React.FC = () => {
                         Manage
                       </button>
                     </div>
-                    <div className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
+                    <div className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors opacity-60">
                       <div className="flex items-center gap-3">
                         <Key className="w-4 h-4 text-slate-400" />
                         <div>
                           <p className="text-[14px] font-semibold text-slate-900 mb-0.5">API Keys</p>
-                          <p className="text-[12px] text-slate-400 font-medium">Manage your API access credentials</p>
+                          <p className="text-[12px] text-slate-400 font-medium">Advanced developer features are arriving soon.</p>
                         </div>
                       </div>
-                      <button className="px-3.5 py-1.5 text-[12px] font-semibold text-blue-600 hover:bg-blue-50 rounded-lg border border-blue-200 transition-all active:scale-[0.97]">
-                        Generate
+                      <button className="px-3.5 py-1.5 text-[10px] font-bold text-slate-400 bg-slate-100 rounded-lg border border-slate-200 uppercase tracking-widest cursor-not-allowed">
+                        Coming Soon
                       </button>
                     </div>
                   </div>
@@ -1167,7 +1291,7 @@ const DashboardPage: React.FC = () => {
                 )}
 
                 {/* ─── QR Code Grid ─── */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" ref={menuRef}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" ref={menuRef}>
                   {displayedQRs.map((qr) => {
                     const typeStyle = getTypeStyles(qr.type);
                     return (
@@ -1183,7 +1307,7 @@ const DashboardPage: React.FC = () => {
                         <div className={cn('h-1 w-full', typeStyle.dot)} />
 
                         {/* ── QR Preview — centered & prominent ── */}
-                        <div className="px-6 pt-5 pb-3">
+                        <div className="px-4 pt-5 pb-3">
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-2">
                               <span className={cn(
@@ -1211,6 +1335,9 @@ const DashboardPage: React.FC = () => {
                                   </button>
                                   <button onClick={() => { navigate(`/dashboard/edit/${qr.id}/design`); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
                                     <Brush className="w-4 h-4 text-slate-400" /> Edit Design
+                                  </button>
+                                  <button onClick={() => { window.open(qr.shortUrl, '_blank'); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
+                                    <ExternalLink className="w-4 h-4 text-slate-400" /> Preview Link
                                   </button>
                                   <button onClick={() => { duplicateQR(qr.id); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
                                     <Copy className="w-4 h-4 text-slate-400" /> Duplicate
@@ -1265,6 +1392,13 @@ const DashboardPage: React.FC = () => {
                             <div className="flex items-center justify-center gap-1.5 text-slate-400">
                               <Globe className="w-3 h-3 shrink-0" />
                               <p className="text-[11px] font-medium truncate max-w-[200px]">{qr.shortUrl.replace(/^https?:\/\//, '')}</p>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); copyToClipboard(qr.shortUrl); }}
+                                className="p-1 text-slate-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-all"
+                                title="Copy Link"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
                             </div>
                           </div>
 
@@ -1285,42 +1419,42 @@ const DashboardPage: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* ── Card Action Bar ── */}
-                        <div className="flex items-center border-t border-slate-100 divide-x divide-slate-100 mt-auto">
+                        {/* ── Card Action Bar (Two Prominent Buttons) ── */}
+                        <div className="flex items-center border-t border-slate-100 divide-x divide-slate-100 mt-auto bg-slate-50/10">
                           <button 
-                            onClick={() => window.open(qr.shortUrl, '_blank')} 
-                            className="flex-1 py-3 text-[12px] font-semibold text-slate-500 hover:text-blue-600 hover:bg-blue-50/50 flex items-center justify-center gap-2 transition-all duration-150"
+                            onClick={() => setViewingQR(qr)} 
+                            className="flex-1 py-3.5 text-[12px] font-bold text-slate-600 hover:text-blue-600 hover:bg-white flex items-center justify-center gap-2 transition-all duration-150"
                           >
-                            <ExternalLink className="w-3.5 h-3.5" /> Preview
+                            <Eye className="w-4 h-4" /> View
                           </button>
+                          
                           <div className="relative flex-1">
                             <button 
                               onClick={() => setDownloadMenuOpen(downloadMenuOpen === qr.id ? null : qr.id)} 
-                              className="w-full py-3 text-[12px] font-semibold text-slate-500 hover:text-emerald-600 hover:bg-emerald-50/50 flex items-center justify-center gap-2 transition-all duration-150"
+                              className="w-full py-3.5 text-[12px] font-bold text-slate-600 hover:text-emerald-600 hover:bg-white flex items-center justify-center gap-2 transition-all duration-150"
                             >
-                              <Download className="w-3.5 h-3.5" /> Export
+                              <Download className="w-4 h-4" /> Export
                             </button>
                             {downloadMenuOpen === qr.id && (
-                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 bg-white rounded-xl shadow-xl border border-slate-200/80 py-1.5 z-[100] animate-in slide-in-from-bottom-2 fade-in duration-150">
-                                {(['png', 'svg', 'jpeg', 'webp'] as const).map(ext => (
-                                  <button 
-                                    key={ext}
-                                    onClick={() => { handleDownload(qr, ext); setDownloadMenuOpen(null); }} 
-                                    className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 text-slate-700 uppercase flex items-center gap-2 transition-colors"
-                                  >
-                                    <div className="w-5 h-5 bg-slate-100 rounded text-[9px] font-bold flex items-center justify-center text-slate-500">.{ext}</div>
-                                    {ext.toUpperCase()}
-                                  </button>
-                                ))}
+                              <div className="absolute bottom-full left-0 right-0 mb-3 px-3 z-[100] animate-in slide-in-from-bottom-2 fade-in duration-150">
+                                <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 py-2 overflow-hidden">
+                                  <div className="px-3 py-1.5 mb-1 border-b border-slate-50">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Select Format</p>
+                                  </div>
+                                  {(['png', 'svg', 'jpeg', 'webp'] as const).map(ext => (
+                                    <button 
+                                      key={ext}
+                                      onClick={() => { handleDownload(qr, ext); setDownloadMenuOpen(null); }} 
+                                      className="w-full text-left px-4 py-2.5 text-[13px] font-semibold hover:bg-slate-50 text-slate-700 uppercase flex items-center gap-3 transition-colors"
+                                    >
+                                      <div className="w-6 h-6 bg-slate-100 rounded-lg text-[10px] font-black flex items-center justify-center text-slate-500 border border-slate-200/50">.{ext}</div>
+                                      {ext.toUpperCase()}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
                             )}
                           </div>
-                          <button 
-                            onClick={() => navigate(`/dashboard/edit/${qr.id}/design`)} 
-                            className="flex-1 py-3 text-[12px] font-semibold text-slate-500 hover:text-violet-600 hover:bg-violet-50/50 flex items-center justify-center gap-2 transition-all duration-150"
-                          >
-                            <Brush className="w-3.5 h-3.5" /> Design
-                          </button>
                         </div>
                       </div>
                     );
@@ -1402,23 +1536,61 @@ const DashboardPage: React.FC = () => {
             </div>
 
             {/* Scrollable Form Body */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-hide bg-white">
+            <form 
+              onSubmit={async (e) => {
+                e.preventDefault();
+                console.log('Profile update form submitted');
+                const formData = new FormData(e.currentTarget);
+                const firstName = formData.get('firstName') as string;
+                const lastName = formData.get('lastName') as string;
+                console.log('Form data:', { firstName, lastName });
+                try {
+                  await updateProfileMutation.mutateAsync({ firstName, lastName });
+                  console.log('Profile update successful');
+                  setIsEditingProfile(false);
+                } catch (err) {
+                  console.error('Profile update failed:', err);
+                }
+              }}
+              className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-hide bg-white"
+            >
               
               {/* Avatar Section */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pb-2">
                 <div className="relative shrink-0">
                   <img
-                    src={`https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=120`}
+                    src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=4f46e5&color=fff&bold=true&size=120`}
                     alt="Avatar"
                     className="w-20 h-20 rounded-full border-2 border-slate-100 shadow-sm object-cover"
                   />
+                  {isUploadingPhoto && (
+                    <div className="absolute inset-0 bg-white/60 rounded-full flex items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col gap-2">
                   <div className="flex gap-2">
-                    <button className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[13px] font-medium transition-all shadow-sm">
-                      Change Photo
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={handlePhotoUpload} 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingPhoto}
+                      className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[13px] font-medium transition-all shadow-sm disabled:opacity-50"
+                    >
+                      {isUploadingPhoto ? 'Uploading...' : 'Change Photo'}
                     </button>
-                    <button className="px-4 py-2 bg-white text-slate-600 border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100 rounded-lg text-[13px] font-medium transition-all">
+                    <button 
+                      type="button" 
+                      onClick={() => updateProfileMutation.mutateAsync({ avatar: null })}
+                      className="px-4 py-2 bg-white text-slate-600 border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100 rounded-lg text-[13px] font-medium transition-all"
+                    >
                       Remove
                     </button>
                   </div>
@@ -1431,6 +1603,7 @@ const DashboardPage: React.FC = () => {
                 <div className="space-y-1.5">
                   <label className="text-[13px] font-bold text-slate-700">First Name</label>
                   <input 
+                    name="firstName"
                     defaultValue={user?.firstName || ''}
                     placeholder="Enter first name"
                     className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-50 rounded-xl py-2.5 px-4 text-[13px] font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400"
@@ -1439,6 +1612,7 @@ const DashboardPage: React.FC = () => {
                 <div className="space-y-1.5">
                   <label className="text-[13px] font-bold text-slate-700">Last Name</label>
                   <input 
+                    name="lastName"
                     defaultValue={user?.lastName || ''}
                     placeholder="Enter last name"
                     className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-50 rounded-xl py-2.5 px-4 text-[13px] font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400"
@@ -1474,27 +1648,140 @@ const DashboardPage: React.FC = () => {
                 </div>
                 <p className="text-[12px] text-slate-500 font-medium">To change your email address or update your billing plan, please contact our support team securely.</p>
               </div>
-              
-            </div>
 
-            {/* Modal Footer / Actions */}
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 shrink-0 flex items-center justify-end gap-3 rounded-b-2xl">
-              <button 
-                onClick={() => setIsEditingProfile(false)} 
-                className="px-5 py-2.5 bg-white text-slate-700 rounded-xl font-semibold text-[13px] hover:bg-slate-100 border border-slate-200 transition-all"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => setIsEditingProfile(false)} 
-                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-[13px] transition-all shadow-sm shadow-blue-200"
-              >
-                Save Changes
-              </button>
-            </div>
+              {/* Modal Footer / Actions */}
+              <div className="pt-4 flex items-center justify-end gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setIsEditingProfile(false)} 
+                  className="px-5 py-2.5 bg-white text-slate-700 rounded-xl font-semibold text-[13px] hover:bg-slate-100 border border-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={updateProfileMutation.isPending}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-[13px] transition-all shadow-sm shadow-blue-200 disabled:opacity-50"
+                >
+                  {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
+      {/* View QR Code Modal */}
+      {viewingQR && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 transition-all">
+          <div 
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" 
+            onClick={() => setViewingQR(null)} 
+          />
+          <div className="relative w-full max-w-sm bg-white rounded-[40px] shadow-2xl border border-slate-200/60 overflow-hidden animate-in zoom-in-95 fade-in duration-300 p-8 flex flex-col items-center gap-6">
+            <div className="w-full flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl font-bold text-slate-900 truncate">{viewingQR.name}</h3>
+                <p className="text-[12px] font-medium text-slate-400 mt-0.5 truncate">{viewingQR.shortUrl.replace(/^https?:\/\//, '')}</p>
+              </div>
+              <button 
+                onClick={() => setViewingQR(null)} 
+                className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="w-full aspect-square bg-white rounded-[32px] p-10 shadow-inner border border-slate-100 flex items-center justify-center group relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-indigo-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[32px]" />
+              <div className="relative z-10 w-full h-full">
+                <DashboardQRPreview config={viewingQR.config} shortUrl={viewingQR.shortUrl} size={400} />
+              </div>
+            </div>
+
+            <div className="w-full grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => handleDownload(viewingQR, 'png')}
+                className="py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold text-[13px] transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20"
+              >
+                <Download className="w-4 h-4" /> Export
+              </button>
+              <button 
+                onClick={() => copyToClipboard(viewingQR.shortUrl)}
+                className="py-3.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-2xl font-bold text-[13px] transition-all active:scale-[0.98] flex items-center justify-center gap-2 border border-blue-100"
+              >
+                <Copy className="w-4 h-4" /> Copy Link
+              </button>
+            </div>
+            
+            <p className="text-[11px] text-slate-400 font-medium text-center px-4">
+              Use this high-resolution QR code for digital displays or quick scanning.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Bottom Navigation */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-[72px] bg-white/80 backdrop-blur-xl border-t border-slate-100 px-6 flex items-center justify-between z-[100] safe-area-inset-bottom">
+          <button 
+            onClick={() => setActiveTab('all')}
+            className={cn(
+              "flex flex-col items-center gap-1.5 transition-all duration-300",
+              activeTab === 'all' ? "text-blue-600 scale-110" : "text-slate-400"
+            )}
+          >
+             <div className={cn("p-1 rounded-xl transition-all", activeTab === 'all' ? "bg-blue-50" : "bg-transparent")}>
+                <LayoutGrid className="w-5 h-5" />
+             </div>
+             <span className="text-[10px] font-bold uppercase tracking-tight">Home</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('stats')}
+            className={cn(
+              "flex flex-col items-center gap-1.5 transition-all duration-300",
+              activeTab === 'stats' ? "text-blue-600 scale-110" : "text-slate-400"
+            )}
+          >
+             <div className={cn("p-1 rounded-xl transition-all", activeTab === 'stats' ? "bg-blue-50" : "bg-transparent")}>
+                <BarChart3 className="w-5 h-5" />
+             </div>
+             <span className="text-[10px] font-bold uppercase tracking-tight">Stats</span>
+          </button>
+
+          {/* Floating Create Button */}
+          <button 
+            onClick={() => navigate('/dashboard/create')}
+            className="w-14 h-14 bg-slate-900 text-white rounded-2xl shadow-xl flex items-center justify-center -mt-12 border-[4px] border-slate-50 active:scale-90 transition-all"
+          >
+             <Plus className="w-6 h-6" />
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('leads')}
+            className={cn(
+              "flex flex-col items-center gap-1.5 transition-all duration-300",
+              activeTab === 'leads' ? "text-blue-600 scale-110" : "text-slate-400"
+            )}
+          >
+             <div className={cn("p-1 rounded-xl transition-all", activeTab === 'leads' ? "bg-blue-50" : "bg-transparent")}>
+                <Users className="w-5 h-5" />
+             </div>
+             <span className="text-[10px] font-bold uppercase tracking-tight">Leads</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('settings')}
+            className={cn(
+              "flex flex-col items-center gap-1.5 transition-all duration-300",
+              activeTab === 'settings' ? "text-blue-600 scale-110" : "text-slate-400"
+            )}
+          >
+             <div className={cn("p-1 rounded-xl transition-all", activeTab === 'settings' ? "bg-blue-50" : "bg-transparent")}>
+                <Settings className="w-5 h-5" />
+             </div>
+             <span className="text-[10px] font-bold uppercase tracking-tight">Setup</span>
+          </button>
+      </div>
     </div>
   );
 };
