@@ -60,7 +60,9 @@ const BookingProfilePreview: React.FC<BookingProfilePreviewProps> = ({
   customFormFields = [],
   whatsappEnabled = false,
   whatsappNumber = "",
-  onButtonClick
+  onButtonClick,
+  onSubmit,
+  isReadOnly
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const today = useMemo(() => new Date(), []);
