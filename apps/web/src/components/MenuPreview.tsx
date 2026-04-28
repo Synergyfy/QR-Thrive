@@ -5,15 +5,18 @@ import type { MenuData } from '../types/qr';
 interface MenuPreviewProps {
   data?: MenuData;
   onButtonClick?: (targetQrId: string) => void;
+  onSubmit?: (answers: Record<string, any>) => Promise<void>;
+  isReadOnly?: boolean;
 }
 
-const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
+const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick, onSubmit, isReadOnly }) => {
   const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
   const [cart, setCart] = useState<Record<string, { item: any, quantity: number }>>({});
   const [view, setView] = useState<'menu' | 'checkout' | 'details' | 'success'>('menu');
   const [note, setNote] = useState('');
   const [tableNumber, setTableNumber] = useState('');
   const [details, setDetails] = useState({ name: '', email: '', phone: '', address: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const addToCart = (item: any) => setCart(prev => ({ ...prev, [item.id]: { item, quantity: (prev[item.id]?.quantity || 0) + 1 } }));
   const removeFromCart = (item: any) => {
@@ -74,7 +77,37 @@ const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
                         )}
                     </div>
                 ))}
-                <button onClick={() => setView('success')} className="w-full max-w-[calc(100%-32px)] mx-auto block py-4 bg-gray-900 text-white font-bold rounded-2xl text-center">Confirm Order</button>
+                <button 
+                  disabled={isSubmitting || isReadOnly}
+                  onClick={async () => {
+                    if (isReadOnly) {
+                        setView('success');
+                        return;
+                    }
+                    if (onSubmit) {
+                        setIsSubmitting(true);
+                        try {
+                            await onSubmit({
+                                ...details,
+                                cart: Object.values(cart).map(c => ({ name: c.item.name, quantity: c.quantity, price: c.item.price })),
+                                total: totalPrice,
+                                note,
+                                tableNumber
+                            });
+                            setView('success');
+                        } catch (err) {
+                            // Error toast is handled by useSubmitForm
+                        } finally {
+                            setIsSubmitting(false);
+                        }
+                    } else {
+                        setView('success');
+                    }
+                  }} 
+                  className="w-full max-w-[calc(100%-32px)] mx-auto block py-4 bg-gray-900 text-white font-bold rounded-2xl text-center disabled:opacity-50"
+                >
+                    {isSubmitting ? 'Confirming...' : 'Confirm Order'}
+                </button>
             </div>
         </div>
       )

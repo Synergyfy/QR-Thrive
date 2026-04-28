@@ -25,6 +25,8 @@ interface BookingProfilePreviewProps {
   whatsappEnabled?: boolean;
   whatsappNumber?: string;
   onButtonClick?: (target: string) => void;
+  onSubmit?: (answers: Record<string, any>) => Promise<void>;
+  isReadOnly?: boolean;
 }
 
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1544161515-4ae6b918af99?w=800&h=600&fit=crop";
@@ -71,6 +73,7 @@ const BookingProfilePreview: React.FC<BookingProfilePreviewProps> = ({
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
   const [showingForm, setShowingForm] = useState(false);
   const [formAnswers, setFormAnswers] = useState<Record<string, any>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (scrollContainerRef.current) {
@@ -106,7 +109,7 @@ const BookingProfilePreview: React.FC<BookingProfilePreviewProps> = ({
     setSelectedTime(null);
   };
 
-  const handleBook = () => {
+  const handleBook = async () => {
     if (destinationMode === 'qr_link' && qrLinkId) {
       onButtonClick?.(`qr:${qrLinkId}`);
       return;
@@ -120,14 +123,56 @@ const BookingProfilePreview: React.FC<BookingProfilePreviewProps> = ({
         setShowingForm(true);
         if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
       } else {
-        setBookingConfirmed(true);
+        if (isReadOnly) {
+           setBookingConfirmed(true);
+           return;
+        }
+        if (onSubmit) {
+            setIsSubmitting(true);
+            try {
+               await onSubmit({
+                  date: `${MONTH_NAMES[calMonth]} ${selectedDay}, ${calYear}`,
+                  time: selectedTime,
+                  service: title,
+                  price
+               });
+               setBookingConfirmed(true);
+            } catch (err) {} finally { setIsSubmitting(false); }
+        } else {
+            setBookingConfirmed(true);
+        }
       }
     }
   };
 
-  const handleFormSubmit = () => {
-    setShowingForm(false);
-    setBookingConfirmed(true);
+  const handleFormSubmit = async () => {
+    if (isReadOnly) {
+       setShowingForm(false);
+       setBookingConfirmed(true);
+       return;
+    }
+    
+    if (onSubmit) {
+       setIsSubmitting(true);
+       try {
+          await onSubmit({
+            ...formAnswers,
+            date: `${MONTH_NAMES[calMonth]} ${selectedDay}, ${calYear}`,
+            time: selectedTime,
+            service: title,
+            price
+          });
+          setShowingForm(false);
+          setBookingConfirmed(true);
+       } catch (err) {
+          // Toast handled by hook
+       } finally {
+          setIsSubmitting(false);
+       }
+    } else {
+       setShowingForm(false);
+       setBookingConfirmed(true);
+    }
     if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
   };
 
@@ -511,14 +556,16 @@ const BookingProfilePreview: React.FC<BookingProfilePreviewProps> = ({
                }`}
                style={{ backgroundColor: themeColor, boxShadow: (showingForm || (selectedDay && selectedTime)) ? `0 10px 20px -5px ${themeColor}40` : 'none' }}
              >
-                {showingForm 
-                  ? 'Complete Booking'
-                  : (selectedDay && selectedTime 
-                    ? <>{buttonText} — {MONTH_NAMES[calMonth].slice(0,3)} {selectedDay}, {selectedTime}</>
-                    : selectedDay 
-                      ? 'Select a time slot' 
-                      : 'Select a date first')}
-                {(showingForm || (selectedDay && selectedTime)) && <ArrowRight size={18} />}
+                {isSubmitting 
+                  ? 'Processing...' 
+                  : showingForm 
+                    ? 'Complete Booking'
+                    : (selectedDay && selectedTime 
+                      ? <>{buttonText} — {MONTH_NAMES[calMonth].slice(0,3)} {selectedDay}, {selectedTime}</>
+                      : selectedDay 
+                        ? 'Select a time slot' 
+                        : 'Select a date first')}
+                {(isSubmitting || showingForm || (selectedDay && selectedTime)) && <ArrowRight size={18} />}
              </button>
            ) : (
              <button

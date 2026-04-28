@@ -291,7 +291,7 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ codes: qrCodes }) => {
        </div>
 
        {/* Leads Table Card */}
-       <div className="bg-white rounded-3xl sm:rounded-[40px] border border-slate-100 overflow-hidden shadow-sm relative min-h-[400px]">
+       <div className="bg-white rounded-3xl sm:rounded-[40px] border border-slate-100 shadow-sm relative min-h-[400px]">
           {loadingLeads ? (
             <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center gap-4">
                <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
@@ -306,7 +306,7 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ codes: qrCodes }) => {
                <p className="text-slate-400 text-xs font-medium">Activate a form or menu to start collecting data.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto sm:overflow-visible">
                <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50/50 border-b border-slate-100">
@@ -330,7 +330,18 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ codes: qrCodes }) => {
                                </div>
                                <div>
                                   <p className="text-sm font-bold text-slate-900">
-                                    {Object.values(lead.answers)[0] as string || 'New Submission'}
+                                    {(() => {
+                                      const answers = lead.answers as any;
+                                      const displayVal = answers.name || answers.fullName || answers.email || answers.title || Object.values(lead.answers)[0];
+                                      
+                                      if (typeof displayVal === 'object' && displayVal !== null) {
+                                        if (Array.isArray(displayVal)) {
+                                          return displayVal.length > 0 ? `${displayVal.length} items` : 'Empty Submission';
+                                        }
+                                        return (displayVal as any).name || (displayVal as any).title || (displayVal as any).label || 'Complex Submission';
+                                      }
+                                      return String(displayVal || 'New Submission');
+                                    })()}
                                   </p>
                                   <p className="text-[10px] font-medium text-slate-400">
                                     {formatDate(lead.createdAt)} • {formatTime(lead.createdAt)}
@@ -343,7 +354,11 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ codes: qrCodes }) => {
                                {Object.entries(lead.answers).slice(0, 3).map(([key, val], idx) => (
                                  <div key={idx} className="px-2 py-1 bg-slate-100 rounded-md text-[9px] font-bold text-slate-600">
                                     <span className="opacity-50 mr-1">{formsMap[lead.qrCodeId]?.fields.find(f => f.id === key)?.label || key}:</span>
-                                    {Array.isArray(val) ? val.join(', ') : String(val)}
+                                    {Array.isArray(val) 
+                                      ? val.map(v => typeof v === 'object' ? (v.name || JSON.stringify(v)) : String(v)).join(', ') 
+                                      : typeof val === 'object' && val !== null 
+                                        ? JSON.stringify(val) 
+                                        : String(val)}
                                  </div>
                                ))}
                                {Object.keys(lead.answers).length > 3 && (
@@ -462,7 +477,11 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ codes: qrCodes }) => {
                                     {field?.label || key}
                                  </p>
                                  <p className="text-sm font-bold text-slate-900 leading-relaxed whitespace-pre-wrap">
-                                    {Array.isArray(value) ? value.join(', ') : String(value)}
+                                    {Array.isArray(value) 
+                                      ? value.map(v => typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v)).join('\n')
+                                      : typeof value === 'object' && value !== null 
+                                        ? JSON.stringify(value, null, 2) 
+                                        : String(value)}
                                  </p>
                               </div>
                            );
