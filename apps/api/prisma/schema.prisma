@@ -128,6 +128,7 @@ model Plan {
   isActive      Boolean     @default(true)
   
   vemtapPlanId          String? // Attached Vemtap Plan ID for bundling
+  features      String[]    @default([])
   
   priceBooks    PriceBook[]
   users         User[]
