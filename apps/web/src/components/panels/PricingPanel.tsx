@@ -183,18 +183,18 @@ export default function PricingPanel() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-stretch max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8 items-stretch max-w-7xl mx-auto">
             {currentPlans.map((plan, idx) => (
               <motion.div 
                 key={`${plan.name}-${selectedCycle}`}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
-                className={`flex flex-col relative rounded-[3rem] p-10 transition-all duration-500 overflow-hidden group ${
+                 className={`flex flex-col relative rounded-3xl sm:rounded-[3rem] p-6 sm:p-10 transition-all duration-500 overflow-hidden group ${
                   plan.isCurrent
                     ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-2xl shadow-blue-500/20 z-30'
                     : plan.highlight 
-                      ? 'bg-slate-900 text-white shadow-2xl scale-105 z-20 xl:-translate-y-4 border border-blue-500/30' 
+                      ? 'bg-slate-900 text-white shadow-2xl scale-100 lg:scale-105 z-20 xl:-translate-y-4 border border-blue-500/30' 
                       : 'bg-white border border-slate-100 shadow-xl shadow-blue-900/5 z-10'
                 }`}
               >
@@ -207,9 +207,9 @@ export default function PricingPanel() {
                   </div>
                 )}
 
-                {(plan.popular || plan.trial) && !plan.isCurrent && (
-                  <div className="absolute top-8 right-10">
-                      <span className={`flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] px-5 py-2.5 rounded-full shadow-lg transition-transform group-hover:scale-110 ${
+                 {(plan.popular || plan.trial) && !plan.isCurrent && (
+                  <div className="absolute top-4 sm:top-8 right-6 sm:right-10">
+                      <span className={`flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] px-4 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-lg transition-transform group-hover:scale-110 ${
                         plan.highlight ? 'bg-blue-600 text-white shadow-blue-500/40' : 'bg-slate-900 text-white'
                      }`}>
                         <Sparkles className="w-3 h-3" />
@@ -226,12 +226,12 @@ export default function PricingPanel() {
                     {plan.description}
                   </p>
                   
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <span className={`text-3xl font-bold ${plan.isCurrent ? 'text-blue-600' : 'text-slate-400'}`}>{plan.currency}</span>
-                    <span className={`text-7xl font-black tracking-tighter ${plan.isCurrent ? 'text-slate-800' : (plan.highlight ? 'text-white' : 'text-slate-900')}`}>
+                   <div className="flex items-baseline gap-1 mb-2">
+                    <span className={`text-2xl sm:text-3xl font-bold ${plan.isCurrent ? 'text-blue-600' : 'text-slate-400'}`}>{plan.currency}</span>
+                    <span className={`text-5xl sm:text-7xl font-black tracking-tighter ${plan.isCurrent ? 'text-slate-800' : (plan.highlight ? 'text-white' : 'text-slate-900')}`}>
                        {plan.price === 0 ? '0' : plan.price.toLocaleString()}
                     </span>
-                    <span className={`text-sm font-bold opacity-60 ml-2 ${plan.isCurrent ? 'text-blue-600' : (plan.highlight ? 'text-white' : 'text-slate-500')}`}>
+                    <span className={`text-xs sm:text-sm font-bold opacity-60 ml-2 ${plan.isCurrent ? 'text-blue-600' : (plan.highlight ? 'text-white' : 'text-slate-500')}`}>
                       / {selectedCycle === 'yearly' ? 'year' : (selectedCycle === 'quarterly' ? 'quarter' : 'month')}
                     </span>
                   </div>

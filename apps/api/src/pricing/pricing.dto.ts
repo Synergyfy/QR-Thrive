@@ -92,6 +92,16 @@ export class CreatePlanDto {
   @IsEnum(QRType, { each: true })
   qrCodeTypes: QRType[];
 
+  @ApiPropertyOptional({
+    example: ['Feature 1', 'Feature 2'],
+    description: 'List of plan features',
+    isArray: true,
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  features?: string[];
+
   @ApiPropertyOptional({ example: false })
   @IsBoolean()
   @IsOptional()

@@ -1148,6 +1148,8 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
           <MenuPreview 
             data={data.menu} 
             onButtonClick={(targetQrId) => handleAction(`qr:${targetQrId}`)} 
+            onSubmit={(answers) => submitMutation.mutateAsync(answers)}
+            isReadOnly={isWizardPreview}
           />
         );
 
@@ -1231,6 +1233,8 @@ const DynamicView: React.FC<DynamicViewProps> = ({ data: initialData, isWizardPr
           <BookingProfilePreview 
             {...data.booking} 
             onButtonClick={handleAction}
+            onSubmit={(answers) => submitMutation.mutateAsync(answers)}
+            isReadOnly={isWizardPreview}
           />
         );
       default:

@@ -79,14 +79,36 @@ export class QRCodesService {
       },
     });
 
-    // If it's a form type, synchronize with the Form table
-    if (qrCode.type === 'form' && data && (data as { form?: any }).form) {
-      const formData = (data as { form: any }).form;
+    // Synchronize with the Form table for lead-capture types
+    const leadTypes = ['form', 'menu', 'booking'];
+    const qrType = String(qrCode.type);
+    if (leadTypes.includes(qrType)) {
+      let title = 'Untitled Form';
+      let description = '';
+      let fields = [];
+
+      const qrData = data as any;
+      if (qrType === 'form' && qrData?.form) {
+        title = qrData.form.title || title;
+        description = qrData.form.description || '';
+        fields = qrData.form.fields || [];
+      } else if (qrType === 'menu') {
+        const menuData = qrData?.menu || qrData;
+        title = menuData?.restaurantName || title;
+        description = menuData?.description || '';
+        fields = menuData?.customFields || [];
+      } else if (qrType === 'booking') {
+        const bookingData = qrData?.booking || qrData;
+        title = bookingData?.title || bookingData?.businessName || title;
+        description = bookingData?.description || '';
+        fields = bookingData?.customFormFields || [];
+      }
+
       await this.formsService.createOrUpdateForm(userId, {
         qrCodeId: qrCode.id,
-        title: formData.title || 'Untitled Form',
-        description: formData.description,
-        fields: formData.fields || [],
+        title,
+        description,
+        fields,
       });
     }
 
@@ -203,14 +225,36 @@ export class QRCodesService {
       },
     });
 
-    // If it's a form type, synchronize with the Form table
-    if (updated.type === 'form' && data && (data as { form?: any }).form) {
-      const formData = (data as { form: any }).form;
+    // Synchronize with the Form table for lead-capture types
+    const leadTypes = ['form', 'menu', 'booking'];
+    const qrType = String(updated.type);
+    if (leadTypes.includes(qrType)) {
+      let title = 'Untitled Form';
+      let description = '';
+      let fields = [];
+
+      const qrData = (data || updated.data) as any;
+      if (qrType === 'form' && qrData?.form) {
+        title = qrData.form.title || title;
+        description = qrData.form.description || '';
+        fields = qrData.form.fields || [];
+      } else if (qrType === 'menu') {
+        const menuData = qrData?.menu || qrData;
+        title = menuData?.restaurantName || title;
+        description = menuData?.description || '';
+        fields = menuData?.customFields || [];
+      } else if (qrType === 'booking') {
+        const bookingData = qrData?.booking || qrData;
+        title = bookingData?.title || bookingData?.businessName || title;
+        description = bookingData?.description || '';
+        fields = bookingData?.customFormFields || [];
+      }
+
       await this.formsService.createOrUpdateForm(userId, {
         qrCodeId: updated.id,
-        title: formData.title || 'Untitled Form',
-        description: formData.description,
-        fields: formData.fields || [],
+        title,
+        description,
+        fields,
       });
     }
 
