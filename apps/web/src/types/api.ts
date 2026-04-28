@@ -236,3 +236,33 @@ export interface SystemConfig {
   createdAt: string;
   updatedAt: string;
 }
+
+export type MessageSender = 'USER' | 'ADMIN';
+export type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+
+export interface SupportMessage {
+  id: string;
+  ticketId: string;
+  sender: MessageSender;
+  text: string;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  userId: string | null;
+  guestName: string | null;
+  guestEmail: string | null;
+  subject: string;
+  status: TicketStatus;
+  user?: { firstName: string; lastName: string; email: string; createdAt: string; avatar?: string } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TicketWithMessages {
+  ticket: SupportTicket;
+  messages: SupportMessage[];
+  isOtherSideTyping: boolean;
+}
