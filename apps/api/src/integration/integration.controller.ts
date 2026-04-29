@@ -100,6 +100,13 @@ export class IntegrationController {
     return this.formsService.getSubmissions(id, userId);
   }
 
+  @Get('users/:userId/leads')
+  @ApiOperation({ summary: 'Get all leads (form submissions) for a user across all QR codes' })
+  @ApiResponse({ status: 200, description: 'All leads retrieved.' })
+  async getAllLeads(@Param('userId') userId: string) {
+    return this.formsService.getAllSubmissions(userId);
+  }
+
   @Get('plans')
   @ApiOperation({ summary: 'Get all active plans' })
   @ApiResponse({ status: 200, description: 'List of plans retrieved.' })
