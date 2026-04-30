@@ -91,7 +91,7 @@ const LogoPanel: React.FC<LogoPanelProps> = ({ config, updateConfig }) => {
 
         <div className="space-y-6">
           <p className="text-xs font-bold text-gray-500">Choose a Presets</p>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
             {popularLogos.map((logo) => (
               <button
                 key={logo.name}

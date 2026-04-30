@@ -21,6 +21,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ScheduleModule } from '@nestjs/schedule';
 import { LoggingInterceptor } from './common/logging.interceptor';
 import { NotificationsModule } from './notifications/notifications.module';
+import { SupportModule } from './support/support.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     PricingModule,
     IntegrationModule,
     NotificationsModule,
+    SupportModule,
   ],
   controllers: [AppController],
   providers: [

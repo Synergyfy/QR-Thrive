@@ -177,23 +177,24 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ codes: qrCodes }) => {
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
        {/* Stats Cards */}
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+          {/* intelligence captured, fresh interactions, etc */}
           {[
             { label: 'Intelligence Captured', value: stats.total, icon: Users, color: 'blue', trend: '+12%' },
             { label: 'Fresh Interactions', value: stats.today, icon: Zap, color: 'indigo', trend: 'ACTIVE' },
             { label: 'Smart Campaigns', value: stats.activeForms, icon: Target, color: 'amber', trend: 'LIVE' },
             { label: 'Conversion Power', value: `${stats.conversion}%`, icon: TrendingUp, color: 'emerald', trend: 'OPTIMIZED' },
           ].map((s, i) => (
-            <div key={i} className="bg-white p-10 rounded-[3rem] border border-slate-100/50 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_45px_90px_-20px_rgba(0,0,0,0.1)] transition-all group relative overflow-hidden">
+            <div key={i} className="bg-white p-4 sm:p-10 rounded-2xl sm:rounded-[3rem] border border-slate-100/50 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_45px_90px_-20px_rgba(0,0,0,0.1)] transition-all group relative overflow-hidden">
                <div className={`absolute top-0 right-0 w-32 h-32 bg-${s.color}-400/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000`} />
                <div className="relative z-10">
-                  <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 group-hover:-rotate-6 transition-all", `bg-${s.color}-50 text-${s.color}-600`)}>
-                     <s.icon className="w-7 h-7" />
+                  <div className={cn("w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-8 shadow-sm group-hover:scale-110 group-hover:-rotate-6 transition-all", `bg-${s.color}-50 text-${s.color}-600`)}>
+                     <s.icon className="w-5 h-5 sm:w-7 sm:h-7" />
                   </div>
-                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-2">{s.label}</p>
+                  <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] mb-1 sm:mb-2">{s.label}</p>
                   <div className="flex items-center justify-between group/val">
-                     <h3 className="text-4xl font-black text-slate-900 leading-none tracking-tighter">{s.value}</h3>
-                     <span className={cn("text-[9px] font-black px-3 py-1.5 rounded-full tracking-widest shadow-sm", 
+                     <h3 className="text-2xl sm:text-4xl font-black text-slate-900 leading-none tracking-tighter">{s.value}</h3>
+                     <span className={cn("hidden sm:flex text-[9px] font-black px-3 py-1.5 rounded-full tracking-widest shadow-sm", 
                        s.trend === 'LIVE' || s.trend === 'ACTIVE' ? "bg-amber-100 text-amber-600" : "bg-emerald-100 text-emerald-600")}>
                        {s.trend}
                      </span>
@@ -204,9 +205,9 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ codes: qrCodes }) => {
        </div>
 
        {/* Actions Bar */}
-       <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 w-full md:w-auto">
-             <div className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-slate-100 w-full md:w-80 shadow-sm focus-within:ring-2 ring-indigo-100 transition-all">
+       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+             <div className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-slate-100 w-full sm:w-80 shadow-sm focus-within:ring-2 ring-indigo-100 transition-all">
                 <Search className="w-4 h-4 text-slate-400" />
                 <input 
                   type="text" 
@@ -216,9 +217,9 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ codes: qrCodes }) => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
              </div>
-             <button 
+              <button 
                onClick={handleExportCSV}
-               className="p-3.5 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-indigo-600 transition-all shadow-sm flex items-center gap-2 font-bold text-xs"
+               className="w-full sm:w-auto px-5 py-3.5 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-indigo-600 transition-all shadow-sm flex items-center justify-center gap-2 font-bold text-xs shrink-0"
              >
                 <Database className="w-4 h-4" /> Export CSV
              </button>
@@ -290,7 +291,7 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ codes: qrCodes }) => {
        </div>
 
        {/* Leads Table Card */}
-       <div className="bg-white rounded-[40px] border border-slate-100 overflow-hidden shadow-sm relative min-h-[400px]">
+       <div className="bg-white rounded-3xl sm:rounded-[40px] border border-slate-100 shadow-sm relative min-h-[400px]">
           {loadingLeads ? (
             <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center gap-4">
                <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
@@ -305,22 +306,22 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ codes: qrCodes }) => {
                <p className="text-slate-400 text-xs font-medium">Activate a form or menu to start collecting data.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto sm:overflow-visible">
                <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50/50 border-b border-slate-100">
-                      <th className="px-8 py-6 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Interaction</th>
-                      <th className="px-8 py-6 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Data Points</th>
-                      <th className="px-8 py-6 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Source</th>
-                      <th className="px-8 py-6 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
+                      <th className="px-4 sm:px-8 py-4 sm:py-6 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Interaction</th>
+                      <th className="px-4 sm:px-8 py-4 sm:py-6 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] hidden sm:table-cell">Data Points</th>
+                      <th className="px-4 sm:px-8 py-4 sm:py-6 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] hidden lg:table-cell">Source</th>
+                      <th className="px-4 sm:px-8 py-4 sm:py-6 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {filteredLeads.map((lead) => (
+                     {filteredLeads.map((lead) => (
                       <tr key={lead.id} className="hover:bg-slate-50/80 transition-all group">
-                         <td className="px-8 py-6">
-                            <div className="flex items-center gap-4">
-                               <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center relative">
+                         <td className="px-4 sm:px-8 py-4 sm:py-6">
+                            <div className="flex items-center gap-3 sm:gap-4">
+                               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-100 flex items-center justify-center relative shrink-0">
                                   {Object.keys(lead.answers).some(k => k.toLowerCase().includes('mail')) ? (
                                     <Mail className="w-5 h-5 text-indigo-600" />
                                   ) : (
@@ -329,7 +330,18 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ codes: qrCodes }) => {
                                </div>
                                <div>
                                   <p className="text-sm font-bold text-slate-900">
-                                    {Object.values(lead.answers)[0] as string || 'New Submission'}
+                                    {(() => {
+                                      const answers = lead.answers as any;
+                                      const displayVal = answers.name || answers.fullName || answers.email || answers.title || Object.values(lead.answers)[0];
+                                      
+                                      if (typeof displayVal === 'object' && displayVal !== null) {
+                                        if (Array.isArray(displayVal)) {
+                                          return displayVal.length > 0 ? `${displayVal.length} items` : 'Empty Submission';
+                                        }
+                                        return (displayVal as any).name || (displayVal as any).title || (displayVal as any).label || 'Complex Submission';
+                                      }
+                                      return String(displayVal || 'New Submission');
+                                    })()}
                                   </p>
                                   <p className="text-[10px] font-medium text-slate-400">
                                     {formatDate(lead.createdAt)} • {formatTime(lead.createdAt)}
@@ -337,26 +349,30 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ codes: qrCodes }) => {
                                </div>
                             </div>
                          </td>
-                         <td className="px-8 py-6">
+                         <td className="px-4 sm:px-8 py-4 sm:py-6 hidden sm:table-cell">
                             <div className="flex flex-wrap gap-2">
                                {Object.entries(lead.answers).slice(0, 3).map(([key, val], idx) => (
                                  <div key={idx} className="px-2 py-1 bg-slate-100 rounded-md text-[9px] font-bold text-slate-600">
                                     <span className="opacity-50 mr-1">{formsMap[lead.qrCodeId]?.fields.find(f => f.id === key)?.label || key}:</span>
-                                    {Array.isArray(val) ? val.join(', ') : String(val)}
+                                    {Array.isArray(val) 
+                                      ? val.map(v => typeof v === 'object' ? (v.name || JSON.stringify(v)) : String(v)).join(', ') 
+                                      : typeof val === 'object' && val !== null 
+                                        ? JSON.stringify(val) 
+                                        : String(val)}
                                  </div>
                                ))}
                                {Object.keys(lead.answers).length > 3 && (
                                  <span className="text-[9px] font-bold text-indigo-500 mt-1">+{Object.keys(lead.answers).length - 3} more</span>
-                               )}
+                                )}
                             </div>
                          </td>
-                         <td className="px-8 py-6">
+                         <td className="px-4 sm:px-8 py-4 sm:py-6 hidden lg:table-cell">
                             <div className="flex items-center gap-2">
                                <div className={cn("w-1.5 h-1.5 rounded-full", lead.qrType === 'menu' ? "bg-amber-400" : "bg-blue-500")} />
                                <span className="text-[10px] font-black text-slate-900 uppercase tracking-tighter">{lead.qrCodeName}</span>
                             </div>
                          </td>
-                         <td className="px-8 py-6 text-right">
+                         <td className="px-4 sm:px-8 py-4 sm:py-6 text-right">
                             <div className="flex items-center justify-end gap-2 relative">
                                <button 
                                  onClick={() => setViewingLead(lead)}
@@ -461,7 +477,11 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ codes: qrCodes }) => {
                                     {field?.label || key}
                                  </p>
                                  <p className="text-sm font-bold text-slate-900 leading-relaxed whitespace-pre-wrap">
-                                    {Array.isArray(value) ? value.join(', ') : String(value)}
+                                    {Array.isArray(value) 
+                                      ? value.map(v => typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v)).join('\n')
+                                      : typeof value === 'object' && value !== null 
+                                        ? JSON.stringify(value, null, 2) 
+                                        : String(value)}
                                  </p>
                               </div>
                            );

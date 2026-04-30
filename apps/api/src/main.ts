@@ -106,20 +106,26 @@ export async function bootstrap() {
     },
   });
 
-  await app.init();
+  // For Vercel serverless: just init the app and return the express instance
+  if (process.env.VERCEL) {
+    await app.init();
+    return app.getHttpAdapter().getInstance();
+  }
+
+  // For local dev / VPS: use app.listen() so Socket.io can attach to the HTTP server
+  const port = process.env.PORT ?? 3005;
+  const logger = new Logger('Bootstrap');
+  await app.listen(port);
+  logger.log(`Application is running on: http://localhost:${port}`);
+  logger.log(`Swagger documentation is available at: http://localhost:${port}/api-docs`);
+  logger.log(`WebSocket (Socket.io) available at: http://localhost:${port}/support`);
   return app.getHttpAdapter().getInstance();
 }
 
 // Local development server logic
 if (!process.env.VERCEL) {
-  bootstrap().then((expressInstance) => {
-    const port = process.env.PORT ?? 3005;
-    const logger = new Logger('Bootstrap');
-
-    expressInstance.listen(port, () => {
-      const baseUrl = `http://localhost:${port}`;
-      logger.log(`Application is running on: ${baseUrl}`);
-      logger.log(`Swagger documentation is available at: ${baseUrl}/api-docs`);
-    });
+  bootstrap().catch((err) => {
+    console.error('Bootstrap failed:', err);
+    process.exit(1);
   });
 }
