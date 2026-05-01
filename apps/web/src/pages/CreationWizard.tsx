@@ -236,16 +236,23 @@ const CreationWizard: React.FC = () => {
         ...uploadedData,
       };
 
+      // Collect all public IDs for potential cleanup
       const publicIds: string[] = [];
-      const collectPublicIds = (data: any) => {
-        if (data?.publicId) {
-          publicIds.push(data.publicId);
-        }
+      const collect = (obj: any) => {
+        if (!obj || typeof obj !== 'object') return;
+        if (obj.publicId) publicIds.push(obj.publicId);
+        if (obj.avatarPublicId) publicIds.push(obj.avatarPublicId);
+        if (obj.bannerPublicId) publicIds.push(obj.bannerPublicId);
+        
+        Object.values(obj).forEach(val => {
+          if (Array.isArray(val)) {
+            val.forEach(item => collect(item));
+          } else if (typeof val === 'object') {
+            collect(val);
+          }
+        });
       };
-      collectPublicIds(dataToSave.image);
-      collectPublicIds(dataToSave.video);
-      collectPublicIds(dataToSave.pdf);
-      collectPublicIds(dataToSave.mp3);
+      collect(dataToSave);
       setUploadedPublicIds(publicIds);
 
       if (isEditing && editId) {
