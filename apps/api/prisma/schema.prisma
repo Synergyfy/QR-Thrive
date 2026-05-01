@@ -42,6 +42,7 @@ model User {
   qrCodes       QRCode[]
   magicLinks    MagicLink[]    // Added for SSO
   pushSubscriptions PushSubscription[]
+  supportTickets SupportTicket[] // Added for Support Chat
   scanNotificationsEnabled Boolean    @default(false)
   countryCode   String?        // ISO-2 country code for account locking
   deletedAt     DateTime?      // Added for Soft-Delete
@@ -127,6 +128,7 @@ model Plan {
   isActive      Boolean     @default(true)
   
   vemtapPlanId          String? // Attached Vemtap Plan ID for bundling
+  features      String[]    @default([])
   
   priceBooks    PriceBook[]
   users         User[]
@@ -372,4 +374,72 @@ model PushSubscription {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum MessageSender {
+  USER
+  ADMIN
+}
+
+model SupportTicket {
+  id          String        @id @default(uuid()) @db.Uuid
+  userId      String?       @db.Uuid
+  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Guest support (unauthenticated FloatingChat lead form)
+  guestName   String?
+  guestEmail  String?
+
+  subject     String        @default("Support Request")
+  status      TicketStatus  @default(OPEN)
+
+  messages       SupportMessage[]
+  typingIndicators TypingIndicator[]
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id        String        @id @default(uuid()) @db.Uuid
+  ticketId  String        @db.Uuid
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  sender    MessageSender
+  text      String
+
+  // Read receipt: set when the OTHER party first fetches this message
+  readAt    DateTime?
+
+  createdAt DateTime      @default(now())
+
+  @@index([ticketId])
+  @@index([createdAt])
+  @@map("support_messages")
+}
+
+// Ephemeral typing indicator — auto-invalidated by updatedAt TTL, no cron needed
+model TypingIndicator {
+  id        String        @id @default(uuid()) @db.Uuid
+  ticketId  String        @db.Uuid
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  sender    MessageSender // who is typing
+  updatedAt DateTime      @updatedAt // refresh this to "keep alive"
+
+  @@unique([ticketId, sender]) // one row per (ticket, side)
+  @@index([ticketId])
+  @@map("typing_indicators")
 }

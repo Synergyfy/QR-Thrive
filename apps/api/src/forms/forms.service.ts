@@ -132,22 +132,28 @@ export class FormsService {
     const { answers } = submitDto;
     const validatedAnswers: Record<string, any> = {};
 
-    // Validate each field
-    for (const field of form.fields) {
-      const value = answers[field.id];
+    // For standard forms, perform strict validation based on fields.
+    // For specialized types (menu, booking), allow arbitrary JSON answers to capture all lead data.
+    if (qrCode.type === 'form') {
+      for (const field of form.fields) {
+        const value = answers[field.id];
 
-      // Required check
-      if (
-        field.required &&
-        (value === undefined || value === null || value === '')
-      ) {
-        throw new BadRequestException(`Field "${field.label}" is required`);
-      }
+        // Required check
+        if (
+          field.required &&
+          (value === undefined || value === null || value === '')
+        ) {
+          throw new BadRequestException(`Field "${field.label}" is required`);
+        }
 
-      if (value !== undefined && value !== null && value !== '') {
-        this.validateValue(field, value);
-        validatedAnswers[field.id] = value;
+        if (value !== undefined && value !== null && value !== '') {
+          this.validateValue(field, value);
+          validatedAnswers[field.id] = value;
+        }
       }
+    } else {
+      // Specialized types: accept all provided answers as-is
+      Object.assign(validatedAnswers, answers);
     }
 
     // Save submission

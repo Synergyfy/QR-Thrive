@@ -408,3 +408,19 @@ export const paymentsApi = {
   cancelSubscription: async () =>
     (await apiClient.post<{ message: string }>("/payments/cancel")).data,
 };
+
+export const supportApi = {
+  createTicket: async (data: { guestName?: string; guestEmail?: string; subject?: string }) => 
+    (await apiClient.post<SupportTicket>('/support/tickets', data)).data,
+  getMyTicket: async () => (await apiClient.get<TicketWithMessages>('/support/tickets/mine')).data,
+  sendMessage: async (ticketId: string, text: string) => 
+    (await apiClient.post(`/support/tickets/${ticketId}/messages`, { text })).data,
+  sendTypingSignal: async (ticketId: string) => 
+    (await apiClient.post(`/support/tickets/${ticketId}/typing`)).data,
+  getTickets: async (params?: { page?: number; limit?: number; search?: string; status?: string }) => 
+    (await apiClient.get<{ data: (SupportTicket & { unreadCount: number, lastMessage?: any })[], meta: any }>('/support/tickets', { params })).data,
+  getTicketMessages: async (ticketId: string) => 
+    (await apiClient.get<TicketWithMessages>(`/support/tickets/${ticketId}/messages`)).data,
+  updateTicketStatus: async (ticketId: string, status: TicketStatus) => 
+    (await apiClient.patch(`/support/tickets/${ticketId}/status`, { status })).data,
+};

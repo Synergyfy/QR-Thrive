@@ -262,6 +262,7 @@ export class PricingService {
       isFree: plan.isFree,
       trialDays: plan.trialDays,
       vemtapPlanId: plan.vemtapPlanId,
+      features: plan.features,
       pricing: { monthly, quarterly, yearly },
       isActive: plan.isActive,
       deletedAt: plan.deletedAt,
