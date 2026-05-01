@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useEffect, useRef, useState } from "react";
+// @ts-ignore - Module might not be found in current environment but is in package.json
+import { io, Socket } from "socket.io-client";
 
 // SOCKET_URL must be the bare host — NOT the /api/v1 REST prefix.
 // e.g. VITE_SOCKET_URL=http://localhost:3005
 // The namespace '/support' is appended by socket.io-client automatically.
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3005';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:3005";
 
 // Singleton — one socket for the whole app lifetime.
 let globalSocket: Socket | null = null;
@@ -14,10 +15,10 @@ function getOrCreateSocket(): Socket {
     return globalSocket;
   }
 
-  console.log('[Socket] Creating new connection to', `${SOCKET_URL}/support`);
+  console.log("[Socket] Creating new connection to", `${SOCKET_URL}/support`);
   globalSocket = io(`${SOCKET_URL}/support`, {
     withCredentials: true,
-    transports: ['websocket', 'polling'],
+    transports: ["websocket", "polling"],
     autoConnect: true,
     reconnection: true,
     reconnectionAttempts: Infinity,
@@ -30,7 +31,9 @@ function getOrCreateSocket(): Socket {
 
 export const useSocket = () => {
   const socketRef = useRef<Socket>(getOrCreateSocket());
-  const [isConnected, setIsConnected] = useState(() => socketRef.current.connected);
+  const [isConnected, setIsConnected] = useState(
+    () => socketRef.current.connected,
+  );
 
   useEffect(() => {
     const socket = socketRef.current;
@@ -41,30 +44,30 @@ export const useSocket = () => {
     }
 
     const onConnect = () => {
-      console.log('[Socket] Connected ✓', socket.id);
+      console.log("[Socket] Connected ✓", socket.id);
       setIsConnected(true);
     };
 
     const onDisconnect = (reason: string) => {
-      console.warn('[Socket] Disconnected:', reason);
+      console.warn("[Socket] Disconnected:", reason);
       setIsConnected(false);
     };
 
     const onConnectError = (err: Error) => {
-      console.error('[Socket] Connection error:', err.message);
+      console.error("[Socket] Connection error:", err.message);
     };
 
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-    socket.on('connect_error', onConnectError);
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+    socket.on("connect_error", onConnectError);
 
     // If already connected when the hook mounts, set state immediately
     if (socket.connected) setIsConnected(true);
 
     return () => {
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      socket.off('connect_error', onConnectError);
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+      socket.off("connect_error", onConnectError);
     };
   }, []);
 

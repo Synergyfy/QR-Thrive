@@ -1,36 +1,44 @@
-import type { DotType, CornerDotType, CornerSquareType, ErrorCorrectionLevel, Mode, TypeNumber, GradientType } from "qr-code-styling";
+import type {
+  DotType,
+  CornerDotType,
+  CornerSquareType,
+  ErrorCorrectionLevel,
+  Mode,
+  TypeNumber,
+  GradientType,
+} from "qr-code-styling";
 import type { FormField } from "./form";
 
-export type QRType = 
-  | 'url' 
-  | 'text' 
-  | 'vcard' 
-  | 'wifi' 
-  | 'email' 
-  | 'sms' 
-  | 'whatsapp' 
-  | 'phone' 
-  | 'instagram' 
-  | 'facebook' 
-  | 'linkedin' 
-  | 'twitter' 
-  | 'youtube' 
-  | 'tiktok' 
-  | 'crypto' 
-  | 'socials'
-  | 'links'
-  | 'image'
-  | 'event'
-  | 'pdf'
-  | 'video'
-  | 'mp3'
-  | 'app'
-  | 'form'
-  | 'business'
-  | 'menu'
-  | 'coupon'
-  | 'booking';
-  
+export type QRType =
+  | "url"
+  | "text"
+  | "vcard"
+  | "wifi"
+  | "email"
+  | "sms"
+  | "whatsapp"
+  | "phone"
+  | "instagram"
+  | "facebook"
+  | "linkedin"
+  | "twitter"
+  | "youtube"
+  | "tiktok"
+  | "crypto"
+  | "socials"
+  | "links"
+  | "image"
+  | "event"
+  | "pdf"
+  | "video"
+  | "mp3"
+  | "app"
+  | "form"
+  | "business"
+  | "menu"
+  | "coupon"
+  | "booking";
+
 export interface FileData {
   id?: string;
   url: string;
@@ -49,7 +57,11 @@ export interface MenuData {
   restaurantName?: string;
   description?: string;
   logo?: string;
+  logoPublicId?: string;
+  logoPendingFile?: PendingFile;
   banner?: string;
+  bannerPublicId?: string;
+  bannerPendingFile?: PendingFile;
   currency?: string;
   categories?: {
     id: string;
@@ -60,6 +72,8 @@ export interface MenuData {
       description?: string;
       price: number;
       image?: string;
+      imagePublicId?: string;
+      imagePendingFile?: PendingFile;
       flags?: string[];
     }[];
   }[];
@@ -97,11 +111,11 @@ export interface QRData {
     description?: string;
     buttonText?: string;
     buttonUrl?: string;
-    destinationMode?: 'url' | 'qr_link';
+    destinationMode?: "url" | "qr_link";
     qrLinkId?: string;
     themeColor?: string;
   };
-  pdf?: FileData & { 
+  pdf?: FileData & {
     pendingFile?: PendingFile;
     companyName?: string;
     title?: string;
@@ -113,7 +127,7 @@ export interface QRData {
     buttonTextColor?: string;
     buttonText?: string;
     buttonUrl?: string;
-    destinationMode?: 'url' | 'qr_link';
+    destinationMode?: "url" | "qr_link";
     qrLinkId?: string;
   };
   video?: {
@@ -122,7 +136,7 @@ export interface QRData {
     name?: string;
     size?: number;
     publicId?: string;
-    platform?: 'youtube' | 'vimeo' | 'other';
+    platform?: "youtube" | "vimeo" | "other";
     pendingFile?: PendingFile;
     companyName?: string;
     title?: string;
@@ -134,10 +148,10 @@ export interface QRData {
     buttonTextColor?: string;
     buttonText?: string;
     buttonUrl?: string;
-    destinationMode?: 'url' | 'qr_link';
+    destinationMode?: "url" | "qr_link";
     qrLinkId?: string;
   };
-  mp3?: FileData & { 
+  mp3?: FileData & {
     pendingFile?: PendingFile;
     companyName?: string;
     title?: string;
@@ -145,7 +159,7 @@ export interface QRData {
     artist?: string;
     buttonText?: string;
     buttonUrl?: string;
-    destinationMode?: 'url' | 'qr_link';
+    destinationMode?: "url" | "qr_link";
     qrLinkId?: string;
     themeColor?: string;
     textColor?: string;
@@ -164,6 +178,8 @@ export interface QRData {
     title?: string;
     description?: string;
     icon?: string;
+    iconPublicId?: string;
+    iconPendingFile?: PendingFile;
     themeColor?: string;
   };
   vcard?: {
@@ -199,7 +215,7 @@ export interface QRData {
   wifi?: {
     ssid: string;
     password: string;
-    encryption: 'WPA' | 'WEP' | 'nopass';
+    encryption: "WPA" | "WEP" | "nopass";
   };
   email?: {
     address: string;
@@ -221,7 +237,13 @@ export interface QRData {
   };
   social?: {
     username: string;
-    platform: 'instagram' | 'facebook' | 'linkedin' | 'twitter' | 'youtube' | 'tiktok';
+    platform:
+      | "instagram"
+      | "facebook"
+      | "linkedin"
+      | "twitter"
+      | "youtube"
+      | "tiktok";
   };
   socials?: {
     name?: string;
@@ -236,7 +258,7 @@ export interface QRData {
   };
   crypto?: {
     address: string;
-    coin: 'bitcoin' | 'ethereum' | 'litecoin';
+    coin: "bitcoin" | "ethereum" | "litecoin";
     amount?: string;
   };
   event?: {
@@ -256,7 +278,11 @@ export interface QRData {
     linkBgColor?: string;
     linkTextColor?: string;
     avatar?: string;
+    avatarPublicId?: string;
+    avatarPendingFile?: PendingFile;
     banner?: string;
+    bannerPublicId?: string;
+    bannerPendingFile?: PendingFile;
     title?: string;
     description?: string;
     phone?: string;
@@ -277,7 +303,11 @@ export interface QRData {
     buttonUrl?: string;
     about?: string;
     logo?: string;
+    logoPublicId?: string;
+    logoPendingFile?: PendingFile;
     banner?: string;
+    bannerPublicId?: string;
+    bannerPendingFile?: PendingFile;
     contact?: {
       email?: string;
       phone?: string;
@@ -312,6 +342,8 @@ export interface QRData {
     validUntil?: string;
     terms?: string;
     banner?: string;
+    bannerPublicId?: string;
+    bannerPendingFile?: PendingFile;
     companyName?: string;
     website?: string;
   };
@@ -322,12 +354,16 @@ export interface QRData {
     location?: string;
     bookingUrl?: string;
     imageUrl?: string;
+    coverPublicId?: string;
+    coverPendingFile?: PendingFile;
     profileImageUrl?: string;
+    profilePublicId?: string;
+    profilePendingFile?: PendingFile;
     themeColor?: string;
     buttonText?: string;
     price?: string;
     duration?: string;
-    destinationMode?: 'url' | 'calendar' | 'qr_link';
+    destinationMode?: "url" | "calendar" | "qr_link";
     qrLinkId?: string;
     customFormEnabled?: boolean;
     customFormFields?: FormField[];
@@ -379,7 +415,19 @@ export interface QRDesignOptions {
 }
 
 export interface QRFrameOptions {
-  type: 'none' | 'simple' | 'text-below' | 'bubble' | 'ribbon' | 'bracket' | 'rounded-thick' | 'shadow' | 'phone' | 'circular' | 'tag' | 'minimal';
+  type:
+    | "none"
+    | "simple"
+    | "text-below"
+    | "bubble"
+    | "ribbon"
+    | "bracket"
+    | "rounded-thick"
+    | "shadow"
+    | "phone"
+    | "circular"
+    | "tag"
+    | "minimal";
   text?: string;
   color?: string;
   textColor?: string;
