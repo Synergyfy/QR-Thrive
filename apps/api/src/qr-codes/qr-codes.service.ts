@@ -589,6 +589,7 @@ export class QRCodesService {
       .slice(0, 10);
 
     return {
+      totalQrCodes: qrCodes.length,
       totalScans,
       uniqueVisitors,
       scansByDate: Object.entries(scansByDate)

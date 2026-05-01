@@ -126,7 +126,7 @@ export class IntegrationController {
 
   @Get('users/:userId/stats')
   @ApiOperation({ summary: 'Get aggregated stats for all QR codes of a user' })
-  @ApiResponse({ status: 200, description: 'Aggregated statistics retrieved.' })
+  @ApiResponse({ status: 200, description: 'Aggregated statistics and total QR code count retrieved.' })
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
   async getStats(
