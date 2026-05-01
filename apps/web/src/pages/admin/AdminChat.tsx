@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Search,
   MoreVertical,
@@ -7,15 +7,15 @@ import {
   CheckCheck,
   Check,
   Paperclip,
-} from 'lucide-react';
-import { useSupport } from '../../hooks/useSupport';
-import { format } from 'date-fns';
-import type { TicketStatus } from '../../types/api';
+} from "lucide-react";
+import { useSupport } from "../../hooks/useSupport";
+import { format } from "date-fns";
+import type { TicketStatus, SupportMessage } from "../../types/api";
 
 const AdminChat: React.FC = () => {
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
-  const [message, setMessage] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [message, setMessage] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [isOtherSideTyping, setIsOtherSideTyping] = useState(false);
 
   const {
@@ -29,7 +29,8 @@ const AdminChat: React.FC = () => {
   const { data: ticketsData } = useAdminTickets({ status: statusFilter });
   const tickets = ticketsData?.data || [];
 
-  const { data: currentChatData, refetch: refetchMessages } = useAdminTicketMessages(selectedChat);
+  const { data: currentChatData, refetch: refetchMessages } =
+    useAdminTicketMessages(selectedChat);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const lastTypingEmit = useRef<number>(0);
@@ -38,7 +39,7 @@ const AdminChat: React.FC = () => {
 
   // ── Scroll to bottom ─────────────────────────────────────────────────────────
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [currentChatData?.messages, isOtherSideTyping]);
 
   // ── Reset typing when switching tickets ───────────────────────────────────────
@@ -52,50 +53,60 @@ const AdminChat: React.FC = () => {
   useEffect(() => {
     if (!socket || !selectedChat) return;
 
-    const handleTyping = (data: { ticketId: string; sender: string; isTyping: boolean }) => {
-      if (data.sender !== 'USER' || data.ticketId !== selectedChat) return;
+    const handleTyping = (data: {
+      ticketId: string;
+      sender: string;
+      isTyping: boolean;
+    }) => {
+      if (data.sender !== "USER" || data.ticketId !== selectedChat) return;
       setIsOtherSideTyping(data.isTyping);
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       if (data.isTyping) {
-        typingTimeoutRef.current = setTimeout(() => setIsOtherSideTyping(false), 4000);
+        typingTimeoutRef.current = setTimeout(
+          () => setIsOtherSideTyping(false),
+          4000,
+        );
       }
     };
 
-    socket.on('typing', handleTyping);
+    socket.on("typing", handleTyping);
     return () => {
-      socket.off('typing', handleTyping);
+      socket.off("typing", handleTyping);
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
   }, [socket, selectedChat]);
 
   // ── Emit typing signal ────────────────────────────────────────────────────────
-  const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setMessage(val);
+  const handleMessageChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value;
+      setMessage(val);
 
-    if (!socket || !selectedChat) return;
+      if (!socket || !selectedChat) return;
 
-    const now = Date.now();
-    if (val && now - lastTypingEmit.current > 2000) {
-      socket.emit('typing', { ticketId: selectedChat, isTyping: true });
-      lastTypingEmit.current = now;
-      isTypingRef.current = true;
-    } else if (!val && isTypingRef.current) {
-      socket.emit('typing', { ticketId: selectedChat, isTyping: false });
-      isTypingRef.current = false;
-    }
-  }, [socket, selectedChat]);
+      const now = Date.now();
+      if (val && now - lastTypingEmit.current > 2000) {
+        socket.emit("typing", { ticketId: selectedChat, isTyping: true });
+        lastTypingEmit.current = now;
+        isTypingRef.current = true;
+      } else if (!val && isTypingRef.current) {
+        socket.emit("typing", { ticketId: selectedChat, isTyping: false });
+        isTypingRef.current = false;
+      }
+    },
+    [socket, selectedChat],
+  );
 
   // ── Send ──────────────────────────────────────────────────────────────────────
   const handleSend = async () => {
     if (!message.trim() || !selectedChat) return;
 
     const currentText = message;
-    setMessage('');
+    setMessage("");
 
     // Stop typing indicator
     if (socket && isTypingRef.current) {
-      socket.emit('typing', { ticketId: selectedChat, isTyping: false });
+      socket.emit("typing", { ticketId: selectedChat, isTyping: false });
       isTypingRef.current = false;
     }
 
@@ -103,22 +114,28 @@ const AdminChat: React.FC = () => {
       await sendMessageAsync({ ticketId: selectedChat, text: currentText });
       refetchMessages();
     } catch (err) {
-      console.error('Failed to send message', err);
+      console.error("Failed to send message", err);
     }
   };
 
   const getInitials = (ticket: any) => {
     if (ticket.user) {
-      return `${ticket.user.firstName?.[0] || ''}${ticket.user.lastName?.[0] || ''}`.toUpperCase() || 'U';
+      return (
+        `${ticket.user.firstName?.[0] || ""}${ticket.user.lastName?.[0] || ""}`.toUpperCase() ||
+        "U"
+      );
     }
-    return ticket.guestName ? ticket.guestName[0].toUpperCase() : 'G';
+    return ticket.guestName ? ticket.guestName[0].toUpperCase() : "G";
   };
 
   const getName = (ticket: any) => {
     if (ticket.user) {
-      return `${ticket.user.firstName || ''} ${ticket.user.lastName || ''}`.trim() || ticket.user.email;
+      return (
+        `${ticket.user.firstName || ""} ${ticket.user.lastName || ""}`.trim() ||
+        ticket.user.email
+      );
     }
-    return ticket.guestName || 'Guest User';
+    return ticket.guestName || "Guest User";
   };
 
   const currentTicket = currentChatData?.ticket;
@@ -143,7 +160,10 @@ const AdminChat: React.FC = () => {
             </select>
           </div>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              size={18}
+            />
             <input
               type="text"
               placeholder="Search conversations..."
@@ -154,7 +174,9 @@ const AdminChat: React.FC = () => {
 
         <div className="flex-1 overflow-y-auto">
           {tickets.length === 0 ? (
-            <div className="p-6 text-center text-gray-400 text-sm">No conversations found.</div>
+            <div className="p-6 text-center text-gray-400 text-sm">
+              No conversations found.
+            </div>
           ) : (
             tickets.map((ticket: any) => (
               <button
@@ -162,37 +184,45 @@ const AdminChat: React.FC = () => {
                 onClick={() => setSelectedChat(ticket.id)}
                 className={`w-full p-4 flex items-center gap-4 transition-all hover:bg-gray-50 ${
                   selectedChat === ticket.id
-                    ? 'bg-blue-50/50 border-l-4 border-blue-600'
-                    : 'border-l-4 border-transparent'
+                    ? "bg-blue-50/50 border-l-4 border-blue-600"
+                    : "border-l-4 border-transparent"
                 }`}
               >
                 <div className="relative">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 rounded-2xl flex items-center justify-center font-bold text-sm">
                     {ticket.user?.avatar ? (
-                      <img src={ticket.user.avatar} alt="avatar" className="w-full h-full rounded-2xl object-cover" />
+                      <img
+                        src={ticket.user.avatar}
+                        alt="avatar"
+                        className="w-full h-full rounded-2xl object-cover"
+                      />
                     ) : (
                       getInitials(ticket)
                     )}
                   </div>
                   <div
                     className={`absolute -bottom-1 -right-1 w-4 h-4 border-4 border-white rounded-full ${
-                      ticket.status === 'OPEN'
-                        ? 'bg-red-500'
-                        : ticket.status === 'IN_PROGRESS'
-                        ? 'bg-yellow-500'
-                        : 'bg-gray-300'
+                      ticket.status === "OPEN"
+                        ? "bg-red-500"
+                        : ticket.status === "IN_PROGRESS"
+                          ? "bg-yellow-500"
+                          : "bg-gray-300"
                     }`}
                   />
                 </div>
                 <div className="flex-1 text-left min-w-0">
                   <div className="flex justify-between items-center mb-1">
-                    <h3 className="font-bold text-gray-900 truncate">{getName(ticket)}</h3>
+                    <h3 className="font-bold text-gray-900 truncate">
+                      {getName(ticket)}
+                    </h3>
                     <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                      {format(new Date(ticket.updatedAt), 'MMM d')}
+                      {format(new Date(ticket.updatedAt), "MMM d")}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 truncate">
-                    {ticket.lastMessage?.text || ticket.subject || 'No messages'}
+                    {ticket.lastMessage?.text ||
+                      ticket.subject ||
+                      "No messages"}
                   </p>
                 </div>
                 {ticket.unreadCount > 0 && (
@@ -214,27 +244,36 @@ const AdminChat: React.FC = () => {
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center font-bold">
                 {currentTicket.user?.avatar ? (
-                  <img src={currentTicket.user.avatar} alt="avatar" className="w-full h-full rounded-xl object-cover" />
+                  <img
+                    src={currentTicket.user.avatar}
+                    alt="avatar"
+                    className="w-full h-full rounded-xl object-cover"
+                  />
                 ) : (
                   getInitials(currentTicket)
                 )}
               </div>
               <div>
-                <h2 className="font-bold text-gray-900">{getName(currentTicket)}</h2>
+                <h2 className="font-bold text-gray-900">
+                  {getName(currentTicket)}
+                </h2>
                 <div className="flex items-center gap-2">
                   <select
                     value={currentTicket.status}
                     onChange={(e) =>
-                      updateTicketStatus({ ticketId: currentTicket.id, status: e.target.value as TicketStatus })
+                      updateTicketStatus({
+                        ticketId: currentTicket.id,
+                        status: e.target.value as TicketStatus,
+                      })
                     }
                     className={`text-xs font-medium border-none bg-transparent p-0 outline-none cursor-pointer ${
-                      currentTicket.status === 'OPEN'
-                        ? 'text-red-500'
-                        : currentTicket.status === 'IN_PROGRESS'
-                        ? 'text-yellow-500'
-                        : currentTicket.status === 'RESOLVED'
-                        ? 'text-green-500'
-                        : 'text-gray-500'
+                      currentTicket.status === "OPEN"
+                        ? "text-red-500"
+                        : currentTicket.status === "IN_PROGRESS"
+                          ? "text-yellow-500"
+                          : currentTicket.status === "RESOLVED"
+                            ? "text-green-500"
+                            : "text-gray-500"
                     }`}
                   >
                     <option value="OPEN">Open</option>
@@ -256,39 +295,49 @@ const AdminChat: React.FC = () => {
           <div className="flex-1 overflow-y-auto p-8 space-y-6">
             <div className="flex justify-center">
               <span className="bg-white border border-gray-100 px-4 py-1 rounded-full text-[10px] text-gray-400 font-medium">
-                {format(new Date(currentTicket.createdAt), 'MMMM d, yyyy')}
+                {format(new Date(currentTicket.createdAt), "MMMM d, yyyy")}
               </span>
             </div>
 
-            {currentChatData?.messages?.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.sender === 'ADMIN' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`flex gap-3 max-w-[70%] ${msg.sender === 'ADMIN' ? 'flex-row-reverse' : 'flex-row'}`}>
+            {currentChatData?.messages?.map((msg: SupportMessage) => (
+              <div
+                key={msg.id}
+                className={`flex ${msg.sender === "ADMIN" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`flex gap-3 max-w-[70%] ${msg.sender === "ADMIN" ? "flex-row-reverse" : "flex-row"}`}
+                >
                   <div
                     className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-[10px] font-bold ${
-                      msg.sender === 'ADMIN' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
+                      msg.sender === "ADMIN"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-600"
                     }`}
                   >
-                    {msg.sender === 'ADMIN' ? 'AD' : getInitials(currentTicket)}
+                    {msg.sender === "ADMIN" ? "AD" : getInitials(currentTicket)}
                   </div>
                   <div>
                     <div
                       className={`p-4 rounded-2xl shadow-sm ${
-                        msg.sender === 'ADMIN'
-                          ? 'bg-blue-600 text-white rounded-tr-none'
-                          : 'bg-white border border-gray-100 text-gray-800 rounded-tl-none'
+                        msg.sender === "ADMIN"
+                          ? "bg-blue-600 text-white rounded-tr-none"
+                          : "bg-white border border-gray-100 text-gray-800 rounded-tl-none"
                       }`}
                     >
                       <p className="text-sm leading-relaxed">{msg.text}</p>
                     </div>
-                    <div className={`flex items-center gap-2 mt-2 ${msg.sender === 'ADMIN' ? 'justify-end' : 'justify-start'}`}>
+                    <div
+                      className={`flex items-center gap-2 mt-2 ${msg.sender === "ADMIN" ? "justify-end" : "justify-start"}`}
+                    >
                       <span className="text-[10px] text-gray-400 font-medium">
-                        {format(new Date(msg.createdAt), 'hh:mm a')}
+                        {format(new Date(msg.createdAt), "hh:mm a")}
                       </span>
-                      {msg.sender === 'ADMIN' && (
-                        msg.readAt
-                          ? <CheckCheck size={14} className="text-blue-500" />
-                          : <Check size={14} className="text-gray-400" />
-                      )}
+                      {msg.sender === "ADMIN" &&
+                        (msg.readAt ? (
+                          <CheckCheck size={14} className="text-blue-500" />
+                        ) : (
+                          <Check size={14} className="text-gray-400" />
+                        ))}
                     </div>
                   </div>
                 </div>
@@ -303,8 +352,14 @@ const AdminChat: React.FC = () => {
                   </div>
                   <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-none shadow-sm p-4 text-xs flex items-center gap-1 h-10">
                     <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" />
-                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                    <span
+                      className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    />
+                    <span
+                      className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.4s" }}
+                    />
                   </div>
                 </div>
               </div>
@@ -316,11 +371,17 @@ const AdminChat: React.FC = () => {
           {/* Input */}
           <div className="p-6 bg-white border-t border-gray-100 shrink-0">
             <form
-              onSubmit={(e) => { e.preventDefault(); handleSend(); }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSend();
+              }}
               className="flex items-center gap-4 bg-gray-50 p-2 pl-4 rounded-2xl border border-gray-100 focus-within:border-blue-500/30 focus-within:ring-4 focus-within:ring-blue-500/5 transition-all"
             >
               <div className="flex items-center gap-1">
-                <button type="button" className="p-2 hover:bg-white rounded-xl transition-all text-gray-400 hover:text-blue-600">
+                <button
+                  type="button"
+                  className="p-2 hover:bg-white rounded-xl transition-all text-gray-400 hover:text-blue-600"
+                >
                   <Paperclip size={20} />
                 </button>
               </div>
@@ -330,11 +391,11 @@ const AdminChat: React.FC = () => {
                 onChange={handleMessageChange}
                 placeholder="Type your response..."
                 className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2 outline-none"
-                disabled={currentTicket.status === 'CLOSED'}
+                disabled={currentTicket.status === "CLOSED"}
               />
               <button
                 type="submit"
-                disabled={!message.trim() || currentTicket.status === 'CLOSED'}
+                disabled={!message.trim() || currentTicket.status === "CLOSED"}
                 className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Send <Send size={16} />
@@ -347,9 +408,12 @@ const AdminChat: React.FC = () => {
           <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600 mb-6">
             <User size={40} />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Select a conversation</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            Select a conversation
+          </h2>
           <p className="text-gray-500 max-w-xs">
-            Choose a customer from the left to view their profile and start chatting with them.
+            Choose a customer from the left to view their profile and start
+            chatting with them.
           </p>
         </div>
       )}
@@ -360,12 +424,18 @@ const AdminChat: React.FC = () => {
           <div className="text-center mb-8">
             <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 rounded-3xl flex items-center justify-center font-bold text-2xl mx-auto mb-4 overflow-hidden">
               {currentTicket.user?.avatar ? (
-                <img src={currentTicket.user.avatar} alt="avatar" className="w-full h-full object-cover" />
+                <img
+                  src={currentTicket.user.avatar}
+                  alt="avatar"
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 getInitials(currentTicket)
               )}
             </div>
-            <h2 className="text-lg font-bold text-gray-900">{getName(currentTicket)}</h2>
+            <h2 className="text-lg font-bold text-gray-900">
+              {getName(currentTicket)}
+            </h2>
             {currentTicket.user ? (
               <p className="text-xs text-gray-500 mt-1">Authenticated User</p>
             ) : (
@@ -375,33 +445,47 @@ const AdminChat: React.FC = () => {
 
           <div className="space-y-6">
             <div>
-              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Customer Details</h3>
+              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+                Customer Details
+              </h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-500">Email</span>
                   <span className="font-medium text-gray-900 truncate ml-2">
-                    {currentTicket.user?.email || currentTicket.guestEmail || 'N/A'}
+                    {currentTicket.user?.email ||
+                      currentTicket.guestEmail ||
+                      "N/A"}
                   </span>
                 </div>
                 {currentTicket.user && (
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-500">Joined</span>
                     <span className="font-medium text-gray-900">
-                      {format(new Date(currentTicket.user.createdAt), 'MMM yyyy')}
+                      {format(
+                        new Date(currentTicket.user.createdAt),
+                        "MMM yyyy",
+                      )}
                     </span>
                   </div>
                 )}
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-500">Subject</span>
-                  <span className="font-medium text-gray-900 truncate ml-2">{currentTicket.subject}</span>
+                  <span className="font-medium text-gray-900 truncate ml-2">
+                    {currentTicket.subject}
+                  </span>
                 </div>
               </div>
             </div>
 
             <div className="pt-6 border-t border-gray-100">
               <button
-                onClick={() => updateTicketStatus({ ticketId: currentTicket.id, status: 'CLOSED' })}
-                disabled={currentTicket.status === 'CLOSED'}
+                onClick={() =>
+                  updateTicketStatus({
+                    ticketId: currentTicket.id,
+                    status: "CLOSED",
+                  })
+                }
+                disabled={currentTicket.status === "CLOSED"}
                 className="w-full py-3 border border-red-100 text-red-600 rounded-xl text-xs font-bold hover:bg-red-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Close Ticket
