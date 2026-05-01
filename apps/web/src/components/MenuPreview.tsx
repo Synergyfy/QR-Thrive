@@ -13,11 +13,9 @@ import type { MenuData } from "../types/qr";
 interface MenuPreviewProps {
   data?: MenuData;
   onButtonClick?: (targetQrId: string) => void;
-  onSubmit?: (answers: Record<string, any>) => Promise<void>;
-  isReadOnly?: boolean;
 }
 
-const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick, onSubmit, isReadOnly }) => {
+const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
   const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [cart, setCart] = useState<
