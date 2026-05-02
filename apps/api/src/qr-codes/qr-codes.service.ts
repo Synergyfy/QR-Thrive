@@ -448,12 +448,14 @@ export class QRCodesService {
       );
     }
 
-    // If it's a form type and we have relational form data, sync it back into the 'data' field
+    // If it's a lead-capture type and we have relational form data, sync it back into the 'data' field
     // so the frontend receives the correct database IDs (CUIDs)
-    if (qrCode.type === 'form' && qrCode.form) {
+    const leadTypes = ['form', 'menu', 'booking'];
+    const qrType = String(qrCode.type);
+    if (leadTypes.includes(qrType) && qrCode.form) {
       const data = qrCode.data as Record<string, any>;
-      if (data && data.form) {
-        data.form.fields = qrCode.form.fields.map((f) => ({
+      if (data) {
+        const fields = qrCode.form.fields.map((f) => ({
           id: f.id,
           type: f.type,
           label: f.label,
@@ -463,6 +465,14 @@ export class QRCodesService {
           options: f.options,
           validation: f.validation,
         }));
+
+        if (qrType === 'form' && data.form) {
+          data.form.fields = fields;
+        } else if (qrType === 'menu' && data.menu) {
+          data.menu.customFields = fields;
+        } else if (qrType === 'booking' && data.booking) {
+          data.booking.customFormFields = fields;
+        }
       }
     }
 
