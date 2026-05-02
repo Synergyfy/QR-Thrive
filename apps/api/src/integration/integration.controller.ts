@@ -13,6 +13,7 @@ import { ApiKeyGuard } from '../auth/guards/api-key.guard';
 import { IntegrationService } from './integration.service';
 import { IntegrationUserDto } from './dto/integration.dto';
 import { StatsQueryDto } from './dto/stats-query.dto';
+import { LeadsQueryDto } from './dto/leads-query.dto';
 import { QRCodesService } from '../qr-codes/qr-codes.service';
 import { FormsService } from '../forms/forms.service';
 import { CreateQRCodeDto } from '../qr-codes/dto/create-qr-code.dto';
@@ -105,6 +106,16 @@ export class IntegrationController {
   @ApiResponse({ status: 200, description: 'All leads retrieved.' })
   async getAllLeads(@Param('userId') userId: string) {
     return this.formsService.getAllSubmissions(userId);
+  }
+
+  @Get('users/:userId/specialized-leads')
+  @ApiOperation({ summary: 'Get specialized leads (booking, menu) for a user with pagination and search' })
+  @ApiResponse({ status: 200, description: 'Leads retrieved successfully.' })
+  async getSpecializedLeads(
+    @Param('userId') userId: string,
+    @Query() query: LeadsQueryDto,
+  ) {
+    return this.formsService.getLeadsForIntegration(userId, query);
   }
 
   @Get('plans')
