@@ -37,4 +37,11 @@ export class LeadsQueryDto {
   @IsArray()
   @IsEnum(['booking', 'menu', 'form'], { each: true })
   types?: string[] = ['booking', 'menu'];
+
+  @ApiPropertyOptional({
+    description: 'Filter by specific QR Code ID (UUID or shortId)',
+  })
+  @IsOptional()
+  @IsString()
+  qrCodeId?: string;
 }

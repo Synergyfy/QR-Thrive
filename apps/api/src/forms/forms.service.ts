@@ -293,7 +293,7 @@ export class FormsService {
    * with pagination, search, and filtering. Designed for external integration.
    */
   async getLeadsForIntegration(userId: string, query: LeadsQueryDto) {
-    const { page, limit, search, types } = query;
+    const { page = 1, limit = 10, search, types, qrCodeId } = query;
     const skip = (page - 1) * limit;
 
     const where: any = {
@@ -303,6 +303,11 @@ export class FormsService {
         },
       },
     };
+
+    // Filter by specific QR Code (ID or shortId)
+    if (qrCodeId) {
+      where.form.qrCode.OR = [{ id: qrCodeId }, { shortId: qrCodeId }];
+    }
 
     // Filter by types (default is both booking and menu)
     if (types && types.length > 0) {
