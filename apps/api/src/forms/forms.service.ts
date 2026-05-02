@@ -306,7 +306,15 @@ export class FormsService {
 
     // Filter by specific QR Code (ID or shortId)
     if (qrCodeId) {
-      where.form.qrCode.OR = [{ id: qrCodeId }, { shortId: qrCodeId }];
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          qrCodeId,
+        );
+      if (isUuid) {
+        where.form.qrCode.OR = [{ id: qrCodeId }, { shortId: qrCodeId }];
+      } else {
+        where.form.qrCode.shortId = qrCodeId;
+      }
     }
 
     // Filter by types (default is both booking and menu)
