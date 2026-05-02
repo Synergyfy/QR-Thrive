@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateFormDto } from './dto/create-form.dto';
 import { SubmitFormDto } from './dto/submit-form.dto';
 import { FormFieldType } from '@prisma/client';
+import { LeadsQueryDto } from '../integration/dto/leads-query.dto';
 
 @Injectable()
 export class FormsService {
@@ -285,5 +286,93 @@ export class FormsService {
     });
 
     return { success: true };
+  }
+
+  /**
+   * Fetches leads (form submissions) for specialized QR types (booking, menu, form)
+   * with pagination, search, and filtering. Designed for external integration.
+   */
+  async getLeadsForIntegration(userId: string, query: LeadsQueryDto) {
+    const { page = 1, limit = 10, search, types, qrCodeId } = query;
+    const skip = (page - 1) * limit;
+
+    const where: any = {
+      form: {
+        qrCode: {
+          userId,
+        },
+      },
+    };
+
+    // Filter by specific QR Code (ID or shortId)
+    if (qrCodeId) {
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          qrCodeId,
+        );
+      if (isUuid) {
+        where.form.qrCode.OR = [{ id: qrCodeId }, { shortId: qrCodeId }];
+      } else {
+        where.form.qrCode.shortId = qrCodeId;
+      }
+    }
+
+    // Filter by types (default is both booking and menu)
+    if (types && types.length > 0) {
+      where.form.qrCode.type = { in: types };
+    }
+
+    // Search logic
+    if (search) {
+      where.OR = [
+        {
+          form: {
+            title: { contains: search, mode: 'insensitive' },
+          },
+        },
+        {
+          form: {
+            qrCode: {
+              name: { contains: search, mode: 'insensitive' },
+            },
+          },
+        },
+      ];
+    }
+
+    const [total, items] = await Promise.all([
+      this.prisma.formSubmission.count({ where }),
+      this.prisma.formSubmission.findMany({
+        where,
+        include: {
+          form: {
+            include: {
+              qrCode: {
+                select: {
+                  id: true,
+                  name: true,
+                  type: true,
+                  shortId: true,
+                },
+              },
+              fields: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      items,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 }
