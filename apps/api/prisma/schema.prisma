@@ -220,6 +220,7 @@ enum QRType {
   menu
   coupon
   form
+  booking
 }
 
 enum QRStatus {
