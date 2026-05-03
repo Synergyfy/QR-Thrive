@@ -230,6 +230,7 @@ enum QRStatus {
 
 enum FormFieldType {
   text
+  textarea
   number
   range
   checkbox
@@ -237,6 +238,9 @@ enum FormFieldType {
   radio
   email
   phone
+  tel
+  date
+  boolean
 }
 
 model QRCode {

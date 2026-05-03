@@ -528,7 +528,7 @@ const DashboardPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] flex font-sans selection:bg-blue-100 selection:text-blue-900 overflow-hidden relative">
+    <div className="min-h-screen max-w-[100vw] bg-[#f5f6f8] flex font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden overflow-y-hidden relative">
 
       {/* ─── Mobile Sidebar Overlay ─── */}
       {isMobileMenuOpen && (
@@ -772,41 +772,41 @@ const DashboardPage: React.FC = () => {
       </aside>
 
       {/* ─── Main Content ─── */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
+      <main className="flex-1 min-w-0 flex flex-col h-screen overflow-hidden relative">
 
          {/* Top Bar */}
-        <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 flex items-center justify-between px-4 sm:px-8 relative z-50 shrink-0">
-          <div className="flex items-center gap-4 flex-1">
+        <header className="h-14 sm:h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 flex items-center justify-between px-3 sm:px-8 relative z-50 shrink-0 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+              className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
             >
-              <LayoutGrid className="w-6 h-6" />
+              <LayoutGrid className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
 
-            <div className="flex items-center gap-3 bg-slate-100/80 px-4 py-2 rounded-xl w-full max-w-md focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-200 focus-within:shadow-sm transition-all duration-200 border border-transparent focus-within:border-blue-200">
-            <Search className="w-4 h-4 text-slate-400" />
+            <div className="flex items-center gap-2 sm:gap-3 bg-slate-100/80 px-3 sm:px-4 py-2 rounded-xl flex-1 min-w-0 max-w-md focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-200 focus-within:shadow-sm transition-all duration-200 border border-transparent focus-within:border-blue-200">
+            <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input 
               type="text"
               placeholder="Search codes..." 
-              className="bg-transparent text-[13px] font-medium text-slate-800 outline-none w-full placeholder:text-slate-400"
+              className="bg-transparent text-[13px] font-medium text-slate-800 outline-none w-full min-w-0 placeholder:text-slate-400"
               value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="p-0.5 text-slate-400 hover:text-slate-600 rounded transition-colors">
+              <button onClick={() => setSearchQuery('')} className="p-0.5 text-slate-400 hover:text-slate-600 rounded transition-colors shrink-0">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 ml-2">
             <button className="text-slate-400 hover:text-slate-700 relative p-2 rounded-lg transition-all hover:bg-slate-100 group">
               <Bell className="w-5 h-5" />
               <div className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 border-[1.5px] border-white rounded-full" />
             </button>
             
-            <div className="h-6 w-px bg-slate-200/50" />
+            <div className="h-6 w-px bg-slate-200/50 hidden sm:block" />
             
             <div className="relative">
               <div 
@@ -855,8 +855,8 @@ const DashboardPage: React.FC = () => {
         </header>
 
          {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide pb-20 lg:pb-0">
-          <div className="max-w-[1440px] mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+        <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden scrollbar-hide pb-24 lg:pb-0">
+          <div className="max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6 lg:space-y-8">
 
             {/* Page Header */}
             {activeTab !== 'profile' && (
@@ -883,9 +883,9 @@ const DashboardPage: React.FC = () => {
                 {!['stats', 'leads', 'pricing', 'settings'].includes(activeTab) && (
                   <button
                     onClick={() => navigate('/dashboard/create')}
-                    className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[12px] sm:text-[13px] font-semibold transition-all duration-200 active:scale-[0.97] shadow-sm shrink-0"
+                    className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 sm:px-5 py-3 sm:py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[14px] sm:text-[13px] font-semibold transition-all duration-200 active:scale-[0.97] shadow-sm shrink-0"
                   >
-                    <Plus className="w-4 h-4" /> <span className="hidden xs:inline">New Code</span>
+                    <Plus className="w-5 h-5 sm:w-4 sm:h-4" /> <span>New QR Code</span>
                   </button>
                 )}
               </div>
@@ -1243,21 +1243,21 @@ const DashboardPage: React.FC = () => {
                     amber:   { iconBg: 'bg-amber-50',   iconText: 'text-amber-600',   changeBg: 'bg-amber-50',   changeText: 'text-amber-600' },
                   };
                   return (
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                       {statsCards.map((stat) => {
                         const c = colorMap[stat.color];
                         return (
-                          <div key={stat.label} className="bg-white rounded-2xl border border-slate-200/60 p-5 hover:shadow-md hover:border-slate-300/60 transition-all duration-200 group">
-                            <div className="flex items-center justify-between mb-4">
-                              <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105', c.iconBg)}>
-                                <stat.icon className={cn('w-5 h-5', c.iconText)} />
+                          <div key={stat.label} className="bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 hover:shadow-md hover:border-slate-300/60 transition-all duration-200 group min-w-0">
+                            <div className="flex items-center justify-between mb-2 sm:mb-4">
+                              <div className={cn('w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105', c.iconBg)}>
+                                <stat.icon className={cn('w-4 h-4 sm:w-5 sm:h-5', c.iconText)} />
                               </div>
-                              <span className={cn('text-[11px] font-semibold px-2 py-1 rounded-lg', c.changeBg, c.changeText)}>
+                              <span className={cn('text-[10px] sm:text-[11px] font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg', c.changeBg, c.changeText)}>
                                 {stat.change}
                               </span>
                             </div>
-                            <p className="text-2xl font-bold text-slate-900 tracking-tight leading-none mb-1">{stat.value}</p>
-                            <p className="text-[12px] font-medium text-slate-400">{stat.label}</p>
+                            <p className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight leading-none mb-0.5 sm:mb-1">{stat.value}</p>
+                            <p className="text-[10px] sm:text-[12px] font-medium text-slate-400 truncate">{stat.label}</p>
                           </div>
                         );
                       })}
@@ -1291,7 +1291,7 @@ const DashboardPage: React.FC = () => {
                 )}
 
                 {/* ─── QR Code Grid ─── */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" ref={menuRef}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5" ref={menuRef}>
                   {displayedQRs.map((qr) => {
                     const typeStyle = getTypeStyles(qr.type);
                     return (
@@ -1307,7 +1307,7 @@ const DashboardPage: React.FC = () => {
                         <div className={cn('h-1 w-full', typeStyle.dot)} />
 
                         {/* ── QR Preview — centered & prominent ── */}
-                        <div className="px-4 pt-5 pb-3">
+                        <div className="px-3 sm:px-4 pt-4 sm:pt-5 pb-3">
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-2">
                               <span className={cn(
@@ -1329,7 +1329,7 @@ const DashboardPage: React.FC = () => {
                                 <MoreVertical className="w-4 h-4" />
                               </button>
                               {menuOpen === qr.id && (
-                                <div className="absolute top-8 right-0 w-52 bg-white rounded-xl shadow-xl border border-slate-200/80 py-1.5 z-[100] animate-in slide-in-from-top-1 fade-in duration-150">
+                                <div className="absolute top-8 right-0 w-48 sm:w-52 bg-white rounded-xl shadow-xl border border-slate-200/80 py-1.5 z-[100] animate-in slide-in-from-top-1 fade-in duration-150">
                                   <button onClick={() => { navigate(`/dashboard/edit/${qr.id}/content`); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
                                     <Edit3 className="w-4 h-4 text-slate-400" /> Edit Content
                                   </button>
@@ -1353,7 +1353,7 @@ const DashboardPage: React.FC = () => {
                                         <ChevronRight className="w-3 h-3 ml-auto text-slate-400" />
                                       </button>
                                       {folderMenuOpen === qr.id && (
-                                        <div className="absolute left-full top-0 ml-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200/80 py-1.5 z-[101]">
+                                        <div className="absolute right-0 sm:left-full sm:right-auto top-full sm:top-0 mt-1 sm:mt-0 sm:ml-1 w-44 sm:w-48 bg-white rounded-xl shadow-xl border border-slate-200/80 py-1.5 z-[101]">
                                           <button onClick={() => { moveToFolder(qr.id, undefined); setFolderMenuOpen(null); setMenuOpen(null); }} className="w-full text-left px-4 py-2 text-[13px] font-medium hover:bg-slate-50 text-slate-500">
                                             No folder
                                           </button>
@@ -1380,21 +1380,21 @@ const DashboardPage: React.FC = () => {
                           </div>
 
                           {/* Large QR Preview */}
-                          <div className="flex justify-center mb-4">
-                            <div className="w-[140px] h-[140px] bg-gradient-to-br from-slate-50 to-white rounded-2xl flex items-center justify-center p-3 border border-slate-100 group-hover:border-slate-200 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-slate-100/80 relative">
+                          <div className="flex justify-center mb-3 sm:mb-4">
+                            <div className="w-[120px] h-[120px] sm:w-[140px] sm:h-[140px] bg-gradient-to-br from-slate-50 to-white rounded-xl sm:rounded-2xl flex items-center justify-center p-2 sm:p-3 border border-slate-100 group-hover:border-slate-200 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-slate-100/80 relative">
                               <DashboardQRPreview config={qr.config} shortUrl={qr.shortUrl} />
                             </div>
                           </div>
 
                           {/* Name + URL */}
-                          <div className="text-center mb-3">
-                            <h3 className="text-[15px] font-bold text-slate-900 truncate leading-snug mb-1 px-2">{qr.name}</h3>
-                            <div className="flex items-center justify-center gap-1.5 text-slate-400">
+                          <div className="text-center mb-3 min-w-0">
+                            <h3 className="text-[13px] sm:text-[15px] font-bold text-slate-900 truncate leading-snug mb-1 px-1">{qr.name}</h3>
+                            <div className="flex items-center justify-center gap-1 sm:gap-1.5 text-slate-400 min-w-0">
                               <Globe className="w-3 h-3 shrink-0" />
-                              <p className="text-[11px] font-medium truncate max-w-[200px]">{qr.shortUrl.replace(/^https?:\/\//, '')}</p>
+                              <p className="text-[10px] sm:text-[11px] font-medium truncate max-w-[140px] sm:max-w-[200px]">{qr.shortUrl.replace(/^https?:\/\//, '')}</p>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); copyToClipboard(qr.shortUrl); }}
-                                className="p-1 text-slate-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-all"
+                                className="p-1 text-slate-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-all shrink-0"
                                 title="Copy Link"
                               >
                                 <Copy className="w-3 h-3" />
@@ -1403,7 +1403,7 @@ const DashboardPage: React.FC = () => {
                           </div>
 
                           {/* Mini Stats Row */}
-                          <div className="flex items-center justify-center gap-4 mb-1">
+                          <div className="flex items-center justify-center gap-3 sm:gap-4 mb-1">
                             <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
                               <Calendar className="w-3 h-3" />
                               {formatDate(qr.updatedAt).split(',')[0]}
@@ -1468,7 +1468,7 @@ const DashboardPage: React.FC = () => {
 
       {/* Quick URL Edit Modal */}
       {editingURLQR && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6">
           <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm" onClick={() => setEditingURLQR(null)} />
           <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200/60 overflow-hidden animate-in zoom-in-95 fade-in duration-200">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
@@ -1672,12 +1672,12 @@ const DashboardPage: React.FC = () => {
       )}
       {/* View QR Code Modal */}
       {viewingQR && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 transition-all">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 transition-all">
           <div 
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" 
             onClick={() => setViewingQR(null)} 
           />
-          <div className="relative w-full max-w-sm bg-white rounded-[40px] shadow-2xl border border-slate-200/60 overflow-hidden animate-in zoom-in-95 fade-in duration-300 p-8 flex flex-col items-center gap-6">
+          <div className="relative w-full max-w-sm bg-white rounded-[28px] sm:rounded-[40px] shadow-2xl border border-slate-200/60 overflow-hidden animate-in zoom-in-95 fade-in duration-300 p-5 sm:p-8 flex flex-col items-center gap-4 sm:gap-6">
             <div className="w-full flex items-center justify-between">
               <div className="flex-1 min-w-0">
                 <h3 className="text-xl font-bold text-slate-900 truncate">{viewingQR.name}</h3>
@@ -1691,7 +1691,7 @@ const DashboardPage: React.FC = () => {
               </button>
             </div>
             
-            <div className="w-full aspect-square bg-white rounded-[32px] p-10 shadow-inner border border-slate-100 flex items-center justify-center group relative">
+            <div className="w-full aspect-square bg-white rounded-[20px] sm:rounded-[32px] p-6 sm:p-10 shadow-inner border border-slate-100 flex items-center justify-center group relative">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-indigo-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[32px]" />
               <div className="relative z-10 w-full h-full">
                 <DashboardQRPreview config={viewingQR.config} shortUrl={viewingQR.shortUrl} size={400} />
@@ -1721,7 +1721,7 @@ const DashboardPage: React.FC = () => {
       )}
 
       {/* Mobile Bottom Navigation */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-[72px] bg-white/80 backdrop-blur-xl border-t border-slate-100 px-6 flex items-center justify-between z-[100] safe-area-inset-bottom">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-[72px] bg-white/80 backdrop-blur-xl border-t border-slate-100 px-4 sm:px-6 flex items-center justify-between z-[100] safe-area-inset-bottom">
           <button 
             onClick={() => setActiveTab('all')}
             className={cn(

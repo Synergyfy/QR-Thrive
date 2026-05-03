@@ -113,7 +113,7 @@ const qrTypes: QRTypeOption[] = [
 ];
 
 const INITIAL_CONFIG: QRConfiguration = {
-  data: { type: 'url', url: 'https://qr-thrive.com' },
+  data: { type: 'url', url: 'https://qrthrive.com' },
   design: {
     dots: { type: 'square', color: '#000000' },
     cornersSquare: { type: 'square', color: '#000000' },
@@ -358,35 +358,13 @@ const CreationWizard: React.FC = () => {
                  <div className="w-5 h-5 border-2 border-current rounded-md flex items-center justify-center text-[10px] font-bold">?</div>
               </button>
            </div>
-           <button 
-            onClick={handleBack}
-            className="px-3 sm:px-5 py-2 bg-slate-50 text-slate-600 rounded-xl text-[10px] sm:text-xs font-bold hover:bg-slate-100 transition-all flex items-center gap-2"
-           >
-              Back
-           </button>
-           <button 
-            disabled={!selectedType || isSaving}
-            onClick={handleNext}
-            className={cn(
-              "px-4 sm:px-6 py-2 rounded-xl text-[10px] sm:text-xs font-bold flex items-center gap-2 transition-all shadow-lg min-w-[80px] sm:min-w-[100px] justify-center tracking-widest uppercase",
-              selectedType ? "bg-blue-600 text-white shadow-blue-100 hover:bg-blue-700 active:scale-95" : "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
-            )}
-           >
-              {isSaving ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <>
-                  {step === 'design' ? (isEditing ? 'Save' : 'Finish') : 'Next'}
-                </>
-              )}
-           </button>
         </div>
       </nav>
 
       {/* Content area */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
          {/* Left Side: Configuration */}
-         <div className="flex-1 overflow-y-auto p-4 sm:p-8 lg:p-12 custom-scrollbar flex flex-col items-center relative z-20 lg:pr-[480px]">
+         <div className="flex-1 overflow-y-auto p-4 sm:p-8 lg:p-12 pb-32 lg:pb-32 custom-scrollbar flex flex-col items-center relative z-20 lg:pr-[480px]">
             <div className="w-full max-w-4xl space-y-6 sm:space-y-10">
                 {step === 'type' && (
                  <div className="space-y-6 sm:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -399,7 +377,14 @@ const CreationWizard: React.FC = () => {
                             key={type.id}
                             onMouseEnter={() => setHoveredType(type.id)}
                             onMouseLeave={() => setHoveredType(null)}
-                            onClick={() => !isLocked(type.id) && setSelectedType(type.id)}
+                            onClick={() => {
+                              if (!isLocked(type.id)) {
+                                setSelectedType(type.id);
+                                if (window.innerWidth < 1024) {
+                                  setTimeout(() => setStep('content'), 200);
+                                }
+                              }
+                            }}
                             className={cn(
                               "flex flex-col items-center text-center p-6 rounded-[2rem] border-2 transition-all group relative overflow-hidden",
                               isLocked(type.id)
@@ -443,18 +428,18 @@ const CreationWizard: React.FC = () => {
 
                {step === 'content' && (
                   <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
-                     <div className="flex items-center justify-between">
-                        <div className="space-y-1">
+                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
+                        <div className="space-y-1 pr-4 sm:pr-0">
                            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                               2. {isEditing ? 'Edit Content' : qrTypes.find(t => t.id === selectedType)?.title}
                            </h1>
-                           <p className="text-xs sm:text-sm text-slate-400 font-medium">
+                           <p className="text-[11px] sm:text-sm text-slate-400 font-medium">
                               {isEditing ? 'Update the information for your QR Code.' : 'Complete the information for your QR Code.'}
                            </p>
                         </div>
                         {!isEditing && (
-                          <button className="px-5 py-2.5 bg-blue-600 text-white text-xs font-bold uppercase tracking-widest rounded-xl flex items-center gap-2 shadow-lg shadow-blue-100">
-                             <Zap className="w-3.5 h-3.5 fill-white" /> Bulk Creation
+                          <button className="w-full sm:w-auto px-5 py-3.5 sm:py-2.5 bg-blue-600 text-white text-[11px] sm:text-xs font-bold uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-100 shrink-0">
+                             <Zap className="w-4 h-4 sm:w-3.5 sm:h-3.5 fill-white" /> Bulk Creation
                           </button>
                         )}
                      </div>
@@ -628,13 +613,52 @@ const CreationWizard: React.FC = () => {
       </div>
 
       {/* Mobile Preview Toggle */}
-      <div className="lg:hidden fixed bottom-6 right-6 z-40">
+      <div className="lg:hidden fixed bottom-28 right-6 z-40">
          <button 
            onClick={() => setShowMobilePreview(true)}
            className="w-14 h-14 bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center group active:scale-90 transition-transform"
          >
             <SmartphoneNfc className="w-6 h-6 group-hover:animate-bounce" />
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white animate-pulse" />
+         </button>
+      </div>
+
+      {/* Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 lg:right-[480px] bg-white/90 backdrop-blur-xl border-t border-slate-100 p-4 px-6 lg:px-12 flex items-center justify-between z-[60] safe-area-inset-bottom shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+         <button 
+          onClick={handleBack}
+          className="px-5 lg:px-8 py-3.5 bg-slate-100/80 text-slate-700 rounded-2xl text-[11px] lg:text-xs font-bold hover:bg-slate-200 transition-all flex items-center gap-2 active:scale-95 border border-slate-200/50"
+         >
+            Back
+         </button>
+         
+         {/* Stepper Info */}
+         <div className="flex flex-col items-center justify-center pointer-events-none px-2">
+            <div className="flex gap-1.5 lg:gap-2 mb-1.5 lg:mb-2">
+              {steps.map((s, idx) => (
+                <div key={s.id} className={cn(
+                  "h-1.5 rounded-full transition-all duration-300",
+                  step === s.id ? "w-4 bg-blue-600" : steps.findIndex(x => x.id === step) > idx ? "w-1.5 bg-slate-800" : "w-1.5 bg-slate-200"
+                )} />
+              ))}
+            </div>
+         </div>
+
+         <button 
+          disabled={!selectedType || isSaving}
+          onClick={handleNext}
+          className={cn(
+            "px-6 lg:px-10 py-3.5 rounded-2xl text-[11px] lg:text-xs font-bold flex items-center gap-2 transition-all shadow-lg min-w-[100px] lg:min-w-[140px] justify-center tracking-widest uppercase active:scale-95",
+            selectedType ? "bg-blue-600 text-white shadow-blue-200 hover:bg-blue-700" : "bg-slate-100 text-slate-400 cursor-not-allowed shadow-none border border-slate-200/50"
+          )}
+         >
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                {step === 'design' ? (isEditing ? 'Save' : 'Finish') : 'Next'}
+              </>
+            )}
          </button>
       </div>
 
