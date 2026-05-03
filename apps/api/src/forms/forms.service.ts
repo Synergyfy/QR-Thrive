@@ -189,6 +189,11 @@ export class FormsService {
         }
         break;
 
+      case FormFieldType.text:
+      case FormFieldType.textarea:
+        // Basic text validation (mostly handled by required check)
+        break;
+
       case FormFieldType.email:
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(String(value))) {
@@ -197,12 +202,29 @@ export class FormsService {
         break;
 
       case FormFieldType.phone:
+      case FormFieldType.tel:
         // Basic phone validation
         const phoneRegex = /^\+?[\d\s-]{7,15}$/;
         if (!phoneRegex.test(String(value))) {
           throw new BadRequestException(
             `${label} must be a valid phone number`,
           );
+        }
+        break;
+
+      case FormFieldType.date:
+        if (isNaN(Date.parse(String(value)))) {
+          throw new BadRequestException(`${label} must be a valid date`);
+        }
+        break;
+
+      case FormFieldType.boolean:
+        if (
+          typeof value !== 'boolean' &&
+          value !== 'true' &&
+          value !== 'false'
+        ) {
+          throw new BadRequestException(`${label} must be a boolean`);
         }
         break;
 
@@ -218,7 +240,6 @@ export class FormsService {
 
       case FormFieldType.checkbox:
         // For single checkbox, value should be boolean or "true"/"false"
-        // If it's a group, we might need different logic, but let's stick to simple checkbox for now
         break;
     }
   }
