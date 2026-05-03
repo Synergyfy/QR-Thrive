@@ -63,7 +63,7 @@ const FAQ_DATA = [
 const INITIAL_CONFIG: QRConfiguration = {
   data: {
     type: 'url',
-    url: 'https://qr-thrive.com',
+    url: 'https://qrthrive.com',
   },
   design: {
     dots: {
