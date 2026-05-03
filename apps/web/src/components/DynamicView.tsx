@@ -355,7 +355,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
     switch (data.type) {
       case "url":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden">
+          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
             <WebsiteProfilePreview
               url={data.url}
               title={data.urlPreview?.title}
@@ -368,7 +368,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
       case "socials": {
         const { name, bio, images, ...socialLinks } = data.socials || {};
         return (
-          <div className="w-full h-full rounded-none overflow-hidden">
+          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
             <SocialsProfilePreview
               name={name}
               bio={bio}
@@ -381,7 +381,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "image":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden">
+          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
             <PhotoProfilePreview
               galleryTitle={data.imageGalleryInfo?.title}
               description={data.imageGalleryInfo?.description}
@@ -393,7 +393,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
         );
       case "wifi":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden">
+          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
             <WifiProfilePreview
               ssid={data.wifi?.ssid}
               password={data.wifi?.password}
@@ -491,7 +491,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
                 )}
                 {displayWebsite && (
                   <a
-                    href={displayWebsite}
+                    href={(displayWebsite as string).startsWith("http") ? (displayWebsite as string) : `https://${displayWebsite}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
@@ -522,7 +522,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
                     icon: Globe,
                     label: "Website",
                     value: displayWebsite,
-                    href: displayWebsite as string,
+                    href: (displayWebsite as string)?.startsWith("http") ? (displayWebsite as string) : `https://${displayWebsite}`,
                   },
                   { icon: Building2, label: "Company", value: displayCompany },
                   { icon: User, label: "Profession", value: displayJobTitle },
@@ -655,7 +655,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "whatsapp":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden">
+          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
             <WhatsAppChatPreview
               number={data.whatsapp?.phoneNumber || ""}
               message={data.whatsapp?.message || ""}
@@ -762,7 +762,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "instagram":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden">
+          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
             <InstagramProfilePreview
               username={data.social?.username || "Vemtapng"}
             />
@@ -771,7 +771,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "facebook":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden">
+          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
             <FacebookProfilePreview
               name={data.facebook?.name}
               bio={data.facebook?.bio}
@@ -845,7 +845,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
                 )}
                 {data.linksInfo?.website && (
                   <a
-                    href={data.linksInfo.website}
+                    href={data.linksInfo.website.startsWith("http") ? data.linksInfo.website : `https://${data.linksInfo.website}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
@@ -902,7 +902,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "pdf":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden">
+          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
             <PDFProfilePreview
               companyName={data.pdf?.companyName}
               title={data.pdf?.title}
@@ -926,7 +926,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "image":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden">
+          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
             <PhotoProfilePreview
               companyName="Vemtap"
               galleryTitle={data.imageGalleryInfo?.title}
@@ -947,7 +947,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "video":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden">
+          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
             <VideoProfilePreview
               companyName={data.video?.companyName}
               title={data.video?.title}
@@ -972,7 +972,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "mp3":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden">
+          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
             <AudioProfilePreview
               companyName={data.mp3?.companyName}
               title={data.mp3?.title}
@@ -998,7 +998,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "app":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden">
+          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
             <AppStorePreview
               title={data.app?.title}
               description={data.app?.description}
@@ -1373,7 +1373,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
                 )}
                 {data.business?.contact?.website && (
                   <a
-                    href={data.business.contact.website}
+                    href={data.business.contact.website.startsWith("http") ? data.business.contact.website : `https://${data.business.contact.website}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-50"
@@ -1666,16 +1666,8 @@ const DynamicView: React.FC<DynamicViewProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-8 flex items-center justify-center font-walsheim">
-      <div className="w-full max-w-[480px] bg-white rounded-[48px] shadow-[0_40px_100px_rgba(0,0,0,0.06)] border border-gray-50 p-8 sm:p-12 relative overflow-hidden">
-        {/* Branding Header */}
-        <div className="flex items-center justify-center gap-2 mb-12">
-          <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center">
-            <ShieldCheck className="text-white w-5 h-5" />
-          </div>
-          <span className="text-lg font-normal text-gray-900">QR Thrive</span>
-        </div>
-
+    <div className="min-h-screen bg-[#F8FAFC] sm:p-8 flex items-center justify-center font-walsheim">
+      <div className="w-full min-h-screen sm:min-h-0 sm:max-w-[480px] bg-white sm:rounded-[48px] sm:shadow-[0_40px_100px_rgba(0,0,0,0.06)] sm:border sm:border-gray-50 p-6 sm:p-12 relative overflow-hidden">
         {renderContent()}
 
         {/* Linked QR Teaser - "Next Experience" */}
