@@ -3,6 +3,7 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -67,6 +68,12 @@ export class VemTapSubscriptionGuard implements CanActivate {
 
       if (payload.subscriptionStatus !== 'active' && payload.subscriptionStatus !== 'trial') {
         throw new UnauthorizedException('Invalid VemTap subscription status');
+      }
+
+      if (!payload.qrThrivePlanId) {
+        throw new ForbiddenException(
+          'Your subscription does not include QR-Thrive. Please upgrade your plan to access QR-Thrive.',
+        );
       }
 
       request.vemtapSubscription = payload;
