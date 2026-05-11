@@ -45,11 +45,7 @@ export class QRCodesService {
     vemtapSubscription?: VemTapSubscriptionPayload,
   ): Promise<boolean> {
     if (vemtapSubscription) {
-      if (vemtapSubscription.subscriptionStatus === 'active' || vemtapSubscription.subscriptionStatus === 'trial') {
-        return true;
-      }
-      console.warn(`[QRCodesService] VemTap subscription status: ${vemtapSubscription.subscriptionStatus}`);
-      return false;
+      return true;
     }
 
     // 1. Check for Managed Subscription Assertion (VemTap)
@@ -490,7 +486,7 @@ export class QRCodesService {
 
     if (!(await this.isAccessActive(qrCode.user, vemtapSubscription))) {
       throw new ForbiddenException(
-        'This QR code is currently disabled. Owner subscription expired.',
+        'This QR code is currently disabled. Please contact the owner.',
       );
     }
 
@@ -540,7 +536,7 @@ export class QRCodesService {
 
     if (!(await this.isAccessActive(qrCode.user, vemtapSubscription))) {
       throw new ForbiddenException(
-        'This QR code is currently disabled. Owner subscription expired.',
+        'This QR code is currently disabled. Please contact the owner.',
       );
     }
 
