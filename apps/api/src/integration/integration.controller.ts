@@ -5,6 +5,7 @@ import {
   UseGuards,
   Param,
   Get,
+  Patch,
   Query,
   Delete,
   Logger,
@@ -17,6 +18,7 @@ import { LeadsQueryDto } from './dto/leads-query.dto';
 import { QRCodesService } from '../qr-codes/qr-codes.service';
 import { FormsService } from '../forms/forms.service';
 import { CreateQRCodeDto } from '../qr-codes/dto/create-qr-code.dto';
+import { UpdateQRCodeDto } from '../qr-codes/dto/update-qr-code.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiHeader, ApiQuery } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
 
@@ -131,8 +133,13 @@ export class IntegrationController {
   async setUserSubscription(
     @Param('userId') userId: string,
     @Body('planId') planId: string,
+    @Body('managedSubscriptionToken') managedSubscriptionToken?: string,
   ) {
-    return this.integrationService.setUserSubscription(userId, planId);
+    return this.integrationService.setUserSubscription(
+      userId,
+      planId,
+      managedSubscriptionToken,
+    );
   }
 
   @Get('users/:userId/stats')
@@ -145,6 +152,17 @@ export class IntegrationController {
     @Query() query: StatsQueryDto,
   ) {
     return this.qrCodesService.getStats(userId, query.startDate, query.endDate);
+  }
+
+  @Patch('users/:userId/qr-codes/:id')
+  @ApiOperation({ summary: 'Update a QR code' })
+  @ApiResponse({ status: 200, description: 'QR code updated successfully.' })
+  async updateQRCode(
+    @Param('userId') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateQRCodeDto,
+  ) {
+    return this.qrCodesService.update(id, userId, dto);
   }
 
   @Delete('users/:userId/qr-codes/:id')
