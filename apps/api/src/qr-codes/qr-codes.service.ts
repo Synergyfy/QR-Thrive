@@ -85,7 +85,7 @@ export class QRCodesService {
     return false;
   }
 
-  async create(userId: string, createQRCodeDto: CreateQRCodeDto) {
+  async create(userId: string, createQRCodeDto: CreateQRCodeDto, vemtapSubscription?: VemTapSubscriptionPayload) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { plan: true },
@@ -96,7 +96,7 @@ export class QRCodesService {
     }
 
     // UsageGuard already checks limits, but we check overall account status here
-    if (!(await this.isAccessActive(user))) {
+    if (!(await this.isAccessActive(user, vemtapSubscription))) {
       throw new ForbiddenException(
         'Your access has expired or is inactive. Please upgrade your plan to continue.',
       );
@@ -230,13 +230,13 @@ export class QRCodesService {
     });
   }
 
-  async update(id: string, userId: string, updateQRCodeDto: UpdateQRCodeDto) {
+  async update(id: string, userId: string, updateQRCodeDto: UpdateQRCodeDto, vemtapSubscription?: VemTapSubscriptionPayload) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { plan: true },
     });
 
-    if (!user || !(await this.isAccessActive(user))) {
+    if (!user || !(await this.isAccessActive(user, vemtapSubscription))) {
       throw new ForbiddenException(
         'Your access has expired. Please upgrade your plan to continue.',
       );
@@ -431,12 +431,12 @@ export class QRCodesService {
     return { syncCount };
   }
 
-  async duplicate(id: string, userId: string) {
+  async duplicate(id: string, userId: string, vemtapSubscription?: VemTapSubscriptionPayload) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { plan: true },
     });
-    if (!user || !(await this.isAccessActive(user))) {
+    if (!user || !(await this.isAccessActive(user, vemtapSubscription))) {
       throw new ForbiddenException(
         'Your access has expired. Please upgrade your plan to continue.',
       );

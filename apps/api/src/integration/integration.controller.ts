@@ -9,8 +9,10 @@ import {
   Query,
   Delete,
   Logger,
+  Req,
 } from '@nestjs/common';
 import { ApiKeyGuard } from '../auth/guards/api-key.guard';
+import { VemTapSubscriptionGuard, VemTapSubscriptionPayload } from './vemtap-subscription.guard';
 import { IntegrationService } from './integration.service';
 import { IntegrationUserDto } from './dto/integration.dto';
 import { StatsQueryDto } from './dto/stats-query.dto';
@@ -21,6 +23,7 @@ import { CreateQRCodeDto } from '../qr-codes/dto/create-qr-code.dto';
 import { UpdateQRCodeDto } from '../qr-codes/dto/update-qr-code.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiHeader, ApiQuery } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
+import type { Request } from 'express';
 
 @ApiTags('External Integration')
 @ApiHeader({
@@ -28,7 +31,7 @@ import { Public } from '../auth/decorators/public.decorator';
   description: 'Secure API key for external integration',
 })
 @Controller('integration')
-@UseGuards(ApiKeyGuard)
+@UseGuards(ApiKeyGuard, VemTapSubscriptionGuard)
 @Public()
 export class IntegrationController {
   private readonly logger = new Logger(IntegrationController.name);
@@ -67,8 +70,9 @@ export class IntegrationController {
   async createQRCode(
     @Param('userId') userId: string,
     @Body() dto: CreateQRCodeDto,
+    @Req() req: Request,
   ) {
-    return this.qrCodesService.create(userId, dto);
+    return this.qrCodesService.create(userId, dto, req.vemtapSubscription);
   }
 
   @Get('users/:userId/qr-codes/:id')
@@ -161,8 +165,9 @@ export class IntegrationController {
     @Param('userId') userId: string,
     @Param('id') id: string,
     @Body() dto: UpdateQRCodeDto,
+    @Req() req: Request,
   ) {
-    return this.qrCodesService.update(id, userId, dto);
+    return this.qrCodesService.update(id, userId, dto, req.vemtapSubscription);
   }
 
   @Delete('users/:userId/qr-codes/:id')
