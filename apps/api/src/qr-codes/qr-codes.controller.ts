@@ -17,6 +17,7 @@ import { CreateQRCodeDto } from './dto/create-qr-code.dto';
 import { UpdateQRCodeDto } from './dto/update-qr-code.dto';
 import { Public } from '../auth/decorators/public.decorator';
 import { UsageGuard } from '../pricing/usage.guard';
+import { VemTapSubscriptionGuard } from '../integration/vemtap-subscription.guard';
 import type { Request, Response } from 'express';
 import {
   ApiTags,
@@ -150,6 +151,7 @@ export class QRCodesController {
   }
 
   @Public()
+  @UseGuards(VemTapSubscriptionGuard)
   @Get('public/:shortId')
   @ApiOperation({ summary: 'Get public details of a QR code by short ID' })
   @ApiParam({ name: 'shortId', description: 'The short ID of the QR code' })
@@ -157,12 +159,13 @@ export class QRCodesController {
     status: 200,
     description: 'Public QR code details retrieved.',
   })
-  async getPublic(@Param('shortId') shortId: string) {
-    return this.qrCodesService.findOneByShortId(shortId);
+  async getPublic(@Param('shortId') shortId: string, @Req() req: Request) {
+    return this.qrCodesService.findOneByShortId(shortId, req.vemtapSubscription);
   }
 
   // Public scan redirect endpoint
   @Public()
+  @UseGuards(VemTapSubscriptionGuard)
   @Get('scan/:shortId')
   @ApiOperation({
     summary: 'Record a scan and redirect to the destination URL',
@@ -200,6 +203,7 @@ export class QRCodesController {
         shortId,
         ip,
         userAgent,
+        req.vemtapSubscription,
       );
 
       // Determine destination from data

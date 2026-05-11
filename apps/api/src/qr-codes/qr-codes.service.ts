@@ -16,6 +16,7 @@ import { UploadService } from '../upload/upload.service';
 import { PushService } from '../notifications/push.service';
 import { VemtapAuthService } from '../integration/vemtap-auth.service';
 import { Inject, forwardRef } from '@nestjs/common';
+import type { VemTapSubscriptionPayload } from '../integration/vemtap-subscription.guard';
 
 const TRIAL_DAYS = 7;
 
@@ -33,11 +34,24 @@ export class QRCodesService {
   /**
    * Checks if the user's access is active.
    * Logic:
-   * 1. If they have a plan that isn't the 'Free' plan (non-default), they are active.
-   * 2. If they have the default 'Free' plan, we might have a trial logic or just allow it within limits.
+   * 1. If VemTap subscription token is provided (VemTap-proxied requests), trust VemTap's validation
+   * 2. If they have a managedSubscriptionToken, verify it
+   * 3. If they have a plan that isn't the 'Free' plan (non-default), they are active.
+   * 4. If they have the default 'Free' plan, we might have a trial logic or just allow it within limits.
    * Note: UsageGuard handles the actual limits (counts and types).
    */
-  private async isAccessActive(user: User & { plan?: Plan | null }): Promise<boolean> {
+  private async isAccessActive(
+    user: User & { plan?: Plan | null },
+    vemtapSubscription?: VemTapSubscriptionPayload,
+  ): Promise<boolean> {
+    if (vemtapSubscription) {
+      if (vemtapSubscription.subscriptionStatus === 'active' || vemtapSubscription.subscriptionStatus === 'trial') {
+        return true;
+      }
+      console.warn(`[QRCodesService] VemTap subscription status: ${vemtapSubscription.subscriptionStatus}`);
+      return false;
+    }
+
     // 1. Check for Managed Subscription Assertion (VemTap)
     if (user.managedSubscriptionToken) {
       try {
@@ -458,7 +472,7 @@ export class QRCodesService {
     });
   }
 
-  async findOneByShortId(shortId: string) {
+  async findOneByShortId(shortId: string, vemtapSubscription?: VemTapSubscriptionPayload) {
     const qrCode = await this.prisma.qRCode.findUnique({
       where: { shortId },
       include: {
@@ -474,7 +488,7 @@ export class QRCodesService {
       throw new NotFoundException(`QR Code with shortId ${shortId} not found`);
     }
 
-    if (!(await this.isAccessActive(qrCode.user))) {
+    if (!(await this.isAccessActive(qrCode.user, vemtapSubscription))) {
       throw new ForbiddenException(
         'This QR code is currently disabled. Owner subscription expired.',
       );
@@ -511,7 +525,7 @@ export class QRCodesService {
     return qrCode;
   }
 
-  async recordScan(shortId: string, ip: string, userAgent: string) {
+  async recordScan(shortId: string, ip: string, userAgent: string, vemtapSubscription?: VemTapSubscriptionPayload) {
     const qrCode = await this.prisma.qRCode.findUnique({
       where: { shortId },
       include: {
@@ -524,7 +538,7 @@ export class QRCodesService {
       throw new NotFoundException('QR Code not found');
     }
 
-    if (!(await this.isAccessActive(qrCode.user))) {
+    if (!(await this.isAccessActive(qrCode.user, vemtapSubscription))) {
       throw new ForbiddenException(
         'This QR code is currently disabled. Owner subscription expired.',
       );
