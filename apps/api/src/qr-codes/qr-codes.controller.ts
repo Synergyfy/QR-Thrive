@@ -10,6 +10,7 @@ import {
   Query,
   Res,
   ForbiddenException,
+  NotFoundException,
   UseGuards,
 } from '@nestjs/common';
 import { QRCodesService } from './qr-codes.service';
@@ -160,7 +161,14 @@ export class QRCodesController {
     description: 'Public QR code details retrieved.',
   })
   async getPublic(@Param('shortId') shortId: string, @Req() req: Request) {
-    return this.qrCodesService.findOneByShortId(shortId, req.vemtapSubscription);
+    try {
+      return this.qrCodesService.findOneByShortId(shortId, req.vemtapSubscription);
+    } catch (error) {
+      if (error instanceof ForbiddenException && !req.vemtapSubscription) {
+        throw new NotFoundException(`QR Code with shortId ${shortId} not found`);
+      }
+      throw error;
+    }
   }
 
   // Public scan redirect endpoint
@@ -234,6 +242,9 @@ export class QRCodesController {
 
       return res.redirect(url);
     } catch (error) {
+      if (error instanceof ForbiddenException && !req.vemtapSubscription) {
+        return res.status(404).send('QR Code not found');
+      }
       if (error instanceof ForbiddenException) {
         throw error;
       }
