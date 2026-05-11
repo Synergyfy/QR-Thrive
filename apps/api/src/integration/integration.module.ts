@@ -1,10 +1,13 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule } from '@nestjs/config';
 import { IntegrationController } from './integration.controller';
 import { IntegrationService } from './integration.service';
 import { VemtapService } from './vemtap.service';
 import { VemtapAuthService } from './vemtap-auth.service';
+import { CapabilityService } from './capability.service';
+import { TokenInvalidationService } from './token-invalidation.service';
 import { QRCodesModule } from '../qr-codes/qr-codes.module';
 import { AuthModule } from '../auth/auth.module';
 import { FormsModule } from '../forms/forms.module';
@@ -18,9 +21,16 @@ import { PrismaModule } from '../prisma/prisma.module';
     FormsModule,
     HttpModule,
     JwtModule.register({}),
+    ConfigModule,
   ],
   controllers: [IntegrationController],
-  providers: [IntegrationService, VemtapService, VemtapAuthService],
-  exports: [VemtapService, VemtapAuthService],
+  providers: [
+    IntegrationService,
+    VemtapService,
+    VemtapAuthService,
+    CapabilityService,
+    TokenInvalidationService,
+  ],
+  exports: [VemtapService, VemtapAuthService, CapabilityService, TokenInvalidationService],
 })
 export class IntegrationModule {}
