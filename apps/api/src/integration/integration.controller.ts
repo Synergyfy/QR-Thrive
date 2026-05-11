@@ -133,8 +133,13 @@ export class IntegrationController {
   async setUserSubscription(
     @Param('userId') userId: string,
     @Body('planId') planId: string,
+    @Body('managedSubscriptionToken') managedSubscriptionToken?: string,
   ) {
-    return this.integrationService.setUserSubscription(userId, planId);
+    return this.integrationService.setUserSubscription(
+      userId,
+      planId,
+      managedSubscriptionToken,
+    );
   }
 
   @Get('users/:userId/stats')
