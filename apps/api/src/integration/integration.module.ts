@@ -8,6 +8,7 @@ import { VemtapService } from './vemtap.service';
 import { VemtapAuthService } from './vemtap-auth.service';
 import { CapabilityService } from './capability.service';
 import { TokenInvalidationService } from './token-invalidation.service';
+import { VemTapSubscriptionGuard } from './vemtap-subscription.guard';
 import { QRCodesModule } from '../qr-codes/qr-codes.module';
 import { AuthModule } from '../auth/auth.module';
 import { FormsModule } from '../forms/forms.module';
@@ -30,7 +31,8 @@ import { PrismaModule } from '../prisma/prisma.module';
     VemtapAuthService,
     CapabilityService,
     TokenInvalidationService,
+    VemTapSubscriptionGuard,
   ],
-  exports: [VemtapService, VemtapAuthService, CapabilityService, TokenInvalidationService],
+  exports: [VemtapService, VemtapAuthService, CapabilityService, TokenInvalidationService, VemTapSubscriptionGuard],
 })
 export class IntegrationModule {}
