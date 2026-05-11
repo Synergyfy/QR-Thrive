@@ -45,19 +45,34 @@ export class QRCodesService {
         if (assertion.status === 'active') {
           return true;
         }
+        console.warn(`[QRCodesService] Assertion for user ${user.id} is not 'active' (status: ${assertion.status}). Falling back to plan check.`);
       } catch (e) {
-        // Log or handle invalid token if needed
-        // Fallback to normal check
+        console.warn(`[QRCodesService] Managed token verification failed for user ${user.id}: ${e.message}. Falling back to plan check.`);
       }
     }
 
-    if (user.plan && !user.plan.isDefault) return true;
+    // 2. Check for Paid Plan
+    if (user.plan && !user.plan.isDefault) {
+      return true;
+    }
 
+    // 3. Check for Active Trial
     const now = new Date();
     const trialExpiry = new Date(user.createdAt);
     trialExpiry.setDate(trialExpiry.getDate() + TRIAL_DAYS);
 
-    return now <= trialExpiry || !!user.plan;
+    if (now <= trialExpiry) {
+      return true;
+    }
+
+    // 4. If we reach here, and they have the default plan, it means they are post-trial on a free account
+    // We only allow this if the system is configured to allow free access (!!user.plan)
+    if (user.plan) {
+      return true; 
+    }
+
+    console.error(`[QRCodesService] Access Denied: User ${user.id} has no valid subscription, no paid plan, and trial expired on ${trialExpiry.toISOString()}.`);
+    return false;
   }
 
   async create(userId: string, createQRCodeDto: CreateQRCodeDto) {
