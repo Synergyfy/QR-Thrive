@@ -14,6 +14,8 @@ import { User, Prisma, Plan } from '@prisma/client';
 import { FormsService } from '../forms/forms.service';
 import { UploadService } from '../upload/upload.service';
 import { PushService } from '../notifications/push.service';
+import { VemtapAuthService } from '../integration/vemtap-auth.service';
+import { Inject, forwardRef } from '@nestjs/common';
 
 const TRIAL_DAYS = 7;
 
@@ -24,6 +26,8 @@ export class QRCodesService {
     private readonly formsService: FormsService,
     private readonly uploadService: UploadService,
     private readonly pushService: PushService,
+    @Inject(forwardRef(() => VemtapAuthService))
+    private readonly vemtapAuthService: VemtapAuthService,
   ) {}
 
   /**
@@ -33,7 +37,20 @@ export class QRCodesService {
    * 2. If they have the default 'Free' plan, we might have a trial logic or just allow it within limits.
    * Note: UsageGuard handles the actual limits (counts and types).
    */
-  private isAccessActive(user: User & { plan?: Plan | null }): boolean {
+  private async isAccessActive(user: User & { plan?: Plan | null }): Promise<boolean> {
+    // 1. Check for Managed Subscription Assertion (VemTap)
+    if (user.managedSubscriptionToken) {
+      try {
+        const assertion = this.vemtapAuthService.verifyAssertion(user.managedSubscriptionToken);
+        if (assertion.status === 'active') {
+          return true;
+        }
+      } catch (e) {
+        // Log or handle invalid token if needed
+        // Fallback to normal check
+      }
+    }
+
     if (user.plan && !user.plan.isDefault) return true;
 
     const now = new Date();
@@ -54,7 +71,7 @@ export class QRCodesService {
     }
 
     // UsageGuard already checks limits, but we check overall account status here
-    if (!this.isAccessActive(user)) {
+    if (!(await this.isAccessActive(user))) {
       throw new ForbiddenException(
         'Your access has expired or is inactive. Please upgrade your plan to continue.',
       );
@@ -194,7 +211,7 @@ export class QRCodesService {
       include: { plan: true },
     });
 
-    if (!user || !this.isAccessActive(user)) {
+    if (!user || !(await this.isAccessActive(user))) {
       throw new ForbiddenException(
         'Your access has expired. Please upgrade your plan to continue.',
       );
@@ -394,7 +411,7 @@ export class QRCodesService {
       where: { id: userId },
       include: { plan: true },
     });
-    if (!user || !this.isAccessActive(user)) {
+    if (!user || !(await this.isAccessActive(user))) {
       throw new ForbiddenException(
         'Your access has expired. Please upgrade your plan to continue.',
       );
@@ -442,7 +459,7 @@ export class QRCodesService {
       throw new NotFoundException(`QR Code with shortId ${shortId} not found`);
     }
 
-    if (!this.isAccessActive(qrCode.user)) {
+    if (!(await this.isAccessActive(qrCode.user))) {
       throw new ForbiddenException(
         'This QR code is currently disabled. Owner subscription expired.',
       );
@@ -492,7 +509,7 @@ export class QRCodesService {
       throw new NotFoundException('QR Code not found');
     }
 
-    if (!this.isAccessActive(qrCode.user)) {
+    if (!(await this.isAccessActive(qrCode.user))) {
       throw new ForbiddenException(
         'This QR code is currently disabled. Owner subscription expired.',
       );

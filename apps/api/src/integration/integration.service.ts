@@ -78,7 +78,11 @@ export class IntegrationService {
     });
   }
 
-  async setUserSubscription(userId: string, planId: string) {
+  async setUserSubscription(
+    userId: string,
+    planId: string,
+    managedSubscriptionToken?: string,
+  ) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -98,6 +102,7 @@ export class IntegrationService {
     const planData: any = {
       planId: plan.id,
       subscriptionStatus: 'active',
+      managedSubscriptionToken: managedSubscriptionToken || null,
     };
 
     if (!plan.isFree) {
