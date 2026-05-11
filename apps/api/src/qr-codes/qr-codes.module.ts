@@ -1,4 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { QRCodesService } from './qr-codes.service';
 import { QRCodesController } from './qr-codes.controller';
 import { PrismaModule } from '../prisma/prisma.module';
@@ -13,6 +14,7 @@ import { IntegrationModule } from '../integration/integration.module';
     FormsModule,
     UploadModule,
     NotificationsModule,
+    JwtModule.register({}),
     forwardRef(() => IntegrationModule),
   ],
   controllers: [QRCodesController],
