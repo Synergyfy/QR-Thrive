@@ -95,7 +95,7 @@ export class SupportController {
     @Query('search') search = '',
     @Query('status') status?: string,
   ) {
-    return this.supportService.getTickets(page, limit, search, status);
+    return this.supportService.getTickets(page, Math.max(1, Math.min(100, limit)), search, status);
   }
 
   @Roles(Role.ADMIN)

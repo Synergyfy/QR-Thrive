@@ -7,6 +7,7 @@ import { Logger as PinoLogger } from 'nestjs-pino';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import express from 'express';
 import helmet from 'helmet';
+import compression from 'compression';
 import { LoggingInterceptor } from './common/logging.interceptor';
 
 // Explicitly export the bootstrap function
@@ -46,6 +47,8 @@ export async function bootstrap() {
     }),
   );
   app.setGlobalPrefix('api/v1');
+
+  app.use(compression());
 
   app.use(cookieParser());
   app.useGlobalPipes(

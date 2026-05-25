@@ -6,6 +6,8 @@ import { ForbiddenException } from '@nestjs/common';
 import { FormsService } from '../forms/forms.service';
 import { UploadService } from '../upload/upload.service';
 import { PushService } from '../notifications/push.service';
+import { VemtapAuthService } from '../integration/vemtap-auth.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 describe('QRCodesService', () => {
   let service: QRCodesService;
@@ -76,6 +78,12 @@ describe('QRCodesService', () => {
   const mockFormsService = { createOrUpdateForm: jest.fn() };
   const mockUploadService = { deleteFile: jest.fn() };
   const mockPushService = { sendPushNotification: jest.fn().mockResolvedValue({}) };
+  const mockVemtapAuthService = { verifyAssertion: jest.fn() };
+  const mockCacheManager = {
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue(null),
+    del: jest.fn().mockResolvedValue(null),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -85,6 +93,8 @@ describe('QRCodesService', () => {
         { provide: FormsService, useValue: mockFormsService },
         { provide: UploadService, useValue: mockUploadService },
         { provide: PushService, useValue: mockPushService },
+        { provide: VemtapAuthService, useValue: mockVemtapAuthService },
+        { provide: CACHE_MANAGER, useValue: mockCacheManager },
       ],
     }).compile();
 
@@ -126,6 +136,68 @@ describe('QRCodesService', () => {
 
   it('should block scanning a QR after trial expires', async () => {
     await expect(service.recordScan('short-free-old', '127.0.0.1', 'ua')).rejects.toThrow(ForbiddenException);
+  });
+
+  describe('cached user flow', () => {
+    it('should skip user fetch when cachedUser is provided to create()', async () => {
+      const spy = jest.spyOn(mockPrismaService.user, 'findUnique');
+      const cachedUser = { id: 'user-pro', createdAt: oldDate, plan: { isDefault: false } };
+      const dto = { name: 'Cached QR', type: QRType.pdf, data: {}, design: {}, frame: {} };
+
+      await service.create('user-pro', dto, undefined, cachedUser as any);
+
+      expect(spy).not.toHaveBeenCalled();
+      expect(mockPrismaService.qRCode.create).toHaveBeenCalled();
+    });
+
+    it('should skip user fetch when cachedUser is provided to update()', async () => {
+      const spy = jest.spyOn(mockPrismaService.user, 'findUnique');
+      const cachedUser = { id: 'user-pro', createdAt: oldDate, plan: { isDefault: false } };
+      mockPrismaService.qRCode.findFirst.mockResolvedValue({ id: 'existing-id', userId: 'user-pro' });
+
+      await service.update('existing-id', 'user-pro', { name: 'Updated' }, undefined, cachedUser as any);
+
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('should skip user fetch when cachedUser is provided to duplicate()', async () => {
+      const spy = jest.spyOn(mockPrismaService.user, 'findUnique');
+      const cachedUser = { id: 'user-pro', createdAt: oldDate, plan: { isDefault: false } };
+      mockPrismaService.qRCode.findFirst.mockResolvedValue({ id: 'existing-id', userId: 'user-pro', name: 'Original', type: QRType.url, data: {}, design: {}, frame: {}, shortId: 'short', clicks: 0 });
+
+      await service.duplicate('existing-id', 'user-pro', undefined, cachedUser as any);
+
+      expect(spy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('syncLegacyQRLinks batch optimization', () => {
+    it('should batch-verify linked codes and use Promise.all for updates', async () => {
+      const qrCodes = [
+        { id: 'qr-1', data: { qrLinkId: 'linked-1' }, linkedQRCodeId: null },
+        { id: 'qr-2', data: { qrLinkId: 'linked-2' }, linkedQRCodeId: null },
+      ];
+      mockPrismaService.qRCode.findMany
+        .mockResolvedValueOnce(qrCodes as any)
+        .mockResolvedValueOnce([
+          { id: 'linked-1' },
+          { id: 'linked-2' },
+        ]);
+
+      const result = await service.syncLegacyQRLinks();
+
+      expect(result.syncCount).toBe(2);
+      expect(mockPrismaService.qRCode.update).toHaveBeenCalledTimes(2);
+    });
+
+    it('should return syncCount 0 when no legacy QR codes exist', async () => {
+      mockPrismaService.qRCode.findMany
+        .mockResolvedValueOnce([]);
+
+      const result = await service.syncLegacyQRLinks();
+
+      expect(result.syncCount).toBe(0);
+    });
   });
 
   describe('recordScan Notifications', () => {

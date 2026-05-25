@@ -10,6 +10,7 @@ import {
 } from './dto/auth.dto';
 import type { Response, Request } from 'express';
 import { Public } from './decorators/public.decorator';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiTags,
   ApiOperation,
