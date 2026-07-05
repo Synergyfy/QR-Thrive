@@ -93,7 +93,7 @@ export class AdminController {
     @Query('search') search = '',
     @Query('status') status?: string,
   ) {
-    return this.adminService.getUsers(page, limit, search, status);
+    return this.adminService.getUsers(page, Math.max(1, Math.min(100, limit)), search, status);
   }
 
   @Public()

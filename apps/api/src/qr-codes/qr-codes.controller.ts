@@ -54,7 +54,12 @@ export class QRCodesController {
     @Req() req: RequestWithUser,
     @Body() createQRCodeDto: CreateQRCodeDto,
   ) {
-    return this.qrCodesService.create(req.user.userId, createQRCodeDto);
+    return this.qrCodesService.create(
+      req.user.userId,
+      createQRCodeDto,
+      (req as any).vemtapSubscription,
+      (req as any).__userWithPlan,
+    );
   }
 
   @Get()
@@ -148,7 +153,12 @@ export class QRCodesController {
   @ApiResponse({ status: 201, description: 'QR code duplicated successfully.' })
   @ApiResponse({ status: 403, description: 'Usage limit reached.' })
   duplicate(@Req() req: RequestWithUser, @Param('id') id: string) {
-    return this.qrCodesService.duplicate(id, req.user.userId);
+    return this.qrCodesService.duplicate(
+      id,
+      req.user.userId,
+      (req as any).vemtapSubscription,
+      (req as any).__userWithPlan,
+    );
   }
 
   @Public()

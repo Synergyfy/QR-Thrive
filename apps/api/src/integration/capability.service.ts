@@ -1,5 +1,7 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { Plan, QRType } from '@prisma/client';
 
 export interface PlanCapabilities {
@@ -14,9 +16,16 @@ export interface PlanCapabilities {
 export class CapabilityService {
   private readonly logger = new Logger(CapabilityService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   async getCapabilities(planId: string): Promise<PlanCapabilities> {
+    const cacheKey = `capability:plan:${planId}`;
+    const cached = await this.cacheManager.get<PlanCapabilities>(cacheKey);
+    if (cached) return cached;
+
     const plan = await this.prisma.plan.findUnique({
       where: { id: planId },
     });
@@ -32,10 +41,14 @@ export class CapabilityService {
         return this.getDefaultCapabilities();
       }
 
-      return this.mapPlanToCapabilities(freePlan);
+      const caps = this.mapPlanToCapabilities(freePlan);
+      await this.cacheManager.set(cacheKey, caps, 300);
+      return caps;
     }
 
-    return this.mapPlanToCapabilities(plan);
+    const caps = this.mapPlanToCapabilities(plan);
+    await this.cacheManager.set(cacheKey, caps, 300);
+    return caps;
   }
 
   async checkCreatePermission(planId: string, qrType: QRType): Promise<boolean> {

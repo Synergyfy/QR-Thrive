@@ -98,17 +98,22 @@ export class PricingService {
   }
 
   /**
-   * Fetches the tier and currency info for a specific country.
+   * Fetches the tier and currency info for a specific country (cached 10 min).
    */
   async getCountryInfo(code: string) {
+    const cacheKey = `pricing:country:${code}`;
+    const cached = await this.cacheManager.get<any>(cacheKey);
+    if (cached) return cached;
+
     const country = await this.prisma.country.findUnique({
       where: { code },
     });
 
     // Fallback if country is not in database
+    let result: any;
     if (!country) {
       if (code === 'NG') {
-        return {
+        result = {
           code: 'NG',
           name: 'Nigeria',
           currencyCode: 'NGN',
@@ -116,17 +121,22 @@ export class PricingService {
           tier: PricingTier.LOW,
           taxRate: 0,
         };
+      } else {
+        result = {
+          code,
+          name: 'Global',
+          currencyCode: 'USD',
+          currencySymbol: '$',
+          tier: PricingTier.HIGH,
+          taxRate: 0,
+        };
       }
-      return {
-        code,
-        name: 'Global',
-        currencyCode: 'USD',
-        currencySymbol: '$',
-        tier: PricingTier.HIGH,
-        taxRate: 0,
-      };
+    } else {
+      result = country;
     }
-    return country;
+
+    await this.cacheManager.set(cacheKey, result, 600);
+    return result;
   }
 
   /**
@@ -140,10 +150,24 @@ export class PricingService {
   }
 
   /**
+   * Fetches system config with cache (5 min TTL).
+   */
+  private async getCachedSystemConfig() {
+    const cacheKey = 'pricing:systemConfig';
+    const cached = await this.cacheManager.get<any>(cacheKey);
+    if (cached) return cached;
+
+    const config = await this.prisma.systemConfig.findFirst();
+    // Cache even if null to avoid repeated misses (short TTL)
+    await this.cacheManager.set(cacheKey, config, 300);
+    return config;
+  }
+
+  /**
    * Calculates Quarterly and Yearly prices based on a monthly base and system discounts.
    */
   async calculateDiscountedPrices(monthlyPrice: number, currency: string) {
-    const config = await this.prisma.systemConfig.findFirst();
+    const config = await this.getCachedSystemConfig();
     const qDiscount = (config?.quarterlyDiscount || 10) / 100;
     const yDiscount = (config?.yearlyDiscount || 20) / 100;
 

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Req, Delete, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Req, Delete, Query, Logger } from '@nestjs/common';
 import { FormsService } from './forms.service';
 import { CreateFormDto } from './dto/create-form.dto';
 import type { Request } from 'express';
@@ -30,9 +30,17 @@ export class FormsController {
     status: 200,
     description: 'All form submissions retrieved.',
   })
-  async getAllSubmissions(@Req() req: RequestWithUser) {
+  async getAllSubmissions(
+    @Req() req: RequestWithUser,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
     this.logger.log(`Fetching all leads for user: ${req.user.userId}`);
-    return this.formsService.getAllSubmissions(req.user.userId);
+    return this.formsService.getAllSubmissions(
+      req.user.userId,
+      Math.max(1, Number(page) || 1),
+      Math.min(100, Math.max(1, Number(limit) || 50)),
+    );
   }
 
   @Get(':qrCodeId')

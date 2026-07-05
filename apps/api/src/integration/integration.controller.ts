@@ -6,6 +6,7 @@ import {
   Param,
   Get,
   Patch,
+  Put,
   Query,
   Delete,
   Logger,
@@ -21,6 +22,8 @@ import { QRCodesService } from '../qr-codes/qr-codes.service';
 import { FormsService } from '../forms/forms.service';
 import { CreateQRCodeDto } from '../qr-codes/dto/create-qr-code.dto';
 import { UpdateQRCodeDto } from '../qr-codes/dto/update-qr-code.dto';
+import { FoldersService } from '../folders/folders.service';
+import { CreateFolderDto, UpdateFolderDto } from '../folders/dto/folder.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiHeader, ApiQuery } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
 import type { Request } from 'express';
@@ -40,6 +43,7 @@ export class IntegrationController {
     private readonly integrationService: IntegrationService,
     private readonly qrCodesService: QRCodesService,
     private readonly formsService: FormsService,
+    private readonly foldersService: FoldersService,
   ) {}
 
   @Post('users')
@@ -178,5 +182,43 @@ export class IntegrationController {
     @Param('id') qrCodeId: string,
   ) {
     return this.qrCodesService.remove(qrCodeId, userId);
+  }
+
+  @Get('users/:userId/folders')
+  @ApiOperation({ summary: 'Get all folders for an integration user' })
+  @ApiResponse({ status: 200, description: 'List of folders retrieved.' })
+  async getAllFolders(@Param('userId') userId: string) {
+    return this.foldersService.findAll(userId);
+  }
+
+  @Post('users/:userId/folders')
+  @ApiOperation({ summary: 'Create a folder on behalf of a user' })
+  @ApiResponse({ status: 201, description: 'Folder successfully created.' })
+  async createFolder(
+    @Param('userId') userId: string,
+    @Body() dto: CreateFolderDto,
+  ) {
+    return this.foldersService.create(userId, dto);
+  }
+
+  @Put('users/:userId/folders/:id')
+  @ApiOperation({ summary: 'Update a folder' })
+  @ApiResponse({ status: 200, description: 'Folder updated successfully.' })
+  async updateFolder(
+    @Param('userId') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateFolderDto,
+  ) {
+    return this.foldersService.update(id, userId, dto);
+  }
+
+  @Delete('users/:userId/folders/:id')
+  @ApiOperation({ summary: 'Delete a folder' })
+  @ApiResponse({ status: 200, description: 'Folder deleted.' })
+  async deleteFolder(
+    @Param('userId') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.foldersService.remove(id, userId);
   }
 }
