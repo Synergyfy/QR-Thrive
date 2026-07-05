@@ -79,6 +79,11 @@ export class AuthService {
       planData.subscriptionStatus = 'trialing';
     }
 
+    // Include vemtapPlanId so callers can provision without re-querying the plan
+    if (defaultPlan.vemtapPlanId) {
+      planData._vemtapPlanId = defaultPlan.vemtapPlanId;
+    }
+
     return planData;
   }
 
@@ -115,20 +120,16 @@ export class AuthService {
       this.logger.log(`User created: ${email} with role: USER`);
 
       // Provision on Vemtap if a vemtapPlanId exists for the default plan
-      if (defaultPlanData.planId) {
-        const plan = await this.prisma.plan.findUnique({
-          where: { id: defaultPlanData.planId },
-        });
-        if (plan?.vemtapPlanId) {
-          this.vemtapService
-            .provisionUser(email, firstName, lastName, plan.vemtapPlanId)
-            .catch((err) => {
-              this.logger.error(
-                `Vemtap provisioning failed for ${email} during signup:`,
-                err,
-              );
-            });
-        }
+      const vemtapPlanId = (defaultPlanData as any)._vemtapPlanId;
+      if (vemtapPlanId) {
+        this.vemtapService
+          .provisionUser(email, firstName, lastName, vemtapPlanId)
+          .catch((err) => {
+            this.logger.error(
+              `Vemtap provisioning failed for ${email} during signup:`,
+              err,
+            );
+          });
       }
 
       return this.generateAndSetTokens(user.id, res, true, true);
@@ -285,25 +286,21 @@ export class AuthService {
         this.logger.log(`New user created via Google: ${email}`);
 
         // Provision on Vemtap for new Google users
-        if (defaultPlanData.planId) {
-          const plan = await this.prisma.plan.findUnique({
-            where: { id: defaultPlanData.planId },
-          });
-          if (plan?.vemtapPlanId) {
-            this.vemtapService
-              .provisionUser(
-                email,
-                firstName || 'User',
-                lastName || '',
-                plan.vemtapPlanId,
-              )
-              .catch((err) => {
-                this.logger.error(
-                  `Vemtap provisioning failed for ${email} during Google signup:`,
-                  err,
-                );
-              });
-          }
+        const vemtapPlanId = (defaultPlanData as any)._vemtapPlanId;
+        if (vemtapPlanId) {
+          this.vemtapService
+            .provisionUser(
+              email,
+              firstName || 'User',
+              lastName || '',
+              vemtapPlanId,
+            )
+            .catch((err) => {
+              this.logger.error(
+                `Vemtap provisioning failed for ${email} during Google signup:`,
+                err,
+              );
+            });
         }
       }
 

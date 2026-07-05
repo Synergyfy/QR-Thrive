@@ -10,6 +10,7 @@ import { CapabilityService } from './capability.service';
 import { TokenInvalidationService } from './token-invalidation.service';
 import { VemTapSubscriptionGuard } from './vemtap-subscription.guard';
 import { QRCodesModule } from '../qr-codes/qr-codes.module';
+import { FoldersModule } from '../folders/folders.module';
 import { AuthModule } from '../auth/auth.module';
 import { FormsModule } from '../forms/forms.module';
 import { PrismaModule } from '../prisma/prisma.module';
@@ -18,6 +19,7 @@ import { PrismaModule } from '../prisma/prisma.module';
   imports: [
     PrismaModule,
     QRCodesModule,
+    FoldersModule,
     forwardRef(() => AuthModule),
     FormsModule,
     HttpModule,

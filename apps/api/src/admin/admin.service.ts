@@ -32,6 +32,13 @@ export class AdminService {
   ) {}
 
   async getStats(range = '7d') {
+    const cacheKey = `admin:stats:${range}`;
+    const cachedStats = await this.cacheManager.get<any>(cacheKey);
+    if (cachedStats) {
+      this.logger.log(`Returning cached admin stats for range: ${range}`);
+      return cachedStats;
+    }
+
     const config = await this.prisma.systemConfig.findFirst();
     const [totalUsers, totalQRs, totalScans, activeSubscribers] =
       await Promise.all([
@@ -45,11 +52,8 @@ export class AdminService {
         }),
       ]);
 
-    // Estimated revenue is complex now with tiers.
-    // For simplicity in stats, we might just sum some values or keep it symbolic.
-    // The user didn't ask for a complex revenue model yet, but let's fix the broken part.
-    const estimatedRevenue =
-      activeSubscribers * (config?.quarterlyDiscount || 0); // Placeholder or keep it simple
+    // Revenue calculation is deferred until subscription analytics are implemented
+    const estimatedRevenue = 0;
 
     // Handle different ranges for chart data
     let periods: Date[] = [];
@@ -79,45 +83,57 @@ export class AdminService {
       }).reverse();
     }
 
-    const chartData = await Promise.all(
-      periods.map(async (date) => {
-        const nextPeriod = new Date(date);
-        if (range === 'all') {
-          nextPeriod.setMonth(nextPeriod.getMonth() + 1);
-        } else {
-          nextPeriod.setDate(nextPeriod.getDate() + 1);
-        }
+    const startDate = periods[0];
+    const endDate = new Date(periods[periods.length - 1]);
+    const isAllTime = range === 'all';
+    if (isAllTime) {
+      endDate.setMonth(endDate.getMonth() + 1);
+    } else {
+      endDate.setDate(endDate.getDate() + 1);
+    }
 
-        const count = await this.prisma.qRCode.count({
-          where: {
-            createdAt: {
-              gte: date,
-              lt: nextPeriod,
-            },
-          },
-        });
-
-        let label = '';
-        if (range === '7d') {
-          label = date.toLocaleDateString('en-US', { weekday: 'short' });
-        } else if (range === '30d') {
-          label = date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: '2-digit',
-          });
-        } else {
-          label = date.toLocaleDateString('en-US', {
-            month: 'short',
-            year: '2-digit',
-          });
-        }
-
-        return {
-          name: label,
-          qrs: count,
-        };
-      }),
+    const groupBy = isAllTime ? 'month' : 'day';
+    const dbCounts = await this.prisma.$queryRawUnsafe<{ period: Date; count: bigint }[]>(
+      `SELECT DATE_TRUNC('${groupBy}', "createdAt") as period, COUNT(*)::bigint as count
+       FROM "QRCode"
+       WHERE "createdAt" >= $1 AND "createdAt" < $2 AND "deletedAt" IS NULL
+       GROUP BY DATE_TRUNC('${groupBy}', "createdAt")`,
+      startDate,
+      endDate,
     );
+
+    const countsMap = new Map<string, number>();
+    for (const row of dbCounts) {
+      const keyDate = new Date(row.period);
+      keyDate.setHours(0, 0, 0, 0);
+      countsMap.set(keyDate.toISOString(), Number(row.count));
+    }
+
+    const chartData = periods.map((date) => {
+      let label = '';
+      if (range === '7d') {
+        label = date.toLocaleDateString('en-US', { weekday: 'short' });
+      } else if (range === '30d') {
+        label = date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: '2-digit',
+        });
+      } else {
+        label = date.toLocaleDateString('en-US', {
+          month: 'short',
+          year: '2-digit',
+        });
+      }
+
+      const lookupKey = new Date(date);
+      lookupKey.setHours(0, 0, 0, 0);
+      const count = countsMap.get(lookupKey.toISOString()) || 0;
+
+      return {
+        name: label,
+        qrs: count,
+      };
+    });
 
     // Trends (Compare last 30 days vs previous 30 days)
     const thirtyDaysAgo = new Date();
@@ -151,11 +167,10 @@ export class AdminService {
 
     const calculateChange = (current: number, previous: number) => {
       if (previous === 0) return current > 0 ? 100 : 0;
-      // Using Math.min/max to cap extreme values if necessary, though not strictly required
       return Number((((current - previous) / previous) * 100).toFixed(1));
     };
 
-    return {
+    const statsResult = {
       totalUsers,
       totalQRs,
       totalScans,
@@ -168,6 +183,11 @@ export class AdminService {
         revenue: calculateChange(currentPeriodUsers, previousPeriodUsers), // Proxy for revenue growth
       },
     };
+
+    // Cache the resolved dashboard statistics for 15 minutes (900 seconds)
+    await this.cacheManager.set(cacheKey, statsResult, 900);
+
+    return statsResult;
   }
 
   async getUsers(page = 1, limit = 10, search = '', status?: string) {
@@ -335,10 +355,13 @@ export class AdminService {
       data,
     });
 
-    // Invalidate cache for the affected tier and currency
-    await this.cacheManager.del(
-      `pricing:plans:tier:${updated.tier}:currency:${updated.currencyCode}`,
-    );
+    // Invalidate cache for the affected country, tier, and currency
+    await Promise.all([
+      this.cacheManager.del(`pricing:country:${updated.code}`),
+      this.cacheManager.del(
+        `pricing:plans:tier:${updated.tier}:currency:${updated.currencyCode}`,
+      ),
+    ]);
 
     return updated;
   }
@@ -556,27 +579,23 @@ export class AdminService {
 
     this.logger.log(`Handling expiration for ${expiredUsers.length} users.`);
 
-    // Get the default free plan
+    // Get the default free plan (cached in memory for the duration of this cron tick)
     const freePlan = await this.prisma.plan.findFirst({
       where: { isDefault: true },
     });
 
-    for (const user of expiredUsers) {
-      try {
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: {
-            planId: freePlan?.id || null,
-            subscriptionStatus: 'expired',
-            billingCycle: null,
-            trialEndsAt: null,
-          },
-        });
-        this.logger.log(`User ${user.email} subscription expired and downgraded.`);
-      } catch (err) {
-        this.logger.error(`Failed to downgrade user ${user.email}:`, err);
-      }
-    }
+    const expiredIds = expiredUsers.map((u) => u.id);
+    const result = await this.prisma.user.updateMany({
+      where: { id: { in: expiredIds } },
+      data: {
+        planId: freePlan?.id || null,
+        subscriptionStatus: 'expired',
+        billingCycle: null,
+        trialEndsAt: null,
+      },
+    });
+
+    this.logger.log(`Downgraded ${result.count} expired users to free plan.`);
   }
 
   private async syncPlansWithPaystack(newData: any, oldData: any) {
