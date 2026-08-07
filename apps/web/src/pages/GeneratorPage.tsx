@@ -244,34 +244,21 @@ function GeneratorPage() {
                     {/* Hero intro - catchy, mobile-first attention grabber */}
           <div className="max-w-3xl mx-auto text-center mb-8 sm:mb-12 animate-in fade-in slide-in-from-bottom-6 duration-700">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 mb-4 rounded-full bg-gradient-to-r from-emerald-50 to-blue-50 text-emerald-600 text-[11px] font-semibold border border-emerald-100">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Free. No credit card required.
+              
+              
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-tight mb-3">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
-                Create beautiful, Branded QR codes
-              </span>
-            </h1>
+<h1 className="text-3xl sm:text-4xl md:text-4xl font-extrabold tracking-tight leading-tight mb-3 -mt-4">
+  <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
+    Create beautiful, Branded QR codes
+  </span>
+</h1>
+
             <p className="text-slate-900 font-semibold text-base sm:text-lg mb-1">
               Real-Time Analytics, Dynamic Links &amp; a Landing Page for every Scan.
             </p>
-            <p className="text-slate-500 text-sm sm:text-base mb-6 max-w-xl mx-auto">
-              Scan. Click. Convert. The QR platform that turns physical scans into real customers.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-              <button
-                onClick={() => setIsAuthModalOpen(true)}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-xl shadow-blue-200 hover:from-blue-700 hover:to-indigo-700 active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
-              >
-                <Zap className="w-4 h-4" /> Get Started Free
-              </button>
-              <button
-                onClick={() => document.getElementById('benefits')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-6 py-3 bg-white text-slate-700 rounded-xl font-bold border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
-              >
-                <span className="w-4 h-4" /> See How It Works
-              </button>
-            </div>
+
+
+
           </div>
 
           {/* This is the Main Generator Card - The 1-2-3 Psychology Container */}
