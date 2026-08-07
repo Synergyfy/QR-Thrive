@@ -769,7 +769,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
               >
                 {t.icon}
               </div>
-              <span className="text-[10px] font-extrabold leading-tight flex-1 whitespace-nowrap">
+              <span className="text-[10px] font-medium leading-tight flex-1 whitespace-nowrap">
                 {t.label}
               </span>
             </button>

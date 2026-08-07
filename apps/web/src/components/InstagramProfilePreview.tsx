@@ -8,7 +8,7 @@ interface InstagramProfilePreviewProps {
 const InstagramProfilePreview: React.FC<InstagramProfilePreviewProps> = ({ username }) => {
   const displayUsername = username || 'Vemtapng';
   return (
-    <div className="w-full h-full flex flex-col bg-white font-sans">
+    <div className="w-full min-h-full flex flex-col bg-white font-sans overflow-y-auto scrollbar-hide">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
         <span className="font-bold text-lg">{displayUsername}</span>

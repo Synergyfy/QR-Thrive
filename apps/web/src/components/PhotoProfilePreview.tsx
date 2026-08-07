@@ -12,6 +12,7 @@ interface PhotoProfilePreviewProps {
   buttonColor?: string;
   buttonTextColor?: string;
   onButtonClick?: () => void;
+  compact?: boolean;
 }
 
 const PhotoProfilePreview: React.FC<PhotoProfilePreviewProps> = ({ 
@@ -24,7 +25,8 @@ const PhotoProfilePreview: React.FC<PhotoProfilePreviewProps> = ({
   textColor = "#ffffff",
   buttonColor = "transparent",
   buttonTextColor = "#ffffff",
-  onButtonClick
+  onButtonClick,
+  compact = false
 }) => {
   const [viewingIndex, setViewingIndex] = useState<number | null>(null);
 
@@ -39,7 +41,7 @@ const PhotoProfilePreview: React.FC<PhotoProfilePreviewProps> = ({
   };
 
   return (
-    <div className="w-full h-full flex flex-col font-sans overflow-hidden relative" style={{ backgroundColor: themeColor }}>
+    <div className="w-full min-h-full flex flex-col font-sans overflow-y-auto scrollbar-hide relative" style={{ backgroundColor: themeColor }}>
       {/* Scrollable Container */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
         {/* Header Info */}
@@ -58,8 +60,8 @@ const PhotoProfilePreview: React.FC<PhotoProfilePreviewProps> = ({
         </div>
 
         {/* Gallery Card */}
-        <div className="bg-white rounded-t-[40px] p-5 shadow-xl min-h-[400px]">
-          <div className="flex flex-col gap-4">
+        <div className={compact ? "bg-white rounded-t-[40px] p-5 shadow-xl" : "bg-white rounded-t-[40px] p-5 shadow-xl min-h-[400px]"}>
+          <div className={compact ? "grid grid-cols-2 gap-2" : "flex flex-col gap-4"}>
               {images.length > 0 ? (
                 images.map((img, i) => (
                   <div key={i} className="aspect-[4/3] bg-gray-100 rounded-2xl overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setViewingIndex(i)}>

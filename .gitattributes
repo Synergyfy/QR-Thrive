@@ -1,0 +1,23 @@
+# QR-Thrive line-ending policy
+# The repository is authored in LF. Force LF on text files so Windows
+# checkouts do not introduce CRLF drift (which previously caused every
+# file to appear modified). Binary assets are preserved verbatim.
+* text=auto eol=lf
+
+# Binary assets - never touch line endings or content
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.svg   binary
+*.ico   binary
+*.webp  binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary
+*.otf   binary
+*.pdf   binary
+*.zip   binary
+*.gz    binary
+*.map   binary

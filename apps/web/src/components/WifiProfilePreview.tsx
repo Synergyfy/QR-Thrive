@@ -24,7 +24,7 @@ const WifiProfilePreview: React.FC<WifiProfilePreviewProps> = ({
   };
 
   return (
-    <div className="w-full h-full flex flex-col font-sans bg-[#F8FAFF] overflow-hidden relative">
+    <div className="w-full min-h-full flex flex-col font-sans bg-[#F8FAFF] overflow-y-auto scrollbar-hide relative">
       {/* Background Decor */}
       <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-b from-blue-500/10 to-transparent pointer-events-none" />
       <div className="absolute -top-12 -right-12 w-48 h-48 bg-blue-400/10 rounded-full blur-[60px] pointer-events-none" />
