@@ -252,7 +252,7 @@ export default function PricingPanel() {
                   ))}
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 mt-auto min-h-[80px] flex flex-col justify-end">
                   <button 
                     onClick={() => handleJoinPlan(plans!.find((p: any) => p.name === plan.name)!)}
                     disabled={initializePayment.isPending || plan.isCurrent}

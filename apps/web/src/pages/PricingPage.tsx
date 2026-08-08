@@ -249,7 +249,11 @@ export default function PricingPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+              <div className={`grid gap-8 items-stretch ${
+                currentPlans.length <= 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-4xl mx-auto' :
+                currentPlans.length === 3 ? 'grid-cols-1 md:grid-cols-3' :
+                'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+              }`}>
               {currentPlans.map((plan, idx) => (
                 <motion.div 
                   key={plan.name}
@@ -328,7 +332,7 @@ export default function PricingPage() {
                     ))}
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 mt-auto min-h-[140px] flex flex-col justify-end">
                     {plan.trial && !plan.isCurrent && !user?.hasUsedTrial && (
                       <button 
                         onClick={() => handleJoinPlan(plans!.find(p => p.name === plan.name)!, true)}
