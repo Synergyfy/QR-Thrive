@@ -2204,6 +2204,75 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
 
             {data.type === "video" && (
               <div className="space-y-4">
+                <CollapsibleSection
+                  id="video-info"
+                  title="Page Details"
+                  subtitle="Customize display text"
+                  icon={Type}
+                  isExpanded={expandedSections["video-info"]}
+                  onToggle={toggleSection}
+                >
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Company Name
+                      </p>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm"
+                        placeholder="e.g. Vemtap"
+                        value={data.video?.companyName || ""}
+                        onChange={(e) =>
+                          updateData({
+                            video: {
+                              ...(data.video || { url: "" }),
+                              companyName: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Title
+                      </p>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm"
+                        placeholder="e.g. Digital Engagement Solutions"
+                        value={data.video?.title || ""}
+                        onChange={(e) =>
+                          updateData({
+                            video: {
+                              ...(data.video || { url: "" }),
+                              title: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Description
+                      </p>
+                      <textarea
+                        className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm"
+                        placeholder="Describe your video content..."
+                        rows={3}
+                        value={data.video?.description || ""}
+                        onChange={(e) =>
+                          updateData({
+                            video: {
+                              ...(data.video || { url: "" }),
+                              description: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </CollapsibleSection>
+
                 <div className="space-y-4">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">
                     Paste Video URL
@@ -2310,6 +2379,75 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
 
             {data.type === "pdf" && (
               <div className="space-y-4">
+                <CollapsibleSection
+                  id="pdf-info"
+                  title="Page Details"
+                  subtitle="Customize display text"
+                  icon={Type}
+                  isExpanded={expandedSections["pdf-info"]}
+                  onToggle={toggleSection}
+                >
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Company Name
+                      </p>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm"
+                        placeholder="e.g. Vemtap"
+                        value={data.pdf?.companyName || ""}
+                        onChange={(e) =>
+                          updateData({
+                            pdf: {
+                              ...(data.pdf || {}),
+                              companyName: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Title
+                      </p>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm"
+                        placeholder="e.g. Digital Engagement Solutions"
+                        value={data.pdf?.title || ""}
+                        onChange={(e) =>
+                          updateData({
+                            pdf: {
+                              ...(data.pdf || {}),
+                              title: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Description
+                      </p>
+                      <textarea
+                        className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm"
+                        placeholder="Describe your PDF content..."
+                        rows={3}
+                        value={data.pdf?.description || ""}
+                        onChange={(e) =>
+                          updateData({
+                            pdf: {
+                              ...(data.pdf || {}),
+                              description: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </CollapsibleSection>
+
                 <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[32px] p-12 flex flex-col items-center justify-center space-y-4 transition-all relative overflow-hidden group">
                   {uploading === "pdf" ? (
                     <div className="flex items-center gap-2 text-blue-600">
