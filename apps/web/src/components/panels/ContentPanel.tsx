@@ -2400,7 +2400,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
                         onChange={(e) =>
                           updateData({
                             pdf: {
-                              ...(data.pdf || {}),
+                              ...(data.pdf || ({} as any)),
                               companyName: e.target.value,
                             },
                           })
@@ -2419,7 +2419,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
                         onChange={(e) =>
                           updateData({
                             pdf: {
-                              ...(data.pdf || {}),
+                              ...(data.pdf || ({} as any)),
                               title: e.target.value,
                             },
                           })
@@ -2438,7 +2438,7 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
                         onChange={(e) =>
                           updateData({
                             pdf: {
-                              ...(data.pdf || {}),
+                              ...(data.pdf || ({} as any)),
                               description: e.target.value,
                             },
                           })
