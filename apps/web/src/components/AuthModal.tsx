@@ -91,7 +91,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
   const isLoading = loginMutation.isPending || signupMutation.isPending;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm"
@@ -99,9 +99,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
       />
       
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-        <div className="p-8">
-          <div className="flex justify-between items-center mb-8">
+      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 max-h-[92dvh] flex flex-col">
+        <div className="p-6 sm:p-8 flex-1 overflow-y-auto">
+          <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <Zap className="text-white w-5 h-5 fill-yellow-300" />
@@ -111,12 +111,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
             <button 
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400"
+              aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="mb-8">
+          <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               {isLogin ? 'Welcome Back!' : 'Start Growing Today'}
             </h2>
@@ -129,9 +130,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
 
           <form onSubmit={handleAuth} className="space-y-4">
             {!isLogin && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase ml-1">First Name</label>
+                  <label className="field-label ml-1">First Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input 
@@ -140,12 +141,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       placeholder="John" 
-                      className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" 
+                      className="input pl-11" 
                     />
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase ml-1">Last Name</label>
+                  <label className="field-label ml-1">Last Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input 
@@ -154,7 +155,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       placeholder="Doe" 
-                      className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" 
+                      className="input pl-11" 
                     />
                   </div>
                 </div>
@@ -162,7 +163,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
             )}
             {!isLogin && (
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase ml-1">Business Phone (WhatsApp)</label>
+                <label className="field-label ml-1">Business Phone (WhatsApp)</label>
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input 
@@ -171,13 +172,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+1 234 567 890" 
-                    className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" 
+                    className="input pl-11" 
                   />
                 </div>
               </div>
             )}
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-500 uppercase ml-1">Email Address</label>
+              <label className="field-label ml-1">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input 
@@ -186,12 +187,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com" 
-                  className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" 
+                  className="input pl-11" 
                 />
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-500 uppercase ml-1">Password</label>
+              <label className="field-label ml-1">Password</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input 
@@ -200,12 +201,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••" 
-                  className="w-full pl-11 pr-11 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" 
+                  className="input pl-11 pr-11" 
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -213,7 +215,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
             </div>
             {!isLogin && (
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase ml-1">Confirm Password</label>
+                <label className="field-label ml-1">Confirm Password</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input 
@@ -222,12 +224,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••" 
-                    className="w-full pl-11 pr-11 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" 
+                    className="input pl-11 pr-11" 
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                   >
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -245,7 +248,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
             <button 
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70"
+              className="btn btn-primary w-full h-12 text-xs uppercase tracking-widest"
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -273,7 +276,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
             />
           </div>
 
-          <p className="mt-8 text-center text-sm text-gray-500">
+          <p className="mt-6 text-center text-sm text-gray-500">
             {isLogin ? "Don't have an account?" : "Already have an account?"}
             <button 
               onClick={() => setIsLogin(!isLogin)}
@@ -284,8 +287,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
           </p>
         </div>
         
-        <div className="bg-blue-50 p-6 flex items-center gap-4">
-           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+        <div className="bg-blue-50 p-4 sm:p-5 flex items-center gap-3 shrink-0">
+           <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm border border-blue-100 shrink-0">
               <Zap className="w-5 h-5 fill-yellow-400 text-yellow-400" />
            </div>
            <div>

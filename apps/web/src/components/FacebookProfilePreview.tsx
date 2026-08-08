@@ -15,7 +15,7 @@ const FacebookProfilePreview: React.FC<FacebookProfilePreviewProps> = ({
   banner = ""
 }) => {
   return (
-    <div className="w-full h-full flex flex-col bg-white font-sans overflow-hidden">
+    <div className="w-full min-h-full flex flex-col bg-white font-sans overflow-y-auto scrollbar-hide">
       {/* Banner / Cover */}
       <div className="h-40 bg-gradient-to-r from-pink-200 via-purple-200 to-blue-200 relative">
         {banner && <img src={banner} className="w-full h-full object-cover" alt="Banner" />}

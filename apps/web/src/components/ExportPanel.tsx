@@ -34,7 +34,7 @@ const ExportPanel: React.FC<ExportPanelProps> = ({ config, hasUser, isValid = tr
         onClick={() => isValid && handleDownload('svg')}
         disabled={!isValid}
         className={cn(
-          "w-full flex items-center justify-center gap-3 px-8 py-5 text-white rounded-[24px] font-bold text-lg transition-all shadow-2xl active:scale-95 group",
+          "w-full flex items-center justify-center gap-2.5 px-5 sm:px-8 py-4 sm:py-5 text-white rounded-2xl sm:rounded-[24px] font-bold text-sm sm:text-lg transition-all shadow-2xl active:scale-95 group",
           isValid 
             ? "bg-blue-600 hover:bg-blue-700 shadow-blue-200" 
             : "bg-gray-300 cursor-not-allowed shadow-none"
@@ -44,12 +44,12 @@ const ExportPanel: React.FC<ExportPanelProps> = ({ config, hasUser, isValid = tr
         Download Vector (SVG)
       </button>
       
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
         <button
           onClick={() => isValid && handleDownload('png')}
           disabled={!isValid}
           className={cn(
-            "flex items-center justify-center gap-2 px-6 py-4 bg-white border border-gray-100 rounded-2xl font-bold transition-all shadow-sm active:scale-95 text-xs uppercase tracking-widest",
+            "flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-3.5 sm:py-4 bg-white border border-gray-100 rounded-xl sm:rounded-2xl font-bold transition-all shadow-sm active:scale-95 text-[11px] sm:text-xs uppercase tracking-widest",
             isValid 
               ? "text-gray-700 hover:shadow-xl hover:border-blue-100" 
               : "text-gray-300 cursor-not-allowed opacity-50"
@@ -62,7 +62,7 @@ const ExportPanel: React.FC<ExportPanelProps> = ({ config, hasUser, isValid = tr
           onClick={() => isValid && handleDownload('jpeg')}
           disabled={!isValid}
           className={cn(
-            "flex items-center justify-center gap-2 px-6 py-4 bg-white border border-gray-100 rounded-2xl font-bold transition-all shadow-sm active:scale-95 text-xs uppercase tracking-widest",
+            "flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-3.5 sm:py-4 bg-white border border-gray-100 rounded-xl sm:rounded-2xl font-bold transition-all shadow-sm active:scale-95 text-[11px] sm:text-xs uppercase tracking-widest",
             isValid 
               ? "text-gray-700 hover:shadow-xl hover:border-blue-100" 
               : "text-gray-300 cursor-not-allowed opacity-50"
