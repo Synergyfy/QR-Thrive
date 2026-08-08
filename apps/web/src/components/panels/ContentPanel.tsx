@@ -914,6 +914,66 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
                   </div>
                 </div>
 
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                      Page Title
+                    </p>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm"
+                      placeholder="e.g. My Website"
+                      value={data.urlPreview?.title || ""}
+                      onChange={(e) =>
+                        updateData({
+                          urlPreview: {
+                            ...(data.urlPreview || {}),
+                            title: e.target.value,
+                          },
+                        })
+                      }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Artist
+                      </p>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm"
+                        placeholder="e.g. John Doe"
+                        value={data.mp3?.artist || ""}
+                        onChange={(e) =>
+                          updateData({
+                            mp3: {
+                              ...(data.mp3 || ({} as any)),
+                              artist: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Description
+                    </p>
+                    <textarea
+                      className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm"
+                      placeholder="A short description of your website..."
+                      rows={3}
+                      value={data.urlPreview?.description || ""}
+                      onChange={(e) =>
+                        updateData({
+                          urlPreview: {
+                            ...(data.urlPreview || {}),
+                            description: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+
                 <CollapsibleSection
                   id="url-theme"
                   title="Mockup Appearance"
@@ -1692,6 +1752,32 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
               </div>
             )}
 
+            {data.type === "phone" && (
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    Phone Number
+                  </p>
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                      <Phone className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="tel"
+                      value={data.phone?.number || ""}
+                      onChange={(e) =>
+                        updateData({
+                          phone: { number: e.target.value },
+                        })
+                      }
+                      placeholder="+1 234 567 890"
+                      className="w-full pl-12 pr-4 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {data.type === "socials" && (
               <div className="space-y-6">
                 <CollapsibleSection
@@ -1739,6 +1825,39 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
                         rows={3}
                         className="w-full p-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-sm font-semibold bg-gray-50/30 transition-all"
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Theme Color
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer"
+                          value={data.socials?.themeColor || "#3b82f6"}
+                          onChange={(e) =>
+                            updateData({
+                              socials: {
+                                ...(data.socials || {}),
+                                themeColor: e.target.value,
+                              },
+                            })
+                          }
+                        />
+                        <input
+                          type="text"
+                          className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm"
+                          value={data.socials?.themeColor || "#3b82f6"}
+                          onChange={(e) =>
+                            updateData({
+                              socials: {
+                                ...(data.socials || {}),
+                                themeColor: e.target.value,
+                              },
+                            })
+                          }
+                        />
+                      </div>
                     </div>
                   </div>
                 </CollapsibleSection>
@@ -2018,6 +2137,119 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
               </div>
             )}
 
+            {data.type === "facebook" && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                    Page Name
+                  </p>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm"
+                    placeholder="e.g. My Business"
+                    value={data.facebook?.name || ""}
+                    onChange={(e) =>
+                      updateData({
+                        facebook: {
+                          ...(data.facebook || {}),
+                          name: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                    Bio
+                  </p>
+                  <textarea
+                    className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm"
+                    placeholder="Tell people about your page..."
+                    rows={3}
+                    value={data.facebook?.bio || ""}
+                    onChange={(e) =>
+                      updateData({
+                        facebook: {
+                          ...(data.facebook || {}),
+                          bio: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                      Logo
+                    </p>
+                    <label className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
+                      {data.facebook?.logo ? (
+                        <img src={data.facebook.logo} className="w-full h-full object-contain p-2" />
+                      ) : (
+                        <>
+                          <Camera className="w-5 h-5 text-gray-400" />
+                          <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Upload Logo</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) =>
+                              updateData({
+                                facebook: {
+                                  ...(data.facebook || {}),
+                                  logo: ev.target?.result as string,
+                                },
+                              });
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                      Banner
+                    </p>
+                    <label className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
+                      {data.facebook?.banner ? (
+                        <img src={data.facebook.banner} className="w-full h-full object-cover" />
+                      ) : (
+                        <>
+                          <ImageIcon className="w-5 h-5 text-gray-400" />
+                          <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Upload Banner</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) =>
+                              updateData({
+                                facebook: {
+                                  ...(data.facebook || {}),
+                                  banner: ev.target?.result as string,
+                                },
+                              });
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {data.type === "crypto" && (
               <div className="space-y-6">
                 <div className="space-y-2">
@@ -2121,6 +2353,78 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
                       className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30"
                     />
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        Start Date
+                      </p>
+                      <input
+                        type="datetime-local"
+                        value={data.event?.startDate || ""}
+                        onChange={(e) =>
+                          updateData({
+                            event: {
+                              ...(data.event || {
+                                title: "",
+                                location: "",
+                                endDate: "",
+                                description: "",
+                              }),
+                              startDate: e.target.value,
+                            },
+                          })
+                        }
+                        className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        End Date
+                      </p>
+                      <input
+                        type="datetime-local"
+                        value={data.event?.endDate || ""}
+                        onChange={(e) =>
+                          updateData({
+                            event: {
+                              ...(data.event || {
+                                title: "",
+                                location: "",
+                                startDate: "",
+                                description: "",
+                              }),
+                              endDate: e.target.value,
+                            },
+                          })
+                        }
+                        className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Description
+                    </p>
+                    <textarea
+                      value={data.event?.description || ""}
+                      onChange={(e) =>
+                        updateData({
+                          event: {
+                            ...(data.event || {
+                              title: "",
+                              location: "",
+                              startDate: "",
+                              endDate: "",
+                            }),
+                            description: e.target.value,
+                          },
+                        })
+                      }
+                      placeholder="Describe your event..."
+                      rows={3}
+                      className="w-full px-4 py-3 border-2 border-gray-50 focus:border-blue-600 rounded-xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30"
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -2185,6 +2489,89 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
                     </p>
                   </div>
                 )}
+
+                <CollapsibleSection
+                  id="image-info"
+                  title="Page Details"
+                  subtitle="Customize display text"
+                  icon={Type}
+                  isExpanded={expandedSections["image-info"]}
+                  onToggle={toggleSection}
+                >
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Gallery Title
+                      </p>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm"
+                        placeholder="e.g. My Gallery"
+                        value={data.imageGalleryInfo?.title || ""}
+                        onChange={(e) =>
+                          updateData({
+                            imageGalleryInfo: {
+                              ...(data.imageGalleryInfo || {}),
+                              title: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Description
+                      </p>
+                      <textarea
+                        className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-medium text-gray-900 bg-gray-50/30 text-sm"
+                        placeholder="Describe your gallery..."
+                        rows={3}
+                        value={data.imageGalleryInfo?.description || ""}
+                        onChange={(e) =>
+                          updateData({
+                            imageGalleryInfo: {
+                              ...(data.imageGalleryInfo || {}),
+                              description: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Theme Color
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer"
+                          value={data.imageGalleryInfo?.themeColor || "#3b82f6"}
+                          onChange={(e) =>
+                            updateData({
+                              imageGalleryInfo: {
+                                ...(data.imageGalleryInfo || {}),
+                                themeColor: e.target.value,
+                              },
+                            })
+                          }
+                        />
+                        <input
+                          type="text"
+                          className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm"
+                          value={data.imageGalleryInfo?.themeColor || "#3b82f6"}
+                          onChange={(e) =>
+                            updateData({
+                              imageGalleryInfo: {
+                                ...(data.imageGalleryInfo || {}),
+                                themeColor: e.target.value,
+                              },
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleSection>
 
                 <CollapsibleSection
                   id="image-cta"
@@ -2269,6 +2656,172 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
                           })
                         }
                       />
+                    </div>
+                  </div>
+                </CollapsibleSection>
+
+                <CollapsibleSection
+                  id="video-design"
+                  title="Colors & Style"
+                  icon={Palette}
+                  isExpanded={expandedSections["video-design"]}
+                  onToggle={toggleSection}
+                >
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Footer Text
+                      </p>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm"
+                        placeholder="e.g. Watch now"
+                        value={data.video?.footerText || ""}
+                        onChange={(e) =>
+                          updateData({
+                            video: {
+                              ...(data.video || { url: "" }),
+                              footerText: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                          Background Color
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer"
+                            value={data.video?.themeColor || "#3b82f6"}
+                            onChange={(e) =>
+                              updateData({
+                                video: {
+                                  ...(data.video || { url: "" }),
+                                  themeColor: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                          <input
+                            type="text"
+                            className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase"
+                            value={data.video?.themeColor || "#3b82f6"}
+                            onChange={(e) =>
+                              updateData({
+                                video: {
+                                  ...(data.video || { url: "" }),
+                                  themeColor: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                          Text Color
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer"
+                            value={data.video?.textColor || "#ffffff"}
+                            onChange={(e) =>
+                              updateData({
+                                video: {
+                                  ...(data.video || { url: "" }),
+                                  textColor: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                          <input
+                            type="text"
+                            className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase"
+                            value={data.video?.textColor || "#ffffff"}
+                            onChange={(e) =>
+                              updateData({
+                                video: {
+                                  ...(data.video || { url: "" }),
+                                  textColor: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                          Button Color
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer"
+                            value={data.video?.buttonColor || "#3b82f6"}
+                            onChange={(e) =>
+                              updateData({
+                                video: {
+                                  ...(data.video || { url: "" }),
+                                  buttonColor: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                          <input
+                            type="text"
+                            className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase"
+                            value={data.video?.buttonColor || "#3b82f6"}
+                            onChange={(e) =>
+                              updateData({
+                                video: {
+                                  ...(data.video || { url: "" }),
+                                  buttonColor: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                          Button Text Color
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer"
+                            value={data.video?.buttonTextColor || "#ffffff"}
+                            onChange={(e) =>
+                              updateData({
+                                video: {
+                                  ...(data.video || { url: "" }),
+                                  buttonTextColor: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                          <input
+                            type="text"
+                            className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase"
+                            value={data.video?.buttonTextColor || "#ffffff"}
+                            onChange={(e) =>
+                              updateData({
+                                video: {
+                                  ...(data.video || { url: "" }),
+                                  buttonTextColor: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </CollapsibleSection>
@@ -2444,6 +2997,153 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
                           })
                         }
                       />
+                    </div>
+                  </div>
+                </CollapsibleSection>
+
+                <CollapsibleSection
+                  id="pdf-design"
+                  title="Colors & Style"
+                  icon={Palette}
+                  isExpanded={expandedSections["pdf-design"]}
+                  onToggle={toggleSection}
+                >
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                          Background Color
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer"
+                            value={data.pdf?.themeColor || "#3b82f6"}
+                            onChange={(e) =>
+                              updateData({
+                                pdf: {
+                                  ...(data.pdf || ({} as any)),
+                                  themeColor: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                          <input
+                            type="text"
+                            className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase"
+                            value={data.pdf?.themeColor || "#3b82f6"}
+                            onChange={(e) =>
+                              updateData({
+                                pdf: {
+                                  ...(data.pdf || ({} as any)),
+                                  themeColor: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                          Text Color
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer"
+                            value={data.pdf?.textColor || "#ffffff"}
+                            onChange={(e) =>
+                              updateData({
+                                pdf: {
+                                  ...(data.pdf || ({} as any)),
+                                  textColor: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                          <input
+                            type="text"
+                            className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase"
+                            value={data.pdf?.textColor || "#ffffff"}
+                            onChange={(e) =>
+                              updateData({
+                                pdf: {
+                                  ...(data.pdf || ({} as any)),
+                                  textColor: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                          Button Color
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer"
+                            value={data.pdf?.buttonColor || "#3b82f6"}
+                            onChange={(e) =>
+                              updateData({
+                                pdf: {
+                                  ...(data.pdf || ({} as any)),
+                                  buttonColor: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                          <input
+                            type="text"
+                            className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase"
+                            value={data.pdf?.buttonColor || "#3b82f6"}
+                            onChange={(e) =>
+                              updateData({
+                                pdf: {
+                                  ...(data.pdf || ({} as any)),
+                                  buttonColor: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                          Button Text Color
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer"
+                            value={data.pdf?.buttonTextColor || "#ffffff"}
+                            onChange={(e) =>
+                              updateData({
+                                pdf: {
+                                  ...(data.pdf || ({} as any)),
+                                  buttonTextColor: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                          <input
+                            type="text"
+                            className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm uppercase"
+                            value={data.pdf?.buttonTextColor || "#ffffff"}
+                            onChange={(e) =>
+                              updateData({
+                                pdf: {
+                                  ...(data.pdf || ({} as any)),
+                                  buttonTextColor: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </CollapsibleSection>
@@ -2921,6 +3621,39 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
                           })
                         }
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Theme Color
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          className="w-10 h-10 rounded-lg border-2 border-gray-100 cursor-pointer"
+                          value={data.app?.themeColor || "#3b82f6"}
+                          onChange={(e) =>
+                            updateData({
+                              app: {
+                                ...(data.app || {}),
+                                themeColor: e.target.value,
+                              },
+                            })
+                          }
+                        />
+                        <input
+                          type="text"
+                          className="flex-1 px-3 py-2 border-2 border-gray-50 rounded-lg outline-none font-mono text-sm"
+                          value={data.app?.themeColor || "#3b82f6"}
+                          onChange={(e) =>
+                            updateData({
+                              app: {
+                                ...(data.app || {}),
+                                themeColor: e.target.value,
+                              },
+                            })
+                          }
+                        />
+                      </div>
                     </div>
                   </div>
                 </CollapsibleSection>
@@ -5106,6 +5839,75 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
                           }
                         />
                       </div>
+                    </div>
+                  </div>
+                </CollapsibleSection>
+
+                <CollapsibleSection
+                  id="links-contact"
+                  title="Contact Info"
+                  subtitle="Optional contact details"
+                  icon={Phone}
+                  isExpanded={expandedSections["links-contact"]}
+                  onToggle={toggleSection}
+                >
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Phone Number
+                      </p>
+                      <input
+                        type="tel"
+                        className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm"
+                        placeholder="+1 234 567 890"
+                        value={data.linksInfo?.phone || ""}
+                        onChange={(e) =>
+                          updateData({
+                            linksInfo: {
+                              ...(data.linksInfo || {}),
+                              phone: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Email
+                      </p>
+                      <input
+                        type="email"
+                        className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm"
+                        placeholder="hello@example.com"
+                        value={data.linksInfo?.email || ""}
+                        onChange={(e) =>
+                          updateData({
+                            linksInfo: {
+                              ...(data.linksInfo || {}),
+                              email: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                        Website
+                      </p>
+                      <input
+                        type="url"
+                        className="w-full px-4 py-3 border-2 border-gray-50 rounded-xl outline-none font-bold text-gray-900 bg-gray-50/30 text-sm"
+                        placeholder="https://your-website.com"
+                        value={data.linksInfo?.website || ""}
+                        onChange={(e) =>
+                          updateData({
+                            linksInfo: {
+                              ...(data.linksInfo || {}),
+                              website: e.target.value,
+                            },
+                          })
+                        }
+                      />
                     </div>
                   </div>
                 </CollapsibleSection>
