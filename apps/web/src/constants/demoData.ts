@@ -112,7 +112,10 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
     pdf: {
       id: 'demo-pdf',
       name: 'Business_Proposal.pdf',
-      url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+      url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+      companyName: 'Vemtap',
+      title: 'Digital Engagement Solutions',
+      description: 'We help businesses bring customers back. Instantly collect data with a simple tap and engage them automatically.'
     }
   },
   video: {
@@ -121,7 +124,10 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
       id: 'demo-video',
       url: 'https://www.w3schools.com/html/mov_bbb.mp4',
       name: 'Product_Demo.mp4',
-      platform: 'other'
+      platform: 'other',
+      companyName: 'Vemtap',
+      title: 'Digital Engagement Solutions',
+      description: 'We help businesses bring customers back. Instantly collect data with a simple tap and engage them automatically.'
     }
   },
   image: {
