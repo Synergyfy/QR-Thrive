@@ -32,6 +32,7 @@ import {
   Clock,
   Image as ImageIcon,
   QrCode,
+  Search,
 } from "lucide-react";
 import type { QRConfiguration, QRData, QRType } from "../../types/qr";
 import FormBuilder from "../FormBuilder";
@@ -295,6 +296,91 @@ const CTADestinationPicker = ({
             }
           />
         </div>
+      )}
+    </div>
+  );
+};
+
+const CountrySelector = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  
+  const selectedCountry = countries.find(c => c.dialCode === value) || countries.find(c => c.dialCode === "+1");
+  
+  const filteredCountries = countries.filter(c => 
+    c.name.toLowerCase().includes(search.toLowerCase()) || 
+    c.dialCode.includes(search) ||
+    c.code.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full pl-11 pr-10 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30 flex items-center justify-between cursor-pointer"
+      >
+        <div className="flex items-center gap-2">
+          <span>{selectedCountry?.flag}</span>
+          <span>{selectedCountry?.name} ({selectedCountry?.dialCode})</span>
+        </div>
+        <ChevronDown className={cn("w-4 h-4 text-gray-400 transition-transform", isOpen && "rotate-180")} />
+      </button>
+
+      {isOpen && (
+        <>
+          <div 
+            className="fixed inset-0 z-[100]" 
+            onClick={() => setIsOpen(false)} 
+          />
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-[101] overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-top">
+            <div className="p-3 border-b border-gray-50 bg-gray-50/50">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Search country or code..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 rounded-xl text-xs font-bold outline-none focus:border-blue-600 transition-all"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+            <div className="max-h-[300px] overflow-y-auto no-scrollbar">
+              {filteredCountries.length > 0 ? (
+                filteredCountries.map((c) => (
+                  <button
+                    key={`${c.code}-${c.dialCode}`}
+                    type="button"
+                    onClick={() => {
+                      onChange(c.dialCode);
+                      setIsOpen(false);
+                      setSearch("");
+                    }}
+                    className={cn(
+                      "w-full px-4 py-3 flex items-center justify-between hover:bg-blue-50 transition-colors text-left",
+                      value === c.dialCode && "bg-blue-50/50"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">{c.flag}</span>
+                      <span className="text-sm font-bold text-gray-700">{c.name}</span>
+                    </div>
+                    <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
+                      {c.dialCode}
+                    </span>
+                  </button>
+                ))
+              ) : (
+                <div className="p-8 text-center">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No countries found</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
@@ -1541,30 +1627,17 @@ const ContentPanel: React.FC<ContentPanelProps> = ({
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">
                         <Globe className="w-4 h-4" />
                       </div>
-                      <select
+                      <CountrySelector 
                         value={data.whatsapp?.countryCode || "+1"}
-                        onChange={(e) =>
+                        onChange={(val) => 
                           updateData({
                             whatsapp: {
                               ...(data.whatsapp || { message: "" }),
-                              countryCode: e.target.value,
+                              countryCode: val,
                             },
                           })
                         }
-                        className="w-full pl-11 pr-10 py-4 border-2 border-gray-50 focus:border-blue-600 rounded-2xl outline-none text-gray-900 font-semibold transition-all bg-gray-50/30 appearance-none cursor-pointer"
-                      >
-                        {countries.map((c) => (
-                          <option
-                            key={`${c.code}-${c.dialCode}`}
-                            value={c.dialCode}
-                          >
-                            {c.flag} {c.name} ({c.dialCode})
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                        <ChevronDown className="w-4 h-4" />
-                      </div>
+                      />
                     </div>
                   </div>
 
