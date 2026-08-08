@@ -186,7 +186,7 @@ const BookingProfilePreview: React.FC<BookingProfilePreviewProps> = ({
   for (let d = 1; d <= daysInMonth; d++) calendarCells.push(d);
 
   return (
-    <div className="w-full h-full flex flex-col font-sans bg-slate-50 overflow-hidden relative">
+    <div className="w-full min-h-full flex flex-col font-sans bg-slate-50 overflow-y-auto scrollbar-hide relative">
       {/* Dynamic Background */}
       <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b opacity-10 pointer-events-none" style={{ backgroundColor: themeColor }} />
       

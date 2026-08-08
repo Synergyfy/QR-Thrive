@@ -5,19 +5,28 @@ import {
   UseGuards,
   Param,
   Get,
+  Patch,
+  Put,
   Query,
   Delete,
   Logger,
+  Req,
 } from '@nestjs/common';
 import { ApiKeyGuard } from '../auth/guards/api-key.guard';
+import { VemTapSubscriptionGuard, VemTapSubscriptionPayload } from './vemtap-subscription.guard';
 import { IntegrationService } from './integration.service';
 import { IntegrationUserDto } from './dto/integration.dto';
 import { StatsQueryDto } from './dto/stats-query.dto';
+import { LeadsQueryDto } from './dto/leads-query.dto';
 import { QRCodesService } from '../qr-codes/qr-codes.service';
 import { FormsService } from '../forms/forms.service';
 import { CreateQRCodeDto } from '../qr-codes/dto/create-qr-code.dto';
+import { UpdateQRCodeDto } from '../qr-codes/dto/update-qr-code.dto';
+import { FoldersService } from '../folders/folders.service';
+import { CreateFolderDto, UpdateFolderDto } from '../folders/dto/folder.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiHeader, ApiQuery } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
+import type { Request } from 'express';
 
 @ApiTags('External Integration')
 @ApiHeader({
@@ -25,7 +34,7 @@ import { Public } from '../auth/decorators/public.decorator';
   description: 'Secure API key for external integration',
 })
 @Controller('integration')
-@UseGuards(ApiKeyGuard)
+@UseGuards(ApiKeyGuard, VemTapSubscriptionGuard)
 @Public()
 export class IntegrationController {
   private readonly logger = new Logger(IntegrationController.name);
@@ -34,6 +43,7 @@ export class IntegrationController {
     private readonly integrationService: IntegrationService,
     private readonly qrCodesService: QRCodesService,
     private readonly formsService: FormsService,
+    private readonly foldersService: FoldersService,
   ) {}
 
   @Post('users')
@@ -64,8 +74,9 @@ export class IntegrationController {
   async createQRCode(
     @Param('userId') userId: string,
     @Body() dto: CreateQRCodeDto,
+    @Req() req: Request,
   ) {
-    return this.qrCodesService.create(userId, dto);
+    return this.qrCodesService.create(userId, dto, req.vemtapSubscription);
   }
 
   @Get('users/:userId/qr-codes/:id')
@@ -107,6 +118,16 @@ export class IntegrationController {
     return this.formsService.getAllSubmissions(userId);
   }
 
+  @Get('users/:userId/specialized-leads')
+  @ApiOperation({ summary: 'Get specialized leads (booking, menu) for a user with pagination and search' })
+  @ApiResponse({ status: 200, description: 'Leads retrieved successfully.' })
+  async getSpecializedLeads(
+    @Param('userId') userId: string,
+    @Query() query: LeadsQueryDto,
+  ) {
+    return this.formsService.getLeadsForIntegration(userId, query);
+  }
+
   @Get('plans')
   @ApiOperation({ summary: 'Get all active plans' })
   @ApiResponse({ status: 200, description: 'List of plans retrieved.' })
@@ -120,8 +141,13 @@ export class IntegrationController {
   async setUserSubscription(
     @Param('userId') userId: string,
     @Body('planId') planId: string,
+    @Body('managedSubscriptionToken') managedSubscriptionToken?: string,
   ) {
-    return this.integrationService.setUserSubscription(userId, planId);
+    return this.integrationService.setUserSubscription(
+      userId,
+      planId,
+      managedSubscriptionToken,
+    );
   }
 
   @Get('users/:userId/stats')
@@ -136,6 +162,18 @@ export class IntegrationController {
     return this.qrCodesService.getStats(userId, query.startDate, query.endDate);
   }
 
+  @Patch('users/:userId/qr-codes/:id')
+  @ApiOperation({ summary: 'Update a QR code' })
+  @ApiResponse({ status: 200, description: 'QR code updated successfully.' })
+  async updateQRCode(
+    @Param('userId') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateQRCodeDto,
+    @Req() req: Request,
+  ) {
+    return this.qrCodesService.update(id, userId, dto, req.vemtapSubscription);
+  }
+
   @Delete('users/:userId/qr-codes/:id')
   @ApiOperation({ summary: 'Delete a QR code' })
   @ApiResponse({ status: 200, description: 'QR code deleted.' })
@@ -144,5 +182,43 @@ export class IntegrationController {
     @Param('id') qrCodeId: string,
   ) {
     return this.qrCodesService.remove(qrCodeId, userId);
+  }
+
+  @Get('users/:userId/folders')
+  @ApiOperation({ summary: 'Get all folders for an integration user' })
+  @ApiResponse({ status: 200, description: 'List of folders retrieved.' })
+  async getAllFolders(@Param('userId') userId: string) {
+    return this.foldersService.findAll(userId);
+  }
+
+  @Post('users/:userId/folders')
+  @ApiOperation({ summary: 'Create a folder on behalf of a user' })
+  @ApiResponse({ status: 201, description: 'Folder successfully created.' })
+  async createFolder(
+    @Param('userId') userId: string,
+    @Body() dto: CreateFolderDto,
+  ) {
+    return this.foldersService.create(userId, dto);
+  }
+
+  @Put('users/:userId/folders/:id')
+  @ApiOperation({ summary: 'Update a folder' })
+  @ApiResponse({ status: 200, description: 'Folder updated successfully.' })
+  async updateFolder(
+    @Param('userId') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateFolderDto,
+  ) {
+    return this.foldersService.update(id, userId, dto);
+  }
+
+  @Delete('users/:userId/folders/:id')
+  @ApiOperation({ summary: 'Delete a folder' })
+  @ApiResponse({ status: 200, description: 'Folder deleted.' })
+  async deleteFolder(
+    @Param('userId') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.foldersService.remove(id, userId);
   }
 }

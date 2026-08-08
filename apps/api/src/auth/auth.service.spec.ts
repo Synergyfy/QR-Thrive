@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { VemtapService } from '../integration/vemtap.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -28,6 +29,11 @@ describe('AuthService', () => {
     get: jest.fn(),
   };
 
+  const mockVemtapService = {
+    fetchPlans: jest.fn(),
+    provisionUser: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -35,6 +41,7 @@ describe('AuthService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
+        { provide: VemtapService, useValue: mockVemtapService },
       ],
     }).compile();
 

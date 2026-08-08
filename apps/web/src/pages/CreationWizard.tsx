@@ -15,15 +15,12 @@ import {
   Users,
   Ticket,
   Wifi,
-  Zap,
   Palette,
   Image as LogoIcon,
   Frame,
   Loader2,
   LayoutGrid,
-  FileEdit,
-  X,
-  Lock
+  X
 } from 'lucide-react';
 
 const FacebookIcon = (props: any) => (
@@ -48,7 +45,9 @@ import LogoPanel from '../components/panels/LogoPanel';
 import FramePanel from '../components/panels/FramePanel';
 import ContentPanel from '../components/panels/ContentPanel';
 import QRCodePreview from '../components/QRCodePreview';
+import TypeSelector from '../components/TypeSelector';
 import DynamicView from '../components/DynamicView';
+import AutoFitScale from '../components/AutoFitScale';
 import toast from 'react-hot-toast';
 import { useQRCode, useCreateQRCode, useUpdateQRCode, useCurrentUser } from '../hooks/useApi';
 import { uploadAllPendingFiles } from '../utils/upload';
@@ -59,7 +58,7 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-type Step = 'type' | 'content' | 'design';
+type Step = 'type' | 'design';
 
 const HELP_CONTENT: Record<Step, { title: string; description: string; icon: any; color: string; image: string }> = {
   type: {
@@ -68,13 +67,6 @@ const HELP_CONTENT: Record<Step, { title: string; description: string; icon: any
     icon: LayoutGrid,
     color: "bg-blue-600",
     image: "/inspo-2.png"
-  },
-  content: {
-    title: "Add content",
-    description: "Fill in the necessary information for your QR code. Depending on the type selected, you can add links, files, or text.",
-    icon: FileEdit,
-    color: "bg-purple-600",
-    image: "/inspo-2.png" // Using the same inspo-2 image as requested
   },
   design: {
     title: "Design your QR code",
@@ -137,12 +129,10 @@ const CreationWizard: React.FC = () => {
   const isEditing = !!editId;
 
   const [step, setStep] = useState<Step>(() => {
-    if (editStep === 'content') return 'content';
     if (editStep === 'design') return 'design';
     return 'type';
   });
   const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [hoveredType, setHoveredType] = useState<string | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [config, setConfig] = useState<QRConfiguration>(INITIAL_CONFIG);
   const [designTab, setDesignTab] = useState<'shape' | 'frame' | 'logo' | 'colors'>('shape');
@@ -198,7 +188,6 @@ const CreationWizard: React.FC = () => {
 
   const steps = [
     { id: 'type', label: 'Choose Type' },
-    { id: 'content', label: 'Additional Information' },
     { id: 'design', label: 'QR Design' },
   ];
 
@@ -371,90 +360,30 @@ const CreationWizard: React.FC = () => {
                     <div className="space-y-2">
                        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">1. Select a type of QR code</h1>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                       {qrTypes.map(type => (
-                          <button
-                            key={type.id}
-                            onMouseEnter={() => setHoveredType(type.id)}
-                            onMouseLeave={() => setHoveredType(null)}
-                            onClick={() => {
-                              if (!isLocked(type.id)) {
-                                setSelectedType(type.id);
-                                if (window.innerWidth < 1024) {
-                                  setTimeout(() => setStep('content'), 200);
-                                }
-                              }
-                            }}
-                            className={cn(
-                              "flex flex-col items-center text-center p-6 rounded-[2rem] border-2 transition-all group relative overflow-hidden",
-                              isLocked(type.id)
-                                ? "border-slate-100 bg-slate-50/30 opacity-80 cursor-not-allowed"
-                                : selectedType === type.id
-                                  ? "border-blue-600 bg-blue-50/10 ring-4 ring-blue-50/30 hover:scale-[1.02] active:scale-[0.98]"
-                                  : "border-white bg-white hover:border-slate-100 shadow-sm shadow-slate-200/50 hover:scale-[1.02] active:scale-[0.98]"
-                            )}
-                          >
-                             {/* Padlock for restricted types */}
-                             {isLocked(type.id) && (
-                               <div className="absolute top-4 right-4 text-slate-300">
-                                 <Lock className="w-4 h-4" />
-                               </div>
-                             )}
-
-                             <div className={cn(
-                               "w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all mb-3 sm:mb-4 border-2",
-                               isLocked(type.id)
-                                 ? "bg-slate-100 text-slate-300 border-slate-200"
-                                 : selectedType === type.id
-                                   ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200"
-                                   : "bg-white text-slate-400 border-slate-100 group-hover:border-blue-100 group-hover:text-blue-600"
-                             )}>
-                                <type.icon className="w-6 h-6 sm:w-7 sm:h-7" />
-                             </div>
-                             <div className="space-y-1">
-                                <h3 className="font-bold text-slate-900 text-xs sm:text-sm tracking-tight">{type.title}</h3>
-                                <p className="text-[10px] sm:text-xs font-medium text-slate-400 leading-tight px-1 sm:px-2">
-                                  {isLocked(type.id) ? 'Upgrade' : type.description}
-                                </p>
-                             </div>
-                             {type.category === 'dynamic' && !isLocked(type.id) && (
-                                <div className="absolute top-3 right-3 w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-                             )}
-                          </button>
-                       ))}
-                    </div>
-                 </div>
-               )}
-
-               {step === 'content' && (
-                  <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
-                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
-                        <div className="space-y-1 pr-4 sm:pr-0">
-                           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-                              2. {isEditing ? 'Edit Content' : qrTypes.find(t => t.id === selectedType)?.title}
-                           </h1>
-                           <p className="text-[11px] sm:text-sm text-slate-400 font-medium">
-                              {isEditing ? 'Update the information for your QR Code.' : 'Complete the information for your QR Code.'}
-                           </p>
-                        </div>
-                        {!isEditing && (
-                          <button className="w-full sm:w-auto px-5 py-3.5 sm:py-2.5 bg-blue-600 text-white text-[11px] sm:text-xs font-bold uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-100 shrink-0">
-                             <Zap className="w-4 h-4 sm:w-3.5 sm:h-3.5 fill-white" /> Bulk Creation
-                          </button>
-                        )}
-                     </div>
-                     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                    <TypeSelector
+                      qrTypes={qrTypes}
+                      selected={selectedType}
+                      isLocked={isLocked}
+                      onSelect={(id) => {
+                        if (!isLocked(id)) {
+                          setSelectedType(id);
+                        }
+                      }}
+                    />
+                    {selectedType && step === 'type' && (
+                      <div className="animate-in fade-in slide-in-from-top-4 duration-500">
                         <ContentPanel config={config} updateData={updateData} hideTypeSelector={true} />
-                     </div>
-                  </div>
-               )}
+                      </div>
+                    )}
+                 </div>
+                )}
 
-               {step === 'design' && (
+                {step === 'design' && (
                  <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                      <div className="space-y-2">
-                       <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-                          3. {isEditing ? 'Edit Design' : 'Design QR Code'}
-                       </h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                   2. {isEditing ? 'Edit Design' : 'Design QR Code'}
+                </h1>
                        <p className="text-xs sm:text-sm text-slate-400 font-medium">Customize the look of your QR code to match your brand.</p>
                     </div>
                      <div className="bg-white rounded-3xl sm:rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden flex flex-col">
@@ -486,10 +415,10 @@ const CreationWizard: React.FC = () => {
          </div>
 
          {/* Right Side: Preview (Fixed on desktop, toggleable on mobile) */}
-         <div className={cn(
-           "fixed lg:top-20 lg:right-0 lg:bottom-0 lg:w-[480px] bg-white border-l border-slate-100 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] z-30 flex flex-col items-center justify-center overflow-y-auto custom-scrollbar transition-all duration-500",
-           showMobilePreview ? "inset-0 top-16 z-50 p-6" : "top-full lg:p-12 p-0 hidden lg:flex"
-         )}>
+          <div className={cn(
+            "fixed lg:top-20 lg:right-0 lg:bottom-0 lg:w-[480px] bg-white border-l border-slate-100 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] z-30 flex flex-col items-center justify-center overflow-y-auto custom-scrollbar transition-all duration-500",
+            showMobilePreview ? "inset-0 top-16 z-50 p-4" : "top-full lg:p-12 p-0 hidden lg:flex"
+          )}>
             {/* Close Mobile Preview */}
             <button 
               onClick={() => setShowMobilePreview(false)}
@@ -498,8 +427,8 @@ const CreationWizard: React.FC = () => {
                <X className="w-6 h-6" />
             </button>
             <div className="w-full flex flex-col items-center">
-               {selectedType && (
-                  <div className="mb-10 w-full max-w-[240px] p-1.5 bg-blue-50/50 rounded-full border border-blue-100 flex items-center relative group/switcher shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+               {selectedType && step === 'type' && (
+                   <div className="mb-6 w-full max-w-[240px] p-1.5 bg-blue-50/50 rounded-full border border-blue-100 flex items-center relative group/switcher shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
                      <div className={cn(
                        "absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-blue-600 rounded-full shadow-lg shadow-blue-200 transition-all duration-300 ease-out z-10",
                        previewMode === 'qr' ? "left-[calc(50%+3px)]" : "left-1.5"
@@ -525,9 +454,9 @@ const CreationWizard: React.FC = () => {
                   </div>
                )}
 
-               {(step === 'design' || previewMode === 'qr') && selectedType ? (
-                  <div className="w-full max-w-[340px] animate-in zoom-in-95 duration-500 flex flex-col items-center">
-                    <div className="bg-white p-8 rounded-[48px] shadow-2xl shadow-slate-200/50 border border-slate-50 mb-8 w-full aspect-square flex items-center justify-center">
+               {(step === 'design' || (step === 'type' && previewMode === 'qr')) && selectedType ? (
+                   <div className="w-full max-w-[300px] sm:max-w-[340px] animate-in zoom-in-95 duration-500 flex flex-col items-center">
+                    <div className="bg-white p-6 rounded-3xl shadow-2xl shadow-slate-200/50 border border-slate-50 mb-6 w-full aspect-square flex items-center justify-center">
                        <div className="w-full h-full flex items-center justify-center">
                           <QRCodePreview config={config} isValid={true} />
                        </div>
@@ -546,7 +475,7 @@ const CreationWizard: React.FC = () => {
                ) : (
                   <div className="relative group">
                     {/* Phone Mockup Case */}
-                    <div className="relative w-[300px] aspect-[9/18.5] bg-slate-900 rounded-[55px] p-3 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] border-[1px] border-slate-800">
+                    <div className="relative w-[260px] sm:w-[300px] aspect-[9/18.5] bg-slate-900 rounded-[55px] p-3 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] border-[1px] border-slate-800">
                       {/* Notch */}
                       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-slate-900 rounded-b-2xl z-40 border-x border-b border-slate-800" />
                       
@@ -567,14 +496,14 @@ const CreationWizard: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col relative">
-                            {(step === 'type' ? (hoveredType || selectedType) : selectedType) ? (
-                               <div key={step === 'type' ? (hoveredType || selectedType) : selectedType} className="min-h-full animate-in fade-in slide-in-from-bottom-5 duration-700 flex flex-col">
-                                  <DynamicView 
-                                    data={step === 'type' && hoveredType ? { type: hoveredType } as any : config.data} 
-                                    isWizardPreview={true} 
-                                  />
-                               </div>
+                        <div className="flex-1 overflow-hidden flex flex-col relative">
+                            {selectedType ? (
+                                <AutoFitScale key={selectedType} className="h-full animate-in fade-in slide-in-from-bottom-5 duration-700">
+                                   <DynamicView 
+                                     data={config.data} 
+                                     isWizardPreview={true} 
+                                   />
+                                </AutoFitScale>
                             ) : (
                               <div className="flex-1 flex flex-col items-center justify-center text-center space-y-10 animate-in fade-in duration-1000 p-6 pt-10">
                                  {/* Screenshot specific QR Placeholder */}
@@ -613,7 +542,7 @@ const CreationWizard: React.FC = () => {
       </div>
 
       {/* Mobile Preview Toggle */}
-      <div className="lg:hidden fixed bottom-28 right-6 z-40">
+      <div className="lg:hidden fixed bottom-28 left-6 z-40">
          <button 
            onClick={() => setShowMobilePreview(true)}
            className="w-14 h-14 bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center group active:scale-90 transition-transform"
@@ -666,10 +595,10 @@ const CreationWizard: React.FC = () => {
       {isHelpOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setIsHelpOpen(false)} />
-          <div className="relative w-full max-w-lg bg-white rounded-[40px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
             <button 
               onClick={() => setIsHelpOpen(false)}
-              className="absolute top-6 right-6 p-2 bg-slate-100 text-slate-400 rounded-full hover:bg-slate-200 transition-all z-10"
+              className="absolute top-4 right-4 p-2.5 bg-slate-100 text-slate-400 rounded-full hover:bg-slate-200 transition-all z-10"
             >
               <X className="w-5 h-5" />
             </button>
@@ -682,7 +611,7 @@ const CreationWizard: React.FC = () => {
                   </div>
                </div>
 
-               <div className="p-10 text-center space-y-6">
+               <div className="p-6 sm:p-10 text-center space-y-6">
                   <div className="space-y-2">
                      <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{HELP_CONTENT[step].title}</h3>
                      <p className="text-slate-500 font-medium leading-relaxed px-4">
@@ -692,7 +621,7 @@ const CreationWizard: React.FC = () => {
 
                   <button 
                     onClick={() => setIsHelpOpen(false)}
-                    className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-95"
+                    className="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-95"
                   >
                     Got it, thanks!
                   </button>

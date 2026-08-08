@@ -78,7 +78,36 @@ describe('PricingService', () => {
       expect(result).toEqual(mockCountry);
     });
 
+    it('should cache country info after first fetch', async () => {
+      mockCacheManager.get.mockResolvedValue(null);
+      mockPrismaService.country.findUnique.mockResolvedValue({
+        code: 'US',
+        tier: PricingTier.HIGH,
+        currencyCode: 'USD',
+        taxRate: 0,
+      });
+
+      await service.getCountryInfo('US');
+
+      expect(mockCacheManager.set).toHaveBeenCalledWith(
+        'pricing:country:US',
+        expect.any(Object),
+        600,
+      );
+    });
+
+    it('should return cached country info without hitting DB', async () => {
+      const cached = { code: 'US', tier: PricingTier.HIGH, currencyCode: 'USD' };
+      mockCacheManager.get.mockResolvedValue(cached);
+
+      const result = await service.getCountryInfo('US');
+
+      expect(mockPrismaService.country.findUnique).not.toHaveBeenCalled();
+      expect(result).toEqual(cached);
+    });
+
     it('should return fallback for NG if not in DB', async () => {
+      mockCacheManager.get.mockResolvedValue(null);
       mockPrismaService.country.findUnique.mockResolvedValue(null);
       const result = await service.getCountryInfo('NG');
       expect(result.tier).toBe(PricingTier.LOW);

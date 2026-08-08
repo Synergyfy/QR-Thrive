@@ -16,7 +16,7 @@ const WebsiteProfilePreview: React.FC<WebsiteProfilePreviewProps> = ({
   const displayUrl = url.startsWith('http') ? url : `https://${url}`;
 
   return (
-    <div className="w-full h-full flex flex-col font-sans overflow-hidden" style={{ backgroundColor: themeColor }}>
+    <div className="w-full min-h-full flex flex-col font-sans overflow-y-auto scrollbar-hide" style={{ backgroundColor: themeColor }}>
       {/* Browser Header / Search Bar */}
       <div className="pt-2 pb-6 px-5 flex flex-col items-center gap-4">
         <div className="w-full bg-white/20 backdrop-blur-md border border-white/30 rounded-full py-2.5 px-4 flex items-center gap-3 shadow-lg">

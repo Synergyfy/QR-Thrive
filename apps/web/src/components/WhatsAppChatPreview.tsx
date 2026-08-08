@@ -8,7 +8,7 @@ interface WhatsAppChatPreviewProps {
 
 const WhatsAppChatPreview: React.FC<WhatsAppChatPreviewProps> = ({ number, message }) => {
   return (
-    <div className="w-full h-full flex flex-col bg-[#e5ddd5] relative font-sans">
+    <div className="w-full min-h-full flex flex-col bg-[#e5ddd5] relative font-sans overflow-y-auto scrollbar-hide">
       {/* Header */}
       <div className="bg-[#075e54] text-white p-2.5 flex items-center justify-between shadow-md z-10 pt-4">
         <div className="flex items-center gap-2">
@@ -28,7 +28,7 @@ const WhatsAppChatPreview: React.FC<WhatsAppChatPreviewProps> = ({ number, messa
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 p-4 overflow-hidden relative">
+      <div className="flex-1 flex flex-col justify-end p-4 overflow-hidden relative">
         {/* Chat Background Pattern Placeholder */}
         <div className="absolute inset-0 opacity-[0.06]" 
              style={{ backgroundImage: 'radial-gradient(circle at 10px 10px, #000 1px, transparent 0)', backgroundSize: '40px 40px' }} 

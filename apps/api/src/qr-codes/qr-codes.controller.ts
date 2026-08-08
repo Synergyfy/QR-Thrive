@@ -10,6 +10,7 @@ import {
   Query,
   Res,
   ForbiddenException,
+  NotFoundException,
   UseGuards,
 } from '@nestjs/common';
 import { QRCodesService } from './qr-codes.service';
@@ -17,6 +18,7 @@ import { CreateQRCodeDto } from './dto/create-qr-code.dto';
 import { UpdateQRCodeDto } from './dto/update-qr-code.dto';
 import { Public } from '../auth/decorators/public.decorator';
 import { UsageGuard } from '../pricing/usage.guard';
+import { VemTapSubscriptionGuard } from '../integration/vemtap-subscription.guard';
 import type { Request, Response } from 'express';
 import {
   ApiTags,
@@ -52,7 +54,12 @@ export class QRCodesController {
     @Req() req: RequestWithUser,
     @Body() createQRCodeDto: CreateQRCodeDto,
   ) {
-    return this.qrCodesService.create(req.user.userId, createQRCodeDto);
+    return this.qrCodesService.create(
+      req.user.userId,
+      createQRCodeDto,
+      (req as any).vemtapSubscription,
+      (req as any).__userWithPlan,
+    );
   }
 
   @Get()
@@ -146,10 +153,16 @@ export class QRCodesController {
   @ApiResponse({ status: 201, description: 'QR code duplicated successfully.' })
   @ApiResponse({ status: 403, description: 'Usage limit reached.' })
   duplicate(@Req() req: RequestWithUser, @Param('id') id: string) {
-    return this.qrCodesService.duplicate(id, req.user.userId);
+    return this.qrCodesService.duplicate(
+      id,
+      req.user.userId,
+      (req as any).vemtapSubscription,
+      (req as any).__userWithPlan,
+    );
   }
 
   @Public()
+  @UseGuards(VemTapSubscriptionGuard)
   @Get('public/:shortId')
   @ApiOperation({ summary: 'Get public details of a QR code by short ID' })
   @ApiParam({ name: 'shortId', description: 'The short ID of the QR code' })
@@ -157,12 +170,20 @@ export class QRCodesController {
     status: 200,
     description: 'Public QR code details retrieved.',
   })
-  async getPublic(@Param('shortId') shortId: string) {
-    return this.qrCodesService.findOneByShortId(shortId);
+  async getPublic(@Param('shortId') shortId: string, @Req() req: Request) {
+    try {
+      return this.qrCodesService.findOneByShortId(shortId, req.vemtapSubscription);
+    } catch (error) {
+      if (error instanceof ForbiddenException && !req.vemtapSubscription) {
+        throw new NotFoundException(`QR Code with shortId ${shortId} not found`);
+      }
+      throw error;
+    }
   }
 
   // Public scan redirect endpoint
   @Public()
+  @UseGuards(VemTapSubscriptionGuard)
   @Get('scan/:shortId')
   @ApiOperation({
     summary: 'Record a scan and redirect to the destination URL',
@@ -200,6 +221,7 @@ export class QRCodesController {
         shortId,
         ip,
         userAgent,
+        req.vemtapSubscription,
       );
 
       // Determine destination from data
@@ -230,6 +252,9 @@ export class QRCodesController {
 
       return res.redirect(url);
     } catch (error) {
+      if (error instanceof ForbiddenException && !req.vemtapSubscription) {
+        return res.status(404).send('QR Code not found');
+      }
       if (error instanceof ForbiddenException) {
         throw error;
       }

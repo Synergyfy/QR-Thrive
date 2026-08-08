@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import {
   Globe,
   Mail,
@@ -355,7 +355,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
     switch (data.type) {
       case "url":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
+          <div className="w-full min-h-full rounded-none">
             <WebsiteProfilePreview
               url={data.url}
               title={data.urlPreview?.title}
@@ -368,7 +368,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
       case "socials": {
         const { name, bio, images, ...socialLinks } = data.socials || {};
         return (
-          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
+          <div className="w-full min-h-full rounded-none">
             <SocialsProfilePreview
               name={name}
               bio={bio}
@@ -381,19 +381,20 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "image":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
+          <div className="w-full min-h-full rounded-none">
             <PhotoProfilePreview
               galleryTitle={data.imageGalleryInfo?.title}
               description={data.imageGalleryInfo?.description}
               buttonText={data.imageGalleryInfo?.buttonText}
               themeColor={data.imageGalleryInfo?.themeColor}
               images={(data.images || []).map((img) => ({ url: img.url }))}
+              compact={isWizardPreview}
             />
           </div>
         );
       case "wifi":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
+          <div className="w-full min-h-full rounded-none">
             <WifiProfilePreview
               ssid={data.wifi?.ssid}
               password={data.wifi?.password}
@@ -428,7 +429,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
           : vcardData.address;
 
         return (
-          <div className="flex-1 flex flex-col relative bg-white -mx-6 -mt-6 rounded-t-[44px]">
+          <div className="flex-1 flex flex-col relative bg-white rounded-t-[44px]">
             {/* Banner with Content Inside */}
             <div
               className="h-60 rounded-b-[48px] relative overflow-hidden flex flex-col items-center justify-start text-center px-6 pt-10"
@@ -655,7 +656,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "whatsapp":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
+          <div className="w-full min-h-full rounded-none">
             <WhatsAppChatPreview
               number={data.whatsapp?.phoneNumber || ""}
               message={data.whatsapp?.message || ""}
@@ -762,7 +763,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "instagram":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
+          <div className="w-full min-h-full rounded-none">
             <InstagramProfilePreview
               username={data.social?.username || "Vemtapng"}
             />
@@ -771,7 +772,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "facebook":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
+          <div className="w-full min-h-full rounded-none">
             <FacebookProfilePreview
               name={data.facebook?.name}
               bio={data.facebook?.bio}
@@ -782,7 +783,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
         );
       case "links":
         return (
-          <div className="flex-1 flex flex-col relative bg-white -mx-6 -mt-6 rounded-t-[44px]">
+          <div className="flex-1 flex flex-col relative bg-white rounded-t-[44px]">
             {/* Banner with Content Inside */}
             <div
               className="h-60 rounded-b-[48px] relative overflow-hidden flex flex-col items-center justify-start text-center px-6 pt-10"
@@ -902,7 +903,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "pdf":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
+          <div className="w-full min-h-full rounded-none">
             <PDFProfilePreview
               companyName={data.pdf?.companyName}
               title={data.pdf?.title}
@@ -926,7 +927,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "image":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
+          <div className="w-full min-h-full rounded-none">
             <PhotoProfilePreview
               companyName="Vemtap"
               galleryTitle={data.imageGalleryInfo?.title}
@@ -934,6 +935,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
               buttonText={data.imageGalleryInfo?.buttonText}
               themeColor={data.imageGalleryInfo?.themeColor}
               images={(data.images || []).map((img) => ({ url: img.url }))}
+              compact={isWizardPreview}
               onButtonClick={() =>
                 handleAction({
                   mode: data.imageGalleryInfo?.destinationMode,
@@ -947,7 +949,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "video":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
+          <div className="w-full min-h-full rounded-none">
             <VideoProfilePreview
               companyName={data.video?.companyName}
               title={data.video?.title}
@@ -972,7 +974,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "mp3":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
+          <div className="w-full min-h-full rounded-none">
             <AudioProfilePreview
               companyName={data.mp3?.companyName}
               title={data.mp3?.title}
@@ -998,7 +1000,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
       case "app":
         return (
-          <div className="w-full h-full rounded-none overflow-hidden -mx-6 -mt-6">
+          <div className="w-full min-h-full rounded-none">
             <AppStorePreview
               title={data.app?.title}
               description={data.app?.description}
@@ -1309,7 +1311,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
         );
       case "business":
         return (
-          <div className="flex-1 flex flex-col relative bg-white -mx-6 -mt-6 rounded-t-[44px]">
+          <div className="flex-1 flex flex-col relative bg-white rounded-t-[44px]">
             {/* Banner with Content Inside */}
             <div
               className="h-60 rounded-b-[48px] relative overflow-hidden flex flex-col items-center justify-start text-center px-6 pt-10"
@@ -1643,21 +1645,6 @@ const DynamicView: React.FC<DynamicViewProps> = ({
   };
 
   if (isWizardPreview) {
-    if (
-      data.type === "whatsapp" ||
-      data.type === "instagram" ||
-      data.type === "facebook" ||
-      data.type === "pdf" ||
-      data.type === "video" ||
-      data.type === "image" ||
-      data.type === "mp3" ||
-      data.type === "url" ||
-      data.type === "wifi" ||
-      data.type === "app" ||
-      data.type === "booking"
-    ) {
-      return <div className="w-full h-full">{renderContent()}</div>;
-    }
     return (
       <div className="w-full h-full flex flex-col font-walsheim">
         {renderContent()}

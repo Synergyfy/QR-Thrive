@@ -25,6 +25,7 @@ describe('FormsService', () => {
     formSubmission: {
       create: jest.fn(),
       findMany: jest.fn(),
+      count: jest.fn(),
     },
     $transaction: jest.fn().mockImplementation((cb) => cb(mockPrismaService)),
   };
@@ -42,6 +43,7 @@ describe('FormsService', () => {
 
     service = module.get<FormsService>(FormsService);
     prisma = module.get<PrismaService>(PrismaService);
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -101,6 +103,7 @@ describe('FormsService', () => {
   describe('submitForm', () => {
     it('should throw if required field is missing', async () => {
       mockPrismaService.qRCode.findUnique.mockResolvedValue({
+        type: 'form',
         form: {
           id: 'form-1',
           fields: [
@@ -121,6 +124,7 @@ describe('FormsService', () => {
 
     it('should create submission if validation passes', async () => {
       mockPrismaService.qRCode.findUnique.mockResolvedValue({
+        type: 'form',
         form: {
           id: 'form-1',
           fields: [
@@ -142,6 +146,131 @@ describe('FormsService', () => {
       });
       expect(res).toBeDefined();
       expect(mockPrismaService.formSubmission.create).toHaveBeenCalled();
+    });
+  });
+
+  describe('getLeadsForIntegration', () => {
+    it('should call findMany with correct filters for specialized types', async () => {
+      const userId = 'user-1';
+      const query = { page: 1, limit: 10, types: ['booking', 'menu'] };
+
+      (mockPrismaService.formSubmission.count as jest.Mock).mockResolvedValue(1);
+      (mockPrismaService.formSubmission.findMany as jest.Mock).mockResolvedValue([
+        { id: 'sub-1', form: { qrCode: { type: 'booking' } } },
+      ]);
+
+      const result = await service.getLeadsForIntegration(userId, query);
+
+      expect(mockPrismaService.formSubmission.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            form: expect.objectContaining({
+              qrCode: expect.objectContaining({
+                userId: 'user-1',
+                type: { in: ['booking', 'menu'] },
+              }),
+            }),
+          }),
+          skip: 0,
+          take: 10,
+        }),
+      );
+      expect(result.items).toHaveLength(1);
+      expect(result.meta.total).toBe(1);
+    });
+
+    it('should apply search filter correctly', async () => {
+      const userId = 'user-1';
+      const query = { page: 1, limit: 10, search: 'test' };
+
+      await service.getLeadsForIntegration(userId, query);
+
+      expect(mockPrismaService.formSubmission.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: [
+              { form: { title: { contains: 'test', mode: 'insensitive' } } },
+              { form: { qrCode: { name: { contains: 'test', mode: 'insensitive' } } } },
+            ],
+          }),
+        }),
+      );
+    });
+
+    it('should filter by specific qrCodeId (non-UUID sets shortId)', async () => {
+      const userId = 'user-1';
+      const query = { qrCodeId: 'qr-123' };
+
+      await service.getLeadsForIntegration(userId, query);
+
+      expect(mockPrismaService.formSubmission.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            form: expect.objectContaining({
+              qrCode: expect.objectContaining({
+                shortId: 'qr-123',
+              }),
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('should filter by specific qrCodeId (UUID uses OR)', async () => {
+      const userId = 'user-1';
+      const uuid = '550e8400-e29b-41d4-a716-446655440000';
+      const query = { qrCodeId: uuid };
+
+      (mockPrismaService.formSubmission.count as jest.Mock).mockResolvedValue(1);
+      (mockPrismaService.formSubmission.findMany as jest.Mock).mockResolvedValue([
+        { id: 'sub-1', form: { qrCode: { type: 'booking' } } },
+      ]);
+
+      await service.getLeadsForIntegration(userId, query);
+
+      expect(mockPrismaService.formSubmission.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            form: expect.objectContaining({
+              qrCode: expect.objectContaining({
+                OR: [{ id: uuid }, { shortId: uuid }],
+              }),
+            }),
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('getAllSubmissions pagination', () => {
+    it('should return paginated results with meta', async () => {
+      const userId = 'user-1';
+      const submissions = [{ id: 'sub-1' }, { id: 'sub-2' }];
+      mockPrismaService.formSubmission.count.mockResolvedValue(10);
+      mockPrismaService.formSubmission.findMany.mockResolvedValue(submissions);
+
+      const result = await service.getAllSubmissions(userId, 2, 5);
+
+      expect(result.items).toHaveLength(2);
+      expect(result.meta.total).toBe(10);
+      expect(result.meta.page).toBe(2);
+      expect(result.meta.limit).toBe(5);
+      expect(result.meta.totalPages).toBe(2);
+    });
+
+    it('should use provided limit as take value', async () => {
+      const userId = 'user-1';
+      mockPrismaService.formSubmission.count.mockResolvedValue(0);
+      mockPrismaService.formSubmission.findMany.mockResolvedValue([]);
+
+      await service.getAllSubmissions(userId, 3, 25);
+
+      expect(mockPrismaService.formSubmission.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skip: 50,
+          take: 25,
+        }),
+      );
     });
   });
 });

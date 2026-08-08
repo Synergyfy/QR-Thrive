@@ -44,6 +44,7 @@ model User {
   pushSubscriptions PushSubscription[]
   supportTickets SupportTicket[] // Added for Support Chat
   scanNotificationsEnabled Boolean    @default(false)
+  managedSubscriptionToken String?    @db.Text
   countryCode   String?        // ISO-2 country code for account locking
   deletedAt     DateTime?      // Added for Soft-Delete
   createdAt     DateTime       @default(now())
@@ -220,6 +221,7 @@ enum QRType {
   menu
   coupon
   form
+  booking
 }
 
 enum QRStatus {
@@ -229,6 +231,7 @@ enum QRStatus {
 
 enum FormFieldType {
   text
+  textarea
   number
   range
   checkbox
@@ -236,6 +239,9 @@ enum FormFieldType {
   radio
   email
   phone
+  tel
+  date
+  boolean
 }
 
 model QRCode {

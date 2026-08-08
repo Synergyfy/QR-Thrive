@@ -20,7 +20,7 @@ const AppStorePreview: React.FC<AppStorePreviewProps> = ({
   themeColor: _themeColor = "#3b82f6"
 }) => {
   return (
-    <div className="w-full h-full flex flex-col font-sans bg-slate-50 overflow-hidden">
+    <div className="w-full min-h-full flex flex-col font-sans bg-slate-50 overflow-y-auto scrollbar-hide">
       <div className="flex-1 overflow-y-auto scrollbar-hide py-8 px-6 flex flex-col items-center space-y-8">
         
         {/* App Icon Mockup */}

@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Poppins", sans-serif;
-  --font-walsheim: "GT Walsheim Pro", sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-walsheim: "GT Walsheim Pro", "Plus Jakarta Sans", sans-serif;
 }
 
 :root {
@@ -47,5 +47,77 @@ body {
   .scrollbar-hide {
       -ms-overflow-style: none;
       scrollbar-width: none;
+  }
+  .hidden-scrollbar::-webkit-scrollbar {
+      display: none;
+  }
+  .hidden-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+  }
+}
+
+/*
+ * QRThrive design system — shared component classes.
+ * Keeps every page/QR-type form visually consistent (mobile-first).
+ */
+@layer components {
+  /* ---- Field label ---- */
+  .field-label {
+    @apply block text-xs font-semibold text-slate-500;
+  }
+
+  /* ---- Text inputs / selects / textareas ---- */
+  .input {
+    @apply w-full px-4 py-3 border border-slate-200 rounded-xl outline-none text-sm font-medium text-slate-900 bg-white transition-colors placeholder:text-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10;
+  }
+  .input-error {
+    @apply border-red-200 focus:border-red-500 bg-red-50/30;
+  }
+
+  /* ---- Buttons ---- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all cursor-pointer disabled:opacity-60 disabled:pointer-events-none active:scale-[0.98];
+  }
+  .btn-primary {
+    @apply bg-blue-600 text-white shadow-sm hover:bg-blue-700;
+  }
+  .btn-secondary {
+    @apply bg-slate-100 text-slate-700 hover:bg-slate-200;
+  }
+  .btn-ghost {
+    @apply bg-transparent text-slate-600 hover:bg-slate-100;
+  }
+  .btn-soft {
+    @apply bg-blue-50 text-blue-600 hover:bg-blue-100;
+  }
+  .btn-lg {
+    @apply h-12 px-6 text-base;
+  }
+  .btn-md {
+    @apply h-11 px-5;
+  }
+  .btn-sm {
+    @apply h-9 px-3.5 text-xs;
+  }
+
+  /* ---- Cards ---- */
+  .card {
+    @apply bg-white border border-slate-100 rounded-2xl shadow-sm;
+  }
+
+  /* ---- Eyebrow label (section eyebrow pills/text) ---- */
+  .eyebrow {
+    @apply inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600;
+  }
+
+  /* ---- Section heading ---- */
+  .section-title {
+    @apply text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 tracking-tight;
+  }
+
+  /* ---- Mobile-first page hero (below the fixed public nav) ---- */
+  .page-hero {
+    @apply pt-24 sm:pt-28 pb-16 px-4;
   }
 }
