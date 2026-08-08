@@ -17,6 +17,8 @@ import { PushService } from '../notifications/push.service';
 import { VemtapAuthService } from '../integration/vemtap-auth.service';
 import { Inject, forwardRef } from '@nestjs/common';
 import type { VemTapSubscriptionPayload } from '../integration/vemtap-subscription.guard';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 const TRIAL_DAYS = 7;
 
@@ -29,6 +31,7 @@ export class QRCodesService {
     private readonly pushService: PushService,
     @Inject(forwardRef(() => VemtapAuthService))
     private readonly vemtapAuthService: VemtapAuthService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   /**
@@ -85,8 +88,8 @@ export class QRCodesService {
     return false;
   }
 
-  async create(userId: string, createQRCodeDto: CreateQRCodeDto, vemtapSubscription?: VemTapSubscriptionPayload) {
-    const user = await this.prisma.user.findUnique({
+  async create(userId: string, createQRCodeDto: CreateQRCodeDto, vemtapSubscription?: VemTapSubscriptionPayload, cachedUser?: User & { plan?: Plan | null }) {
+    const user = cachedUser || await this.prisma.user.findUnique({
       where: { id: userId },
       include: { plan: true },
     });
@@ -230,8 +233,8 @@ export class QRCodesService {
     });
   }
 
-  async update(id: string, userId: string, updateQRCodeDto: UpdateQRCodeDto, vemtapSubscription?: VemTapSubscriptionPayload) {
-    const user = await this.prisma.user.findUnique({
+  async update(id: string, userId: string, updateQRCodeDto: UpdateQRCodeDto, vemtapSubscription?: VemTapSubscriptionPayload, cachedUser?: User & { plan?: Plan | null }) {
+    const user = cachedUser || await this.prisma.user.findUnique({
       where: { id: userId },
       include: { plan: true },
     });
@@ -300,6 +303,15 @@ export class QRCodesService {
       });
     }
 
+    // Invalidate public caches for this QR code
+    await Promise.all([
+      this.cacheManager.del(`qrcode:shortid:${updated.shortId}:native`),
+      this.cacheManager.del(`qrcode:shortid:${updated.shortId}:vemtap`),
+      this.cacheManager.del(`user:stats:${userId}:all:all`),
+    ]).catch((err) => {
+      console.error('[QRCodesService] Failed to clear update cache:', err);
+    });
+
     return updated;
   }
 
@@ -309,9 +321,20 @@ export class QRCodesService {
     // Delete associated files from Cloudinary
     await this.deleteCloudinaryFiles(qrCode);
 
-    return this.prisma.qRCode.delete({
+    const deleted = await this.prisma.qRCode.delete({
       where: { id: qrCode.id },
     });
+
+    // Invalidate public caches for this QR code
+    await Promise.all([
+      this.cacheManager.del(`qrcode:shortid:${qrCode.shortId}:native`),
+      this.cacheManager.del(`qrcode:shortid:${qrCode.shortId}:vemtap`),
+      this.cacheManager.del(`user:stats:${userId}:all:all`),
+    ]).catch((err) => {
+      console.error('[QRCodesService] Failed to clear delete cache:', err);
+    });
+
+    return deleted;
   }
 
   private extractCloudinaryUrls(obj: any): string[] {
@@ -367,9 +390,7 @@ export class QRCodesService {
 
     const uniquePublicIds = [...new Set(publicIds)];
 
-    for (const publicId of uniquePublicIds) {
-      await this.uploadService.deleteFile(publicId);
-    }
+    await Promise.all(uniquePublicIds.map((id) => this.uploadService.deleteFile(id)));
   }
 
   /**
@@ -411,28 +432,42 @@ export class QRCodesService {
       },
     });
 
-    let syncCount = 0;
+    // Extract linked IDs, then verify all in one batch query
+    const extractedPairs: { qrId: string; linkedId: string }[] = [];
     for (const qr of qrCodes) {
       const extractedId = this.extractLinkedQRId(qr.data);
       if (extractedId) {
-        // Verify the linked QR code exists to maintain integrity
-        const exists = await this.prisma.qRCode.findUnique({
-          where: { id: extractedId },
-        });
-        if (exists) {
-          await this.prisma.qRCode.update({
-            where: { id: qr.id },
-            data: { linkedQRCodeId: extractedId },
-          });
-          syncCount++;
-        }
+        extractedPairs.push({ qrId: qr.id, linkedId: extractedId });
       }
     }
-    return { syncCount };
+
+    if (extractedPairs.length === 0) return { syncCount: 0 };
+
+    // Batch-verify existence of all linked QR codes
+    const linkedIds = extractedPairs.map((p) => p.linkedId);
+    const existing = await this.prisma.qRCode.findMany({
+      where: { id: { in: linkedIds } },
+      select: { id: true },
+    });
+    const existingSet = new Set(existing.map((e) => e.id));
+
+    // Parallel updates for valid pairs
+    const results = await Promise.all(
+      extractedPairs
+        .filter((p) => existingSet.has(p.linkedId))
+        .map((p) =>
+          this.prisma.qRCode.update({
+            where: { id: p.qrId },
+            data: { linkedQRCodeId: p.linkedId },
+          }),
+        ),
+    );
+
+    return { syncCount: results.length };
   }
 
-  async duplicate(id: string, userId: string, vemtapSubscription?: VemTapSubscriptionPayload) {
-    const user = await this.prisma.user.findUnique({
+  async duplicate(id: string, userId: string, vemtapSubscription?: VemTapSubscriptionPayload, cachedUser?: User & { plan?: Plan | null }) {
+    const user = cachedUser || await this.prisma.user.findUnique({
       where: { id: userId },
       include: { plan: true },
     });
@@ -469,6 +504,12 @@ export class QRCodesService {
   }
 
   async findOneByShortId(shortId: string, vemtapSubscription?: VemTapSubscriptionPayload) {
+    const cacheKey = `qrcode:shortid:${shortId}:${vemtapSubscription ? 'vemtap' : 'native'}`;
+    const cachedQR = await this.cacheManager.get<any>(cacheKey);
+    if (cachedQR) {
+      return cachedQR;
+    }
+
     const qrCode = await this.prisma.qRCode.findUnique({
       where: { shortId },
       include: {
@@ -518,20 +559,30 @@ export class QRCodesService {
       }
     }
 
+    // Cache dynamic resolution for 5 minutes (300 seconds)
+    await this.cacheManager.set(cacheKey, qrCode, 300);
+
     return qrCode;
   }
 
   async recordScan(shortId: string, ip: string, userAgent: string, vemtapSubscription?: VemTapSubscriptionPayload) {
-    const qrCode = await this.prisma.qRCode.findUnique({
-      where: { shortId },
-      include: {
-        user: { include: { plan: true } },
-        linkedQRCode: true,
-      },
-    });
+    const cacheKey = `qrcode:shortid:${shortId}:${vemtapSubscription ? 'vemtap' : 'native'}`;
+    let qrCode = await this.cacheManager.get<any>(cacheKey);
 
     if (!qrCode) {
-      throw new NotFoundException('QR Code not found');
+      qrCode = await this.prisma.qRCode.findUnique({
+        where: { shortId },
+        include: {
+          user: { include: { plan: true } },
+          linkedQRCode: true,
+        },
+      });
+
+      if (!qrCode) {
+        throw new NotFoundException('QR Code not found');
+      }
+
+      await this.cacheManager.set(cacheKey, qrCode, 300);
     }
 
     if (!(await this.isAccessActive(qrCode.user, vemtapSubscription))) {
@@ -548,25 +599,29 @@ export class QRCodesService {
       console.log(`[QRCodesService] No geo data found for IP: ${ip}`);
     }
 
-    await this.prisma.$transaction([
-      this.prisma.qRCode.update({
-        where: { id: qrCode.id },
-        data: { clicks: { increment: 1 } },
-      }),
-      this.prisma.scan.create({
-        data: {
-          qrCodeId: qrCode.id,
-          ip,
-          userAgent,
-          browser: result.browser.name || 'unknown',
-          os: result.os.name || 'unknown',
-          device: result.device.type || 'desktop',
-          city: geo?.city || null,
-          country: geo?.country || null,
-          region: geo?.region || null,
-        },
-      }),
-    ]);
+    // Create standard Scan record (blocking insert, fast)
+    await this.prisma.scan.create({
+      data: {
+        qrCodeId: qrCode.id,
+        ip,
+        userAgent,
+        browser: result.browser.name || 'unknown',
+        os: result.os.name || 'unknown',
+        device: result.device.type || 'desktop',
+        city: geo?.city || null,
+        country: geo?.country || null,
+        region: geo?.region || null,
+      },
+    });
+
+    // Decouple clicks increment to run asynchronously in the background.
+    // This entirely bypasses database row locks and queue latency under heavy load.
+    this.prisma.qRCode.update({
+      where: { id: qrCode.id },
+      data: { clicks: { increment: 1 } },
+    }).catch(err => {
+      console.error(`[QRCodesService] Failed to increment clicks for ${qrCode.id}:`, err);
+    });
     
     // Trigger push notification if owner has opted in
     if (qrCode.user.scanNotificationsEnabled) {
@@ -584,77 +639,115 @@ export class QRCodesService {
   }
 
   async getStats(userId: string, startDate?: string, endDate?: string) {
+    const cacheKey = `user:stats:${userId}:${startDate || 'all'}:${endDate || 'all'}`;
+    const cachedStats = await this.cacheManager.get<any>(cacheKey);
+    if (cachedStats) {
+      return cachedStats;
+    }
+
     const qrCodes = await this.prisma.qRCode.findMany({
       where: { userId },
       select: { id: true, name: true },
     });
 
-    const qrCodeIds = qrCodes.map((qr) => qr.id);
-
-    const dateFilter: any = {};
-    if (startDate || endDate) {
-      dateFilter.createdAt = {};
-      if (startDate) dateFilter.createdAt.gte = new Date(startDate);
-      if (endDate) dateFilter.createdAt.lte = new Date(endDate);
+    if (qrCodes.length === 0) {
+      return {
+        totalQrCodes: 0,
+        totalScans: 0,
+        uniqueVisitors: 0,
+        scansByDate: [],
+        scansByCountry: [],
+        scansByCity: [],
+        topQrCodes: [],
+      };
     }
 
-    const scans = await this.prisma.scan.findMany({
-      where: {
-        qrCodeId: { in: qrCodeIds },
-        ...dateFilter,
-      },
-    });
+    const qrCodeIds = qrCodes.map((qr) => qr.id);
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
 
-    const totalScans = scans.length;
-    const uniqueVisitors = new Set(
-      scans.map((s) => `${s.ip}-${s.userAgent}`).filter(Boolean),
-    ).size;
+    // Use database-level aggregation for all stats
+    const [totalScansResult, scansByDateResult, scansByCountryResult, scansByCityResult, topQrCodesResult, uniqueVisitorsResult] = await Promise.all([
+      this.prisma.$queryRaw<{ count: bigint }[]>`
+        SELECT COUNT(*)::bigint as count FROM "Scan"
+        WHERE "qrCodeId" = ANY(${qrCodeIds}::uuid[])
+          AND (${start}::timestamptz IS NULL OR "createdAt" >= ${start}::timestamptz)
+          AND (${end}::timestamptz IS NULL OR "createdAt" <= ${end}::timestamptz)
+      `,
+      this.prisma.$queryRaw<{ date: string; count: bigint }[]>`
+        SELECT DATE("createdAt") as date, COUNT(*)::bigint as count
+        FROM "Scan"
+        WHERE "qrCodeId" = ANY(${qrCodeIds}::uuid[])
+          AND (${start}::timestamptz IS NULL OR "createdAt" >= ${start}::timestamptz)
+          AND (${end}::timestamptz IS NULL OR "createdAt" <= ${end}::timestamptz)
+        GROUP BY DATE("createdAt")
+        ORDER BY date ASC
+      `,
+      this.prisma.$queryRaw<{ country: string; count: bigint }[]>`
+        SELECT country, COUNT(*)::bigint as count
+        FROM "Scan"
+        WHERE "qrCodeId" = ANY(${qrCodeIds}::uuid[]) AND country IS NOT NULL
+          AND (${start}::timestamptz IS NULL OR "createdAt" >= ${start}::timestamptz)
+          AND (${end}::timestamptz IS NULL OR "createdAt" <= ${end}::timestamptz)
+        GROUP BY country
+        ORDER BY count DESC
+      `,
+      this.prisma.$queryRaw<{ city: string; count: bigint }[]>`
+        SELECT city, COUNT(*)::bigint as count
+        FROM "Scan"
+        WHERE "qrCodeId" = ANY(${qrCodeIds}::uuid[]) AND city IS NOT NULL
+          AND (${start}::timestamptz IS NULL OR "createdAt" >= ${start}::timestamptz)
+          AND (${end}::timestamptz IS NULL OR "createdAt" <= ${end}::timestamptz)
+        GROUP BY city
+        ORDER BY count DESC
+        LIMIT 20
+      `,
+      this.prisma.$queryRaw<{ qrCodeId: string; count: bigint }[]>`
+        SELECT "qrCodeId", COUNT(*)::bigint as count
+        FROM "Scan"
+        WHERE "qrCodeId" = ANY(${qrCodeIds}::uuid[])
+          AND (${start}::timestamptz IS NULL OR "createdAt" >= ${start}::timestamptz)
+          AND (${end}::timestamptz IS NULL OR "createdAt" <= ${end}::timestamptz)
+        GROUP BY "qrCodeId"
+        ORDER BY count DESC
+        LIMIT 10
+      `,
+      this.prisma.$queryRaw<{ count: bigint }[]>`
+        SELECT COUNT(DISTINCT COALESCE(ip, ''))::bigint as count
+        FROM "Scan"
+        WHERE "qrCodeId" = ANY(${qrCodeIds}::uuid[])
+          AND (${start}::timestamptz IS NULL OR "createdAt" >= ${start}::timestamptz)
+          AND (${end}::timestamptz IS NULL OR "createdAt" <= ${end}::timestamptz)
+      `,
+    ]);
 
-    const scansByDate: Record<string, number> = {};
-    const scansByCountry: Record<string, number> = {};
-    const scansByCity: Record<string, number> = {};
-    const qrCodeScanCounts: Record<string, number> = {};
+    const totalScans = Number(totalScansResult[0]?.count || 0);
+    const uniqueVisitors = Number(uniqueVisitorsResult[0]?.count || 0);
 
-    scans.forEach((scan) => {
-      const date = scan.createdAt.toISOString().split('T')[0];
-      scansByDate[date] = (scansByDate[date] || 0) + 1;
-
-      if (scan.country) {
-        scansByCountry[scan.country] = (scansByCountry[scan.country] || 0) + 1;
-      }
-
-      if (scan.city) {
-        scansByCity[scan.city] = (scansByCity[scan.city] || 0) + 1;
-      }
-
-      qrCodeScanCounts[scan.qrCodeId] = (qrCodeScanCounts[scan.qrCodeId] || 0) + 1;
-    });
-
+    const qrCodeScanMap = new Map(topQrCodesResult.map((r) => [r.qrCodeId, Number(r.count)]));
     const topQrCodes = qrCodes
+      .filter((qr) => qrCodeScanMap.has(qr.id))
+      .sort((a, b) => (qrCodeScanMap.get(b.id) || 0) - (qrCodeScanMap.get(a.id) || 0))
+      .slice(0, 10)
       .map((qr) => ({
         qrCodeId: qr.id,
         name: qr.name,
-        scans: qrCodeScanCounts[qr.id] || 0,
-      }))
-      .filter((qr) => qr.scans > 0)
-      .sort((a, b) => b.scans - a.scans)
-      .slice(0, 10);
+        scans: qrCodeScanMap.get(qr.id) || 0,
+      }));
 
-    return {
+    const statsResult = {
       totalQrCodes: qrCodes.length,
       totalScans,
       uniqueVisitors,
-      scansByDate: Object.entries(scansByDate)
-        .map(([date, count]) => ({ date, count }))
-        .sort((a, b) => a.date.localeCompare(b.date)),
-      scansByCountry: Object.entries(scansByCountry)
-        .map(([country, count]) => ({ country, count }))
-        .sort((a, b) => b.count - a.count),
-      scansByCity: Object.entries(scansByCity)
-        .map(([city, count]) => ({ city, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 20),
+      scansByDate: scansByDateResult.map((r) => ({ date: r.date, count: Number(r.count) })),
+      scansByCountry: scansByCountryResult.map((r) => ({ country: r.country, count: Number(r.count) })),
+      scansByCity: scansByCityResult.map((r) => ({ city: r.city, count: Number(r.count) })),
       topQrCodes,
     };
+
+    // Cache user statistics for 2 minutes (120 seconds)
+    await this.cacheManager.set(cacheKey, statsResult, 120);
+
+    return statsResult;
   }
 }

@@ -38,24 +38,24 @@ export default function PublicNav() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 bg-white/70 backdrop-blur-xl z-[100] border-b border-gray-100/50 shadow-sm">
+      <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-xl z-[100] border-b border-slate-200/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
+          <div className="flex justify-between items-center h-16 sm:h-20">
             {/* Logo */}
             <Link to="/" className="flex items-center group cursor-pointer shrink-0">
-              <img src="/QRThrive_Logo_Full-BG.png" alt="QR Thrive" className="h-[80px] md:h-[100px] w-auto transform transition-all duration-300" style={{ filter: 'brightness(0) saturate(100%) invert(32%) sepia(95%) saturate(3033%) hue-rotate(211deg) brightness(96%) contrast(92%)' }} />
+              <img src="/QRThrive_Logo_Full-BG.png" alt="QR Thrive" className="h-12 sm:h-16 w-auto transform transition-all duration-300" style={{ filter: 'brightness(0) saturate(100%) invert(32%) sepia(95%) saturate(3033%) hue-rotate(211deg) brightness(96%) contrast(92%)' }} />
             </Link>
             
             {/* Desktop Navigation Links */}
-            <div className="hidden lg:flex items-center gap-1 bg-gray-50/50 p-1 rounded-2xl border border-gray-100/50">
+            <div className="hidden lg:flex items-center gap-1 p-1 rounded-xl border border-slate-100 bg-slate-50/60">
               {navLinks.map((link) => (
                 <Link 
                   key={link.path}
                   to={link.path} 
-                  className={`px-5 py-2.5 text-sm font-bold rounded-xl transition-all duration-300 ${
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
                     location.pathname === link.path 
                       ? 'bg-white text-blue-600 shadow-sm' 
-                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/60'
                   }`}
                 >
                   {link.name}
@@ -64,7 +64,7 @@ export default function PublicNav() {
             </div>
 
             {/* Desktop Action Buttons */}
-            <div className="hidden md:flex items-center gap-4">
+            <div className="hidden lg:flex items-center gap-3">
               {user ? (
                 <div className="relative group">
                   <button 
@@ -73,33 +73,33 @@ export default function PublicNav() {
                     className="flex items-center gap-3 pl-4 pr-3 py-1.5 bg-white hover:bg-gray-50 rounded-full transition-all border border-gray-100 shadow-sm group"
                   >
                     <div className="flex flex-col items-end -space-y-1">
-                      <span className="text-sm font-bold text-gray-900">{user.firstName} {user.lastName}</span>
-                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">{user.role}</span>
+                      <span className="text-sm font-semibold text-slate-900">{user.firstName} {user.lastName}</span>
+                      <span className="text-[11px] font-semibold text-blue-600 capitalize">{user.role.toLowerCase()}</span>
                     </div>
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-black text-xs shadow-lg shadow-blue-200">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-blue-200">
                       {user.firstName[0]}{user.lastName[0]}
                     </div>
                   </button>
 
                   {/* Dropdown Menu */}
-                  <div className="absolute right-0 mt-3 w-64 bg-white rounded-3xl shadow-2xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 p-2 transform origin-top-right group-hover:translate-y-0 translate-y-2">
-                    <div className="p-4 border-b border-gray-50 mb-2">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Logged in as</p>
-                      <p className="text-sm font-bold text-gray-900 truncate">{user.email}</p>
+                  <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 p-2 transform origin-top-right group-hover:translate-y-0 translate-y-2">
+                    <div className="p-4 border-b border-slate-100 mb-2">
+                      <p className="text-[11px] font-semibold text-slate-400 mb-1">Logged in as</p>
+                      <p className="text-sm font-semibold text-slate-900 truncate">{user.email}</p>
                     </div>
                     
                     <button 
                       onClick={() => navigate(getDashboardPath(user.role))}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
                     >
                       <LayoutGrid size={18} /> My Dashboard
                     </button>
                     
-                    <div className="h-px bg-gray-50 my-2" />
+                    <div className="h-px bg-slate-100 my-2" />
                     
                     <button 
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 rounded-xl transition-all"
                     >
                       <LogOut size={18} /> Logout Session
                     </button>
@@ -109,13 +109,13 @@ export default function PublicNav() {
                 <>
                   <button 
                     onClick={() => setIsAuthModalOpen(true)} 
-                    className="px-6 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 rounded-full transition-all"
+                    className="px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-all"
                   >
                     Log In
                   </button>
                   <button 
                     onClick={() => setIsAuthModalOpen(true)} 
-                    className="px-8 py-3 text-sm font-black text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-all shadow-xl shadow-blue-600/30 active:scale-95 uppercase tracking-widest"
+                    className="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all shadow-sm active:scale-95"
                   >
                     Get Started Free
                   </button>
@@ -125,8 +125,9 @@ export default function PublicNav() {
 
             {/* Mobile Menu Toggle */}
             <button 
-              className="lg:hidden p-3 bg-gray-50 rounded-2xl text-gray-600 hover:text-blue-600 transition-colors" 
+              className="lg:hidden p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:text-blue-600 transition-colors" 
               onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Toggle menu"
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -142,26 +143,26 @@ export default function PublicNav() {
               exit={{ opacity: 0, height: 0 }}
               className="lg:hidden bg-white border-t border-gray-100 overflow-hidden shadow-2xl"
             >
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 gap-2">
+              <div className="p-5 space-y-4">
+                <div className="grid grid-cols-1 gap-1">
                   {navLinks.map((link) => (
                     <Link
                       key={link.path}
                       to={link.path}
                       onClick={() => setIsMenuOpen(false)}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-blue-50 group transition-all"
+                      className="flex items-center justify-between px-3 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-all group"
                     >
-                      <span className="font-bold text-gray-700 group-hover:text-blue-600">{link.name}</span>
-                      <ChevronRight size={18} className="text-gray-400 group-hover:text-blue-600 transform group-hover:translate-x-1 transition-all" />
+                      <span className="font-medium group-hover:text-blue-600">{link.name}</span>
+                      <ChevronRight size={18} className="text-slate-300 group-hover:text-blue-600 transition-all" />
                     </Link>
                   ))}
                 </div>
 
-                <div className="pt-4 space-y-3">
+                <div className="pt-3 space-y-3 border-t border-slate-100">
                   {user ? (
                     <button 
                       onClick={() => { navigate(getDashboardPath(user.role)); setIsMenuOpen(false); }}
-                      className="w-full p-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2"
+                      className="w-full p-3.5 bg-blue-600 text-white rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2"
                     >
                       <LayoutGrid size={20} /> My Dashboard
                     </button>
@@ -169,13 +170,13 @@ export default function PublicNav() {
                     <>
                       <button 
                         onClick={() => { setIsAuthModalOpen(true); setIsMenuOpen(false); }}
-                        className="w-full p-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg"
+                        className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-semibold shadow-sm active:scale-[0.98] transition-all"
                       >
                         Create Account
                       </button>
                       <button 
                         onClick={() => { setIsAuthModalOpen(true); setIsMenuOpen(false); }}
-                        className="w-full p-4 bg-gray-50 text-gray-700 rounded-2xl font-bold border border-gray-100 text-center"
+                        className="w-full py-3.5 bg-slate-50 text-slate-700 rounded-xl font-medium border border-slate-100 text-center active:scale-[0.98] transition-all"
                       >
                         Log In
                       </button>
@@ -184,7 +185,7 @@ export default function PublicNav() {
                   {user && (
                     <button 
                       onClick={handleLogout}
-                      className="w-full p-4 text-red-500 font-bold hover:bg-red-50 rounded-2xl transition-colors"
+                      className="w-full py-3.5 text-red-500 font-medium hover:bg-red-50 rounded-xl transition-colors"
                     >
                       Logout Session
                     </button>

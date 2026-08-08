@@ -21,39 +21,39 @@ export default function FAQPage() {
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <PublicNav />
 
-      <main className="flex-1 pt-32 pb-20 px-4">
-        <div className="max-w-4xl mx-auto space-y-16">
+      <main className="flex-1 pt-24 sm:pt-28 pb-16 sm:pb-20 px-4">
+        <div className="max-w-4xl mx-auto space-y-12 sm:space-y-16">
           
           {/* Header Section */}
           <div className="text-center">
-            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <HelpCircle className="w-8 h-8" />
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
+              <HelpCircle className="w-7 h-7 sm:w-8 sm:h-8" />
             </div>
-            <h1 className="text-5xl font-black text-slate-900 tracking-tight mb-6">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-4 sm:mb-6">
               Frequently Asked Questions
             </h1>
-            <p className="text-lg text-slate-500 font-medium leading-relaxed">
+            <p className="text-base sm:text-lg text-slate-500 font-medium leading-relaxed">
               Find answers to the most common questions about QR Thrive, our features, and our platform.
             </p>
           </div>
 
           {/* FAQ List */}
-          <div className="bg-white p-6 md:p-10 rounded-[2.5rem] shadow-sm border border-slate-100 space-y-4">
+          <div className="bg-white p-4 sm:p-6 md:p-10 rounded-3xl shadow-sm border border-slate-100 space-y-3 sm:space-y-4">
             {FAQ_DATA.map((item, i) => (
               <div key={i} className="border border-slate-100 rounded-2xl overflow-hidden bg-slate-50 hover:border-blue-100 transition-colors">
                 <button
                   onClick={() => setFaqOpenIndex(faqOpenIndex === i ? null : i)}
-                  className="w-full flex justify-between items-center p-6 text-left font-bold text-slate-800 transition-colors focus:outline-none"
+                  className="w-full flex justify-between items-center gap-4 p-4 sm:p-6 text-left font-bold text-slate-800 transition-colors focus:outline-none"
                 >
-                  <span className="text-lg">{item.q}</span>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${faqOpenIndex === i ? 'bg-blue-600 text-white' : 'bg-white text-slate-400 border border-slate-200'}`}>
-                    <ChevronRight className={`w-5 h-5 transition-transform ${faqOpenIndex === i ? 'rotate-90' : ''}`} />
+                  <span className="text-sm sm:text-lg">{item.q}</span>
+                  <div className={`w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-full flex items-center justify-center transition-colors ${faqOpenIndex === i ? 'bg-blue-600 text-white' : 'bg-white text-slate-400 border border-slate-200'}`}>
+                    <ChevronRight className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${faqOpenIndex === i ? 'rotate-90' : ''}`} />
                   </div>
                 </button>
                 <div 
                   className={`overflow-hidden transition-all duration-300 ease-in-out ${faqOpenIndex === i ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}
                 >
-                  <div className="p-6 pt-0 border-t border-transparent text-slate-600 font-medium leading-relaxed">
+                  <div className="px-4 sm:px-6 pb-6 pt-0 border-t border-transparent text-slate-600 font-medium leading-relaxed text-sm sm:text-base">
                     {item.a}
                   </div>
                 </div>

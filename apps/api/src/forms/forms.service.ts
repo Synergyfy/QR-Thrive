@@ -253,29 +253,46 @@ export class FormsService {
     });
   }
 
-  async getAllSubmissions(userId: string) {
-    return this.prisma.formSubmission.findMany({
-      where: {
-        form: {
-          qrCode: { userId },
-        },
+  async getAllSubmissions(userId: string, page = 1, limit = 50) {
+    const where = {
+      form: {
+        qrCode: { userId },
       },
-      include: {
-        form: {
-          include: {
-            qrCode: {
-              select: {
-                id: true,
-                name: true,
-                type: true,
+    };
+
+    const [total, items] = await Promise.all([
+      this.prisma.formSubmission.count({ where }),
+      this.prisma.formSubmission.findMany({
+        where,
+        include: {
+          form: {
+            include: {
+              qrCode: {
+                select: {
+                  id: true,
+                  name: true,
+                  type: true,
+                },
               },
+              fields: true,
             },
-            fields: true,
           },
         },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      items,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-      orderBy: { createdAt: 'desc' },
-    });
+    };
   }
 
   async deleteSubmission(qrCodeId: string, submissionId: string, userId: string) {

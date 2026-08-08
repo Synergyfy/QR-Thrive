@@ -37,7 +37,7 @@ const PDFProfilePreview: React.FC<PDFProfilePreviewProps> = ({
   };
 
   return (
-    <div className="w-full h-full flex flex-col font-sans overflow-hidden" style={{ backgroundColor: themeColor }}>
+    <div className="w-full min-h-full flex flex-col font-sans overflow-y-auto scrollbar-hide" style={{ backgroundColor: themeColor }}>
       {/* Hide scrollbar but keep scrollable */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
         {/* Header Info - Compacted */}
@@ -48,7 +48,7 @@ const PDFProfilePreview: React.FC<PDFProfilePreviewProps> = ({
         </div>
 
         {/* Main Card */}
-        <div className="bg-white rounded-t-[32px] p-5 shadow-xl flex flex-col items-center">
+        <div className="bg-white rounded-t-[32px] pt-5 px-5 pb-14 shadow-xl flex flex-col items-center">
           <div className="w-full aspect-[4/3] bg-orange-50 rounded-2xl overflow-hidden border border-orange-100 mb-6 flex items-center justify-center">
             {previewImage ? (
                <img src={previewImage} alt="PDF Preview" className="w-full h-full object-cover" />

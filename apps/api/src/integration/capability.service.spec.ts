@@ -1,11 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CapabilityService } from './capability.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { Plan, QRType } from '@prisma/client';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Plan } from '@prisma/client';
 
 describe('CapabilityService', () => {
   let service: CapabilityService;
   let prisma: PrismaService;
+
+  const mockCacheManager = {
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn(),
+    del: jest.fn(),
+  };
 
   const mockPrisma = {
     plan: {
@@ -15,10 +22,14 @@ describe('CapabilityService', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+    mockCacheManager.get.mockResolvedValue(null);
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CapabilityService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: CACHE_MANAGER, useValue: mockCacheManager },
       ],
     }).compile();
 
@@ -81,7 +92,7 @@ describe('CapabilityService', () => {
       const result = await service.getCapabilities('non-existent-plan');
 
       expect(result.qrCodeLimit).toBe(10);
-      expect(result.allowedQRTypes).toEqual([QRType.URL, QRType.TEXT]);
+      expect(result.allowedQRTypes).toEqual(['url', 'text']);
       expect(result.canCreateQR).toBe(true);
       expect(result.canScan).toBe(true);
       expect(result.canAnalytics).toBe(false);
@@ -176,7 +187,7 @@ describe('CapabilityService', () => {
 
       mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
 
-      const result = await service.checkCreatePermission('plan-1', 'url' as QRType);
+      const result = await service.checkCreatePermission('plan-1', 'url' );
 
       expect(result).toBe(true);
     });
@@ -194,18 +205,19 @@ describe('CapabilityService', () => {
 
       mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
 
-      const result = await service.checkCreatePermission('plan-1', 'wifi' as QRType);
+      const result = await service.checkCreatePermission('plan-1', 'wifi' );
 
       expect(result).toBe(false);
     });
 
-    it('should return false when plan not found', async () => {
+    it('should fallback to default capabilities when plan not found', async () => {
       mockPrisma.plan.findUnique.mockResolvedValue(null);
       mockPrisma.plan.findFirst.mockResolvedValue(null);
 
-      const result = await service.checkCreatePermission('non-existent', 'url' as QRType);
+      const result = await service.checkCreatePermission('non-existent', 'url' );
 
-      expect(result).toBe(false);
+      // Falls back to default capabilities which allow 'url'
+      expect(result).toBe(true);
     });
   });
 

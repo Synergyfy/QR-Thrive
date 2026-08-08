@@ -27,7 +27,7 @@ export class UsageGuard implements CanActivate {
       return this.handleVemTapSubscription(request, vemtapSubscription, qrType);
     }
 
-    return this.handleNativeAuth(user, qrType);
+    return this.handleNativeAuth(request, user, qrType);
   }
 
   private async handleVemTapSubscription(
@@ -63,7 +63,7 @@ export class UsageGuard implements CanActivate {
     return true;
   }
 
-  private async handleNativeAuth(user: any, qrType?: string): Promise<boolean> {
+  private async handleNativeAuth(request: Request, user: any, qrType?: string): Promise<boolean> {
     if (!user) {
       throw new ForbiddenException('User not found in request');
     }
@@ -78,6 +78,9 @@ export class UsageGuard implements CanActivate {
     if (!userWithPlan || !userWithPlan.plan) {
       throw new ForbiddenException('User has no active plan assigned');
     }
+
+    // Attach the full user to request so downstream services don't re-fetch
+    (request as any).__userWithPlan = userWithPlan;
 
     const { plan } = userWithPlan;
 

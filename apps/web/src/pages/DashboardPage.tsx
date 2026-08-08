@@ -551,7 +551,7 @@ const DashboardPage: React.FC = () => {
             <img
               src="/QRThrive_Logo_Full-BG.png"
               alt="QR Thrive"
-              className="h-20 w-auto transition-transform duration-300 group-hover:scale-[1.02]"
+              className="h-14 w-auto transition-transform duration-300 group-hover:scale-[1.02]"
             />
           </div>
           <button 
