@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "public": false,
   "trailingSlash": false,
   "functions": {
     "api/index.js": {

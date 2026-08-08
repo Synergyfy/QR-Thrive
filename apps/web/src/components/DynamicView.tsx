@@ -366,12 +366,13 @@ const DynamicView: React.FC<DynamicViewProps> = ({
         );
 
       case "socials": {
-        const { name, bio, images, ...socialLinks } = data.socials || {};
+        const { name, bio, images, themeColor, ...socialLinks } = data.socials || {};
         return (
           <div className="w-full min-h-full rounded-none">
             <SocialsProfilePreview
               name={name}
               bio={bio}
+              themeColor={themeColor}
               images={images?.map((i) => i.url)}
               socials={socialLinks as any}
             />

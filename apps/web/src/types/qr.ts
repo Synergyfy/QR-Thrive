@@ -248,6 +248,7 @@ export interface QRData {
   socials?: {
     name?: string;
     bio?: string;
+    themeColor?: string;
     images?: (FileData & { pendingFile?: PendingFile; caption?: string })[];
     instagram?: string;
     facebook?: string;
