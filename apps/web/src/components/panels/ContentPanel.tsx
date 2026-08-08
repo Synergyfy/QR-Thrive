@@ -133,8 +133,8 @@ const QRPickerDropdown = ({ currentData, updateData, typeKey }: any) => {
       >
         <option value="">Select a QR code...</option>
         {qrCodes.map((qr: any) => (
-          <option key={qr.id} value={qr.id}>
-            {qr.name || qr.type} {qr.shortId ? `(${qr.shortId})` : ""}
+          <option key={qr.id} value={qr.shortId}>
+            {qr.name || qr.type}
           </option>
         ))}
       </select>
@@ -151,8 +151,8 @@ const QROptionsList = () => {
   return (
     <>
       {qrCodes.map((qr: any) => (
-        <option key={qr.id} value={qr.id}>
-          {qr.name || qr.type} {qr.shortId ? `(${qr.shortId})` : ""}
+        <option key={qr.id} value={qr.shortId}>
+          {qr.name || qr.type}
         </option>
       ))}
     </>

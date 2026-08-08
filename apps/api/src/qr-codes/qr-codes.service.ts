@@ -110,7 +110,8 @@ export class QRCodesService {
     const { data, design, frame, linkedQRCodeId, ...rest } = createQRCodeDto;
 
     // Auto-sync linkedQRCodeId from JSON if not explicitly provided
-    const syncedLinkedId = linkedQRCodeId || this.extractLinkedQRId(data);
+    const rawLinkedId = linkedQRCodeId || this.extractLinkedQRId(data);
+    const syncedLinkedId = await this.resolveLinkedQRId(rawLinkedId);
 
     const qrCode = await this.prisma.qRCode.create({
       data: {
@@ -250,12 +251,13 @@ export class QRCodesService {
     const { data, design, frame, linkedQRCodeId, ...rest } = updateQRCodeDto;
 
     // Auto-sync linkedQRCodeId from JSON if it was updated or if we are forced to re-extract
-    const syncedLinkedId =
+    const rawLinkedId =
       linkedQRCodeId !== undefined
         ? linkedQRCodeId
         : data !== undefined
           ? this.extractLinkedQRId(data)
           : undefined;
+    const syncedLinkedId = rawLinkedId ? await this.resolveLinkedQRId(rawLinkedId) : null;
 
     const updated = await this.prisma.qRCode.update({
       where: { id: qrCode.id },
@@ -420,6 +422,23 @@ export class QRCodesService {
       }
     }
     return null;
+  }
+
+  /**
+   * Resolve a QR link reference (shortId or UUID) to a UUID for database storage.
+   */
+  private async resolveLinkedQRId(value: string | null): Promise<string | null> {
+    if (!value) return null;
+    // Already a UUID
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
+      return value;
+    }
+    // Looks like a shortId — resolve to UUID
+    const qrCode = await this.prisma.qRCode.findUnique({
+      where: { shortId: value },
+      select: { id: true },
+    });
+    return qrCode?.id || null;
   }
 
   /**
