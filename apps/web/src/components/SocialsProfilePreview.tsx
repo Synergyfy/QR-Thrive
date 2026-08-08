@@ -31,7 +31,7 @@ const SocialsProfilePreview: React.FC<SocialsProfilePreviewProps> = ({
   socials = { facebook: "https://facebook.com", instagram: "https://instagram.com", tiktok: "https://tiktok.com", youtube: "https://youtube.com" }
 }) => {
   return (
-    <div className="w-full h-full flex flex-col font-sans" style={{ backgroundColor: themeColor }}>
+    <div className="w-full min-h-full flex flex-col font-sans overflow-y-auto scrollbar-hide" style={{ backgroundColor: themeColor }}>
       <div className="flex-1 overflow-y-auto pb-4 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <style>{`.scrollbar-hide::-webkit-scrollbar { display: none; }`}</style>
         

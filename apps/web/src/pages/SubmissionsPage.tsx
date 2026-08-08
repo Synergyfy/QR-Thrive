@@ -216,25 +216,25 @@ const SubmissionsPage: React.FC = () => {
     <div className="min-h-screen bg-[#F8FAFC] flex font-sans selection:bg-blue-100 selection:text-blue-900">
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Top Header */}
-        <header className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-10 relative z-20">
-           <div className="flex items-center gap-6">
+        <header className="h-16 sm:h-20 bg-white border-b border-slate-100 flex items-center justify-between px-4 sm:px-8 relative z-20 gap-3">
+           <div className="flex items-center gap-3 sm:gap-6 min-w-0">
               <button 
                 onClick={() => navigate(getDashboardPath(user))}
-                className="p-3 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-blue-600 hover:border-blue-600 transition-all shadow-sm active:scale-95"
+                className="p-2.5 sm:p-3 bg-white border border-slate-100 rounded-xl sm:rounded-2xl text-slate-400 hover:text-blue-600 hover:border-blue-600 transition-all shadow-sm active:scale-95 shrink-0"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
-              <div>
-                <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                  <ClipboardList className="w-6 h-6 text-emerald-600" />
-                  {qrCode?.name || 'Form'} Responses
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-2 sm:gap-3 truncate">
+                  <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600 shrink-0" />
+                  <span className="truncate">{qrCode?.name || 'Form'} Responses</span>
                 </h1>
-                <p className="text-xs font-bold text-slate-400 mt-0.5">{qrCode?.shortUrl || 'Dynamic QR'}</p>
+                <p className="text-[11px] sm:text-xs font-bold text-slate-400 mt-0.5 truncate">{qrCode?.shortUrl || 'Dynamic QR'}</p>
               </div>
            </div>
            
-           <div className="flex items-center gap-4 group">
-              <div className="flex items-center gap-4 bg-slate-50 px-5 py-2.5 rounded-2xl border border-slate-100 w-80 focus-within:ring-2 ring-blue-100 transition-all">
+           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+              <div className="hidden sm:flex items-center gap-4 bg-slate-50 px-4 py-2.5 rounded-2xl border border-slate-100 w-80 focus-within:ring-2 ring-blue-100 transition-all">
                 <Search className="w-4 h-4 text-slate-400" />
                 <input 
                   type="text" 
@@ -247,7 +247,7 @@ const SubmissionsPage: React.FC = () => {
               <button 
                 onClick={() => setIsExportModalOpen(true)}
                 disabled={displaySubmissions.length === 0}
-                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-100 disabled:opacity-50 disabled:grayscale"
+                className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-100 disabled:opacity-50 disabled:grayscale"
               >
                 <Download className="w-4 h-4 stroke-[3]" /> Export CSV
               </button>
@@ -258,9 +258,9 @@ const SubmissionsPage: React.FC = () => {
         {isExportModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setIsExportModalOpen(false)} />
-            <div className="relative w-full max-w-lg bg-white rounded-[40px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-              <div className="p-10">
-                <div className="flex items-center justify-between mb-10">
+            <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+              <div className="p-5 sm:p-10">
+                <div className="flex items-center justify-between mb-6 sm:mb-10">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
                       <Download className="w-6 h-6" />
@@ -354,16 +354,16 @@ const SubmissionsPage: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="flex gap-4 pt-4">
+                  <div className="flex gap-3 sm:gap-4 pt-4">
                     <button
                       onClick={() => setIsExportModalOpen(false)}
-                      className="flex-1 py-5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-[24px] font-black text-xs uppercase tracking-widest transition-all active:scale-95"
+                      className="flex-1 py-3.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl sm:rounded-[24px] font-black text-xs uppercase tracking-widest transition-all active:scale-95"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleExport}
-                      className="flex-[2] py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-[24px] font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+                      className="flex-[2] py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl sm:rounded-[24px] font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-100 transition-all active:scale-95 flex items-center justify-center gap-2"
                     >
                       Download CSV <Download className="w-4 h-4 stroke-[3]" />
                     </button>
@@ -375,19 +375,19 @@ const SubmissionsPage: React.FC = () => {
         )}
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-10 custom-scrollbar">
           {displaySubmissions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center">
-              <div className="w-24 h-24 bg-slate-100 rounded-[32px] flex items-center justify-center mb-8 text-slate-300">
-                <ClipboardList className="w-12 h-12" />
+            <div className="flex flex-col items-center justify-center py-16 sm:py-24 text-center">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-slate-100 rounded-3xl flex items-center justify-center mb-6 sm:mb-8 text-slate-300">
+                <ClipboardList className="w-10 h-10 sm:w-12 sm:h-12" />
               </div>
-              <h3 className="text-2xl font-black text-slate-900 mb-2">No responses yet</h3>
-              <p className="text-slate-400 font-medium mb-8 max-w-sm">
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 mb-2">No responses yet</h3>
+              <p className="text-slate-400 font-medium mb-8 max-w-sm text-sm sm:text-base">
                 As soon as people start filling out your form, their responses will appear here.
               </p>
             </div>
           ) : (
-            <div className="bg-white rounded-[40px] border border-slate-100 overflow-hidden shadow-sm">
+            <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>

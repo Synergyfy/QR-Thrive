@@ -281,7 +281,7 @@ const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
         <div className="p-4 bg-white border-t border-gray-100 sticky bottom-0">
           <button
             onClick={() => setView("details")}
-            className="w-full max-w-[calc(100%-32px)] mx-auto py-4 bg-gray-900 text-white font-bold rounded-2xl flex items-center justify-center gap-3 shadow-xl text-sm"
+            className="w-full max-w-[calc(100%-32px)] mx-auto py-3 bg-gray-900 text-white font-semibold rounded-xl flex items-center justify-center gap-3 shadow-md text-sm"
           >
             <ShoppingBag className="w-4 h-4" />
             PLACE ORDER - {data?.currency || "$"}
@@ -362,7 +362,7 @@ const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
               </div>
               <button
                 onClick={() => setView("checkout")}
-                className="flex-1 py-4 px-6 bg-white text-gray-900 font-black rounded-[1.5rem] text-sm tracking-widest uppercase"
+                className="flex-1 py-4 px-6 bg-white text-gray-900 font-semibold rounded-xl text-sm"
               >
                 Go to Cart
               </button>
@@ -370,7 +370,7 @@ const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
           ) : (
             <button
               onClick={() => addToCart(selectedItem)}
-              className="w-full py-5 bg-gray-900 text-white font-black rounded-[2rem] shadow-2xl shadow-gray-300 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all tracking-widest uppercase text-sm"
+              className="w-full py-4 bg-gray-900 text-white font-semibold rounded-xl shadow-lg shadow-gray-200 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all text-sm"
             >
               Add to Order — {data?.currency || "$"}
               {selectedItem.price.toLocaleString()}
@@ -464,7 +464,7 @@ const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
         {totalItems > 0 && (
           <div className="absolute bottom-6 left-6 right-6 bg-gray-900 text-white p-4 rounded-2xl flex justify-between items-center z-20 shadow-xl">
             <div>
-              <p className="text-[10px] opacity-70 uppercase font-bold tracking-widest">
+              <p className="text-[11px] font-medium opacity-70">
                 {totalItems} items
               </p>
               <p className="font-bold">
@@ -474,7 +474,7 @@ const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
             </div>
             <button
               onClick={() => setView("checkout")}
-              className="px-6 py-3 bg-blue-600 font-bold rounded-xl text-sm"
+              className="px-5 py-2.5 bg-blue-600 font-semibold rounded-lg text-sm"
             >
               Order Now
             </button>
@@ -520,9 +520,9 @@ const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
           <button
             key={category.id}
             onClick={() => setSelectedCategory(category)}
-            className="w-full bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center transition-all hover:bg-gray-50"
+            className="w-full bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center transition-all hover:bg-gray-50"
           >
-            <span className="text-lg font-medium text-gray-900">
+            <span className="text-base font-medium text-gray-900">
               {category.name || "Category"}
             </span>
             <ChevronRight className="w-6 h-6 text-gray-400" />

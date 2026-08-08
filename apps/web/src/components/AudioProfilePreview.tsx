@@ -65,7 +65,7 @@ const AudioProfilePreview: React.FC<AudioProfilePreviewProps> = ({
   }, []);
 
   return (
-    <div className="w-full h-full flex flex-col font-sans overflow-hidden" style={{ backgroundColor: themeColor }}>
+    <div className="w-full min-h-full flex flex-col font-sans overflow-y-auto scrollbar-hide" style={{ backgroundColor: themeColor }}>
       {/* Scrollable Container */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
         {/* Header Info */}
