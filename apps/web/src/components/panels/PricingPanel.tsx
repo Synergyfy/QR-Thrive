@@ -256,7 +256,7 @@ export default function PricingPanel() {
                   <button 
                     onClick={() => handleJoinPlan(plans!.find((p: any) => p.name === plan.name)!)}
                     disabled={initializePayment.isPending || plan.isCurrent}
-                    className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
+                    className={`w-full py-4 sm:py-5 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-[0.15em] whitespace-nowrap transition-all active:scale-95 flex justify-center items-center gap-2 group/btn ${
                       plan.isCurrent
                         ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 cursor-not-allowed'
                         : plan.highlight 

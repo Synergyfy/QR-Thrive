@@ -332,12 +332,12 @@ export default function PricingPage() {
                     ))}
                   </div>
 
-                  <div className="space-y-3 mt-auto min-h-[140px] flex flex-col justify-end">
+                  <div className="space-y-3 mt-auto min-h-[120px] flex flex-col justify-end">
                     {plan.trial && !plan.isCurrent && !user?.hasUsedTrial && (
                       <button 
                         onClick={() => handleJoinPlan(plans!.find(p => p.name === plan.name)!, true)}
                         disabled={initializePayment.isPending || plan.isCurrent}
-                        className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30 ${initializePayment.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        className={`w-full py-4 sm:py-5 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-[0.15em] whitespace-nowrap transition-all active:scale-95 flex justify-center items-center gap-2 group/btn bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30 ${initializePayment.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
                       >
                         {initializePayment.isPending && selectedPlan?.name === plan.name ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -353,7 +353,7 @@ export default function PricingPage() {
                     <button 
                       onClick={() => handleJoinPlan(plans!.find(p => p.name === plan.name)!)}
                       disabled={initializePayment.isPending || plan.isCurrent}
-                      className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
+                      className={`w-full py-4 sm:py-5 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-[0.15em] whitespace-nowrap transition-all active:scale-95 flex justify-center items-center gap-2 group/btn ${
                         plan.isCurrent
                           ? (plan.highlight ? 'bg-slate-800 text-slate-400 cursor-default shadow-inner' : 'bg-slate-100 text-slate-400 cursor-default shadow-inner')
                           : plan.trial && !user?.hasUsedTrial
