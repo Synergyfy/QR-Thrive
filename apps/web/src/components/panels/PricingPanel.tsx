@@ -183,7 +183,7 @@ export default function PricingPanel() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8 items-stretch max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 sm:gap-8 items-stretch max-w-7xl mx-auto">
             {currentPlans.map((plan, idx) => (
               <motion.div 
                 key={`${plan.name}-${selectedCycle}`}

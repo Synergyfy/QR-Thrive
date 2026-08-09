@@ -32,7 +32,7 @@ export default function PublicNav() {
   const navLinks = [
     { name: 'Why Us', path: '/why-us' },
     { name: 'Solutions', path: '/solutions' },
-    { name: 'Pricing', path: user ? '/dashboard?tab=pricing' : '/pricing' },
+    { name: 'Pricing', path: '/pricing' },
     { name: 'FAQ', path: '/faq' },
   ];
 
