@@ -194,7 +194,7 @@ export default function PricingPanel() {
                   plan.isCurrent
                     ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-2xl shadow-blue-500/20 z-30'
                     : plan.highlight 
-                      ? 'bg-slate-900 text-white shadow-2xl scale-100 lg:scale-105 z-20 xl:-translate-y-4 border border-blue-500/30' 
+                      ? 'bg-slate-900 text-white shadow-2xl z-20 xl:-translate-y-4 border border-blue-500/30' 
                       : 'bg-white border border-slate-100 shadow-xl shadow-blue-900/5 z-10'
                 }`}
               >

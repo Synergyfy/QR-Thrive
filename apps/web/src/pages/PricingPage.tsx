@@ -267,7 +267,7 @@ export default function PricingPage() {
                   } ${
                     plan.isCurrent
                       ? 'ring-4 ring-blue-500 ring-offset-4 ring-offset-slate-50 z-30'
-                      : plan.highlight ? 'scale-105 z-20' : 'z-10'
+                      : plan.highlight ? 'z-20' : 'z-10'
                   }`}
                 >
                   {/* Current Plan Badge */}
