@@ -524,22 +524,27 @@ export class AuthService {
       },
     });
 
-    const isProd = this.configService.get<string>('NODE_ENV') === 'production';
+    const nodeEnv = this.configService.get<string>('NODE_ENV');
+    const isSecureEnv =
+      nodeEnv === 'production' ||
+      nodeEnv === 'staging' ||
+      this.configService.get<string>('COOKIE_SECURE') === 'true';
+
     this.logger.log(
-      `Setting tokens for user ${userId}. isProd=${isProd}, sameSite=${isProd ? 'none' : 'lax'}, secure=${isProd}`,
+      `Setting tokens for user ${userId}. nodeEnv=${nodeEnv}, isSecureEnv=${isSecureEnv}, sameSite=${isSecureEnv ? 'none' : 'lax'}, secure=${isSecureEnv}`,
     );
 
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
+      secure: isSecureEnv,
+      sameSite: isSecureEnv ? 'none' : 'lax',
       maxAge: 15 * 60 * 1000, // 15 mins
     });
 
     res.cookie('refreshToken', refreshTokenString, {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
+      secure: isSecureEnv,
+      sameSite: isSecureEnv ? 'none' : 'lax',
       maxAge: refreshDays * 24 * 60 * 60 * 1000,
     });
 

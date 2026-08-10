@@ -109,8 +109,9 @@ export class QRCodesService {
 
     const { data, design, frame, linkedQRCodeId, ...rest } = createQRCodeDto;
 
-    // Auto-sync linkedQRCodeId from JSON if not explicitly provided
-    const syncedLinkedId = linkedQRCodeId || this.extractLinkedQRId(data);
+    // Auto-sync linkedQRCodeId from JSON if not explicitly provided, resolving shortId to UUID if needed
+    const rawLinkedId = linkedQRCodeId || this.extractLinkedQRId(data);
+    const syncedLinkedId = await this.resolveLinkedQRCodeId(rawLinkedId);
 
     const qrCode = await this.prisma.qRCode.create({
       data: {
@@ -249,13 +250,18 @@ export class QRCodesService {
 
     const { data, design, frame, linkedQRCodeId, ...rest } = updateQRCodeDto;
 
-    // Auto-sync linkedQRCodeId from JSON if it was updated or if we are forced to re-extract
-    const syncedLinkedId =
+    // Auto-sync linkedQRCodeId from JSON if it was updated or if we are forced to re-extract, resolving shortId to UUID if needed
+    const rawLinkedId =
       linkedQRCodeId !== undefined
         ? linkedQRCodeId
         : data !== undefined
           ? this.extractLinkedQRId(data)
           : undefined;
+
+    const syncedLinkedId =
+      rawLinkedId !== undefined
+        ? await this.resolveLinkedQRCodeId(rawLinkedId)
+        : undefined;
 
     const updated = await this.prisma.qRCode.update({
       where: { id: qrCode.id },
@@ -420,6 +426,34 @@ export class QRCodesService {
       }
     }
     return null;
+  }
+
+  /**
+   * Resolves a linked QR Code ID (which might be an 8-character shortId or a 36-character UUID)
+   * to a valid UUID referencing an existing QRCode record.
+   */
+  private async resolveLinkedQRCodeId(
+    idOrShortId?: string | null,
+  ): Promise<string | null> {
+    if (!idOrShortId || typeof idOrShortId !== 'string') return null;
+
+    const trimmed = idOrShortId.trim();
+    if (!trimmed) return null;
+
+    // Check if it's already a valid UUID format
+    const isUuid =
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+        trimmed,
+      );
+    if (isUuid) return trimmed;
+
+    // Otherwise, look up the target QRCode by shortId to retrieve its UUID id
+    const target = await this.prisma.qRCode.findUnique({
+      where: { shortId: trimmed },
+      select: { id: true },
+    });
+
+    return target ? target.id : null;
   }
 
   /**
