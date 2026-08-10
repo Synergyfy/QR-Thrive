@@ -384,17 +384,17 @@ const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
   if (selectedCategory) {
     return (
       <div className="flex-1 flex flex-col relative bg-white -mx-6 -mt-6 min-h-full">
-        <div className="bg-white p-6 pb-4 border-b border-gray-100 flex items-center sticky top-0 z-10">
+        <div className="bg-white p-4 pb-3 border-b border-gray-100 flex items-center sticky top-0 z-10">
           <button
             onClick={() => setSelectedCategory(null)}
             className="p-2 -ml-2"
           >
             <ArrowLeft />
           </button>
-          <h2 className="text-xl font-bold ml-2">{selectedCategory.name}</h2>
+          <h2 className="text-lg font-bold ml-2">{selectedCategory.name}</h2>
         </div>
 
-        <div className="px-6 py-6 space-y-4 pb-24">
+        <div className="px-6 py-4 space-y-3 pb-24">
           {selectedCategory.items.map((item: any, idx: number) => {
             const imageUrl = item.image;
             const inCart = cart[item.id];
@@ -402,24 +402,24 @@ const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
             return (
               <div
                 key={idx}
-                className="bg-white p-3 rounded-[2rem] border border-gray-100 flex items-center gap-4 transition-all active:scale-[0.98] cursor-pointer"
+                className="bg-white p-3 rounded-2xl border border-gray-100 flex items-center gap-3.5 transition-all active:scale-[0.98] cursor-pointer"
                 onClick={() => {
                   setSelectedItem(item);
                   setView("item-details");
                 }}
               >
-                <div className="w-24 h-24 shrink-0 rounded-[1.5rem] overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
+                <div className="w-[72px] h-[72px] shrink-0 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
                   {imageUrl ? (
                     <img
                       src={imageUrl}
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <ImageIcon className="w-8 h-8 text-gray-200" />
+                    <ImageIcon className="w-7 h-7 text-gray-200" />
                   )}
                 </div>
-                <div className="flex flex-col justify-center gap-1 pr-2 flex-1">
-                  <h3 className="text-sm font-semibold">{item.name}</h3>
+                <div className="flex flex-col justify-center gap-1 pr-1 flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-gray-900 leading-snug truncate">{item.name}</h3>
                   <p className="text-sm font-bold text-blue-600">
                     {data?.currency || "$"}
                     {item.price.toLocaleString()}
@@ -427,19 +427,19 @@ const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
 
                   {inCart ? (
                     <div
-                      className="flex items-center gap-3 mt-1"
+                      className="flex items-center gap-2.5 mt-0.5"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
                         onClick={() => removeFromCart(item)}
-                        className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold"
+                        className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center font-bold text-xs text-gray-600"
                       >
                         -
                       </button>
-                      <span className="font-bold">{inCart.quantity}</span>
+                      <span className="font-bold text-sm w-5 text-center">{inCart.quantity}</span>
                       <button
                         onClick={() => addToCart(item)}
-                        className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold"
+                        className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs"
                       >
                         +
                       </button>
@@ -450,7 +450,7 @@ const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
                         e.stopPropagation();
                         addToCart(item);
                       }}
-                      className="mt-1 px-4 py-2 bg-blue-50 text-blue-600 text-xs font-bold rounded-xl w-fit"
+                      className="mt-0.5 px-3.5 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg w-fit hover:bg-blue-100 transition-colors"
                     >
                       Add
                     </button>
@@ -462,19 +462,19 @@ const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
         </div>
         {/* Floating Cart Footer */}
         {totalItems > 0 && (
-          <div className="absolute bottom-6 left-6 right-6 bg-gray-900 text-white p-4 rounded-2xl flex justify-between items-center z-20 shadow-xl">
+          <div className="absolute bottom-6 left-6 right-6 bg-gray-900 text-white p-3 rounded-2xl flex justify-between items-center z-20 shadow-xl">
             <div>
-              <p className="text-[11px] font-medium opacity-70">
+              <p className="text-[10px] font-medium opacity-70">
                 {totalItems} items
               </p>
-              <p className="font-bold">
+              <p className="font-bold text-sm">
                 {data?.currency || "$"}
                 {totalPrice.toLocaleString()}
               </p>
             </div>
             <button
               onClick={() => setView("checkout")}
-              className="px-5 py-2.5 bg-blue-600 font-semibold rounded-lg text-sm"
+              className="px-4 py-2 bg-blue-600 font-semibold rounded-lg text-xs"
             >
               Order Now
             </button>
@@ -497,35 +497,35 @@ const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
           />
         </div>
       )}
-      <div className="px-6 pt-12 pb-8 text-center text-white relative z-10">
-        <div className="w-24 h-24 rounded-3xl shadow-xl overflow-hidden bg-white flex items-center justify-center shrink-0 mx-auto mb-6 border-4 border-white">
+      <div className="px-6 pt-10 pb-6 text-center text-white relative z-10">
+        <div className="w-16 h-16 rounded-2xl shadow-xl overflow-hidden bg-white flex items-center justify-center shrink-0 mx-auto mb-4 border-3 border-white">
           {data?.logo ? (
             <img src={data.logo} className="w-full h-full object-cover" />
           ) : (
-            <UtensilsCrossed className="w-12 h-12 text-gray-300" />
+            <UtensilsCrossed className="w-8 h-8 text-gray-300" />
           )}
         </div>
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-2xl font-bold tracking-tight">
           {data?.restaurantName || "Restaurant"}
         </h1>
         {data?.description && (
-          <p className="text-md text-white/90 font-medium leading-relaxed mt-2 max-w-[280px] mx-auto">
+          <p className="text-[13px] text-white/90 font-medium leading-relaxed mt-1.5 max-w-[240px] mx-auto">
             {data.description}
           </p>
         )}
       </div>
 
-      <div className="flex-1 bg-white rounded-t-[32px] px-6 py-8 space-y-4">
+      <div className="flex-1 bg-white rounded-t-[32px] px-6 py-6 space-y-3">
         {(data?.categories || []).map((category) => (
           <button
             key={category.id}
             onClick={() => setSelectedCategory(category)}
-            className="w-full bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center transition-all hover:bg-gray-50"
+            className="w-full bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center transition-all hover:bg-gray-50"
           >
-            <span className="text-base font-medium text-gray-900">
+            <span className="text-sm font-medium text-gray-900">
               {category.name || "Category"}
             </span>
-            <ChevronRight className="w-6 h-6 text-gray-400" />
+            <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
         ))}
 
