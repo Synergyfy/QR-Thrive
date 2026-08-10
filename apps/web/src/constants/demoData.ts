@@ -3,139 +3,139 @@ import type { QRData } from '../types/qr';
 export const DEMO_DATA: Record<string, Partial<QRData>> = {
   url: {
     type: 'url',
-    url: 'https://www.example.com'
+    url: 'https://qrthrive.com'
   },
   vcard: {
     type: 'vcard',
     vcard: {
-      firstName: 'Kyle',
-      lastName: 'Thorsen',
-      mobile: '(001) 555-1000',
-      email: 'kyle.thorsen@studio.com',
-      website: 'www.webcrafters.com',
-      jobTitle: 'Senior Web Developer',
-      company: 'WebCrafters Studio',
-      address: '123 Innovation Drive, Silicon Valley, CA',
+      firstName: 'Miije',
+      lastName: 'Kane',
+      mobile: '+1 (555) 019-2834',
+      email: 'hello@qrthrive.com',
+      website: 'https://qrthrive.com',
+      jobTitle: 'Head of Growth',
+      company: 'QR Thrive',
+      address: 'Lagos, Nigeria',
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop'
     }
   },
   business: {
     type: 'business',
     business: {
-      companyName: 'WebCrafters Studio',
-      headline: 'Modern Web Solutions for Everyone',
-      about: 'As a senior web developer at WebCrafters Studio, I am proud to provide the best website development service in Europe!',
+      companyName: 'QR Thrive',
+      headline: 'Smart QR Codes That Drive Real Results',
+      about: 'QR Thrive helps businesses create dynamic QR codes that bridge the gap between physical and digital. Collect customer data, drive engagement, and grow — all with a simple scan.',
       logo: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=400&h=400&fit=crop',
       banner: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=600&fit=crop',
       contact: {
-        phone: '(001) 555-1000',
-        email: 'hello@webcrafters.com',
-        website: 'https://webcrafters.studio',
-        address: '123 Innovation Drive, Silicon Valley, CA'
+        phone: '+1 (555) 019-2834',
+        email: 'hello@qrthrive.com',
+        website: 'https://qrthrive.com',
+        address: 'Lagos, Nigeria'
       }
     }
   },
   socials: {
     type: 'socials',
     socials: {
-      name: 'Sarah Ann Peters',
-      bio: "Hi! I'm Sarah Ann Peters. Welcome to my social media hub! The links below will connect you with my channels on every popular platform.",
+      name: 'QR Thrive',
+      bio: 'Smart QR codes for modern businesses. Create, track, and optimize your QR experiences. Follow us for tips, updates, and inspiration.',
       images: [
-        { id: 'd1', url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80" },
-        { id: 'd2', url: "https://images.unsplash.com/photo-1531746020798-e7953e3e83f8?auto=format&fit=crop&w=400&q=80" },
-        { id: 'd3', url: "https://images.unsplash.com/photo-1554151228-14d9def656e4?auto=format&fit=crop&w=400&q=80" }
+        { id: 'd1', url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=80' },
+        { id: 'd2', url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80' },
+        { id: 'd3', url: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?auto=format&fit=crop&w=400&q=80' }
       ],
-      instagram: 'https://instagram.com/webcrafters',
-      facebook: 'https://facebook.com/webcrafters',
-      twitter: 'https://twitter.com/webcrafters',
-      linkedin: 'https://linkedin.com/company/webcrafters',
-      youtube: 'https://youtube.com/webcrafters',
-      tiktok: 'https://tiktok.com/@webcrafters'
+      instagram: 'https://instagram.com/qrthrive',
+      facebook: 'https://facebook.com/qrthrive',
+      twitter: 'https://twitter.com/qrthrive',
+      linkedin: 'https://linkedin.com/company/qrthrive',
+      youtube: 'https://youtube.com/@qrthrive',
+      tiktok: 'https://tiktok.com/@qrthrive'
     }
   },
   links: {
     type: 'links',
     linksInfo: {
-      title: 'My Digital Presence',
-      description: 'Check out all my professional links and projects in one place.',
+      title: 'QR Thrive — Everything in One Place',
+      description: 'Explore QR Thrive. Your smart QR code platform for engagement, analytics, and growth.',
       themeColor: '#2563eb',
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop'
     },
     linksList: [
-      { title: 'Portfolio Website', url: 'https://portfolio.me' },
-      { title: 'Latest Blog Post', url: 'https://blog.me/post/1' },
-      { title: 'Hire Me on Upwork', url: 'https://upwork.com/me' }
+      { title: 'Visit QR Thrive', url: 'https://qrthrive.com' },
+      { title: 'View Pricing Plans', url: 'https://qrthrive.com/pricing' },
+      { title: 'Read Our Blog', url: 'https://qrthrive.com/blog' }
     ]
   },
   wifi: {
     type: 'wifi',
     wifi: {
-      ssid: 'Guest_WiFi_HighSpeed',
-      password: 'demo-password-123',
+      ssid: 'QRThrive_Guest',
+      password: 'welcome2qrthrive',
       encryption: 'WPA'
     }
   },
   text: {
     type: 'text',
-    text: 'Hello! This is a demo message encoded in a QR code. QR Thrive makes it easy to share any text instantly!'
+    text: 'Welcome to QR Thrive — the smart QR code platform that helps businesses collect data, drive engagement, and boost growth. Scan to learn more at qrthrive.com'
   },
   whatsapp: {
     type: 'whatsapp',
     whatsapp: {
-      phoneNumber: '1234567890',
-      message: 'Hi! I saw your business on QR Thrive and would like to learn more.'
+      phoneNumber: '15550192834',
+      message: 'Hi! I just scanned your QR Thrive code and would like to learn more about your platform.'
     }
   },
   email: {
     type: 'email',
     email: {
-      address: 'hello@example.com',
-      subject: 'Inquiry from QR Code',
-      body: 'Hi, I would like to get more information about your services.'
+      address: 'hello@qrthrive.com',
+      subject: 'Interested in QR Thrive',
+      body: 'Hi QR Thrive team, I scanned your QR code and would love to learn more about your platform and pricing.'
     }
   },
   phone: {
     type: 'phone',
     phone: {
-      number: '+1234567890'
+      number: '+15550192834'
     }
   },
   sms: {
     type: 'sms',
     sms: {
-      number: '+1234567890',
-      message: 'Hi! I am interested in your services. Please contact me back.'
+      number: '+15550192834',
+      message: 'Hi! I found your QR Thrive code and would like to get started. Please send me more info.'
     }
   },
   pdf: {
     type: 'pdf',
     pdf: {
       id: 'demo-pdf',
-      name: 'Business_Proposal.pdf',
+      name: 'QR_Thrive_Guide.pdf',
       url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-      companyName: 'Vemtap',
-      title: 'Digital Engagement Solutions',
-      description: 'We help businesses bring customers back. Instantly collect data with a simple tap and engage them automatically.'
+      companyName: 'QR Thrive',
+      title: 'Getting Started with QR Thrive',
+      description: 'A complete guide to creating, managing, and tracking your dynamic QR codes with QR Thrive.'
     }
   },
   video: {
     type: 'video',
     video: {
       id: 'demo-video',
-      url: 'https://www.w3schools.com/html/mov_bbb.mp4',
-      name: 'Product_Demo.mp4',
+      url: '',
+      name: 'QR_Thrive_Demo.mp4',
       platform: 'other',
-      companyName: 'Vemtap',
-      title: 'Digital Engagement Solutions',
-      description: 'We help businesses bring customers back. Instantly collect data with a simple tap and engage them automatically.'
+      companyName: 'QR Thrive',
+      title: 'See QR Thrive in Action',
+      description: 'Watch how QR Thrive helps businesses create smart QR codes that drive real engagement and growth.'
     }
   },
   image: {
     type: 'image',
     images: [
-      { id: 'img1', url: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d', name: 'Workstation' },
-      { id: 'img2', url: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085', name: 'Coding' },
-      { id: 'img3', url: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c', name: 'Terminal' }
+      { id: 'img1', url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop', name: 'Analytics Dashboard' },
+      { id: 'img2', url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop', name: 'Marketing Growth' },
+      { id: 'img3', url: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800&h=600&fit=crop', name: 'Team Collaboration' }
     ]
   },
   mp3: {
@@ -144,9 +144,9 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
       id: 'demo-mp3',
       name: 'The Future of QR Technology',
       url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-      companyName: 'TechTalk Weekly',
-      title: 'Episode #42: Digital Engagement',
-      description: 'Join us as we discuss how QR codes are revolutionizing the way we interact with the physical world and digital content.',
+      companyName: 'QR Thrive',
+      title: 'How QR Codes Are Changing Business',
+      description: 'Discover how QR Thrive is helping businesses bridge the physical-digital gap with smart, trackable QR codes.',
       themeColor: '#1e40af',
       textColor: '#ffffff',
       buttonColor: 'rgba(255,255,255,0.15)',
@@ -156,24 +156,24 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
   menu: {
     type: 'menu',
     menu: {
-      restaurantName: 'Thrive Bistro',
-      description: 'Delicious & Healthy Meals',
+      restaurantName: 'QR Thrive Café',
+      description: 'Scan. Order. Enjoy.',
       currency: '$',
       categories: [
         {
           id: '1',
-          name: 'Starters',
+          name: 'Digital Solutions',
           items: [
-            { id: '1-1', name: 'Fresh Spring Rolls', description: 'Vegetables wrapped in rice paper', price: 8 },
-            { id: '1-2', name: 'Tomato Bruschetta', description: 'Grilled bread with garlic and tomatoes', price: 10 }
+            { id: '1-1', name: 'Dynamic QR Codes', description: 'Unlimited edits, real-time analytics', price: 0 },
+            { id: '1-2', name: 'QR Chaining', description: 'Connect multiple QR experiences together', price: 0 }
           ]
         },
         {
           id: '2',
-          name: 'Main Courses',
+          name: 'Growth Tools',
           items: [
-            { id: '2-1', name: 'Grilled Salmon', description: 'Served with roasted vegetables', price: 22 },
-            { id: '2-2', name: 'Mushroom Risotto', description: 'Creamy Arborio rice with wild mushrooms', price: 18 }
+            { id: '2-1', name: 'Engagement Tracking', description: 'See scans, locations, and device data', price: 0 },
+            { id: '2-2', name: 'Custom Branding', description: 'Add your logo, colors, and frames', price: 0 }
           ]
         }
       ]
@@ -182,35 +182,35 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
   coupon: {
     type: 'coupon',
     coupon: {
-      title: 'Spring Sale 20% OFF',
-      companyName: 'Thrive Fashion',
+      title: 'Get 20% Off Your First QR Code',
+      companyName: 'QR Thrive',
       discount: '20% OFF',
-      description: 'Use this coupon on your next purchase at Thrive Fashion!',
-      promoCode: 'SPRING20',
-      validUntil: '2026-06-30'
+      description: 'Start building smart QR codes today. Use this coupon on your first paid plan.',
+      promoCode: 'THRIVE20',
+      validUntil: '2026-12-31'
     }
   },
   app: {
     type: 'app',
     app: {
-      ios: 'https://apps.apple.com',
-      android: 'https://play.google.com'
+      ios: 'https://apps.apple.com/app/qrthrive',
+      android: 'https://play.google.com/store/apps/details?id=com.qrthrive'
     }
   },
   booking: {
     type: 'booking',
     booking: {
-      businessName: 'Luxe Wellness Spa',
-      title: 'Full Body Massage & Aromatherapy',
-      description: 'Experience deep relaxation with our signature 90-minute treatment. Our expert therapists use organic essential oils to rejuvenate your body and mind.',
-      location: 'Downtown Wellness Center, NY',
-      bookingUrl: 'https://calendly.com/demo-booking',
-      imageUrl: 'https://images.unsplash.com/photo-1544161515-4ae6b918af99?w=800&h=600&fit=crop',
+      businessName: 'QR Thrive',
+      title: 'Free Strategy Consultation',
+      description: 'Book a free 30-minute call with our team. We will help you choose the right QR strategy for your business and show you how QR Thrive works.',
+      location: 'Online — Zoom / Google Meet',
+      bookingUrl: 'https://calendly.com/qrthrive/demo',
+      imageUrl: 'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=800&h=600&fit=crop',
       profileImageUrl: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=400&fit=crop',
-      price: '$120',
-      duration: '90 Min',
-      themeColor: '#4f46e5',
-      buttonText: 'Schedule Session',
+      price: 'Free',
+      duration: '30 Min',
+      themeColor: '#2563eb',
+      buttonText: 'Book Now',
       destinationMode: 'calendar'
     }
   }
