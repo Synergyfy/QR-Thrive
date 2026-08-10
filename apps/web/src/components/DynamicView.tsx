@@ -1663,7 +1663,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
 
         {/* Linked QR Teaser - "Next Experience" (only for connector added via Chaining section, not CTA) */}
         {(data.linkedQRCodeId || data.connectedQrId) && linkedQRCode && !isWizardPreview && (
-          <div className="mt-4 pt-6 border-t border-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+          <div className="mt-1 pt-4 border-t border-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-1000">
             <p className="text-[10px] font-normal text-gray-400 uppercase tracking-widest mb-4">
               Discover More
             </p>
