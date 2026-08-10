@@ -402,41 +402,41 @@ const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
             return (
               <div
                 key={idx}
-                className="bg-white p-2.5 rounded-2xl border border-gray-100 flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+                className="bg-white p-3 rounded-2xl border border-gray-100 flex items-center gap-3.5 transition-all active:scale-[0.98] cursor-pointer"
                 onClick={() => {
                   setSelectedItem(item);
                   setView("item-details");
                 }}
               >
-                <div className="w-16 h-16 shrink-0 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
+                <div className="w-[72px] h-[72px] shrink-0 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
                   {imageUrl ? (
                     <img
                       src={imageUrl}
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <ImageIcon className="w-6 h-6 text-gray-200" />
+                    <ImageIcon className="w-7 h-7 text-gray-200" />
                   )}
                 </div>
-                <div className="flex flex-col justify-center gap-0.5 pr-2 flex-1">
-                  <h3 className="text-[13px] font-semibold leading-tight">{item.name}</h3>
-                  <p className="text-[13px] font-bold text-blue-600">
+                <div className="flex flex-col justify-center gap-1 pr-1 flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-gray-900 leading-snug truncate">{item.name}</h3>
+                  <p className="text-sm font-bold text-blue-600">
                     {data?.currency || "$"}
                     {item.price.toLocaleString()}
                   </p>
 
                   {inCart ? (
                     <div
-                      className="flex items-center gap-2 mt-1"
+                      className="flex items-center gap-2.5 mt-0.5"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
                         onClick={() => removeFromCart(item)}
-                        className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center font-bold text-xs"
+                        className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center font-bold text-xs text-gray-600"
                       >
                         -
                       </button>
-                      <span className="font-bold text-sm">{inCart.quantity}</span>
+                      <span className="font-bold text-sm w-5 text-center">{inCart.quantity}</span>
                       <button
                         onClick={() => addToCart(item)}
                         className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs"
@@ -450,7 +450,7 @@ const MenuPreview: React.FC<MenuPreviewProps> = ({ data, onButtonClick }) => {
                         e.stopPropagation();
                         addToCart(item);
                       }}
-                      className="mt-0.5 px-3 py-1.5 bg-blue-50 text-blue-600 text-[11px] font-bold rounded-lg w-fit"
+                      className="mt-0.5 px-3.5 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg w-fit hover:bg-blue-100 transition-colors"
                     >
                       Add
                     </button>
