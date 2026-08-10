@@ -177,7 +177,8 @@ const DynamicView: React.FC<DynamicViewProps> = ({
         return;
       }
 
-      const { mode, url, qrLinkId } = target;
+      const { url, qrLinkId } = target;
+      const mode = target.mode || "url";
 
       if (mode === "url" && url) {
         if (isWizardPreview) {
