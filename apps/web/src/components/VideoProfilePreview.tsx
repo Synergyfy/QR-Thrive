@@ -33,7 +33,7 @@ const VideoProfilePreview: React.FC<VideoProfilePreviewProps> = ({
   companyName = "Vemtap",
   title = "Digital Engagement Solutions",
   description = "We help businesses bring customers back. Instantly collect data with a simple tap and engage them automatically.",
-  footerText = "From the preparation to the plate, learn to cook my favourite recipes",
+  footerText = "Create, track, and optimize your QR codes with QR Thrive",
   videoUrl,
   themeColor = "#5c7cfa",
   textColor = "#ffffff",
