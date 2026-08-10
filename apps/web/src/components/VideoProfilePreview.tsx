@@ -80,21 +80,16 @@ const VideoProfilePreview: React.FC<VideoProfilePreviewProps> = ({
                 className="w-full h-full object-cover"
                 preload="metadata"
               />
-            ) : videoUrl ? (
-              <div className="w-full h-full flex flex-col items-center justify-center gap-3 cursor-pointer" onClick={onPlay}>
-                <img
-                  src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=600&auto=format&fit=crop"
-                  alt="Video Thumbnail"
-                  className="w-full h-full object-cover absolute inset-0"
-                />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-                  <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
-                    <Play className="w-8 h-8 text-black ml-1" fill="currentColor" />
-                  </div>
-                </div>
-              </div>
             ) : (
-              <div className="text-sm text-gray-400">No Video</div>
+              <video
+                src="/Vemtap Flyer QR Video.mp4"
+                muted
+                loop
+                playsInline
+                autoPlay
+                className="w-full h-full object-cover"
+                preload="metadata"
+              />
             )}
           </div>
 
