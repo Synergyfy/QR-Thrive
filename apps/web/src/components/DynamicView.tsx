@@ -915,6 +915,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
               textColor={data.pdf?.textColor}
               buttonColor={data.pdf?.buttonColor}
               buttonTextColor={data.pdf?.buttonTextColor}
+              buttonText={data.pdf?.buttonText || "View"}
               onView={() =>
                 handleAction({
                   mode: data.pdf?.destinationMode,
@@ -961,6 +962,7 @@ const DynamicView: React.FC<DynamicViewProps> = ({
               textColor={data.video?.textColor}
               buttonColor={data.video?.buttonColor}
               buttonTextColor={data.video?.buttonTextColor}
+              buttonText={data.video?.buttonText || "View more"}
               onPlay={() => {}}
               onButtonClick={() =>
                 handleAction({

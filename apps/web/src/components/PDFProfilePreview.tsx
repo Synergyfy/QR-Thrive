@@ -12,6 +12,7 @@ interface PDFProfilePreviewProps {
   textColor?: string;
   buttonColor?: string;
   buttonTextColor?: string;
+  buttonText?: string;
 }
 
 const PDFProfilePreview: React.FC<PDFProfilePreviewProps> = ({ 
@@ -24,7 +25,8 @@ const PDFProfilePreview: React.FC<PDFProfilePreviewProps> = ({
   themeColor = "#5c7cfa",
   textColor = "#ffffff",
   buttonColor = "#74b816",
-  buttonTextColor = "#ffffff"
+  buttonTextColor = "#ffffff",
+  buttonText = "View"
 }) => {
   const handleDownload = () => {
     if (!pdfUrl) return;
@@ -69,7 +71,7 @@ const PDFProfilePreview: React.FC<PDFProfilePreviewProps> = ({
               style={{ backgroundColor: buttonColor, color: buttonTextColor }}
             >
               <Eye className="w-4 h-4" />
-              View
+              {buttonText}
             </button>
             <button 
               onClick={handleDownload}
