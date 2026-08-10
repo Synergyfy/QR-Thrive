@@ -122,6 +122,7 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
     type: 'video',
     video: {
       id: 'demo-video',
+      url: '',
       name: 'QR_Thrive_Demo.mp4',
       platform: 'other',
       companyName: 'QR Thrive',

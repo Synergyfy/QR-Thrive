@@ -1,5 +1,4 @@
 import React from 'react';
-import { Play } from 'lucide-react';
 
 interface VideoProfilePreviewProps {
   companyName?: string;
@@ -40,7 +39,6 @@ const VideoProfilePreview: React.FC<VideoProfilePreviewProps> = ({
   buttonColor = "transparent",
   buttonTextColor = "#ffffff",
   buttonText = "View more",
-  onPlay,
   onButtonClick
 }) => {
   const youtubeId = videoUrl ? getYouTubeId(videoUrl) : null;
