@@ -1661,8 +1661,8 @@ const DynamicView: React.FC<DynamicViewProps> = ({
       <div className="w-full min-h-screen sm:min-h-0 sm:max-w-[480px] bg-white sm:rounded-[48px] sm:shadow-[0_40px_100px_rgba(0,0,0,0.06)] sm:border sm:border-gray-50 p-6 sm:p-12 relative overflow-hidden">
         {renderContent()}
 
-        {/* Linked QR Teaser - "Next Experience" */}
-        {linkedQRCode && !isWizardPreview && (
+        {/* Linked QR Teaser - "Next Experience" (only for connector added via Chaining section, not CTA) */}
+        {(data.linkedQRCodeId || data.connectedQrId) && linkedQRCode && !isWizardPreview && (
           <div className="mt-12 pt-8 border-t border-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-1000">
             <p className="text-[10px] font-normal text-gray-400 uppercase tracking-widest mb-4">
               Discover More
