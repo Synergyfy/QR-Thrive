@@ -11,8 +11,22 @@ interface VideoProfilePreviewProps {
   textColor?: string;
   buttonColor?: string;
   buttonTextColor?: string;
+  buttonText?: string;
   onPlay: () => void;
   onButtonClick?: () => void;
+}
+
+function getYouTubeId(url: string): string | null {
+  if (!url) return null;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /^([a-zA-Z0-9_-]{11})$/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
 }
 
 const VideoProfilePreview: React.FC<VideoProfilePreviewProps> = ({ 
@@ -25,14 +39,16 @@ const VideoProfilePreview: React.FC<VideoProfilePreviewProps> = ({
   textColor = "#ffffff",
   buttonColor = "transparent",
   buttonTextColor = "#ffffff",
+  buttonText = "View more",
   onPlay,
   onButtonClick
 }) => {
+  const youtubeId = videoUrl ? getYouTubeId(videoUrl) : null;
+  const isDirectVideo = videoUrl && !youtubeId && /\.(mp4|mov|webm|ogg|avi)(\?|$)/i.test(videoUrl);
+
   return (
     <div className="w-full min-h-full flex flex-col font-sans overflow-y-auto scrollbar-hide" style={{ backgroundColor: themeColor }}>
-      {/* Scrollable Container */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
-        {/* Header Info */}
         <div className="px-6 pt-12 pb-6 text-center" style={{ color: textColor }}>
           <p className="text-[11px] opacity-90 font-medium mb-1 tracking-wider">{companyName}</p>
           <h1 className="text-2xl font-bold mb-3">{title}</h1>
@@ -43,23 +59,43 @@ const VideoProfilePreview: React.FC<VideoProfilePreviewProps> = ({
             className="w-full py-4 rounded-xl font-semibold text-md border border-white/40 transition-colors"
             style={{ backgroundColor: buttonColor, color: buttonTextColor }}
           >
-            View more
+            {buttonText}
           </button>
         </div>
 
-        {/* Video Card */}
         <div className="bg-white rounded-t-[32px] p-5 shadow-xl flex flex-col items-center min-h-[400px]">
-          <div className="w-full aspect-[4/3] bg-gray-100 rounded-2xl overflow-hidden mb-6 flex items-center justify-center relative cursor-pointer" onClick={onPlay}>
-            {videoUrl ? (
-               <img src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=600&auto=format&fit=crop" alt="Video Thumbnail" className="w-full h-full object-cover" />
+          <div className="w-full aspect-[4/3] bg-gray-100 rounded-2xl overflow-hidden mb-6 flex items-center justify-center relative">
+            {youtubeId ? (
+              <iframe
+                src={`https://www.youtube.com/embed/${youtubeId}?rel=0`}
+                title="Video"
+                className="w-full h-full absolute inset-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            ) : isDirectVideo ? (
+              <video
+                src={videoUrl}
+                controls
+                className="w-full h-full object-cover"
+                preload="metadata"
+              />
+            ) : videoUrl ? (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3 cursor-pointer" onClick={onPlay}>
+                <img
+                  src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=600&auto=format&fit=crop"
+                  alt="Video Thumbnail"
+                  className="w-full h-full object-cover absolute inset-0"
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                  <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
+                    <Play className="w-8 h-8 text-black ml-1" fill="currentColor" />
+                  </div>
+                </div>
+              </div>
             ) : (
-               <div className="text-sm text-gray-400">No Video</div>
+              <div className="text-sm text-gray-400">No Video</div>
             )}
-            <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-               <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
-                  <Play className="w-8 h-8 text-black ml-1" fill="currentColor" />
-               </div>
-            </div>
           </div>
 
           <p className="text-sm text-gray-700 leading-relaxed text-center px-2">

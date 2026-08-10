@@ -183,7 +183,7 @@ export default function PricingPanel() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8 items-stretch max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 sm:gap-8 items-stretch max-w-7xl mx-auto">
             {currentPlans.map((plan, idx) => (
               <motion.div 
                 key={`${plan.name}-${selectedCycle}`}
@@ -194,7 +194,7 @@ export default function PricingPanel() {
                   plan.isCurrent
                     ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-2xl shadow-blue-500/20 z-30'
                     : plan.highlight 
-                      ? 'bg-slate-900 text-white shadow-2xl scale-100 lg:scale-105 z-20 xl:-translate-y-4 border border-blue-500/30' 
+                      ? 'bg-slate-900 text-white shadow-2xl z-20 xl:-translate-y-4 border border-blue-500/30' 
                       : 'bg-white border border-slate-100 shadow-xl shadow-blue-900/5 z-10'
                 }`}
               >
@@ -256,7 +256,7 @@ export default function PricingPanel() {
                   <button 
                     onClick={() => handleJoinPlan(plans!.find((p: any) => p.name === plan.name)!)}
                     disabled={initializePayment.isPending || plan.isCurrent}
-                    className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex justify-center items-center gap-3 group/btn ${
+                    className={`w-full py-4 sm:py-5 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-[0.15em] whitespace-nowrap transition-all active:scale-95 flex justify-center items-center gap-2 group/btn ${
                       plan.isCurrent
                         ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 cursor-not-allowed'
                         : plan.highlight 
