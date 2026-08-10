@@ -122,7 +122,6 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
     type: 'video',
     video: {
       id: 'demo-video',
-      url: 'https://www.w3schools.com/html/mov_bbb.mp4',
       name: 'Product_Demo.mp4',
       platform: 'other',
       companyName: 'Vemtap',
