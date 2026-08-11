@@ -111,7 +111,7 @@ const DynamicPage: React.FC = () => {
   const showLandingPageTypes = [
     'socials', 'text', 'vcard', 'crypto', 'event', 'instagram', 
     'facebook', 'twitter', 'linkedin', 'youtube', 'tiktok', 
-    'image', 'pdf', 'video', 'mp3', 'app', 'business', 'menu', 'wifi', 'form'
+    'image', 'pdf', 'video', 'mp3', 'app', 'business', 'menu', 'wifi', 'form', 'links', 'coupon', 'booking'
   ];
   
   if (showLandingPageTypes.includes(data?.type || '')) {
