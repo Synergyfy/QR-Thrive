@@ -137,13 +137,23 @@ const DashboardPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
 
-   const [activeTab, setActiveTab] = useState(() => {
+   const [activeTab, setActiveTab] = useState<string>(() => {
     if (tabParam) return tabParam;
-    return user?.role !== 'ADMIN' && 
-    user?.subscriptionStatus !== 'active' && 
-    user?.subscriptionStatus !== 'non-renewing' && 
-    user?.subscriptionStatus !== 'trialing' ? 'pricing' : 'all';
+    return 'all';
   });
+
+  // Redirect to pricing only when user is confirmed loaded with no active subscription
+  useEffect(() => {
+    if (!user || tabParam) return;
+    if (
+      user?.role !== 'ADMIN' &&
+      user?.subscriptionStatus !== 'active' &&
+      user?.subscriptionStatus !== 'non-renewing' &&
+      user?.subscriptionStatus !== 'trialing'
+    ) {
+      setActiveTab('pricing');
+    }
+  }, [user, tabParam]);
   const [searchQuery, setSearchQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [folderMenuOpen, setFolderMenuOpen] = useState<string | null>(null);
