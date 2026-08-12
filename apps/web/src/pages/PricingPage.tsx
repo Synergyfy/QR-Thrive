@@ -333,34 +333,15 @@ export default function PricingPage() {
                   </div>
 
                   <div className="space-y-3 mt-auto min-h-[120px] flex flex-col justify-end">
-                    {plan.trial && !plan.isCurrent && !user?.hasUsedTrial && (
-                      <button 
-                        onClick={() => handleJoinPlan(plans!.find(p => p.name === plan.name)!, true)}
-                        disabled={initializePayment.isPending || plan.isCurrent}
-                        className={`w-full py-4 sm:py-5 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-[0.15em] whitespace-nowrap transition-all active:scale-95 flex justify-center items-center gap-2 group/btn bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30 ${initializePayment.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
-                      >
-                        {initializePayment.isPending && selectedPlan?.name === plan.name ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            {`Start ${plan.trialDays}-Day Free Trial`}
-                            <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
-                          </>
-                        )}
-                      </button>
-                    )}
-
-                    <button 
+                    <button
                       onClick={() => handleJoinPlan(plans!.find(p => p.name === plan.name)!)}
                       disabled={initializePayment.isPending || plan.isCurrent}
                       className={`w-full py-4 sm:py-5 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-[0.15em] whitespace-nowrap transition-all active:scale-95 flex justify-center items-center gap-2 group/btn ${
                         plan.isCurrent
                           ? (plan.highlight ? 'bg-slate-800 text-slate-400 cursor-default shadow-inner' : 'bg-slate-100 text-slate-400 cursor-default shadow-inner')
-                          : plan.trial && !user?.hasUsedTrial
-                            ? (plan.highlight ? 'bg-slate-800 border-2 border-slate-700 text-white hover:bg-slate-700' : 'bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-50')
-                            : plan.highlight 
-                              ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30' 
-                              : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
+                          : plan.highlight
+                            ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30'
+                            : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
                       } ${initializePayment.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
                       {((initializePayment.isPending || subscribeFree.isPending) && selectedPlan?.name === plan.name) ? (
@@ -372,6 +353,23 @@ export default function PricingPage() {
                         </>
                       )}
                     </button>
+
+                    {plan.trial && !plan.isCurrent && !user?.hasUsedTrial && (
+                      <button
+                        onClick={() => handleJoinPlan(plans!.find(p => p.name === plan.name)!, true)}
+                        disabled={initializePayment.isPending || plan.isCurrent}
+                        className={`w-full py-3 sm:py-4 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-[0.15em] whitespace-nowrap transition-all active:scale-95 flex justify-center items-center gap-2 group/btn bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 ${initializePayment.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
+                      >
+                        {initializePayment.isPending && selectedPlan?.name === plan.name ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            {`Start ${plan.trialDays}-Day Free Trial`}
+                            <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               ))}

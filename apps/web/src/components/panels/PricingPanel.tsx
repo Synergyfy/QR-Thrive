@@ -253,7 +253,8 @@ export default function PricingPanel() {
                   ))}
                 </div>
 
-                <div className="space-y-3 mt-auto min-h-[120px] flex flex-col justify-end">
+<div className="space-y-3 mt-auto min-h-[120px] flex flex-col justify-end">
+                  {/* Main CTA button */}
                   <button
                     onClick={() => handleJoinPlan(plans!.find((p: any) => p.name === plan.name)!)}
                     disabled={initializePayment.isPending || plan.isCurrent}
@@ -275,6 +276,7 @@ export default function PricingPanel() {
                     )}
                   </button>
 
+                  {/* Trial button - shown when plan has trial and not yet used */}
                   {plan.trial && !plan.isCurrent && !user?.hasUsedTrial && (
                     <button
                       onClick={() => handleJoinPlan(plans!.find((p: any) => p.name === plan.name)!, true)}
@@ -290,7 +292,7 @@ export default function PricingPanel() {
                         </>
                       )}
                     </button>
-                  )}
+                  </div>
                 </div>
               </motion.div>
             ))}
