@@ -47,7 +47,7 @@ export default function PricingPanel() {
         isCurrent: user?.planId === plan.id,
         trialDays: plan.trialDays,
         trial: plan.trialDays > 0,
-        cta: plan.isFree ? "Start Free" : (plan.trialDays > 0 ? `Start ${plan.trialDays}-Day Trial` : "Get Started"),
+        cta: plan.isFree ? "Start Free" : "Subscribe Now",
         features: [
           `${plan.qrCodeLimit === -1 ? 'Unlimited' : plan.qrCodeLimit} Dynamic QR Codes`,
           ...((config?.features as string[]) || [])
@@ -115,7 +115,7 @@ export default function PricingPanel() {
           } catch (err) {
             toast.dismiss(verifyingToast);
             toast.error('Failed to verify payment. Please contact support.');
-          }
+                    }
         };
         
         try {
@@ -270,7 +270,7 @@ export default function PricingPanel() {
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <>
-                        {plan.isCurrent ? "Active Plan" : (plan.trial && !user?.hasUsedTrial ? "Subscribe Now" : plan.cta)}
+                        {plan.isCurrent ? "Active Plan" : plan.cta}
                         {!plan.isCurrent && <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />}
                       </>
                     )}
@@ -292,8 +292,8 @@ export default function PricingPanel() {
                         </>
                       )}
                     </button>
+                  )}
                   </div>
-                </div>
               </motion.div>
             ))}
           </div>

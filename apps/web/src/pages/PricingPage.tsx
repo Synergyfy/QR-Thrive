@@ -62,7 +62,7 @@ export default function PricingPage() {
         isCurrent,
         trialDays: plan.trialDays,
         trial: plan.trialDays > 0,
-        cta: plan.isFree ? "Start Now" : (plan.trialDays > 0 ? `Start ${plan.trialDays}-Day Free Trial` : "Get Started"),
+        cta: plan.isFree ? "Start Now" : "Subscribe Now",
         features: [
           `${plan.qrCodeLimit === -1 ? 'Unlimited' : plan.qrCodeLimit} Dynamic QR Codes`,
           ...(plan.features || []),
@@ -348,7 +348,7 @@ export default function PricingPage() {
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <>
-                          {plan.isCurrent ? "Active Plan" : (plan.trial && !user?.hasUsedTrial ? "Subscribe Now" : plan.cta)}
+                          {plan.isCurrent ? "Active Plan" : plan.cta}
                           {!plan.isCurrent && <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />}
                         </>
                       )}
