@@ -29,7 +29,7 @@ interface BookingProfilePreviewProps {
   isReadOnly?: boolean;
 }
 
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1544161515-4ae6b918af99?w=800&h=600&fit=crop";
+const DEFAULT_IMAGE = "/20260407_233728.jpg.jpeg";
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];

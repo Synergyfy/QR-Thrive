@@ -23,9 +23,9 @@ const SocialsProfilePreview: React.FC<SocialsProfilePreviewProps> = ({
   name = "Sarah Ann Peters", 
   bio = "Hi! I'm Sarah Ann Peters. Welcome to my social media hub! The links below will connect you with my channels on every popular platform.",
   images = [
-    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
-    "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80",
-    "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80"
+    "/20260317_133047.jpg.jpeg",
+    "/20260317_145631.jpg.jpeg",
+    "/20260407_233728.jpg.jpeg"
   ],
   themeColor = "#5c7cfa",
   socials = { facebook: "https://facebook.com", instagram: "https://instagram.com", tiktok: "https://tiktok.com", youtube: "https://youtube.com" }

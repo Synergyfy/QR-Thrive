@@ -1,5 +1,12 @@
 import type { QRData } from '../types/qr';
 
+export const DEMO_IMAGES = [
+  '/20260317_133047.jpg.jpeg',
+  '/20260317_145631.jpg.jpeg',
+  '/20260407_233728.jpg.jpeg',
+  '/20260408_091514.jpg.jpeg',
+];
+
 export const DEMO_DATA: Record<string, Partial<QRData>> = {
   url: {
     type: 'url',
@@ -16,7 +23,7 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
       jobTitle: 'Head of Growth',
       company: 'QR Thrive',
       address: 'Lagos, Nigeria',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop'
+      avatar: DEMO_IMAGES[0]
     }
   },
   business: {
@@ -25,8 +32,8 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
       companyName: 'QR Thrive',
       headline: 'Smart QR Codes That Drive Real Results',
       about: 'QR Thrive helps businesses create dynamic QR codes that bridge the gap between physical and digital. Collect customer data, drive engagement, and grow — all with a simple scan.',
-      logo: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=400&h=400&fit=crop',
-      banner: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=600&fit=crop',
+      logo: DEMO_IMAGES[1],
+      banner: DEMO_IMAGES[2],
       contact: {
         phone: '+1 (555) 019-2834',
         email: 'hello@qrthrive.com',
@@ -41,9 +48,9 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
       name: 'QR Thrive',
       bio: 'Smart QR codes for modern businesses. Create, track, and optimize your QR experiences. Follow us for tips, updates, and inspiration.',
       images: [
-        { id: 'd1', url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=80' },
-        { id: 'd2', url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80' },
-        { id: 'd3', url: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?auto=format&fit=crop&w=400&q=80' }
+        { id: 'd1', url: DEMO_IMAGES[0] },
+        { id: 'd2', url: DEMO_IMAGES[1] },
+        { id: 'd3', url: DEMO_IMAGES[2] }
       ],
       instagram: 'https://instagram.com/qrthrive',
       facebook: 'https://facebook.com/qrthrive',
@@ -59,7 +66,7 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
       title: 'QR Thrive — Everything in One Place',
       description: 'Explore QR Thrive. Your smart QR code platform for engagement, analytics, and growth.',
       themeColor: '#2563eb',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop'
+      avatar: DEMO_IMAGES[0]
     },
     linksList: [
       { title: 'Visit QR Thrive', url: 'https://qrthrive.com' },
@@ -133,9 +140,9 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
   image: {
     type: 'image',
     images: [
-      { id: 'img1', url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop', name: 'Analytics Dashboard' },
-      { id: 'img2', url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop', name: 'Marketing Growth' },
-      { id: 'img3', url: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800&h=600&fit=crop', name: 'Team Collaboration' }
+      { id: 'img1', url: DEMO_IMAGES[1], name: 'Analytics Dashboard' },
+      { id: 'img2', url: DEMO_IMAGES[2], name: 'Marketing Growth' },
+      { id: 'img3', url: DEMO_IMAGES[3], name: 'Team Collaboration' }
     ]
   },
   mp3: {
@@ -205,8 +212,8 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
       description: 'Book a free 30-minute call with our team. We will help you choose the right QR strategy for your business and show you how QR Thrive works.',
       location: 'Online — Zoom / Google Meet',
       bookingUrl: 'https://calendly.com/qrthrive/demo',
-      imageUrl: 'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=800&h=600&fit=crop',
-      profileImageUrl: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=400&fit=crop',
+      imageUrl: DEMO_IMAGES[2],
+      profileImageUrl: DEMO_IMAGES[0],
       price: 'Free',
       duration: '30 Min',
       themeColor: '#2563eb',
