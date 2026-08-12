@@ -56,9 +56,9 @@ export default function PricingPanel() {
     });
   }, [plans, config, selectedCycle, user]);
 
-  const handleJoinPlan = async (plan: PublicPlan) => {
+  const handleJoinPlan = async (plan: PublicPlan, isTrial = false) => {
     setSelectedPlan(plan);
-    
+
     if (!user) return;
 
     if (plan.isFree) {
@@ -73,7 +73,8 @@ export default function PricingPanel() {
     try {
       const data = await initializePayment.mutateAsync({
         planId: plan.id,
-        interval: selectedCycle
+        interval: selectedCycle,
+        isTrial,
       });
 
       console.log('Payment init response:', data);
@@ -183,7 +184,7 @@ export default function PricingPanel() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 sm:gap-8 items-stretch max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3 gap-6 sm:gap-8 items-stretch max-w-7xl mx-auto">
             {currentPlans.map((plan, idx) => (
               <motion.div 
                 key={`${plan.name}-${selectedCycle}`}
@@ -218,15 +219,15 @@ export default function PricingPanel() {
                   </div>
                 )}
 
-                <div className="mb-10 pt-4">
+                <div className="mb-6 pt-4">
                   <h3 className={`text-2xl font-black tracking-tight mb-2 ${plan.isCurrent ? 'text-blue-700' : (plan.highlight ? 'text-blue-400' : 'text-slate-900')}`}>
                     {plan.name}
                   </h3>
-                  <p className={`text-sm font-medium leading-relaxed mb-10 ${plan.isCurrent ? 'text-blue-600' : (plan.highlight ? 'text-slate-400' : 'text-slate-500')}`}>
+                  <p className={`text-sm font-medium leading-relaxed mb-8 ${plan.isCurrent ? 'text-blue-600' : (plan.highlight ? 'text-slate-400' : 'text-slate-500')}`}>
                     {plan.description}
                   </p>
-                  
-                   <div className="flex items-baseline gap-1 mb-2">
+
+                  <div className="flex items-baseline gap-1 mb-2">
                     <span className={`text-2xl sm:text-3xl font-bold ${plan.isCurrent ? 'text-blue-600' : 'text-slate-400'}`}>{plan.currency}</span>
                     <span className={`text-5xl sm:text-7xl font-black tracking-tighter ${plan.isCurrent ? 'text-slate-800' : (plan.highlight ? 'text-white' : 'text-slate-900')}`}>
                        {plan.price === 0 ? '0' : plan.price.toLocaleString()}
@@ -237,7 +238,7 @@ export default function PricingPanel() {
                   </div>
                 </div>
 
-                <div className="space-y-6 mb-12 flex-grow">
+                <div className="space-y-4 mb-8 flex-grow">
                   {plan.features.map((feature, fIdx) => (
                     <div key={fIdx} className="flex items-center gap-4">
                       <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
@@ -252,15 +253,15 @@ export default function PricingPanel() {
                   ))}
                 </div>
 
-                <div className="space-y-3 mt-auto min-h-[80px] flex flex-col justify-end">
-                  <button 
+                <div className="space-y-3 mt-auto min-h-[120px] flex flex-col justify-end">
+                  <button
                     onClick={() => handleJoinPlan(plans!.find((p: any) => p.name === plan.name)!)}
                     disabled={initializePayment.isPending || plan.isCurrent}
                     className={`w-full py-4 sm:py-5 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-[0.15em] whitespace-nowrap transition-all active:scale-95 flex justify-center items-center gap-2 group/btn ${
                       plan.isCurrent
                         ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 cursor-not-allowed'
-                        : plan.highlight 
-                          ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-600/30' 
+                        : plan.highlight
+                          ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-600/30'
                           : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/10'
                     } ${initializePayment.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
                   >
@@ -268,11 +269,28 @@ export default function PricingPanel() {
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <>
-                        {plan.isCurrent ? "Active Plan" : plan.cta}
+                        {plan.isCurrent ? "Active Plan" : (plan.trial && !user?.hasUsedTrial ? "Subscribe Now" : plan.cta)}
                         {!plan.isCurrent && <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />}
                       </>
                     )}
                   </button>
+
+                  {plan.trial && !plan.isCurrent && !user?.hasUsedTrial && (
+                    <button
+                      onClick={() => handleJoinPlan(plans!.find((p: any) => p.name === plan.name)!, true)}
+                      disabled={initializePayment.isPending || plan.isCurrent}
+                      className={`w-full py-3 sm:py-4 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-[0.15em] whitespace-nowrap transition-all active:scale-95 flex justify-center items-center gap-2 group/btn bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 ${initializePayment.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    >
+                      {initializePayment.isPending && selectedPlan?.name === plan.name ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          {`Start ${plan.trialDays}-Day Free Trial`}
+                          <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </motion.div>
             ))}
