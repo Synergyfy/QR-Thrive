@@ -23,7 +23,7 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
       jobTitle: 'Head of Growth',
       company: 'QR Thrive',
       address: 'Lagos, Nigeria',
-      avatar: DEMO_IMAGES[0]
+      avatar: '/vemtap.png'
     }
   },
   business: {
@@ -32,7 +32,7 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
       companyName: 'QR Thrive',
       headline: 'Smart QR Codes That Drive Real Results',
       about: 'QR Thrive helps businesses create dynamic QR codes that bridge the gap between physical and digital. Collect customer data, drive engagement, and grow — all with a simple scan.',
-      logo: DEMO_IMAGES[1],
+      logo: '/vemtap.png',
       banner: DEMO_IMAGES[2],
       contact: {
         phone: '+1 (555) 019-2834',
@@ -66,7 +66,7 @@ export const DEMO_DATA: Record<string, Partial<QRData>> = {
       title: 'QR Thrive — Everything in One Place',
       description: 'Explore QR Thrive. Your smart QR code platform for engagement, analytics, and growth.',
       themeColor: '#2563eb',
-      avatar: DEMO_IMAGES[0]
+      avatar: '/vemtap.png'
     },
     linksList: [
       { title: 'Visit QR Thrive', url: 'https://qrthrive.com' },
