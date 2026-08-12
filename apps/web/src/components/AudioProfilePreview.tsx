@@ -25,7 +25,7 @@ const AudioProfilePreview: React.FC<AudioProfilePreviewProps> = ({
   name = "New Audio Track",
   artist = "Unknown Artist",
   audioUrl,
-  coverImage = "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=800&auto=format&fit=crop",
+  coverImage = "/20260317_145631.jpg.jpeg",
   themeColor = "#3b82f6",
   textColor = "#ffffff",
   buttonColor = "rgba(255, 255, 255, 0.2)",
