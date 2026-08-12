@@ -158,9 +158,9 @@ const CreationWizard: React.FC = () => {
     return !allowedTypes.includes(typeId as any);
   };
 
-  // Sync types for new QRs
+  // Sync types when user selects a different QR type (works for new and edit)
   useEffect(() => {
-    if (selectedType && !isEditing) {
+    if (selectedType && selectedType !== config.data.type) {
       setConfig(prev => {
         const typeTitle = qrTypes.find(t => t.id === selectedType)?.title || selectedType;
         const newData = { 
@@ -184,7 +184,7 @@ const CreationWizard: React.FC = () => {
         };
       });
     }
-  }, [selectedType, isEditing, user]);
+  }, [selectedType, config.data.type, user]);
 
   const steps = [
     { id: 'type', label: 'Choose Type' },
