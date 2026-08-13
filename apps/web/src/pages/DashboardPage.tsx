@@ -137,13 +137,23 @@ const DashboardPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
 
-   const [activeTab, setActiveTab] = useState(() => {
+   const [activeTab, setActiveTab] = useState<string>(() => {
     if (tabParam) return tabParam;
-    return user?.role !== 'ADMIN' && 
-    user?.subscriptionStatus !== 'active' && 
-    user?.subscriptionStatus !== 'non-renewing' && 
-    user?.subscriptionStatus !== 'trialing' ? 'pricing' : 'all';
+    return 'all';
   });
+
+  // Redirect to pricing only when user is confirmed loaded with no active subscription
+  useEffect(() => {
+    if (!user || tabParam) return;
+    if (
+      user?.role !== 'ADMIN' &&
+      user?.subscriptionStatus !== 'active' &&
+      user?.subscriptionStatus !== 'non-renewing' &&
+      user?.subscriptionStatus !== 'trialing'
+    ) {
+      setActiveTab('pricing');
+    }
+  }, [user, tabParam]);
   const [searchQuery, setSearchQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [folderMenuOpen, setFolderMenuOpen] = useState<string | null>(null);
@@ -199,6 +209,7 @@ const DashboardPage: React.FC = () => {
   };
   const [newURLValue, setNewURLValue] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
+  const headerMenuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
@@ -229,7 +240,8 @@ const DashboardPage: React.FC = () => {
   // Close menus on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node) &&
+          !(headerMenuRef.current && headerMenuRef.current.contains(e.target as Node))) {
         setMenuOpen(null);
         setFolderMenuOpen(null);
         setDownloadMenuOpen(null);
@@ -808,7 +820,7 @@ const DashboardPage: React.FC = () => {
             
             <div className="h-6 w-px bg-slate-200/50 hidden sm:block" />
             
-            <div className="relative">
+            <div className="relative" ref={headerMenuRef}>
               <div 
                 onClick={() => setHeaderMenuOpen(!headerMenuOpen)}
                 className="flex items-center gap-3 group cursor-pointer py-1.5 px-2 rounded-xl hover:bg-slate-50 transition-all duration-150"
