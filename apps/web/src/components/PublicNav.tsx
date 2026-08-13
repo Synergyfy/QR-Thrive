@@ -89,7 +89,7 @@ export default function PublicNav() {
                     </div>
                     
                     <button 
-                      onClick={() => navigate(getDashboardPath(user.role))}
+                      onClick={() => navigate(getDashboardPath(user))}
                       className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
                     >
                       <LayoutGrid size={18} /> My Dashboard
@@ -161,7 +161,7 @@ export default function PublicNav() {
                 <div className="pt-3 space-y-3 border-t border-slate-100">
                   {user ? (
                     <button 
-                      onClick={() => { navigate(getDashboardPath(user.role)); setIsMenuOpen(false); }}
+                      onClick={() => { navigate(getDashboardPath(user)); setIsMenuOpen(false); }}
                       className="w-full p-3.5 bg-blue-600 text-white rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2"
                     >
                       <LayoutGrid size={20} /> My Dashboard
