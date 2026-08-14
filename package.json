@@ -8,8 +8,8 @@
     "pnpm": ">=10.29.1"
   },
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev start:dev",
+    "build": "node init && turbo run build",
+    "dev": "node init && turbo run dev start:dev",
     "lint": "turbo run lint",
     "test": "turbo run test"
   },
