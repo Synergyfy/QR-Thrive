@@ -170,10 +170,7 @@ const DashboardPage: React.FC = () => {
   const { subscribeBrowser, toggleUserPreference, loading: pushLoading } = usePushNotifications();
 
   // Settings values from user data
-  const emailNotifs = user?.emailNotificationsEnabled ?? false;
-  const pushNotifs = user?.scanNotificationsEnabled ?? false;
-  const weeklyDigest = user?.weeklyDigestEnabled ?? false;
-  const twoFactorEnabled = user?.twoFactorEnabled ?? false;
+  const pushNotifs = user?.scanNotificationsEnabled ?? localStorage.getItem('qth_push_enabled') === 'true';
 
   const handleTogglePush = async () => {
     const nextState = !pushNotifs;
@@ -187,16 +184,6 @@ const DashboardPage: React.FC = () => {
     console.log('[Push] Updating scanNotificationsEnabled (Push) to:', nextState);
     await toggleUserPreference(nextState);
     console.log('[Push] User preference update complete');
-  };
-
-  const handleToggleSetting = async (key: string, value: boolean) => {
-    console.log('[Settings] handleToggleSetting called:', { key, value });
-    try {
-      await updateProfileMutation.mutateAsync({ [key]: value });
-      console.log('[Settings] handleToggleSetting success for key:', key);
-    } catch (err) {
-      console.error('[Settings] handleToggleSetting failed for key:', key, err);
-    }
   };
 
   const [editingURLQR, setEditingURLQR] = useState<string | null>(null);
@@ -1118,8 +1105,6 @@ const DashboardPage: React.FC = () => {
                   <div className="divide-y divide-slate-100">
                     {[
                       { label: 'Push Notification', desc: 'Get notified about account activity', value: pushNotifs, key: 'scanNotificationsEnabled' },
-                      { label: 'Scan Alerts', desc: 'Real-time alerts when your QR codes are scanned', value: emailNotifs, key: 'emailNotificationsEnabled' },
-                      { label: 'Weekly Digest', desc: 'Summary of your weekly QR performance', value: weeklyDigest, key: 'weeklyDigestEnabled' },
                     ].map(row => (
                       <div key={row.label} className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
                         <div>
@@ -1127,13 +1112,7 @@ const DashboardPage: React.FC = () => {
                           <p className="text-[12px] text-slate-400 font-medium">{row.desc}</p>
                         </div>
                         <button
-                          onClick={() => {
-                            if (row.label === 'Push Notification') {
-                              handleTogglePush();
-                            } else {
-                              handleToggleSetting(row.key, !row.value);
-                            }
-                          }}
+                          onClick={() => handleTogglePush()}
                           disabled={pushLoading || updateProfileMutation.isPending}
                           className={cn(
                             'w-11 h-6 rounded-full transition-all duration-200 relative shrink-0 ml-4',
@@ -1163,27 +1142,6 @@ const DashboardPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="divide-y divide-slate-100">
-                    <div className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <Lock className="w-4 h-4 text-slate-400" />
-                        <div>
-                          <p className="text-[14px] font-semibold text-slate-900 mb-0.5">Two-Factor Authentication</p>
-                          <p className="text-[12px] text-slate-400 font-medium">Add an extra layer of security to your account</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleToggleSetting('twoFactorEnabled', !twoFactorEnabled)}
-                        className={cn(
-                          'w-11 h-6 rounded-full transition-all duration-200 relative shrink-0 ml-4',
-                          twoFactorEnabled ? 'bg-emerald-600' : 'bg-slate-200'
-                        )}
-                      >
-                        <div className={cn(
-                          'w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-all duration-200',
-                          twoFactorEnabled ? 'left-[22px]' : 'left-0.5'
-                        )} />
-                      </button>
-                    </div>
                     <div className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <Smartphone className="w-4 h-4 text-slate-400" />
