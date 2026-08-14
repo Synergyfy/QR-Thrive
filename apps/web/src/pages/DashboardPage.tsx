@@ -1829,11 +1829,33 @@ const DashboardPage: React.FC = () => {
           <p className="text-[12px] text-slate-500 max-w-[240px] leading-relaxed">
             You'll see scan alerts, account updates, and product announcements here when they arrive.
           </p>
+
+          {pushNotifs ? (
+            <div className="mt-6 w-full max-w-[280px] bg-blue-50/60 border border-blue-100 rounded-xl px-4 py-3">
+              <p className="text-[12px] font-semibold text-blue-700 mb-1">Push notifications enabled</p>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                You'll be alerted in real time when your QR codes are scanned.
+              </p>
+            </div>
+          ) : (
+            <button
+              onClick={async () => {
+                const success = await subscribeBrowser();
+                if (!success) return;
+                await toggleUserPreference(true);
+              }}
+              disabled={pushLoading}
+              className="mt-6 px-5 py-2.5 text-[12px] font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors border border-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {pushLoading ? 'Enabling...' : 'Enable Push Notifications'}
+            </button>
+          )}
+
           <button 
             onClick={() => { setIsNotificationsOpen(false); setActiveTab('settings'); }}
-            className="mt-6 px-4 py-2 text-[12px] font-semibold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-100"
+            className="mt-3 px-4 py-2 text-[12px] font-semibold text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
           >
-            Configure notifications
+            Manage notification settings
           </button>
         </div>
       </div>
