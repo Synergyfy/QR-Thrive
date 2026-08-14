@@ -159,6 +159,7 @@ const DashboardPage: React.FC = () => {
   const [folderMenuOpen, setFolderMenuOpen] = useState<string | null>(null);
   const [downloadMenuOpen, setDownloadMenuOpen] = useState<string | null>(null);
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolder, setShowNewFolder] = useState(false);
@@ -813,7 +814,7 @@ const DashboardPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 ml-2">
-            <button className="text-slate-400 hover:text-slate-700 relative p-2 rounded-lg transition-all hover:bg-slate-100 group">
+            <button onClick={() => setIsNotificationsOpen(true)} className="text-slate-400 hover:text-slate-700 relative p-2 rounded-lg transition-all hover:bg-slate-100 group" aria-label="Open notifications">
               <Bell className="w-5 h-5" />
               <div className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 border-[1.5px] border-white rounded-full" />
             </button>
@@ -1793,6 +1794,48 @@ const DashboardPage: React.FC = () => {
              </div>
              <span className="text-[10px] font-bold uppercase tracking-tight">Setup</span>
           </button>
+      </div>
+
+      {/* ─── Notifications Drawer ─── */}
+      {isNotificationsOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[150] animate-in fade-in duration-300"
+          onClick={() => setIsNotificationsOpen(false)}
+        />
+      )}
+      <div className={cn(
+        "fixed inset-y-0 right-0 w-full sm:w-[380px] bg-white shadow-2xl z-[160] transition-all duration-300 flex flex-col",
+        isNotificationsOpen ? "translate-x-0" : "translate-x-full pointer-events-none"
+      )}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-2">
+            <Bell className="w-5 h-5 text-blue-600" />
+            <h3 className="text-[15px] font-bold text-slate-900">Notifications</h3>
+          </div>
+          <button 
+            onClick={() => setIsNotificationsOpen(false)}
+            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+            aria-label="Close notifications"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto scrollbar-hide p-6 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+            <Bell className="w-7 h-7 text-blue-600/70" />
+          </div>
+          <p className="text-[14px] font-semibold text-slate-800 mb-1">No notifications yet</p>
+          <p className="text-[12px] text-slate-500 max-w-[240px] leading-relaxed">
+            You'll see scan alerts, account updates, and product announcements here when they arrive.
+          </p>
+          <button 
+            onClick={() => { setIsNotificationsOpen(false); setActiveTab('settings'); }}
+            className="mt-6 px-4 py-2 text-[12px] font-semibold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-100"
+          >
+            Configure notifications
+          </button>
+        </div>
       </div>
     </div>
   );
