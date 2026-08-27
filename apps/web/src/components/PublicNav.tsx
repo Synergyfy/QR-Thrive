@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutGrid, LogOut, Menu, X, ChevronRight } from 'lucide-react';
 import { useCurrentUser, useLogout } from '../hooks/useApi';
@@ -16,11 +16,14 @@ export default function PublicNav() {
   
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
+  const avatarMenuRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
     try {
       await logoutMutation.mutateAsync();
       setIsMenuOpen(false);
+      setIsAvatarMenuOpen(false);
       toast.success('Logged out successfully');
       navigate('/');
     } catch (e) {
@@ -28,6 +31,17 @@ export default function PublicNav() {
       toast.error('Logout failed. Please try again.');
     }
   };
+
+  const handleOutsideClick = (e: MouseEvent) => {
+    if (avatarMenuRef.current && !avatarMenuRef.current.contains(e.target as Node)) {
+      setIsAvatarMenuOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   const navLinks = [
     { name: 'Why Us', path: '/why-us' },
@@ -66,11 +80,12 @@ export default function PublicNav() {
             {/* Desktop Action Buttons */}
             <div className="hidden lg:flex items-center gap-3">
               {user ? (
-                <div className="relative group">
+                <div ref={avatarMenuRef} className="relative">
                   <button 
-                    onClick={() => setIsMenuOpen(!isMenuOpen)} // Reusing menu open state for dropdown or adding a new bit
-                    onMouseEnter={() => setIsMenuOpen(true)}
-                    className="flex items-center gap-3 pl-4 pr-3 py-1.5 bg-white hover:bg-gray-50 rounded-full transition-all border border-gray-100 shadow-sm group"
+                    onClick={() => setIsAvatarMenuOpen(!isAvatarMenuOpen)}
+                    aria-haspopup="menu"
+                    aria-expanded={isAvatarMenuOpen}
+                    className="flex items-center gap-3 pl-4 pr-3 py-1.5 bg-white hover:bg-gray-50 rounded-full transition-all border border-gray-100 shadow-sm"
                   >
                     <div className="flex flex-col items-end -space-y-1">
                       <span className="text-sm font-semibold text-slate-900">{user.firstName} {user.lastName}</span>
@@ -82,14 +97,14 @@ export default function PublicNav() {
                   </button>
 
                   {/* Dropdown Menu */}
-                  <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 p-2 transform origin-top-right group-hover:translate-y-0 translate-y-2">
+                  <div className={`absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 transition-all duration-300 z-50 p-2 transform origin-top-right ${isAvatarMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2 pointer-events-none'}`}>
                     <div className="p-4 border-b border-slate-100 mb-2">
                       <p className="text-[11px] font-semibold text-slate-400 mb-1">Logged in as</p>
                       <p className="text-sm font-semibold text-slate-900 truncate">{user.email}</p>
                     </div>
                     
                     <button 
-                      onClick={() => navigate(getDashboardPath(user))}
+                      onClick={() => { setIsAvatarMenuOpen(false); navigate(getDashboardPath(user)); }}
                       className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
                     >
                       <LayoutGrid size={18} /> My Dashboard
