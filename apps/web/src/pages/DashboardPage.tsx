@@ -159,6 +159,7 @@ const DashboardPage: React.FC = () => {
   const [folderMenuOpen, setFolderMenuOpen] = useState<string | null>(null);
   const [downloadMenuOpen, setDownloadMenuOpen] = useState<string | null>(null);
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolder, setShowNewFolder] = useState(false);
@@ -169,10 +170,7 @@ const DashboardPage: React.FC = () => {
   const { subscribeBrowser, toggleUserPreference, loading: pushLoading } = usePushNotifications();
 
   // Settings values from user data
-  const emailNotifs = user?.emailNotificationsEnabled ?? false;
-  const pushNotifs = user?.scanNotificationsEnabled ?? false;
-  const weeklyDigest = user?.weeklyDigestEnabled ?? false;
-  const twoFactorEnabled = user?.twoFactorEnabled ?? false;
+  const pushNotifs = user?.scanNotificationsEnabled ?? localStorage.getItem('qth_push_enabled') === 'true';
 
   const handleTogglePush = async () => {
     const nextState = !pushNotifs;
@@ -186,16 +184,6 @@ const DashboardPage: React.FC = () => {
     console.log('[Push] Updating scanNotificationsEnabled (Push) to:', nextState);
     await toggleUserPreference(nextState);
     console.log('[Push] User preference update complete');
-  };
-
-  const handleToggleSetting = async (key: string, value: boolean) => {
-    console.log('[Settings] handleToggleSetting called:', { key, value });
-    try {
-      await updateProfileMutation.mutateAsync({ [key]: value });
-      console.log('[Settings] handleToggleSetting success for key:', key);
-    } catch (err) {
-      console.error('[Settings] handleToggleSetting failed for key:', key, err);
-    }
   };
 
   const [editingURLQR, setEditingURLQR] = useState<string | null>(null);
@@ -813,7 +801,7 @@ const DashboardPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 ml-2">
-            <button className="text-slate-400 hover:text-slate-700 relative p-2 rounded-lg transition-all hover:bg-slate-100 group">
+            <button onClick={() => setIsNotificationsOpen(true)} className="text-slate-400 hover:text-slate-700 relative p-2 rounded-lg transition-all hover:bg-slate-100 group" aria-label="Open notifications">
               <Bell className="w-5 h-5" />
               <div className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 border-[1.5px] border-white rounded-full" />
             </button>
@@ -1117,8 +1105,6 @@ const DashboardPage: React.FC = () => {
                   <div className="divide-y divide-slate-100">
                     {[
                       { label: 'Push Notification', desc: 'Get notified about account activity', value: pushNotifs, key: 'scanNotificationsEnabled' },
-                      { label: 'Scan Alerts', desc: 'Real-time alerts when your QR codes are scanned', value: emailNotifs, key: 'emailNotificationsEnabled' },
-                      { label: 'Weekly Digest', desc: 'Summary of your weekly QR performance', value: weeklyDigest, key: 'weeklyDigestEnabled' },
                     ].map(row => (
                       <div key={row.label} className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
                         <div>
@@ -1126,13 +1112,7 @@ const DashboardPage: React.FC = () => {
                           <p className="text-[12px] text-slate-400 font-medium">{row.desc}</p>
                         </div>
                         <button
-                          onClick={() => {
-                            if (row.label === 'Push Notification') {
-                              handleTogglePush();
-                            } else {
-                              handleToggleSetting(row.key, !row.value);
-                            }
-                          }}
+                          onClick={() => handleTogglePush()}
                           disabled={pushLoading || updateProfileMutation.isPending}
                           className={cn(
                             'w-11 h-6 rounded-full transition-all duration-200 relative shrink-0 ml-4',
@@ -1162,27 +1142,6 @@ const DashboardPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="divide-y divide-slate-100">
-                    <div className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <Lock className="w-4 h-4 text-slate-400" />
-                        <div>
-                          <p className="text-[14px] font-semibold text-slate-900 mb-0.5">Two-Factor Authentication</p>
-                          <p className="text-[12px] text-slate-400 font-medium">Add an extra layer of security to your account</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleToggleSetting('twoFactorEnabled', !twoFactorEnabled)}
-                        className={cn(
-                          'w-11 h-6 rounded-full transition-all duration-200 relative shrink-0 ml-4',
-                          twoFactorEnabled ? 'bg-emerald-600' : 'bg-slate-200'
-                        )}
-                      >
-                        <div className={cn(
-                          'w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-all duration-200',
-                          twoFactorEnabled ? 'left-[22px]' : 'left-0.5'
-                        )} />
-                      </button>
-                    </div>
                     <div className="px-6 py-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
                       <div className="flex items-center gap-3">
                         <Smartphone className="w-4 h-4 text-slate-400" />
@@ -1793,6 +1752,70 @@ const DashboardPage: React.FC = () => {
              </div>
              <span className="text-[10px] font-bold uppercase tracking-tight">Setup</span>
           </button>
+      </div>
+
+      {/* ─── Notifications Drawer ─── */}
+      {isNotificationsOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[150] animate-in fade-in duration-300"
+          onClick={() => setIsNotificationsOpen(false)}
+        />
+      )}
+      <div className={cn(
+        "fixed inset-y-0 right-0 w-full sm:w-[380px] bg-white shadow-2xl z-[160] transition-all duration-300 flex flex-col",
+        isNotificationsOpen ? "translate-x-0" : "translate-x-full pointer-events-none"
+      )}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-2">
+            <Bell className="w-5 h-5 text-blue-600" />
+            <h3 className="text-[15px] font-bold text-slate-900">Notifications</h3>
+          </div>
+          <button 
+            onClick={() => setIsNotificationsOpen(false)}
+            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+            aria-label="Close notifications"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto scrollbar-hide p-6 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+            <Bell className="w-7 h-7 text-blue-600/70" />
+          </div>
+          <p className="text-[14px] font-semibold text-slate-800 mb-1">No notifications yet</p>
+          <p className="text-[12px] text-slate-500 max-w-[240px] leading-relaxed">
+            You'll see scan alerts, account updates, and product announcements here when they arrive.
+          </p>
+
+          {pushNotifs ? (
+            <div className="mt-6 w-full max-w-[280px] bg-blue-50/60 border border-blue-100 rounded-xl px-4 py-3">
+              <p className="text-[12px] font-semibold text-blue-700 mb-1">Push notifications enabled</p>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                You'll be alerted in real time when your QR codes are scanned.
+              </p>
+            </div>
+          ) : (
+            <button
+              onClick={async () => {
+                const success = await subscribeBrowser();
+                if (!success) return;
+                await toggleUserPreference(true);
+              }}
+              disabled={pushLoading}
+              className="mt-6 px-5 py-2.5 text-[12px] font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors border border-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {pushLoading ? 'Enabling...' : 'Enable Push Notifications'}
+            </button>
+          )}
+
+          <button 
+            onClick={() => { setIsNotificationsOpen(false); setActiveTab('settings'); }}
+            className="mt-3 px-4 py-2 text-[12px] font-semibold text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          >
+            Manage notification settings
+          </button>
+        </div>
       </div>
     </div>
   );

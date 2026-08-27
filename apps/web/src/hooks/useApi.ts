@@ -64,8 +64,16 @@ export const useUpdateProfile = () => {
   return useMutation({
     mutationFn: (data: any) => authApi.updateProfile(data),
     onSuccess: (data) => {
-      queryClient.setQueryData(['currentUser'], data);
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      if (data?.user?.scanNotificationsEnabled !== undefined) {
+        localStorage.setItem(
+          'qth_push_enabled',
+          String(data.user.scanNotificationsEnabled)
+        );
+      }
+      queryClient.setQueryData(['currentUser'], (old: any) => ({
+        ...(old ?? {}),
+        user: { ...(old?.user ?? {}), ...(data?.user ?? {}) },
+      }));
       toast.success('Profile updated successfully');
     },
     onError: (error: any) => {
